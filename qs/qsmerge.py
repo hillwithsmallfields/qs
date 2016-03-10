@@ -1,11 +1,25 @@
 #!/usr/bin/python
 
-# Time-stamp: <2016-03-10 21:32:13 jcgs>
+# Time-stamp: <2016-03-10 22:03:29 jcgs>
 
 # Program to merge my Quantified Self files.
 
 import argparse
 import csv
+import re
+
+def weight_tracker_parser(raw):
+    return raw
+
+row_parsers = {
+    "Weight Tracker": weight_tracker_parser
+}
+
+def find_row_parser_for(filename):
+    for pattern, parser in row_parsers:
+        if re.search(pattern, filename):
+            return parser
+    return None
 
 def main():
     parser = argparse.ArgumentParser()
@@ -25,12 +39,12 @@ def main():
             print "Got row", row
         csvfile.close()
     for incoming_file in args.incoming:
+        row_parser = find_row_parser_for(incoming_file)
         with open(incoming_file) as incoming:
-            pass
-            # todo: get file type by analyzing name, and choose custom reader
-            # inreader = csv.DictReader(incoming)
-            # for row in inreader:
-            #     print "Got incoming row", row
+            inreader = csv.Reader(incoming)
+            for raw in inreader:
+                row = row_parser(raw)
+                print "Got incoming row", row
 
 if __name__ == "__main__":
     main()
