@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Time-stamp: <2016-03-13 21:19:25 jcgs>
+# Time-stamp: <2016-03-14 18:08:35 johstu01>
 
 # Program to merge my Quantified Self files.
 
@@ -24,10 +24,6 @@ def find_row_parser_for(filename):
 def iso8601_date(timestamp):
     return timestamp.replace('/', '-')[0:10]
 
-def merge_row(accumulated, incoming):
-    so_far = accumulated[incoming[date]]
-    # todo: fill this in
-
 def main():
     by_date = {}
     parser = argparse.ArgumentParser()
@@ -36,11 +32,17 @@ def main():
     parser.add_argument('incoming', nargs='+')
     args = parser.parse_args()
     if args.output is None:
+        # todo: save a copy of the original
         output = args.mainfile
     else:
         output = args.output
     print "Main input is", args.mainfile, "and output is", output
     print "Incoming files are", args.incoming
+    with open(args.mainfile) as csvheaderprobe:
+        probereader = csv.reader(csvheaderprobe)
+        for row in probereader:
+            fieldnames = row
+            break
     with open(args.mainfile) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
@@ -49,11 +51,25 @@ def main():
         csvfile.close()
     for incoming_file in args.incoming:
         row_parser = find_row_parser_for(incoming_file)
-        with open(incoming_file) as incoming:
-            inreader = csv.reader(incoming)
-            for raw in inreader:
-                row = row_parser(raw)
-                print "Got incoming row", row
+        if row_parser is None:
+            print "Skipping", incoming_file, "as I don't have a parser for it"
+        else:
+            with open(incoming_file) as incoming:
+                inreader = csv.reader(incoming)
+                for raw in inreader:
+                    new_row = row_parser(raw)
+                    new_row_date = new_row['Date']
+                    if new_row_date in by_date:
+                        existing_row = by_date[new_row_date]
+                        for key, value in new_row.iteritems():
+                            existing_row[key] = value
+                    else:
+                        by_date[new_row_date] = new_row
+    with open(output, 'w') as outstream:
+        writer = csv.DictWriter(outstream, fieldnames)
+        writer.writeheader()
+        for date in by_date.keys().sorted():
+            writer.writerow(by_date[date])
 
 if __name__ == "__main__":
     main()
