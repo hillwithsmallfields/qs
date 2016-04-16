@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Time-stamp: <2016-03-14 18:08:35 johstu01>
+# Time-stamp: <2016-04-16 19:57:24 jcgs>
 
 # Program to merge my Quantified Self files.
 
@@ -9,7 +9,10 @@ import csv
 import re
 
 def weight_tracker_parser(raw):
-    return { 'Date': iso8601_date(raw[1]), 'Kg': raw[0]}
+    if len(raw) == 0:
+        return None
+    else:
+        return { 'Date': iso8601_date(raw[1]), 'Kg': raw[0]}
 
 row_parsers = {
     "Weight Tracker": weight_tracker_parser
@@ -42,7 +45,7 @@ def main():
         probereader = csv.reader(csvheaderprobe)
         for row in probereader:
             fieldnames = row
-            break
+            break               # read only the first row
     with open(args.mainfile) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
@@ -58,17 +61,18 @@ def main():
                 inreader = csv.reader(incoming)
                 for raw in inreader:
                     new_row = row_parser(raw)
-                    new_row_date = new_row['Date']
-                    if new_row_date in by_date:
-                        existing_row = by_date[new_row_date]
-                        for key, value in new_row.iteritems():
-                            existing_row[key] = value
-                    else:
-                        by_date[new_row_date] = new_row
+                    if new_row is not None:
+                        new_row_date = new_row['Date']
+                        if new_row_date in by_date:
+                            existing_row = by_date[new_row_date]
+                            for key, value in new_row.iteritems():
+                                existing_row[key] = value
+                        else:
+                            by_date[new_row_date] = new_row
     with open(output, 'w') as outstream:
         writer = csv.DictWriter(outstream, fieldnames)
         writer.writeheader()
-        for date in by_date.keys().sorted():
+        for date in sorted(by_date.keys()):
             writer.writerow(by_date[date])
 
 if __name__ == "__main__":
