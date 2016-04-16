@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Time-stamp: <2016-04-16 20:31:06 jcgs>
+# Time-stamp: <2016-04-16 21:03:49 jcgs>
 
 # Program to merge my Quantified Self files.
 
@@ -34,12 +34,34 @@ def weight_tracker_complete_row(row):
         if 'Lbs total' in row and row['Lbs total'] != '':
             row['Stone'] = int(row['Lbs total']) / 14
 
+def financisto_parser(raw):
+    if len(raw) == 0:
+        return None
+    else:
+        return {'Date':     raw[0] + "T" + raw[1],
+                'Account':  raw[2],
+                'Amount':   raw[3],
+                'Currency': raw[4],
+                'Category': raw[8] + ':' + raw[7],
+                'Payee':    raw[9],
+                'Note':     raw[12]
+        }
+
+def finances_complete_row(row):
+    pass
+
 file_type_handlers = {
     'weight': {
         'row_parsers': {
             "Weight Tracker": weight_tracker_parser
         },
         'completer': weight_tracker_complete_row
+    },
+    'finances' : {
+        'row_parsers': {
+            "[0-9]{8}_[0-9]{6}_": financisto_parser
+        },
+        'completer': finances_complete_row
     }
 }
 
@@ -50,11 +72,13 @@ def find_row_parser_for(file_type, filename):
     return None
 
 def iso8601_date(timestamp):
-    return timestamp.replace('/', '-')[0:10]
+    return timestamp.replace('/', '-') # [0:10] # try the whole date?
 
 def deduce_file_type_from_headers(headers):
     if 'Kg' in headers:
         return 'weight'
+    if 'Currency' in headers:
+        return 'finances'
     return 'unknown'
 
 def main():
