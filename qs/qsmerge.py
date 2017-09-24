@@ -1,13 +1,15 @@
 #!/usr/bin/python
 
-# Time-stamp: <2016-04-21 21:27:03 jcgs>
+# Time-stamp: <2017-09-24 21:36:08 jcgs>
 
 # Program to merge my Quantified Self files.
 
 import argparse
 import csv
-import re
 import datetime
+import os
+import re
+import shutil
 
 def weight_tracker_parser(raw):
     if len(raw) == 0:
@@ -22,12 +24,12 @@ def weight_tracker_complete_row(row):
         elif 'Stone' in row and row['Stone'] != '' and 'Lbs' in row and row['Lbs'] != '':
             row['Lbs total'] = float(row['Stone']) * 14 + float(row['Lbs'])
         else:
-            print "Could not derive 'Lbs total' for row", row
+            print "Could not derive 'Lbs total' for", row.get('Date', "<unknown date>"), "as neither 'Kg' nor 'Stone'+'Lbs' given"
     if 'Kg' not in row or row['Kg'] == '':
         if 'Lbs total' in row and row['Lbs total'] != '':
             row['Kg'] = float(row['Lbs total']) / 2.20462
         else:
-            print "Could not derive 'Kg' for row", row
+            print "Could not derive 'Kg' for", row.get('Date', "<unknown date>"), "as 'Lbs total' not given or derived"
     if 'Lbs' not in row or row['Lbs'] == '':
         if 'Lbs total' in row and row['Lbs total'] != '':
             row['Lbs'] = int(row['Lbs total']) % 14
@@ -98,14 +100,13 @@ def iso8601_date_only(timestamp):
 def excel_date(date1):          # from http://stackoverflow.com/questions/9574793/how-to-convert-a-python-datetime-datetime-to-excel-serial-date-number
     temp = datetime.datetime(1899, 12, 31)
     parts = map(int, date1.split('-'))
-    print "parts are", parts
     delta = datetime.datetime(parts[0], parts[1], parts[2]) - temp
     return float(delta.days) + (float(delta.seconds) / 86400)
 
 file_type_handlers = {
     'weight': {
         'row_parsers': {
-            "Weight Tracker": weight_tracker_parser
+            "Weight Tracker|weight-": weight_tracker_parser
         },
         'completer': weight_tracker_complete_row,
         'date': iso8601_date_only
@@ -137,18 +138,22 @@ def deduce_file_type_from_headers(headers):
 def main():
     by_date = {}
     parser = argparse.ArgumentParser()
-    parser.add_argument("-t", "--type")
+    parser.add_argument("-d", "--debug")
     parser.add_argument("-o", "--output")
+    parser.add_argument("-t", "--type")
+    parser.add_argument("-v", "--verbose")
     parser.add_argument("mainfile")
     parser.add_argument('incoming', nargs='+')
     args = parser.parse_args()
     if args.output is None:
-        # todo: save a copy of the original
+        old_base, old_ext = os.path.splitext(args.mainfile)
+        shutil.copyfile(args.mainfile, old_base + "-old" + old_ext)
         output = args.mainfile
     else:
         output = args.output
-    print "Main input is", args.mainfile, "and output is", output
-    print "Incoming files are", args.incoming
+    if args.verbose:
+        print "Main input is", args.mainfile, "and output is", output
+        print "Incoming files are", args.incoming
     with open(args.mainfile) as csvheaderprobe:
         probereader = csv.reader(csvheaderprobe)
         for row in probereader:
@@ -156,6 +161,8 @@ def main():
             break               # read only the first row
     if args.type is None:
         file_type = deduce_file_type_from_headers(fieldnames)
+        if args.verbose:
+            print "Deduced file type", file_type
     else:
         file_type = args.type
     handler = file_type_handlers[file_type]
@@ -165,7 +172,8 @@ def main():
             row_date = handler['date'](row['Date'])
             row['Date'] = row_date
             by_date[row_date] = row
-            print "mainfile raw date", row['Date'], "-->", row_date
+            if args.debug:
+                print "mainfile raw date", row['Date'], "converted to", row_date
         csvfile.close()
     for incoming_file in args.incoming:
         row_parser = find_row_parser_for(file_type, incoming_file)
@@ -179,19 +187,23 @@ def main():
                     if new_row is not None:
                         new_row_date = handler['date'](new_row['Date'])
                         new_row['Date'] = new_row_date
-                        print "incoming raw date", new_row['Date'], "-->", new_row_date
+                        if args.debug:
+                            print "incoming raw date", new_row['Date'], "-->", new_row_date
                         if new_row_date in by_date:
-                            print "merging row"
+                            if args.debug:
+                                print "merging row"
                             existing_row = by_date[new_row_date]
                             for key, value in new_row.iteritems():
                                 existing_row[key] = value
                         else:
-                            print "adding row"
+                            if args.debug:
+                                print "adding row"
                             by_date[new_row_date] = new_row
     completer = handler['completer']
     sorted_dates = sorted(by_date.keys())
     for date in sorted_dates:
-        print "completing", date
+        if args.debug:
+            print "completing", date
         completer(by_date[date])
     with open(output, 'w') as outstream:
         writer = csv.DictWriter(outstream, fieldnames)
