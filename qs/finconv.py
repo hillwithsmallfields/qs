@@ -52,6 +52,10 @@ def main():
                         default="~/.qs-conf.yaml")
     parser.add_argument("-f", "--format",
                         default='handelsbanken')
+    parser.add_argument("-a", "--all-rows",
+                        action='store_true',
+                        help="""Convert all rows.
+                        Otherwise only the rows for which payee name conversions are given will be converted."""
     parser.add_argument("-O", "--output-format",
                         default='financisto')
 
@@ -107,7 +111,7 @@ def main():
         with open(os.path.expanduser(os.path.expandvars(input_file_name))) as infile:
             for row in csv.DictReader(infile):
                 conversion = conversions.get(row[in_payee], None)
-                if conversion:  # we're only importing amounts from payees for which we can convert the name-on-statement to the real name
+                if args.all or conversion:  # out of "all" mode, we're only importing amounts from payees for which we can convert the name-on-statement to the real name
                     if in_credits:
                         money_in = row[in_credits]
                         money_in = 0 if money_in == '' else float(money_in)
@@ -136,8 +140,11 @@ def main():
                     if 'time' in out_columns:
                         out_row[out_columns['time']] = row_time
                     for outcol_name in ['category', 'parent', 'payee', 'location', 'project', 'note']:
-                        if outcol_name in out_columns and outcol_name in conversion:
-                            out_row[out_columns[outcol_name]] = conversion[outcol_name]
+                        if outcol_name in out_columns:
+                            if conversion and outcol_name in conversion:
+                                out_row[out_columns[outcol_name]] = conversion[outcol_name]
+                            else:
+                                pass # todo: some form of pass-through when not filtering by conversions
                     output_rows[row_date+"T"+row_time] = out_row
 
     with open(os.path.expanduser(os.path.expandvars(outfile)), 'w') as outfile:
