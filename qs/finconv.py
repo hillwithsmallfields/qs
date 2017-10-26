@@ -91,46 +91,57 @@ def main():
                 if args.update:
                     output_format_name = input_format
                 output_format = config['formats'][output_format_name]
-                out_date = output_format['columns']['date']
-                out_payee = output_format['columns']['payee']
-                out_name = output_format['name']
-                out_currency = output_format['currency']
+                out_columns = output_format['columns']
                 print "output format is", output_format
-        in_date = input_format['columns']['date']
-        in_payee = input_format['columns']['payee']
-        in_credits = input_format['columns']['credits']
-        if not isinstance(in_credits, basestring):
-            pass                # todo: further lookup for multi-account files
-        in_debits = input_format['columns']['debits']
-        if not isinstance(in_debits, basestring):
-            pass                # todo: further lookup for multi-account files
-        conversions = input_format['conversions']
+                outcol_amount = out_columns['amount']
+                outcol_currency = out_columns['currency']
+                default_account_name = output_format.get('name', None)
+        in_columns = input_format['columns']
+        in_date = in_columns['date']
+        in_payee = in_columns['payee']
+        in_credits = in_columns.get('credits', None)
+        in_debits = in_columns.get('debits', None)
+        in_account_column = in_columns.get('account', None)
+        conversions = input_format['conversions'] # lookup table for payees by name in input file to real name
+        in_currency = input_format['currency'] # treat the currency for each file as constant, as this is for importing from bank accounts
         with open(os.path.expanduser(os.path.expandvars(input_file_name))) as infile:
             for row in csv.DictReader(infile):
                 conversion = conversions.get(row[in_payee], None)
-                if conversion:
-                    money_in = row[in_credits]
-                    money_in = 0 if money_in == '' else float(money_in)
-                    money_out = row[in_debits]
-                    money_out = 0 if money_out == '' else float(money_out)
+                if conversion:  # we're only importing amounts from payees for which we can convert the name-on-statement to the real name
+                    if in_credits:
+                        money_in = row[in_credits]
+                        money_in = 0 if money_in == '' else float(money_in)
+                    else:
+                        money_in = 0
+                    if in_debits:
+                        money_out = row[in_debits]
+                        money_out = 0 if money_out == '' else float(money_out)
+                    else:
+                        money_out = 0
                     row_date = row[in_date]
-                    row_time = "08:00:00"
-                    output_rows[row_date+"T"+row_time] = {out_date: row_date,
-                                                          'time': row_time,
-                                                          'account': out_name, # was "Handelsbanken current account"
-                                                          'amount': money_in - money_out,
-                                                          'currency': out_currency, # was "GBP"
-                                                          'original amount': "",
-                                                          'original currency': "",
-                                                          'category': conversion['category'],
-                                                          'parent': conversion['parent'],
-                                                          out_payee: conversion['payee'],
-                                                          'location': "",
-                                                          'project': "",
-                                                          'note': "Imported from bank statement"}
+                    row_time = "01:00:00" # todo: make these count up a second for each successive import
+                    in_account = row[in_account_column] if in_account_column else default_account_name
+                    this_outcol_amount = outcol_amount is isinstance(outcol_amount, basestring) else outcol_amount[in_account]
+                    out_row = {out_columns['date']: row_date,
+                               this_outcol_amount: money_in - money_out}
+                    if outcol_currency:
+                        this_outcol_currency = outcol_currency if isinstance(outcol_currency, basestring) else outcol_currency[in_account]
+                        out_row[this_outcol_currency] = output_format['currency']
+                    if 'original_amount' in out_columns:
+                        out_row[out_columns['original_amount']] = money_in - money_out
+                    if 'original_currency' in out_columns:
+                        out_row[out_columns['original_currency']] = output_format['currency']
+                    if in_account and 'account' in out_columns:
+                        out_row[out_columns['account']] = in_account
+                    if 'time' in out_columns:
+                        out_row[out_columns['time']] = row_time
+                    for outcol_name in ['category', 'parent', 'payee', 'location', 'project', 'note']:
+                        if outcol_name in out_columns and outcol_name in conversion:
+                            out_row[out_columns[outcol_name]] = conversion[outcol_name]
+                    output_rows[row_date+"T"+row_time] = out_row
 
     with open(os.path.expanduser(os.path.expandvars(outfile)), 'w') as outfile:
-        writer = csv.DictWriter(outfile, output_format['column-sequence'])
+        writer = csv.DictWriter(outfile, output_formato['column-sequence'])
         writer.writeheader()
         for timestamp in sorted(output_rows.keys()):
             writer.writerow(output_rows[timestamp])
