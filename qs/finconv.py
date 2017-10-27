@@ -38,6 +38,8 @@ import yaml
 #       date: date
 #       payee: payee
 
+# todo: add to format 'accounts' which indicates which of the columns are accounts
+
 def deduce_format(first_row, formats):
     condensed_row = [cell for cell in first_row if cell != ""]
     for format_name, format_def in formats.iteritems():
