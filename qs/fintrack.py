@@ -2,10 +2,6 @@
 
 # Program to track finance spreadsheets
 
-# Originally written to help to add the automatic payments reported in
-# my bank statements to my financisto (Android app) accounts, as I
-# haven't been in the habit of doing them as they come in.
-
 import argparse
 import csv
 import os
@@ -18,10 +14,10 @@ def main():
     parser.add_argument("-c", "--config",
                         default="~/.qs-conf.yaml")
     parser.add_argument("-f", "--format",
-                        default='handelsbanken')
+                        default='combined')
     parser.add_argument("-o", "--output")
     parser.add_argument("-O", "--output-format",
-                        default='financisto')
+                        default='combined')
     parser.add_argument("input_file")
     args = parser.parse_args()
 
