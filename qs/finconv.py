@@ -9,7 +9,7 @@
 import argparse
 import csv
 import os
-import yaml
+import qsutils
 
 # The config file should look like this:
 
@@ -43,35 +43,48 @@ import yaml
 def deduce_format(first_row, formats):
     condensed_row = [cell for cell in first_row if cell != ""]
     for format_name, format_def in formats.iteritems():
+        print "trying format named", format_name, "with definition", format_def
         sequence = [col for col in format_def['column-sequence'] if col]
         if sequence == condensed_row:
             return format_name
         return None
 
+DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config",
-                        default="~/.qs-conf.yaml")
+                        action='append')
     parser.add_argument("-f", "--format",
                         default='handelsbanken')
     parser.add_argument("-a", "--all-rows",
                         action='store_true',
                         help="""Convert all rows.
-                        Otherwise only the rows for which payee name conversions are given will be converted."""
+                        Otherwise only the rows for which payee name conversions are given will be converted.""")
     parser.add_argument("-O", "--output-format",
                         default='financisto')
 
     outfile_handling = parser.add_mutually_exclusive_group(required=True)
     outfile_handling.add_argument("-o", "--output")
-    output.add_argument("-u", "--update")
+    outfile_handling.add_argument("-u", "--update")
 
     parser.add_argument("input_files", nargs='*')
     args = parser.parse_args()
 
-    with open(os.path.expanduser(os.path.expandvars(args.config))) as config_file:
-        config = yaml.safe_load(config_file)
+    config_files = ([DEFAULT_CONF]
+                    if os.path.exists(DEFAULT_CONF)
+                    else [])
+
+    print "args.config is", args.config
+
+    if args.config:
+        config_files += args.config
+
+    config = qsutils.load_config(*config_files)
 
     print "config is", config
+
+    print "formats are", config['formats']
 
     if args.update:
         infile_names = [args.update] + args.input_files
@@ -89,7 +102,7 @@ def main():
 
     for input_file_name in infile_names:
         with open(os.path.expanduser(os.path.expandvars(input_file_name))) as infile:
-            sample_row = csv.Reader(infile)
+            sample_row = csv.reader(infile)
             input_format = deduce_format(sample_row, config['formats']) or config['formats'][args.format]
             print "input format for", input_file_name, "is", input_format
             if first_file:
@@ -127,7 +140,7 @@ def main():
                     row_date = row[in_date]
                     row_time = "01:00:00" # todo: make these count up a second for each successive import
                     in_account = row[in_account_column] if in_account_column else default_account_name
-                    this_outcol_amount = outcol_amount is isinstance(outcol_amount, basestring) else outcol_amount[in_account]
+                    this_outcol_amount = outcol_amount if isinstance(outcol_amount, basestring) else outcol_amount[in_account]
                     out_row = {out_columns['date']: row_date,
                                this_outcol_amount: money_in - money_out}
                     if outcol_currency:
