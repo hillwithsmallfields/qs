@@ -42,12 +42,16 @@ import qsutils
 
 def deduce_format(first_row, formats):
     condensed_row = [cell for cell in first_row if cell != ""]
+    print "our headers", condensed_row
     for format_name, format_def in formats.iteritems():
-        print "trying format named", format_name, "with definition", format_def
         sequence = [col for col in format_def['column-sequence'] if col]
+        print "trying format named", format_name, "with columns", sequence
         if sequence == condensed_row:
+            print "format", format_name, "matches"
             return format_name
-        return None
+        print "not that, trying next"
+    print "none of those"
+    return None
 
 DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
 
@@ -55,6 +59,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config",
                         action='append')
+    parser.add_argument("-n", "--no-default-config")
     parser.add_argument("-f", "--format",
                         default='handelsbanken')
     parser.add_argument("-a", "--all-rows",
@@ -72,19 +77,13 @@ def main():
     args = parser.parse_args()
 
     config_files = ([DEFAULT_CONF]
-                    if os.path.exists(DEFAULT_CONF)
+                    if os.path.exists(DEFAULT_CONF) and not args.no_default_config
                     else [])
-
-    print "args.config is", args.config
 
     if args.config:
         config_files += args.config
 
     config = qsutils.load_config(*config_files)
-
-    print "config is", config
-
-    print "formats are", config['formats']
 
     if args.update:
         infile_names = [args.update] + args.input_files
@@ -101,9 +100,14 @@ def main():
     first_file = True
 
     for input_file_name in infile_names:
+        print "reading", input_file_name
         with open(os.path.expanduser(os.path.expandvars(input_file_name))) as infile:
-            sample_row = csv.reader(infile)
-            input_format = deduce_format(sample_row, config['formats']) or config['formats'][args.format]
+            for sample_row in csv.reader(infile):
+                print "trying sample row", sample_row
+                input_format = deduce_format(sample_row, config['formats']) or config['formats'][args.format]
+                if input_format:
+                    break
+                print "not recognized, trying next row"
             print "input format for", input_file_name, "is", input_format
             if first_file:
                 first_file = False
@@ -115,15 +119,14 @@ def main():
                 outcol_amount = out_columns['amount']
                 outcol_currency = out_columns['currency']
                 default_account_name = output_format.get('name', None)
-        in_columns = input_format['columns']
-        in_date = in_columns['date']
-        in_payee = in_columns['payee']
-        in_credits = in_columns.get('credits', None)
-        in_debits = in_columns.get('debits', None)
-        in_account_column = in_columns.get('account', None)
-        conversions = input_format['conversions'] # lookup table for payees by name in input file to real name
-        in_currency = input_format['currency'] # treat the currency for each file as constant, as this is for importing from bank accounts
-        with open(os.path.expanduser(os.path.expandvars(input_file_name))) as infile:
+            in_columns = input_format['columns']
+            in_date = in_columns['date']
+            in_payee = in_columns['payee']
+            in_credits = in_columns.get('credits', None)
+            in_debits = in_columns.get('debits', None)
+            in_account_column = in_columns.get('account', None)
+            conversions = input_format['conversions'] # lookup table for payees by name in input file to real name
+            in_currency = input_format['currency'] # treat the currency for each file as constant, as this is for importing from bank accounts
             for row in csv.DictReader(infile):
                 conversion = conversions.get(row[in_payee], None)
                 if args.all or conversion:  # out of "all" mode, we're only importing amounts from payees for which we can convert the name-on-statement to the real name
