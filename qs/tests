@@ -1,0 +1,15 @@
+#!/bin/bash
+TARBALL=~/qsfiles.tar
+ORIGINALS=~/qs-playpen
+SCRATCH=~/qs-scratch
+CONFIGDIR=~/qsconf
+QS=~/open-projects/qs/qs
+if [ ! -f $TARBALL ]
+then
+    echo making $TARBALL from $ORIGINALS
+    tar cf $TARBALL -C $ORIGINALS financisto.csv handelsbanken.csv
+fi
+mkdir -p $SCRATCH
+rm -rf $SCRATCH/*
+tar xf $TARBALL -C $SCRATCH
+$QS/finconv.py --config $CONFIGDIR/accounts.yaml --config $CONFIGDIR/conversions.yaml --output $SCRATCH/converter-output.csv $SCRATCH/financisto.csv $SCRATCH/handelsbanken.csv
