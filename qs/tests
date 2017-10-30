@@ -1,5 +1,5 @@
 #!/bin/bash
-TARBALL=~/qsfiles.tar
+ TARBALL=~/qsfiles.tar
 ORIGINALS=~/qs-playpen
 SCRATCH=~/qs-scratch
 CONFIGDIR=~/qsconf

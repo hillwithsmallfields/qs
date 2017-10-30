@@ -29,6 +29,7 @@ def load_config(*config_files):
             # print "adding", more_config, "to", config
             rec_update(config, more_config)
             # print "config is now", config
+    print "Combined config is", yaml.dump(config)
     return config
 
 def main():
