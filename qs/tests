@@ -13,4 +13,9 @@ mkdir -p $SCRATCH
 rm -rf $SCRATCH/*
 tar xf $TARBALL -C $SCRATCH
 echo Running version from $QS
-$QS/finconv.py --config $CONFIGDIR/accounts.yaml --config $CONFIGDIR/conversions.yaml --output $SCRATCH/converter-output.csv $SCRATCH/financisto.csv $SCRATCH/handelsbanken.csv
+$QS/finconv.py --config $CONFIGDIR/accounts.yaml --config $CONFIGDIR/conversions.yaml --output $SCRATCH/converter-output.csv --output-format financisto $SCRATCH/handelsbanken.csv
+echo -n produced importer file
+wc -c -l $SCRATCH/converter-output.csv
+$QS/finconv.py --config $CONFIGDIR/accounts.yaml --config $CONFIGDIR/conversions.yaml --all-rows --output $SCRATCH/combiner-output.csv --output-format combined $SCRATCH/financisto.csv $SCRATCH/handelsbanken.csv
+echo -n produced combined file
+wc -c -l $SCRATCH/combiner-output.csv

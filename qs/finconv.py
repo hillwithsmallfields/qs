@@ -140,7 +140,9 @@ def main():
                     continue
                 payee_name = row[in_payee]
                 conversion = conversions.get(payee_name, None)
-                if args.all_rows or conversion:  # out of "all" mode, we're only importing amounts from payees for which we can convert the name-on-statement to the real name
+                # except in "all" mode, we're only importing amounts from payees
+                # for which we can convert the name-on-statement to the real name
+                if args.all_rows or conversion:
                     if in_credits:
                         money_in = row[in_credits]
                         money_in = 0 if money_in == '' else float(money_in)
@@ -173,7 +175,9 @@ def main():
                             if conversion and outcol_name in conversion:
                                 out_row[out_columns[outcol_name]] = conversion[outcol_name]
                             else:
-                                pass # todo: some form of pass-through when not filtering by conversions
+                                if outcol_name in in_columns:
+                                    out_row[out_columns[outcol_name]] = row[in_columns[outcol_name]]
+                                # todo: some form of pass-through when not filtering by conversions
                     print "constructed", out_row
                     output_rows[row_date+"T"+row_time] = out_row
 
