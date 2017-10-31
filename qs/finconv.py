@@ -42,15 +42,10 @@ import qsutils
 
 def deduce_format(first_row, formats):
     condensed_row = [cell for cell in first_row if cell != ""]
-    print "our headers", condensed_row
     for format_name, format_def in formats.iteritems():
         sequence = [col for col in format_def['column-sequence'] if col]
-        print "trying format named", format_name, "with columns", sequence
         if sequence == condensed_row:
-            print "format", format_name, "matches"
             return format_name
-        print "not that, trying next"
-    print "none of those formats"
     return None
 
 DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
@@ -61,7 +56,7 @@ def main():
                         action='append')
     parser.add_argument("-n", "--no-default-config")
     parser.add_argument("-f", "--format",
-                        default='handelsbanken')
+                        default=None)
     parser.add_argument("-a", "--all-rows",
                         action='store_true',
                         help="""Convert all rows.
@@ -101,19 +96,15 @@ def main():
     for input_file_name in infile_names:
         print "reading", input_file_name
         with open(os.path.expanduser(os.path.expandvars(input_file_name))) as infile:
-            position = 0
-            prev_position = 0
-            for sample_row in csv.reader(infile):
-                prev_position = position
-                position = infile.tell()
-                print "trying sample row", sample_row
-                input_format_name = deduce_format(sample_row, config['formats']) or config['formats'][args.format]
-                print "got", input_format_name, "from deduce_format"
-                if input_format_name:
-                    print "format recognized as", input_format_name, "from header row", sample_row
-                    break
-                print "not recognized, trying next row"
-            print "input format for", input_file_name, "is", input_format_name
+            header_row_number = 0
+            if args.format and (args.format in config['formats']):
+                input_format_name = args.format
+            else:
+                for sample_row in csv.reader(infile):
+                    header_row_number += 1
+                    input_format_name = deduce_format(sample_row, config['formats'])
+                    if input_format_name:
+                        break
             if first_file:
                 first_file = False
                 if args.update:
@@ -122,13 +113,13 @@ def main():
                 output_format = config['formats'][output_format_name]
                 out_columns = output_format['columns']
                 print "output format is", output_format
+                if 'amount' not in out_columns:
+                    print "An 'amount' label must be specified in the columns of the output format", output_format_name
+                    return 1
                 outcol_amount = out_columns['amount']
                 outcol_currency = out_columns.get('currency', None)
                 default_account_name = output_format.get('name', None)
-            print "formats are", config['formats']
-            print "input_format_name is", input_format_name
             input_format = config['formats'][input_format_name]
-            print "input_format is", input_format
             in_columns = input_format['columns']
             in_date = in_columns['date']
             in_payee = in_columns['payee']
@@ -136,11 +127,14 @@ def main():
             in_debits = in_columns.get('debits', None)
             in_account_column = in_columns.get('account', None)
             conversions = input_format.get('conversions', {}) # lookup table for payees by name in input file to real name
-            in_currency = input_format['currency'] # treat the currency for each file as constant, as this is for importing from bank accounts
+            in_currency = input_format.get('currency', None) # treat the currency for each file as constant, as this is for importing from bank accounts
             print "reading input file", infile
-            infile.seek(prev_position)
+            infile.seek(0)
+            for i in range(1, header_row_number):
+                dummy = infile.readline()
             for row in csv.DictReader(infile):
-                # print "got row", row
+                row = {k:v for k,v in row.iteritems() if k != ''}
+                print "processing transaction row", row
                 if in_payee not in row:
                     print "payee field", in_payee, "missing from row", row
                     continue
@@ -180,10 +174,11 @@ def main():
                                 out_row[out_columns[outcol_name]] = conversion[outcol_name]
                             else:
                                 pass # todo: some form of pass-through when not filtering by conversions
+                    print "constructed", out_row
                     output_rows[row_date+"T"+row_time] = out_row
 
     with open(os.path.expanduser(os.path.expandvars(outfile)), 'w') as outfile:
-        writer = csv.DictWriter(outfile, output_formato['column-sequence'])
+        writer = csv.DictWriter(outfile, output_format['column-sequence'])
         writer.writeheader()
         for timestamp in sorted(output_rows.keys()):
             writer.writerow(output_rows[timestamp])

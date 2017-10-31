@@ -12,4 +12,5 @@ fi
 mkdir -p $SCRATCH
 rm -rf $SCRATCH/*
 tar xf $TARBALL -C $SCRATCH
+echo Running version from $QS
 $QS/finconv.py --config $CONFIGDIR/accounts.yaml --config $CONFIGDIR/conversions.yaml --output $SCRATCH/converter-output.csv $SCRATCH/financisto.csv $SCRATCH/handelsbanken.csv
