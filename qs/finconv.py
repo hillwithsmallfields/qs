@@ -55,6 +55,8 @@ def main():
                         Otherwise only the rows for which payee name conversions are given will be converted.""")
     parser.add_argument("-O", "--output-format",
                         default='financisto')
+    parser.add_argument("-v", "--verbose",
+                        action='store_true')
 
     outfile_handling = parser.add_mutually_exclusive_group(required=True)
     outfile_handling.add_argument("-o", "--output")
@@ -70,7 +72,7 @@ def main():
     if args.config:
         config_files += args.config
 
-    config = qsutils.load_config(*config_files)
+    config = qsutils.load_config(args.verbose, *config_files)
 
     if args.update:
         infile_names = [args.update] + args.input_files
@@ -128,7 +130,8 @@ def main():
                 dummy = infile.readline()
             for row in csv.DictReader(infile):
                 row = {k:v for k,v in row.iteritems() if k != ''}
-                print "processing transaction row", row
+                if args.verbose:
+                    print "processing transaction row", row
                 if in_payee_column not in row:
                     print "payee field", in_payee_column, "missing from row", row
                     continue
@@ -150,7 +153,10 @@ def main():
                     row_date = row[in_columns['date']]
                     row_time = "01:00:00" # todo: make these count up a second for each successive import
                     in_account = row[in_account_column] if in_account_column else default_account_name
-                    this_outcol_amount = outcol_amount if isinstance(outcol_amount, basestring) else outcol_amount[in_account]
+                    if (not isinstance(outcol_amount, basestring)) and in_account not in outcol_amount:
+                        print "unrecognized in_account", in_account
+                        print "while using in_account_column", in_account_column
+                    this_outcol_amount = outcol_amount if isinstance(outcol_amount, basestring) else outcol_amount.get(in_account, "Unknown")
                     out_row = {out_columns['date']: row_date,
                                this_outcol_amount: money_in - money_out}
                     if out_currency_column:
@@ -172,7 +178,8 @@ def main():
                                 if outcol_name in in_columns:
                                     out_row[out_columns[outcol_name]] = row[in_columns[outcol_name]]
                                 # todo: some form of pass-through when not filtering by conversions
-                    print "constructed", out_row
+                    if args.verbose:
+                        print "constructed", out_row
                     output_rows[row_date+"T"+row_time] = out_row
 
     with open(os.path.expanduser(os.path.expandvars(outfile)), 'w') as outfile:

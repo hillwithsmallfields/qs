@@ -18,12 +18,15 @@ def rec_update(d, u, i=""):
             d[k] = v
     return d
 
-def load_config(*config_files):
+def load_config(verbose, *config_files):
     config = {}
     for file in config_files:
         with open(os.path.expanduser(os.path.expandvars(file))) as config_file:
             more_config = yaml.safe_load(config_file)
             rec_update(config, more_config)
+    if verbose:
+        print "Read config:"
+        print yaml.dump(config)
     return config
 
 def deduce_format(first_row, formats):

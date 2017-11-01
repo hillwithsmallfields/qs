@@ -1,0 +1,39 @@
+formats:
+  handelsbanken:
+    column-sequence: ["Date", None, "Details", None, "Money out", None, "Money in", None, "Balance"]
+    columns:
+      date: Date
+      payee: Details
+      credits: Money in
+      debits: Money out
+    name: HB current statement
+  financisto:
+    column-sequence: ["date", "time", "account", "amount", "currency", "original amount", "original currency", "category", "parent", "payee", "location", "project", "note"]
+    columns:
+      date: date
+      payee: payee
+      amount: amount
+      credits: amount
+      account: account
+  combined:
+    column-sequence: ["date", "time",
+                      "HB current", "HB current statement", "HB savings",
+                      "Co-op current", "Co-op savings",
+                      "Sterling cash", "Lek cash", "Euro cash", "Kronor cash",
+                      Categorical Imperative, "Skipped snacks", "Unknown",
+                      "category", "parent", "payee", "location", "project", "note"]
+    columns:
+      date: date
+      payee: payee
+      # map account names in Financisto to our column names:
+      amount:
+        Sterling cash:                 Sterling cash
+        Lek cash:                      Lek cash
+        Euro cash:                     Euro cash
+        Co-op current account:         Co-op current
+        Co-op savings:                 Co-op savings
+        Handelsbanken current account: HB current
+        Handelsbanken savings:         HB savings
+        Unknown:                       Unknown
+        Snacks not bought:             Skipped snacks
+        Categorical Imperative:        CatImp
