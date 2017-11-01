@@ -3,6 +3,7 @@
 
 import os
 import pprint
+import re
 import yaml
 
 # based on https://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
@@ -36,6 +37,16 @@ def deduce_format(first_row, formats):
         if sequence == condensed_row:
             return format_name
     return None
+
+ISO_DATE = re.compile("[0-9]{4}-[0-9]{2}-[0-9]{2}")
+SLASHED_DATE = re.compile("[0-9]{4}/[0-9]{2}/[0-9]{2}")
+
+def normalize_date(date_in):
+    if ISO_DATE.match(date_in):
+        return date_in
+    if SLASHED_DATE.match(date_in):
+        return date_in.replace('/', '-')
+    return date_in
 
 def main():
     """Tests on the utilities"""

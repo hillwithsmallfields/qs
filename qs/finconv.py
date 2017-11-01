@@ -110,7 +110,8 @@ def main():
                     print "updating, so set output_format_name to", output_format_name
                 output_format = config['formats'][output_format_name]
                 out_columns = output_format['columns']
-                print "output format is", output_format
+                if args.verbose:
+                    print "output format is", output_format
                 if 'amount' not in out_columns:
                     print "An 'amount' label must be specified in the columns of the output format", output_format_name
                     return 1
@@ -123,6 +124,7 @@ def main():
             in_credits_column = in_columns.get('credits', None)
             in_debits_column = in_columns.get('debits', None)
             in_account_column = in_columns.get('account', None)
+            default_account_name = input_format.get('name', None)
             conversions = input_format.get('conversions', {}) # lookup table for payees by name in input file to real name
             print "reading input file", infile
             infile.seek(0)
@@ -150,13 +152,13 @@ def main():
                         money_out = 0 if money_out == '' else float(money_out)
                     else:
                         money_out = 0
-                    row_date = row[in_columns['date']]
+                    row_date = qsutils.normalize_date(row[in_columns['date']])
                     row_time = "01:00:00" # todo: make these count up a second for each successive import
                     in_account = row[in_account_column] if in_account_column else default_account_name
                     if (not isinstance(outcol_amount, basestring)) and in_account not in outcol_amount:
-                        print "unrecognized in_account", in_account
-                        print "while using in_account_column", in_account_column
-                    this_outcol_amount = outcol_amount if isinstance(outcol_amount, basestring) else outcol_amount.get(in_account, "Unknown")
+                        print "unrecognized in_account", in_account, "in row", row
+                        print "recognized values are", outcol_amount
+                    this_outcol_amount = outcol_amount if isinstance(outcol_amount, basestring) else outcol_amount.get(in_account, default_account_name or "Unknown")
                     out_row = {out_columns['date']: row_date,
                                this_outcol_amount: money_in - money_out}
                     if out_currency_column:
@@ -170,14 +172,21 @@ def main():
                         out_row[out_columns['account']] = in_account
                     if 'time' in out_columns:
                         out_row[out_columns['time']] = row_time
-                    for outcol_name in ['category', 'parent', 'payee', 'location', 'project', 'note']:
-                        if outcol_name in out_columns:
-                            if conversion and outcol_name in conversion:
-                                out_row[out_columns[outcol_name]] = conversion[outcol_name]
+                    for outcol_descr in ['balance', 'category', 'parent', 'payee', 'location', 'project', 'note']:
+                        if outcol_descr in out_columns:
+                            if conversion and outcol_descr in conversion:
+                                out_row[out_columns[outcol_descr]] = conversion[outcol_descr]
                             else:
-                                if outcol_name in in_columns:
-                                    out_row[out_columns[outcol_name]] = row[in_columns[outcol_name]]
-                                # todo: some form of pass-through when not filtering by conversions
+                                if outcol_descr in in_columns:
+                                    output_column_naming = out_columns[outcol_descr]
+                                    if isinstance(output_column_naming, basestring):
+                                        outcol_name = output_column_naming
+                                    else:
+                                        outcol_name = output_column_naming[default_account_name]
+                                    try:
+                                        out_row[out_columns[outcol_name]] = row[in_columns[outcol_descr]]
+                                    except KeyError:
+                                        print "key", outcol_name, "not defined in", out_columns
                     if args.verbose:
                         print "constructed", out_row
                     output_rows[row_date+"T"+row_time] = out_row
