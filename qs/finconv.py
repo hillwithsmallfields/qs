@@ -40,14 +40,6 @@ import qsutils
 
 # todo: add to format 'accounts' which indicates which of the columns are accounts
 
-def deduce_format(first_row, formats):
-    condensed_row = [cell for cell in first_row if cell != ""]
-    for format_name, format_def in formats.iteritems():
-        sequence = [col for col in format_def['column-sequence'] if col]
-        if sequence == condensed_row:
-            return format_name
-    return None
-
 DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
 
 def main():
@@ -96,13 +88,17 @@ def main():
     for input_file_name in infile_names:
         print "reading", input_file_name
         with open(os.path.expanduser(os.path.expandvars(input_file_name))) as infile:
+            # Scan over the top rows looking for one that matches one
+            # of our known headers.  We count how many rows it took,
+            # so we can reposition the stream for the
+            # dictionary-producing reader.
             header_row_number = 0
             if args.format and (args.format in config['formats']):
                 input_format_name = args.format
             else:
                 for sample_row in csv.reader(infile):
                     header_row_number += 1
-                    input_format_name = deduce_format(sample_row, config['formats'])
+                    input_format_name = qsutils.deduce_format(sample_row, config['formats'])
                     if input_format_name:
                         break
             if first_file:
@@ -117,17 +113,15 @@ def main():
                     print "An 'amount' label must be specified in the columns of the output format", output_format_name
                     return 1
                 outcol_amount = out_columns['amount']
-                outcol_currency = out_columns.get('currency', None)
+                out_currency_column = out_columns.get('currency', None)
                 default_account_name = output_format.get('name', None)
             input_format = config['formats'][input_format_name]
             in_columns = input_format['columns']
-            in_date = in_columns['date']
-            in_payee = in_columns['payee']
-            in_credits = in_columns.get('credits', None)
-            in_debits = in_columns.get('debits', None)
+            in_payee_column = in_columns['payee']
+            in_credits_column = in_columns.get('credits', None)
+            in_debits_column = in_columns.get('debits', None)
             in_account_column = in_columns.get('account', None)
             conversions = input_format.get('conversions', {}) # lookup table for payees by name in input file to real name
-            in_currency = input_format.get('currency', None) # treat the currency for each file as constant, as this is for importing from bank accounts
             print "reading input file", infile
             infile.seek(0)
             for i in range(1, header_row_number):
@@ -135,33 +129,33 @@ def main():
             for row in csv.DictReader(infile):
                 row = {k:v for k,v in row.iteritems() if k != ''}
                 print "processing transaction row", row
-                if in_payee not in row:
-                    print "payee field", in_payee, "missing from row", row
+                if in_payee_column not in row:
+                    print "payee field", in_payee_column, "missing from row", row
                     continue
-                payee_name = row[in_payee]
+                payee_name = row[in_payee_column]
                 conversion = conversions.get(payee_name, None)
                 # except in "all" mode, we're only importing amounts from payees
                 # for which we can convert the name-on-statement to the real name
                 if args.all_rows or conversion:
-                    if in_credits:
-                        money_in = row[in_credits]
+                    if in_credits_column:
+                        money_in = row[in_credits_column]
                         money_in = 0 if money_in == '' else float(money_in)
                     else:
                         money_in = 0
-                    if in_debits:
-                        money_out = row[in_debits]
+                    if in_debits_column:
+                        money_out = row[in_debits_column]
                         money_out = 0 if money_out == '' else float(money_out)
                     else:
                         money_out = 0
-                    row_date = row[in_date]
+                    row_date = row[in_columns['date']]
                     row_time = "01:00:00" # todo: make these count up a second for each successive import
                     in_account = row[in_account_column] if in_account_column else default_account_name
                     this_outcol_amount = outcol_amount if isinstance(outcol_amount, basestring) else outcol_amount[in_account]
                     out_row = {out_columns['date']: row_date,
                                this_outcol_amount: money_in - money_out}
-                    if outcol_currency:
-                        this_outcol_currency = outcol_currency if isinstance(outcol_currency, basestring) else outcol_currency[in_account]
-                        out_row[this_outcol_currency] = output_format['currency']
+                    if out_currency_column:
+                        this_out_currency_column = out_currency_column if isinstance(out_currency_column, basestring) else out_currency_column[in_account]
+                        out_row[this_out_currency_column] = output_format['currency']
                     if 'original_amount' in out_columns:
                         out_row[out_columns['original_amount']] = money_in - money_out
                     if 'original_currency' in out_columns:

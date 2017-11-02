@@ -26,6 +26,14 @@ def load_config(*config_files):
             rec_update(config, more_config)
     return config
 
+def deduce_format(first_row, formats):
+    condensed_row = [cell for cell in first_row if cell != ""]
+    for format_name, format_def in formats.iteritems():
+        sequence = [col for col in format_def['column-sequence'] if col]
+        if sequence == condensed_row:
+            return format_name
+    return None
+
 def main():
     """Tests on the utilities"""
     a = {"one": 1, "two": 2, "three": 3, "teens": {"thirteen": 13, "fourteen": 14}, "listing": ["aon", "do", "tri"]}
