@@ -46,7 +46,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config",
                         action='append')
-    parser.add_argument("-n", "--no-default-config")
+    parser.add_argument("-n", "--no-default-config",
+                        action='store_true',
+                        help="""Do not load the default config file.""")
     parser.add_argument("-f", "--format",
                         default=None)
     parser.add_argument("-a", "--all-rows",
@@ -82,13 +84,13 @@ def main():
         infile_names = args.input_files
         outfile = args.output
         output_format_name = args.output_format
-        print "Will write new output file", outfile, "from input files", infile_names, "with provisional format", output_format_name
+        if args.verbose:
+            print "Will write new output file", outfile, "from input files", infile_names, "with provisional format", output_format_name
 
     output_rows = {}
     first_file = True
 
     for input_file_name in infile_names:
-        print "reading", input_file_name
         with open(os.path.expanduser(os.path.expandvars(input_file_name))) as infile:
             # Scan over the top rows looking for one that matches one
             # of our known headers.  We count how many rows it took,
@@ -126,7 +128,6 @@ def main():
             in_account_column = in_columns.get('account', None)
             default_account_name = input_format.get('name', None)
             conversions = input_format.get('conversions', {}) # lookup table for payees by name in input file to real name
-            print "reading input file", infile
             infile.seek(0)
             for i in range(1, header_row_number):
                 dummy = infile.readline()

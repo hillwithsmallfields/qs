@@ -1,6 +1,7 @@
 formats:
   handelsbanken:
-    column-sequence: ["Date", None, "Details", None, "Money out", None, "Money in", None, "Balance"]
+    # column-sequence: ["Date", None, "Details", None, "Money out", None, "Money in", None, "Balance"]
+    column-sequence: ["Date", "Details", "Money out", "Money in", "Balance"]
     columns:
       date:    Date
       payee:   Details
