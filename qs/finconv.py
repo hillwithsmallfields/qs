@@ -112,6 +112,7 @@ def main():
                     print "updating, so set output_format_name to", output_format_name
                 output_format = config['formats'][output_format_name]
                 out_columns = output_format['columns']
+                out_column_defaults = output_format.get('column-defaults', {})
                 if args.verbose:
                     print "output format is", output_format
                 if 'amount' not in out_columns:
@@ -122,11 +123,13 @@ def main():
                 default_account_name = output_format.get('name', None)
             input_format = config['formats'][input_format_name]
             in_columns = input_format['columns']
+            in_date_column = in_columns['date']
             in_payee_column = in_columns['payee']
             in_credits_column = in_columns.get('credits', None)
             in_debits_column = in_columns.get('debits', None)
             in_account_column = in_columns.get('account', None)
             default_account_name = input_format.get('name', None)
+            in_time_column = in_columns.get('time', None)
             conversions = input_format.get('conversions', {}) # lookup table for payees by name in input file to real name
             infile.seek(0)
             for i in range(1, header_row_number):
@@ -143,6 +146,7 @@ def main():
                 # except in "all" mode, we're only importing amounts from payees
                 # for which we can convert the name-on-statement to the real name
                 if args.all_rows or conversion:
+                    currency = row.get('currency', input_format.get('currency', "?"))
                     if in_credits_column:
                         money_in = row[in_credits_column]
                         money_in = 0 if money_in == '' else float(money_in)
@@ -153,8 +157,9 @@ def main():
                         money_out = 0 if money_out == '' else float(money_out)
                     else:
                         money_out = 0
-                    row_date = qsutils.normalize_date(row[in_columns['date']])
-                    row_time = "01:00:00" # todo: make these count up a second for each successive import
+                    row_date = qsutils.normalize_date(row[in_date_column])
+                    # todo: make these count up a second for each successive import
+                    row_time = row[in_time_column] if in_time_column else out_column_defaults.get('time', "01:02:03")
                     in_account = row[in_account_column] if in_account_column else default_account_name
                     if (not isinstance(outcol_amount, basestring)) and in_account not in outcol_amount:
                         print "unrecognized in_account", in_account, "in row", row
@@ -164,7 +169,7 @@ def main():
                                this_outcol_amount: money_in - money_out}
                     if out_currency_column:
                         this_out_currency_column = out_currency_column if isinstance(out_currency_column, basestring) else out_currency_column[in_account]
-                        out_row[this_out_currency_column] = output_format['currency']
+                        out_row[this_out_currency_column] = currency
                     if 'original_amount' in out_columns:
                         out_row[out_columns['original_amount']] = money_in - money_out
                     if 'original_currency' in out_columns:
@@ -178,14 +183,20 @@ def main():
                             if conversion and outcol_descr in conversion:
                                 out_row[out_columns[outcol_descr]] = conversion[outcol_descr]
                             else:
-                                if outcol_descr in in_columns:
+                                if outcol_descr in in_columns or outcol_descr in out_column_defaults:
                                     output_column_naming = out_columns[outcol_descr]
+                                    # allow for an input column deciding which output column to use
                                     if isinstance(output_column_naming, basestring):
                                         outcol_name = output_column_naming
                                     else:
                                         outcol_name = output_column_naming[default_account_name]
                                     try:
-                                        out_row[out_columns[outcol_name]] = row[in_columns[outcol_descr]]
+                                        in_column_selector = in_columns[outcol_descr] if outcol_descr in in_columns else None
+                                        extra_value = row[in_column_selector] if in_column_selector in row else out_column_defaults[outcol_descr]
+                                        # initially for financisto's category parents:
+                                        if isinstance(extra_value, list):
+                                            extra_value = ':'.join(extra_value)
+                                        out_row[out_columns[outcol_name]] = extra_value
                                     except KeyError:
                                         print "key", outcol_name, "not defined in", out_columns
                     if args.verbose:
@@ -196,6 +207,7 @@ def main():
         writer = csv.DictWriter(outfile, output_format['column-sequence'])
         writer.writeheader()
         for timestamp in sorted(output_rows.keys()):
+            print output_rows[timestamp]
             writer.writerow(output_rows[timestamp])
 
 if __name__ == "__main__":
