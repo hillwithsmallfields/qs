@@ -8,6 +8,7 @@
 
 import argparse
 import csv
+import datetime
 import os
 import qsutils
 
@@ -160,6 +161,10 @@ def main():
                     row_date = qsutils.normalize_date(row[in_date_column])
                     # todo: make these count up a second for each successive import
                     row_time = row[in_time_column] if in_time_column else out_column_defaults.get('time', "01:02:03")
+                    row_timestamp = row_date+"T"+row_time
+                    while row_timestamp in output_rows:
+                        row_time = (datetime.datetime.strptime(row_time, "%H:%M:%S") + datetime.timedelta(0,1)).strftime("%H:%M:%S")
+                        row_timestamp = row_date+"T"+row_time
                     in_account = row[in_account_column] if in_account_column else default_account_name
                     if (not isinstance(outcol_amount, basestring)) and in_account not in outcol_amount:
                         print "unrecognized in_account", in_account, "in row", row
@@ -201,7 +206,7 @@ def main():
                                         print "key", outcol_name, "not defined in", out_columns
                     if args.verbose:
                         print "constructed", out_row
-                    output_rows[row_date+"T"+row_time] = out_row
+                    output_rows[row_timestamp] = out_row
 
     with open(os.path.expanduser(os.path.expandvars(outfile)), 'w') as outfile:
         writer = csv.DictWriter(outfile, output_format['column-sequence'])

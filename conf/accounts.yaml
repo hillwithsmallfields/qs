@@ -14,6 +14,7 @@ formats:
     column-sequence: ["date", "time", "account", "amount", "currency", "original amount", "original currency", "category", "parent", "payee", "location", "project", "note"]
     columns:
       date:     date
+      time:     time
       payee:    payee
       amount:   amount
       credits:  amount
@@ -30,11 +31,13 @@ formats:
     column-sequence: [date, time,
                       HB current, HB Balance, HB current statement, HB current statement balance, HB savings,
                       Co-op current, Co-op savings,
-                      Sterling cash, Lek cash, Koruna cash, Euro cash, Kronor cash,
-                      Categorical Imperative, Skipped snacks, Dart, Unknown,
+                      BoI current,
+                      Sterling cash, Lek cash, Koruna cash, Euro cash, Kronor cash, US dollars cash,
+                      CatImp, Skipped snacks, Dart, Unknown,
                       category, parent, payee, location, project, note]
     columns:
       date:    date
+      time:    time
       payee:   payee
       balance:
         HB current statement: HB_cur_s_balance
