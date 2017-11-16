@@ -9,55 +9,62 @@ import yaml
 
 # See notes in finconv.py for config file format
 
+DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config",
-                        default="~/.qs-conf.yaml")
+                        action='append')
+    parser.add_argument("-n", "--no-default-config",
+                        action='store_true',
+                        help="""Do not load the default config file.""")
     parser.add_argument("-f", "--format",
-                        default='combined')
-    parser.add_argument("-o", "--output")
+                        default=None)
+    parser.add_argument("-a", "--all-rows",
+                        action='store_true',
+                        help="""Convert all rows.
+                        Otherwise only the rows for which payee name conversions are given will be converted.""")
     parser.add_argument("-O", "--output-format",
-                        default='combined')
-    parser.add_argument("input_file")
+                        default='financisto')
+    parser.add_argument("-v", "--verbose",
+                        action='store_true')
+
+    outfile_handling = parser.add_mutually_exclusive_group(required=True)
+    outfile_handling.add_argument("-o", "--output")
+    outfile_handling.add_argument("-u", "--update")
+
+    parser.add_argument("input_file", nargs="?")
     args = parser.parse_args()
 
-    with open(os.path.expanduser(os.path.expandvars(args.config))) as config_file:
-        config = yaml.safe_load(config_file)
+    config_files = ([DEFAULT_CONF]
+                    if os.path.exists(DEFAULT_CONF) and not args.no_default_config
+                    else [])
 
-    print "config is", config
+    if args.config:
+        config_files += args.config
 
-    input_format = config['formats'][args.format]
-    in_date = input_format['columns']['date']
-    in_payee = input_format['columns']['payee']
-    in_credits = input_format['columns']['credits']
-    in_debits = input_format['columns']['debits']
-    conversions = input_format['conversions']
+    config = qsutils.load_config(args.verbose, *config_files)
 
-    output_format = config['formats'][args.output_format]
-    out_date = output_format['columns']['date']
-    out_payee = output_format['columns']['payee']
+    if args.update:
+        infile_name = args.update
+        outfile_name = args.update
+        print "Will update", args.update, "from input files", infile_names
+    else:
+        infile_name = args.input_file
+        outfile_name = args.output
+        output_format_name = args.output_format
+        if args.verbose:
+            print "Will write new output file", outfile, "from input files", infile_names, "with provisional format", output_format_name
 
-    print "input format is", input_format
-    print "output format is", output_format
+    output_rows = {}
 
-    with open(os.path.expanduser(os.path.expandvars(args.output)), 'w') as outfile:
+    with open(os.path.expanduser(os.path.expandvars(outfile_name)), 'w') as outfile:
         writer = csv.DictWriter(outfile, output_format['column-sequence'])
         writer.writeheader()
-        with open(os.path.expanduser(os.path.expandvars(args.input_file))) as infile:
+        with open(os.path.expanduser(os.path.expandvars(infile_names))) as infile:
             for row in csv.DictReader(infile):
-                conversion = conversions.get(row[in_payee], None)
-                if conversion:
-                    money_in = row[in_credits]
-                    money_in = 0 if money_in == '' else float(money_in)
-                    money_out = row[in_debits]
-                    money_out = 0 if money_out == '' else float(money_out)
-                    flow = money_in - money_out
-                    tracking_balance = tracking_balance + flow
-
-                    writer.writerow({out_date: row[in_date],
-                                     'amount': flow,
-                                     'given balance': given_balance,
-                                     'tracking balance': tracking_balance})
+                # todo: for all tracking columns, update them
+                pass
 
 if __name__ == "__main__":
     main()
