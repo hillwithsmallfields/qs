@@ -5,7 +5,7 @@
 import argparse
 import csv
 import os
-import yaml
+import qsutils
 
 # See notes in finconv.py for config file format
 
@@ -56,15 +56,29 @@ def main():
         if args.verbose:
             print "Will write new output file", outfile, "from input files", infile_names, "with provisional format", output_format_name
 
-    output_rows = {}
+    output_format = config['formats'][output_format_name]
+    trackers = output_format['trackers']
+    tracking_values = { key: 0 for key in trackers.keys() }
 
     with open(os.path.expanduser(os.path.expandvars(outfile_name)), 'w') as outfile:
         writer = csv.DictWriter(outfile, output_format['column-sequence'])
         writer.writeheader()
-        with open(os.path.expanduser(os.path.expandvars(infile_names))) as infile:
+        with open(os.path.expanduser(os.path.expandvars(args.input_file))) as infile:
             for row in csv.DictReader(infile):
-                # todo: for all tracking columns, update them
-                pass
+                for tracker, tracked in trackers.iteritems():
+                    # print "old from row: ", row.get(tracker, "<na>")
+                    # print "old from memory:", tracking_values[tracker]
+                    # print "change from row: ", row.get(tracked, "<na>")
+                    old = row.get(tracker, None)
+                    if old is None or old == "":
+                        old = tracking_values[tracker]
+                    new = row.get(tracked, None)
+                    if new is None or new == "":
+                        new = 0
+                    tracking_values[tracker] = float(old) + float(new)
+                    row[tracker] = tracking_values[tracker]
+                    # todo: comparison columns
+                writer.writerow(row)
 
 if __name__ == "__main__":
     main()

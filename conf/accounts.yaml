@@ -23,18 +23,25 @@ formats:
       category: category
       parent:   parent
       project:  project
+      message:  note
     column-defaults:
       project: No project
       time:    04:00:00
     name:      Financisto export
   combined:
     column-sequence: [date, time,
-                      HB current, HB Balance, HB current statement, HB current statement balance, HB savings,
-                      Co-op current, Co-op savings,
+                      HB current, HB Balance, HB current statement, HB current statement balance,
+                      HB savings, HB savings balance,
+                      Co-op current, Co-op balance,
+                      Co-op savings,
                       BoI current,
                       Sterling cash, Lek cash, Koruna cash, Euro cash, Kronor cash, US dollars cash,
                       CatImp, Skipped snacks, Dart, Unknown,
                       category, parent, payee, location, project, note]
+    trackers:
+      HB Balance:            HB current
+      HB savings balance:    HB savings
+      Co-op balance:         Co-op current
     columns:
       date:    date
       time:    time
