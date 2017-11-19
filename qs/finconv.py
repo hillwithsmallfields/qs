@@ -58,6 +58,8 @@ def main():
                         Otherwise only the rows for which payee name conversions are given will be converted.""")
     parser.add_argument("-O", "--output-format",
                         default='financisto')
+    parser.add_argument("-m", "--message",
+                        help="""Message to put in the note field.""")
     parser.add_argument("-v", "--verbose",
                         action='store_true')
 
@@ -183,7 +185,7 @@ def main():
                         out_row[out_columns['account']] = in_account
                     if 'time' in out_columns:
                         out_row[out_columns['time']] = row_time
-                    for outcol_descr in ['balance', 'category', 'parent', 'payee', 'location', 'project', 'note']:
+                    for outcol_descr in ['balance', 'category', 'parent', 'payee', 'location', 'project', 'message']:
                         if outcol_descr in out_columns:
                             if conversion and outcol_descr in conversion:
                                 out_row[out_columns[outcol_descr]] = conversion[outcol_descr]
@@ -204,6 +206,10 @@ def main():
                                         out_row[out_columns[outcol_name]] = extra_value
                                     except KeyError:
                                         print "key", outcol_name, "not defined in", out_columns
+                    if args.message and 'message' in out_columns:
+                        message_column = out_columns['message']
+                        if message_column not in out_row or not out_row[message_column]:
+                            out_row[message_column] = args.message
                     if args.verbose:
                         print "constructed", out_row
                     output_rows[row_timestamp] = out_row
@@ -212,7 +218,6 @@ def main():
         writer = csv.DictWriter(outfile, output_format['column-sequence'])
         writer.writeheader()
         for timestamp in sorted(output_rows.keys()):
-            print output_rows[timestamp]
             writer.writerow(output_rows[timestamp])
 
 if __name__ == "__main__":
