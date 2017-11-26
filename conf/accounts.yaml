@@ -42,6 +42,8 @@ formats:
       HB Balance:            HB current
       HB savings balance:    HB savings
       Co-op balance:         Co-op current
+    comparisons:
+      HB comparison:         [HB Balance, HB current statement balance]
     columns:
       date:    date
       time:    time

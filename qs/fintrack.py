@@ -57,8 +57,14 @@ def main():
             print "Will write new output file", outfile, "from input files", infile_names, "with provisional format", output_format_name
 
     output_format = config['formats'][output_format_name]
+
+    # the keys of the "trackers" part of the format are the tracking
+    # columns, and the values of it are the transaction columns being
+    # tracked
     trackers = output_format['trackers']
     tracking_values = { key: 0 for key in trackers.keys() }
+
+    comparisons = output_format['comparisons']
 
     with open(os.path.expanduser(os.path.expandvars(outfile_name)), 'w') as outfile:
         writer = csv.DictWriter(outfile, output_format['column-sequence'])
@@ -70,6 +76,7 @@ def main():
                     # print "old from memory:", tracking_values[tracker]
                     # print "change from row: ", row.get(tracked, "<na>")
                     old = row.get(tracker, None)
+                    # if there's no value for this cell, use the most recent available
                     if old is None or old == "":
                         old = tracking_values[tracker]
                     new = row.get(tracked, None)
@@ -77,7 +84,11 @@ def main():
                         new = 0
                     tracking_values[tracker] = float(old) + float(new)
                     row[tracker] = tracking_values[tracker]
-                    # todo: comparison columns
+                for difference_col, pair in comparisons:
+                    a = row.get(pair[0], None)
+                    b = row.get(pair[1], None)
+                    if a and b:
+                        row[difference_col] = a - b
                 writer.writerow(row)
 
 if __name__ == "__main__":
