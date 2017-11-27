@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Time-stamp: <2017-09-24 21:36:08 jcgs>
+# Time-stamp: <2017-11-27 19:52:15 jcgs>
 
 # Program to merge my Quantified Self files.
 
@@ -138,10 +138,10 @@ def deduce_file_type_from_headers(headers):
 def main():
     by_date = {}
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--debug")
+    parser.add_argument("-d", "--debug", action='store_true')
     parser.add_argument("-o", "--output")
     parser.add_argument("-t", "--type")
-    parser.add_argument("-v", "--verbose")
+    parser.add_argument("-v", "--verbose", action='store_true')
     parser.add_argument("mainfile")
     parser.add_argument('incoming', nargs='+')
     args = parser.parse_args()
