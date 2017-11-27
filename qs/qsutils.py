@@ -6,6 +6,13 @@ import pprint
 import re
 import yaml
 
+def deduce_file_type_from_headers(headers):
+    if 'Kg' in headers:
+        return 'weight'
+    if 'Currency' in headers:
+        return 'finances'
+    return 'unknown'
+
 # based on https://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
 def rec_update(d, u, i=""):
     for k, v in u.iteritems():

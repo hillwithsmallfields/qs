@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Time-stamp: <2017-11-27 19:52:15 jcgs>
+# Time-stamp: <2017-11-27 20:10:15 jcgs>
 
 # Program to merge my Quantified Self files.
 
@@ -8,6 +8,7 @@ import argparse
 import csv
 import datetime
 import os
+import qsutils
 import re
 import shutil
 
@@ -128,13 +129,6 @@ def find_row_parser_for(file_type, filename):
             return parser
     return None
 
-def deduce_file_type_from_headers(headers):
-    if 'Kg' in headers:
-        return 'weight'
-    if 'Currency' in headers:
-        return 'finances'
-    return 'unknown'
-
 def main():
     by_date = {}
     parser = argparse.ArgumentParser()
@@ -160,7 +154,7 @@ def main():
             fieldnames = row
             break               # read only the first row
     if args.type is None:
-        file_type = deduce_file_type_from_headers(fieldnames)
+        file_type = qsutils.deduce_file_type_from_headers(fieldnames)
         if args.verbose:
             print "Deduced file type", file_type
     else:
