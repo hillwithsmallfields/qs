@@ -30,7 +30,7 @@ formats:
     name:      Financisto export
   combined:
     column-sequence: [date, time,
-                      HB current, HB Balance, HB current statement, HB current statement balance,
+                      HB current, HB Balance, HB current statement, HB current statement balance, HB comparison,
                       HB savings, HB savings balance,
                       Co-op current, Co-op balance,
                       Co-op savings,
