@@ -218,7 +218,10 @@ def main():
         writer = csv.DictWriter(outfile, output_format['column-sequence'])
         writer.writeheader()
         for timestamp in sorted(output_rows.keys()):
-            writer.writerow(output_rows[timestamp])
+            writer.writerow({ k: (("%.2F" % v)
+                                  if type(v) is float
+                                  else v)
+                              for k, v in output_rows[timestamp].iteritems()})
 
 if __name__ == "__main__":
     main()
