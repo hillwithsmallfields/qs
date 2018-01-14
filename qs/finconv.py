@@ -95,6 +95,8 @@ def main():
 
     for input_file_name in infile_names:
         with open(os.path.expanduser(os.path.expandvars(input_file_name))) as infile:
+            if args.verbose:
+                print "Reading file", os.path.expanduser(os.path.expandvars(input_file_name))
             # Scan over the top rows looking for one that matches one
             # of our known headers.  We count how many rows it took,
             # so we can reposition the stream for the
@@ -103,11 +105,19 @@ def main():
             if args.format and (args.format in config['formats']):
                 input_format_name = args.format
             else:
+                sampling_countdown = 12
                 for sample_row in csv.reader(infile):
                     header_row_number += 1
-                    input_format_name = qsutils.deduce_format(sample_row, config['formats'])
+                    input_format_name = qsutils.deduce_format(sample_row,
+                                                              config['formats'],
+                                                              args.verbose)
                     if input_format_name:
                         break
+                    sampling_countdown -= 1
+                    if sampling_countdown <= 0:
+                        if args.verbose:
+                            print "Giving up on deducing format"
+                        break;
             if first_file:
                 first_file = False
                 if args.update:
@@ -160,6 +170,9 @@ def main():
                         money_out = 0 if money_out == '' else float(money_out)
                     else:
                         money_out = 0
+                    if in_date_column not in row:
+                        print "Date column", in_date_column, "not present in row", row
+                        return 1
                     row_date = qsutils.normalize_date(row[in_date_column])
                     # todo: make these count up a second for each successive import
                     row_time = row[in_time_column] if in_time_column else out_column_defaults.get('time', "01:02:03")
@@ -169,8 +182,11 @@ def main():
                         row_timestamp = row_date+"T"+row_time
                     in_account = row[in_account_column] if in_account_column else default_account_name
                     if (not isinstance(outcol_amount, basestring)) and in_account not in outcol_amount:
+                        print "----------------"
                         print "unrecognized in_account", in_account, "in row", row
-                        print "recognized values are", outcol_amount
+                        print "recognized values are:"
+                        for colkey, colval in outcol_amount.iteritems():
+                            print "    ", colkey, colval
                     this_outcol_amount = outcol_amount if isinstance(outcol_amount, basestring) else outcol_amount.get(in_account, default_account_name or "Unknown")
                     out_row = {out_columns['date']: row_date,
                                this_outcol_amount: money_in - money_out}
@@ -222,6 +238,7 @@ def main():
                                   if type(v) is float
                                   else v)
                               for k, v in output_rows[timestamp].iteritems()})
+    return 0
 
 if __name__ == "__main__":
     main()

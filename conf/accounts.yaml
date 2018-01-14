@@ -35,7 +35,8 @@ formats:
                       Co-op current, Co-op balance,
                       Co-op savings,
                       BoI current,
-                      Sterling cash, Lek cash, Koruna cash, Euro cash, Kronor cash, US dollars cash,
+                      Kristi's gift card,
+                      Sterling cash, Lek cash, Kronor cash, Koruna cash, Euro cash, Kronor cash, US dollars cash,
                       CatImp, Skipped snacks, Dart, Unknown,
                       category, parent, payee, location, project, note]
     trackers:
@@ -69,3 +70,5 @@ formats:
         Snacks not bought:             Skipped snacks
         Categorical Imperative:        CatImp
         Dart crossing:                 Dart
+        Svenska kronor cash:           Kronor cash
+        Kristi's card:                 Kristi's gift card

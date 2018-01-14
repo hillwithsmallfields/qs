@@ -37,12 +37,21 @@ def load_config(verbose, *config_files):
         print yaml.dump(config)
     return config
 
-def deduce_format(first_row, formats):
-    condensed_row = [cell for cell in first_row if cell != ""]
+def deduce_format(first_row, formats, verbose=False):
+    # take out some strange characters that Financisto is putting in
+    condensed_row = [cell.lstrip("\357\273\277") for cell in first_row if cell != ""]
+    if verbose:
+        print "Trying to deduce format using sample row", condensed_row
     for format_name, format_def in formats.iteritems():
         sequence = [col for col in format_def['column-sequence'] if col]
+        if verbose:
+            print "  Comparing with", format_name, "sample row", sequence
         if sequence == condensed_row:
+            if verbose:
+                print "Format seems to be", format_name
             return format_name
+    if verbose:
+        print "Could not deduce format"
     return None
 
 ISO_DATE = re.compile("[0-9]{4}-[0-9]{2}-[0-9]{2}")
