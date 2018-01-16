@@ -105,19 +105,8 @@ def main():
             if args.format and (args.format in config['formats']):
                 input_format_name = args.format
             else:
-                sampling_countdown = 12
-                for sample_row in csv.reader(infile):
-                    header_row_number += 1
-                    input_format_name = qsutils.deduce_format(sample_row,
-                                                              config['formats'],
-                                                              args.verbose)
-                    if input_format_name:
-                        break
-                    sampling_countdown -= 1
-                    if sampling_countdown <= 0:
-                        if args.verbose:
-                            print "Giving up on deducing format"
-                        break;
+                input_format_name, header_row_number = qsutils.deduce_stream_format(infile, config, args.verbose)
+
             if first_file:
                 first_file = False
                 if args.update:
@@ -144,7 +133,6 @@ def main():
             default_account_name = input_format.get('name', None)
             in_time_column = in_columns.get('time', None)
             conversions = input_format.get('conversions', {}) # lookup table for payees by name in input file to real name
-            infile.seek(0)
             for i in range(1, header_row_number):
                 dummy = infile.readline()
             for row in csv.DictReader(infile):

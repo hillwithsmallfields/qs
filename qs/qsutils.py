@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # Common routines for my QS programs
 
+import csv
 import os
 import pprint
 import re
@@ -53,6 +54,25 @@ def deduce_format(first_row, formats, verbose=False):
     if verbose:
         print "Could not deduce format"
     return None
+
+def deduce_stream_format(infile, config, verbose):
+    sampling_countdown = 12
+    input_format_name = None
+    header_row_number = 0
+    for sample_row in csv.reader(infile):
+        header_row_number += 1
+        input_format_name = deduce_format(sample_row,
+                                          config['formats'],
+                                          verbose)
+        if input_format_name:
+            break
+        sampling_countdown -= 1
+        if sampling_countdown <= 0:
+            if verbose:
+                print "Giving up on deducing format"
+            break;
+    infile.seek(0)
+    return input_format_name, header_row_number
 
 ISO_DATE = re.compile("[0-9]{4}-[0-9]{2}-[0-9]{2}")
 SLASHED_DATE = re.compile("[0-9]{4}/[0-9]{2}/[0-9]{2}")
