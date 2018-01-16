@@ -50,4 +50,11 @@ $QS/fintrack.py \
     $SCRATCH/combiner-output.csv
 
 echo -n produced tracker file
-wc -c -l  $SCRATCH/tracker-output.csv
+wc -c -l $SCRATCH/tracker-output.csv
+
+$QS/findiscrep.py \
+    --no-default-config \
+    --config $CONFIGDIR/accounts.yaml \
+    --config $CONVDIR/conversions.yaml \
+    --verbose \
+    $SCRATCH/tracker-output.csv
