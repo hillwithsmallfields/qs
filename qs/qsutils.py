@@ -84,6 +84,50 @@ def normalize_date(date_in):
         return date_in.replace('/', '-')
     return date_in
 
+def process_fin_csv(args, config, callback):
+    expanded_input_name = os.path.expanduser(os.path.expandvars(args.input_file))
+    with open(expanded_input_name) as infile:
+        if args.format and (args.format in config['formats']):
+            input_format_name = args.format
+        else:
+            input_format_name, header_row_number = deduce_stream_format(infile, config, args.verbose)
+
+        input_format = config['formats'][input_format_name]
+
+        in_columns = input_format['columns']
+        column_defaults = input_format.get('column-defaults', {})
+        in_date_column = in_columns['date']
+        in_time_column = in_columns.get('time', None)
+
+        if args.verbose:
+            print "Reading", expanded_input_name, "as format", input_format_name
+
+        rows = {}
+        header_row_number = 0
+        for _ in range(1, header_row_number):
+            dummy = infile.readline()
+        for row in csv.DictReader(infile):
+            row = {k:v for k,v in row.iteritems() if k != ''}
+            row_date = normalize_date(row[in_date_column])
+            row_time = row[in_time_column] if in_time_column else column_defaults.get('time', "01:02:03")
+            row_timestamp = row_date+"T"+row_time
+            rows[row_timestamp] = row
+        if args.verbose:
+            print "Read", len(rows), "rows from", expanded_input_name
+        header, output_rows = callback(args, config, input_format, rows)
+        if len(rows) > 0:
+            expanded_output_name = os.path.expanduser(os.path.expandvars(args.output))
+            with open(expanded_output_name, 'w') as outfile:
+                writer = csv.DictWriter(outfile, header)
+                writer.writeheader()
+                for timestamp in sorted(output_rows.keys()):
+                    writer.writerow({ k: (("%.2F" % v)
+                                          if type(v) is float
+                                          else v)
+                                      for k, v in output_rows[timestamp].iteritems()})
+                if args.verbose:
+                    print "Wrote", len(output_rows), "rows to", expanded_output_name
+
 def main():
     """Tests on the utilities"""
     a = {"one": 1, "two": 2, "three": 3, "teens": {"thirteen": 13, "fourteen": 14}, "listing": ["aon", "do", "tri"]}
