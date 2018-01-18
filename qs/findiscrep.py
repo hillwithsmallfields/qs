@@ -14,11 +14,17 @@ DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
 def find_discrepancies(args, config, input_format, rows):
     date_element_index = 1 # 0 = year, 1 = month, 2 = day # todo: make this a command-line option
     comparisons = input_format['comparisons'].keys()
+    outputs = ['date']
+    for comp in comparisons:
+        outputs += [ comp + '-accum', comp + '-delta' ]
+    output_rows = {}
+    print "Outputs will be", outputs
     comparing_values = {}
     comparing_dates = {}
     date_column_name = input_format['columns']['date']
     for timestamp in sorted(rows.keys()):
         row = rows[timestamp]
+        output_row = {}
         for comp in comparisons:
             if comp in row:
                 raw = row[comp]
@@ -36,10 +42,17 @@ def find_discrepancies(args, config, input_format, rows):
                         print "change is", change
                         comparing_dates[comp] = significant_date
                         comparing_values[comp] = number
-                        # todo: construct an output row with 1+2n columns: the date, the total discrepancy that month, and the difference since the previous month
+                        output_row[comp + '-accum'] = number
+                        output_row[comp + '-delta'] = change
                 else:
                     comparing_values[comp] = number
                     comparing_dates[comp] = significant_date
+        if len(output_row) > 0:
+            row_date = row[date_column_name]
+            output_row['date'] = row_date
+            print "made output row", output_row
+            output_rows[row_date] = output_row
+    return outputs, output_rows
 
 def process_fin_csv(args, config, callback):
     with open(os.path.expanduser(os.path.expandvars(args.input_file))) as infile:
@@ -69,7 +82,17 @@ def process_fin_csv(args, config, callback):
             row_timestamp = row_date+"T"+row_time
             rows[row_timestamp] = row
         print "got", len(rows), "rows"
-        callback(args, config, input_format, rows)
+        header, output_rows = callback(args, config, input_format, rows)
+        if len(rows) > 0:
+            with open(os.path.expanduser(os.path.expandvars(args.output)), 'w') as outfile:
+                writer = csv.DictWriter(outfile, header)
+                writer.writeheader()
+                for timestamp in sorted(output_rows.keys()):
+                    writer.writerow({ k: (("%.2F" % v)
+                                          if type(v) is float
+                                          else v)
+                                      for k, v in output_rows[timestamp].iteritems()})
+
 
 def main():
     parser = argparse.ArgumentParser()
