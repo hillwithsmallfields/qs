@@ -18,7 +18,6 @@ def find_discrepancies(args, config, input_format, rows):
     for comp in comparisons:
         outputs += [ comp + '-accum', comp + '-delta' ]
     output_rows = {}
-    print "Outputs will be", outputs
     comparing_values = {}
     comparing_dates = {}
     date_column_name = input_format['columns']['date']
@@ -32,14 +31,10 @@ def find_discrepancies(args, config, input_format, rows):
                     continue
                 row_date = row[date_column_name].split('-')
                 significant_date = row_date[date_element_index]
-                print "Got comparison", raw, "for", comp, "on", row_date
                 number = float(raw)
                 if comp in comparing_values:
                     if significant_date != comparing_dates[comp]:
-                        print "date", significant_date, "changed since", comparing_dates[comp]
-                        print "value changed from", comparing_values[comp], "to", number
                         change = comparing_values[comp] - number
-                        print "change is", change
                         comparing_dates[comp] = significant_date
                         comparing_values[comp] = number
                         output_row[comp + '-accum'] = number
@@ -50,12 +45,12 @@ def find_discrepancies(args, config, input_format, rows):
         if len(output_row) > 0:
             row_date = row[date_column_name]
             output_row['date'] = row_date
-            print "made output row", output_row
             output_rows[row_date] = output_row
     return outputs, output_rows
 
 def process_fin_csv(args, config, callback):
-    with open(os.path.expanduser(os.path.expandvars(args.input_file))) as infile:
+    expanded_input_name = os.path.expanduser(os.path.expandvars(args.input_file))
+    with open(expanded_input_name) as infile:
         if args.format and (args.format in config['formats']):
             input_format_name = args.format
         else:
@@ -69,7 +64,7 @@ def process_fin_csv(args, config, callback):
         in_time_column = in_columns.get('time', None)
 
         if args.verbose:
-            print "Reading", os.path.expanduser(os.path.expandvars(args.input_file)), "as format", input_format_name
+            print "Reading", expanded_input_name, "as format", input_format_name
 
         rows = {}
         header_row_number = 0
@@ -81,10 +76,12 @@ def process_fin_csv(args, config, callback):
             row_time = row[in_time_column] if in_time_column else column_defaults.get('time', "01:02:03")
             row_timestamp = row_date+"T"+row_time
             rows[row_timestamp] = row
-        print "got", len(rows), "rows"
+        if args.verbose:
+            print "Read", len(rows), "rows from", expanded_input_name
         header, output_rows = callback(args, config, input_format, rows)
         if len(rows) > 0:
-            with open(os.path.expanduser(os.path.expandvars(args.output)), 'w') as outfile:
+            expanded_output_name = os.path.expanduser(os.path.expandvars(args.output))
+            with open(expanded_output_name, 'w') as outfile:
                 writer = csv.DictWriter(outfile, header)
                 writer.writeheader()
                 for timestamp in sorted(output_rows.keys()):
@@ -92,6 +89,8 @@ def process_fin_csv(args, config, callback):
                                           if type(v) is float
                                           else v)
                                       for k, v in output_rows[timestamp].iteritems()})
+                if args.verbose:
+                    print "Wrote", len(output_rows), "rows to", expanded_output_name
 
 
 def main():
