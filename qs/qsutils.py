@@ -84,7 +84,7 @@ def normalize_date(date_in):
         return date_in.replace('/', '-')
     return date_in
 
-def process_fin_csv(args, config, callback):
+def process_fin_csv(args, config, callback, *callbackextraargs):
     expanded_input_name = os.path.expanduser(os.path.expandvars(args.input_file))
     with open(expanded_input_name) as infile:
         if args.format and (args.format in config['formats']):
@@ -114,7 +114,7 @@ def process_fin_csv(args, config, callback):
             rows[row_timestamp] = row
         if args.verbose:
             print "Read", len(rows), "rows from", expanded_input_name
-        header, output_rows = callback(args, config, input_format, rows)
+        header, output_rows = callback(args, config, input_format, rows, *callbackextraargs)
         if len(rows) > 0:
             expanded_output_name = os.path.expanduser(os.path.expandvars(args.output))
             with open(expanded_output_name, 'w') as outfile:
@@ -127,6 +127,30 @@ def process_fin_csv(args, config, callback):
                                       for k, v in output_rows[timestamp].iteritems()})
                 if args.verbose:
                     print "Wrote", len(output_rows), "rows to", expanded_output_name
+
+def process_rows(args, config, input_format,
+                 rows,
+                 setup_callback, row_callback, tidyup_callback):
+    column_headers, scratch = (setup_callback(args, config,
+                                             input_format)
+                               if setup_callback
+                               else ([],{}))
+    output_rows = {}
+    for timestamp in sorted(rows.keys()):
+        row_callback(timestamp, rows[timestamp], output_rows, scratch)
+    if tidyup_callback:
+        column_headers, output_rows = tidyup_callback(column_headers, output_rows)
+    return column_headers, output_rows
+
+def process_fin_csv_rows_fn(args, config, input_format, rows, setup_callback, row_callback, tidyup_callback):
+    return process_rows(args, config, input_format,
+                        rows,
+                        setup_callback, row_callback, tidyup_callback)
+
+def process_fin_csv_rows(args, config, setup_callback, row_callback, tidyup_callback):
+    return process_fin_csv(args, config,
+                           process_fin_csv_rows_fn,
+                           setup_callback, row_callback, tidyup_callback)
 
 def main():
     """Tests on the utilities"""
