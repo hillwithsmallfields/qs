@@ -11,6 +11,7 @@ HANDELSBANKENFILE=$FINANCES/handelsbanken/handelsbanken.csv
 FINANCISTOFILE=$(ls -t $DROPBOX/Apps/financisto/*.csv | head -1)
 COMBINEDFILE=$SCRATCH/combiner-output.csv
 TRACKINGFILE=$SCRATCH/tracker-output.csv
+DISCREPANCIESFILE=$SCRATCH/discrepancies.csv
 FINFILE=$SCRATCH/financisto-tmp.csv
 
 rm -f $COMBINEDFILE $TRACKINGFILE $FINFILE
@@ -52,3 +53,14 @@ fi
 
 echo -n "Produced tracking file "
 wc -l $TRACKINGFILE
+
+$QS/findiscrep.py \
+    --no-default-config \
+    --config $CONFIGDIR/accounts.yaml \
+    --config $CONVDIR/conversions.yaml \
+    --verbose \
+    --output $DISCREPANCIESFILE \
+    $TRACKINGFILE
+
+echo -n "Produced discrepancies file "
+wc -l $DISCREPANCIESFILE

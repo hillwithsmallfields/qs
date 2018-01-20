@@ -57,4 +57,5 @@ $QS/findiscrep.py \
     --config $CONFIGDIR/accounts.yaml \
     --config $CONVDIR/conversions.yaml \
     --verbose \
+    --output $SCRATCH/discrepancies.csv \
     $SCRATCH/tracker-output.csv
