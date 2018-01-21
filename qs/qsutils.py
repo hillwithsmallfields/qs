@@ -131,6 +131,22 @@ def process_fin_csv(args, config, callback, *callbackextraargs):
 def process_rows(args, config, input_format,
                  rows,
                  setup_callback, row_callback, tidyup_callback):
+    """Process CSV rows.
+
+The setup_callback must take the args structure (from argparse), the
+config dictionary tree, and the input_format, and return a list of
+columns wanted in the output, and a scratch data value (normally a
+dictionary) for use in the row handler and the tidy_up function.
+
+The row handler must take the row timestamp, the row data (as a
+dictionary), a dictionary to fill in with the output rows (it will be
+output in the order of its keys), and the scratch data.
+
+The tidy_up function must take, and return, the header list and the
+output rows dictionary, and the scratch data.  It should not do the
+output; that will be done by this framework.
+
+    """
     column_headers, scratch = (setup_callback(args, config,
                                              input_format)
                                if setup_callback
@@ -139,15 +155,17 @@ def process_rows(args, config, input_format,
     for timestamp in sorted(rows.keys()):
         row_callback(timestamp, rows[timestamp], output_rows, scratch)
     if tidyup_callback:
-        column_headers, output_rows = tidyup_callback(column_headers, output_rows)
+        column_headers, output_rows = tidyup_callback(column_headers, output_rows, scratch)
     return column_headers, output_rows
 
 def process_fin_csv_rows_fn(args, config, input_format, rows, setup_callback, row_callback, tidyup_callback):
+    """For internal use by process_fin_csv_rows."""
     return process_rows(args, config, input_format,
                         rows,
                         setup_callback, row_callback, tidyup_callback)
 
 def process_fin_csv_rows(args, config, setup_callback, row_callback, tidyup_callback):
+    """See process_rows for descriptions of the callbacks."""
     return process_fin_csv(args, config,
                            process_fin_csv_rows_fn,
                            setup_callback, row_callback, tidyup_callback)
