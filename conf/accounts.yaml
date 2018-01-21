@@ -72,3 +72,5 @@ formats:
         Dart crossing:                 Dart
         Svenska kronor cash:           Kronor cash
         Kristi's card:                 Kristi's gift card
+      category:  category
+      parent:    parent
