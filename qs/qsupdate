@@ -13,6 +13,8 @@ COMBINEDFILE=$SCRATCH/combiner-output.csv
 TRACKINGFILE=$SCRATCH/tracker-output.csv
 DISCREPANCIESFILE=$SCRATCH/discrepancies.csv
 FINFILE=$SCRATCH/financisto-tmp.csv
+CATEGORIESFILE=$SCRATCH/categories.csv
+PAYEESFILE=$SCRATCH/payees.csv
 
 rm -f $COMBINEDFILE $TRACKINGFILE $FINFILE
 
@@ -64,3 +66,23 @@ $QS/findiscrep.py \
 
 echo -n "Produced discrepancies file "
 wc -l $DISCREPANCIESFILE
+
+$QS/finsplit.py \
+    --no-default-config \
+    --config $CONFIGDIR/accounts.yaml \
+    --config $CONVDIR/conversions.yaml \
+    --account "Handelsbanken current account" \
+    --category \
+    --verbose \
+    --output $CATEGORIESFILE \
+    $TRACKINGFILE
+
+$QS/finsplit.py \
+    --no-default-config \
+    --config $CONFIGDIR/accounts.yaml \
+    --config $CONVDIR/conversions.yaml \
+    --account "Handelsbanken current account" \
+    --payee \
+    --verbose \
+    --output $PAYEESFILE \
+    $TRACKINGFILE
