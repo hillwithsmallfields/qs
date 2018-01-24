@@ -5,8 +5,6 @@ CONFIGDIR=$OPEN_PROJECTS/qs/conf
 CONVDIR=$FINANCES
 SCRATCH=~/common/scratch/qs
 
-mkdir -p $SCRATCH
-
 HANDELSBANKENFILE=$FINANCES/handelsbanken/handelsbanken.csv
 FINANCISTOFILE=$(ls -t $DROPBOX/Apps/financisto/*.csv | head -1)
 COMBINEDFILE=$SCRATCH/combiner-output.csv
@@ -16,9 +14,18 @@ FINFILE=$SCRATCH/financisto-tmp.csv
 CATEGORIESFILE=$SCRATCH/categories.csv
 PAYEESFILE=$SCRATCH/payees.csv
 
-rm -f $COMBINEDFILE $TRACKINGFILE $FINFILE
+# Get a clean working / results directory:
+
+mkdir -p $SCRATCH
+rm -f $SCRATCH/*
+
+# Strip off some strange bytes that Financisto puts at the start of
+# the file:
 
 $QS/prepare_financisto $FINANCISTOFILE $FINFILE
+
+# Combine my Financisto tracking with my bank statements (in separate
+# columns):
 
 $QS/finconv.py \
     --no-default-config \
@@ -39,6 +46,10 @@ fi
 echo -n "Produced combined file "
 wc -l $COMBINEDFILE
 
+# Produce a "tracking file" by doing my own calculation of all the
+# Financisto transactions, as the Financisto output doesn't include
+# this:
+
 $QS/fintrack.py \
     --no-default-config \
     --config $CONFIGDIR/accounts.yaml \
@@ -56,6 +67,12 @@ fi
 echo -n "Produced tracking file "
 wc -l $TRACKINGFILE
 
+# Make a smaller file with a column showing the difference between my
+# tracked value and the bank statements at the end of each month, and
+# also one showing how much that has changed since the previous month,
+# to help me track down transactions that I forgot to put into
+# Financisto:
+
 $QS/findiscrep.py \
     --no-default-config \
     --config $CONFIGDIR/accounts.yaml \
@@ -64,8 +81,17 @@ $QS/findiscrep.py \
     --output $DISCREPANCIESFILE \
     $TRACKINGFILE
 
+if [ ! -f $DISCREPANCIESFILE ]
+then
+    echo Failed to produce discrepancies file
+    exit 1
+fi
+
 echo -n "Produced discrepancies file "
 wc -l $DISCREPANCIESFILE
+
+# Produce a file with a separate column for each category of
+# transaction, for drawing graphs from:
 
 $QS/finsplit.py \
     --no-default-config \
@@ -77,6 +103,18 @@ $QS/finsplit.py \
     --output $CATEGORIESFILE \
     $TRACKINGFILE
 
+if [ ! -f $CATEGORIESFILE ]
+then
+    echo Failed to produce categories file
+    exit 1
+fi
+
+echo -n "Produced categories file "
+wc -l $CATEGORIESFILE
+
+# Produce a file with a separate column for each payee, for drawing
+# graphs from:
+
 $QS/finsplit.py \
     --no-default-config \
     --config $CONFIGDIR/accounts.yaml \
@@ -86,3 +124,14 @@ $QS/finsplit.py \
     --verbose \
     --output $PAYEESFILE \
     $TRACKINGFILE
+
+if [ ! -f $PAYEESFILE ]
+then
+    echo Failed to produce payees file
+    exit 1
+fi
+
+echo -n "Produced payees file "
+wc -l $PAYEESFILE
+
+ls -l $SCRATCH
