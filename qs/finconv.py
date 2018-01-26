@@ -11,6 +11,7 @@ import csv
 import datetime
 import os
 import qsutils
+import re
 
 # The config file should look like this:
 
@@ -42,6 +43,12 @@ import qsutils
 # todo: add to format 'accounts' which indicates which of the columns are accounts
 
 DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
+
+def find_conversion(conversions, payee_name):
+    for key, value in conversions.iteritems():
+        if re.match(key, payee_name):
+            return value
+    return None
 
 def main():
     parser = argparse.ArgumentParser()
@@ -143,7 +150,7 @@ def main():
                     print "payee field", in_payee_column, "missing from row", row
                     continue
                 payee_name = row[in_payee_column]
-                conversion = conversions.get(payee_name, None)
+                conversion = find_conversion(conversions, payee_name)
                 # except in "all" mode, we're only importing amounts from payees
                 # for which we can convert the name-on-statement to the real name
                 if args.all_rows or conversion:

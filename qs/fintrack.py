@@ -66,6 +66,8 @@ def main():
 
     comparisons = output_format['comparisons']
 
+    # todo: use process_fin_csv_rows
+
     with open(os.path.expanduser(os.path.expandvars(outfile_name)), 'w') as outfile:
         writer = csv.DictWriter(outfile, output_format['column-sequence'])
         writer.writeheader()
