@@ -66,6 +66,8 @@ def main():
 
     comparisons = output_format['comparisons']
 
+    # todo: use process_fin_csv_rows
+
     with open(os.path.expanduser(os.path.expandvars(outfile_name)), 'w') as outfile:
         writer = csv.DictWriter(outfile, output_format['column-sequence'])
         writer.writeheader()
@@ -82,13 +84,14 @@ def main():
                     new = row.get(tracked, None)
                     if new is None or new == "":
                         new = 0
-                    tracking_values[tracker] = float(old) + float(new)
+                    tracking_values[tracker] = round(float(old) + float(new), 2)
                     row[tracker] = tracking_values[tracker]
-                for difference_col, pair in comparisons:
+                for difference_col, pair in comparisons.iteritems():
                     a = row.get(pair[0], None)
                     b = row.get(pair[1], None)
                     if a and b:
-                        row[difference_col] = a - b
+                         # sometimes they come in as strings, so use float()
+                        row[difference_col] = round(float(a) - float(b), 2)
                 writer.writerow(row)
 
 if __name__ == "__main__":

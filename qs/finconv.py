@@ -11,6 +11,7 @@ import csv
 import datetime
 import os
 import qsutils
+import re
 
 # The config file should look like this:
 
@@ -42,6 +43,12 @@ import qsutils
 # todo: add to format 'accounts' which indicates which of the columns are accounts
 
 DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
+
+def find_conversion(conversions, payee_name):
+    for key, value in conversions.iteritems():
+        if re.match(key, payee_name):
+            return value
+    return None
 
 def main():
     parser = argparse.ArgumentParser()
@@ -95,6 +102,8 @@ def main():
 
     for input_file_name in infile_names:
         with open(os.path.expanduser(os.path.expandvars(input_file_name))) as infile:
+            if args.verbose:
+                print "Reading file", os.path.expanduser(os.path.expandvars(input_file_name))
             # Scan over the top rows looking for one that matches one
             # of our known headers.  We count how many rows it took,
             # so we can reposition the stream for the
@@ -103,11 +112,8 @@ def main():
             if args.format and (args.format in config['formats']):
                 input_format_name = args.format
             else:
-                for sample_row in csv.reader(infile):
-                    header_row_number += 1
-                    input_format_name = qsutils.deduce_format(sample_row, config['formats'])
-                    if input_format_name:
-                        break
+                input_format_name, header_row_number = qsutils.deduce_stream_format(infile, config, args.verbose)
+
             if first_file:
                 first_file = False
                 if args.update:
@@ -134,7 +140,6 @@ def main():
             default_account_name = input_format.get('name', None)
             in_time_column = in_columns.get('time', None)
             conversions = input_format.get('conversions', {}) # lookup table for payees by name in input file to real name
-            infile.seek(0)
             for i in range(1, header_row_number):
                 dummy = infile.readline()
             for row0 in csv.DictReader(infile):
@@ -145,7 +150,7 @@ def main():
                     print "payee field", in_payee_column, "missing from row", row
                     continue
                 payee_name = row[in_payee_column]
-                conversion = conversions.get(payee_name, None)
+                conversion = find_conversion(conversions, payee_name)
                 # except in "all" mode, we're only importing amounts from payees
                 # for which we can convert the name-on-statement to the real name
                 if args.all_rows or conversion:
@@ -160,6 +165,9 @@ def main():
                         money_out = 0 if money_out == '' else float(money_out)
                     else:
                         money_out = 0
+                    if in_date_column not in row:
+                        print "Date column", in_date_column, "not present in row", row
+                        return 1
                     row_date = qsutils.normalize_date(row[in_date_column])
                     # todo: make these count up a second for each successive import
                     row_time = row[in_time_column] if in_time_column else out_column_defaults.get('time', "01:02:03")
@@ -169,8 +177,11 @@ def main():
                         row_timestamp = row_date+"T"+row_time
                     in_account = row[in_account_column] if in_account_column else default_account_name
                     if (not isinstance(outcol_amount, basestring)) and in_account not in outcol_amount:
+                        print "----------------"
                         print "unrecognized in_account", in_account, "in row", row
-                        print "recognized values are", outcol_amount
+                        print "recognized values are:"
+                        for colkey, colval in outcol_amount.iteritems():
+                            print "    ", colkey, colval
                     this_outcol_amount = outcol_amount if isinstance(outcol_amount, basestring) else outcol_amount.get(in_account, default_account_name or "Unknown")
                     out_row = {out_columns['date']: row_date,
                                this_outcol_amount: money_in - money_out}
@@ -218,7 +229,11 @@ def main():
         writer = csv.DictWriter(outfile, output_format['column-sequence'])
         writer.writeheader()
         for timestamp in sorted(output_rows.keys()):
-            writer.writerow(output_rows[timestamp])
+            writer.writerow({ k: (("%.2F" % v)
+                                  if type(v) is float
+                                  else v)
+                              for k, v in output_rows[timestamp].iteritems()})
+    return 0
 
 if __name__ == "__main__":
     main()

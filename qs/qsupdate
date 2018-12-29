@@ -1,0 +1,155 @@
+#!/bin/bash
+
+QS=~/open-projects/qs/qs
+CONFIGDIR=$OPEN_PROJECTS/qs/conf
+CONVDIR=$FINANCES
+SCRATCH=~/common/scratch/qs
+IMPORTDATE=$(date --iso-8601)
+
+HANDELSBANKENFILE=$FINANCES/handelsbanken/handelsbanken.csv
+FINANCISTOFILE=$(ls -t $DROPBOX/Apps/financisto/*.csv | head -1)
+CONVERTEDFILE=$SCRATCH/converter-output.csv
+COMBINEDFILE=$SCRATCH/combiner-output.csv
+TRACKINGFILE=$SCRATCH/tracker-output.csv
+DISCREPANCIESFILE=$SCRATCH/discrepancies.csv
+FINFILE=$SCRATCH/financisto-tmp.csv
+CATEGORIESFILE=$SCRATCH/categories.csv
+PAYEESFILE=$SCRATCH/payees.csv
+
+# Get a clean working / results directory:
+
+mkdir -p $SCRATCH
+rm -f $SCRATCH/*
+
+# Strip off some strange bytes that Financisto puts at the start of
+# the file:
+
+$QS/prepare_financisto $FINANCISTOFILE $FINFILE
+
+# Prepare a complete import file to put entries from my bank
+# statements into Financisto format, so I can filter them and import
+# them:
+
+$QS/finconv.py \
+    --no-default-config \
+    --config $CONFIGDIR/accounts.yaml \
+    --config $CONVDIR/conversions.yaml \
+    --output $CONVERTEDFILE \
+    --message "Import at $IMPORTDATE" \
+    --output-format financisto \
+    $HANDELSBANKENFILE
+
+echo -n produced importer file
+wc -c -l $SCRATCH/converter-output.csv
+
+# Combine my Financisto tracking with my bank statements (in separate
+# columns):
+
+$QS/finconv.py \
+    --no-default-config \
+    --config $CONFIGDIR/accounts.yaml \
+    --config $CONVDIR/conversions.yaml \
+    --all-rows \
+    --output $COMBINEDFILE \
+    --output-format combined \
+    $FINFILE \
+    $HANDELSBANKENFILE
+
+if [ ! -f $COMBINEDFILE ]
+then
+    echo Failed to produce combined file
+    exit 1
+fi
+
+echo -n "Produced combined file "
+wc -l $COMBINEDFILE
+
+# Produce a "tracking file" by doing my own calculation of all the
+# Financisto transactions, as the Financisto output doesn't include
+# this:
+
+$QS/fintrack.py \
+    --no-default-config \
+    --config $CONFIGDIR/accounts.yaml \
+    --config $CONVDIR/conversions.yaml \
+    --output $TRACKINGFILE \
+    --output-format combined \
+    $COMBINEDFILE
+
+if [ ! -f $TRACKINGFILE ]
+then
+    echo Failed to produce tracking file
+    exit 1
+fi
+
+echo -n "Produced tracking file "
+wc -l $TRACKINGFILE
+
+# Make a smaller file with a column showing the difference between my
+# tracked value and the bank statements at the end of each month, and
+# also one showing how much that has changed since the previous month,
+# to help me track down transactions that I forgot to put into
+# Financisto:
+
+$QS/findiscrep.py \
+    --no-default-config \
+    --config $CONFIGDIR/accounts.yaml \
+    --config $CONVDIR/conversions.yaml \
+    --verbose \
+    --output $DISCREPANCIESFILE \
+    $TRACKINGFILE
+
+if [ ! -f $DISCREPANCIESFILE ]
+then
+    echo Failed to produce discrepancies file
+    exit 1
+fi
+
+echo -n "Produced discrepancies file "
+wc -l $DISCREPANCIESFILE
+
+# Produce a file with a separate column for each category of
+# transaction, for drawing graphs from:
+
+$QS/finsplit.py \
+    --no-default-config \
+    --config $CONFIGDIR/accounts.yaml \
+    --config $CONVDIR/conversions.yaml \
+    --account "Handelsbanken current account" \
+    --category \
+    --verbose \
+    --output $CATEGORIESFILE \
+    $TRACKINGFILE
+
+if [ ! -f $CATEGORIESFILE ]
+then
+    echo Failed to produce categories file
+    exit 1
+fi
+
+echo -n "Produced categories file "
+wc -l $CATEGORIESFILE
+
+# Produce a file with a separate column for each payee, for drawing
+# graphs from:
+
+$QS/finsplit.py \
+    --no-default-config \
+    --config $CONFIGDIR/accounts.yaml \
+    --config $CONVDIR/conversions.yaml \
+    --account "Handelsbanken current account" \
+    --payee \
+    --verbose \
+    --output $PAYEESFILE \
+    $TRACKINGFILE
+
+if [ ! -f $PAYEESFILE ]
+then
+    echo Failed to produce payees file
+    exit 1
+fi
+
+echo -n "Produced payees file "
+wc -l $PAYEESFILE
+
+ls -l $SCRATCH

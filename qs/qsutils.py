@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # Common routines for my QS programs
 
+import csv
 import os
 import pprint
 import re
@@ -37,13 +38,41 @@ def load_config(verbose, *config_files):
         print yaml.dump(config)
     return config
 
-def deduce_format(first_row, formats):
-    condensed_row = [cell for cell in first_row if cell != ""]
+def deduce_format(first_row, formats, verbose=False):
+    # take out some strange characters that Financisto is putting in
+    condensed_row = [cell.lstrip("\357\273\277") for cell in first_row if cell != ""]
+    if verbose:
+        print "Trying to deduce format using sample row", condensed_row
     for format_name, format_def in formats.iteritems():
         sequence = [col for col in format_def['column-sequence'] if col]
+        if verbose:
+            print "  Comparing with", format_name, "sample row", sequence
         if sequence == condensed_row:
+            if verbose:
+                print "Format seems to be", format_name
             return format_name
+    if verbose:
+        print "Could not deduce format"
     return None
+
+def deduce_stream_format(infile, config, verbose):
+    sampling_countdown = 12
+    input_format_name = None
+    header_row_number = 0
+    for sample_row in csv.reader(infile):
+        header_row_number += 1
+        input_format_name = deduce_format(sample_row,
+                                          config['formats'],
+                                          verbose)
+        if input_format_name:
+            break
+        sampling_countdown -= 1
+        if sampling_countdown <= 0:
+            if verbose:
+                print "Giving up on deducing format"
+            break;
+    infile.seek(0)
+    return input_format_name, header_row_number
 
 ISO_DATE = re.compile("[0-9]{4}-[0-9]{2}-[0-9]{2}")
 SLASHED_DATE = re.compile("[0-9]{4}/[0-9]{2}/[0-9]{2}")
@@ -54,6 +83,92 @@ def normalize_date(date_in):
     if SLASHED_DATE.match(date_in):
         return date_in.replace('/', '-')
     return date_in
+
+def process_fin_csv(args, config, callback, *callbackextraargs):
+    expanded_input_name = os.path.expanduser(os.path.expandvars(args.input_file))
+    with open(expanded_input_name) as infile:
+        if args.format and (args.format in config['formats']):
+            input_format_name = args.format
+        else:
+            input_format_name, header_row_number = deduce_stream_format(infile, config, args.verbose)
+
+        input_format = config['formats'][input_format_name]
+
+        in_columns = input_format['columns']
+        column_defaults = input_format.get('column-defaults', {})
+        in_date_column = in_columns['date']
+        in_time_column = in_columns.get('time', None)
+
+        if args.verbose:
+            print "Reading", expanded_input_name, "as format", input_format_name
+
+        rows = {}
+        header_row_number = 0
+        for _ in range(1, header_row_number):
+            dummy = infile.readline()
+        for row in csv.DictReader(infile):
+            row = {k:v for k,v in row.iteritems() if k != ''}
+            row_date = normalize_date(row[in_date_column])
+            row_time = row[in_time_column] if in_time_column else column_defaults.get('time', "01:02:03")
+            row_timestamp = row_date+"T"+row_time
+            rows[row_timestamp] = row
+        if args.verbose:
+            print "Read", len(rows), "rows from", expanded_input_name
+        header, output_rows = callback(args, config, input_format, rows, *callbackextraargs)
+        if len(rows) > 0:
+            expanded_output_name = os.path.expanduser(os.path.expandvars(args.output))
+            with open(expanded_output_name, 'w') as outfile:
+                writer = csv.DictWriter(outfile, header)
+                writer.writeheader()
+                for timestamp in sorted(output_rows.keys()):
+                    writer.writerow({ k: (("%.2F" % v)
+                                          if type(v) is float
+                                          else v)
+                                      for k, v in output_rows[timestamp].iteritems()})
+                if args.verbose:
+                    print "Wrote", len(output_rows), "rows to", expanded_output_name
+
+def process_rows(args, config, input_format,
+                 rows,
+                 setup_callback, row_callback, tidyup_callback):
+    """Process CSV rows.
+
+The setup_callback must take the args structure (from argparse), the
+config dictionary tree, and the input_format, and return a list of
+columns wanted in the output, and a scratch data value (normally a
+dictionary) for use in the row handler and the tidy_up function.
+
+The row handler must take the row timestamp, the row data (as a
+dictionary), a dictionary to fill in with the output rows (it will be
+output in the order of its keys), and the scratch data.
+
+The tidy_up function must take, and return, the header list and the
+output rows dictionary, and the scratch data.  It should not do the
+output; that will be done by this framework.
+
+    """
+    column_headers, scratch = (setup_callback(args, config,
+                                             input_format)
+                               if setup_callback
+                               else ([],{}))
+    output_rows = {}
+    for timestamp in sorted(rows.keys()):
+        row_callback(timestamp, rows[timestamp], output_rows, scratch)
+    if tidyup_callback:
+        column_headers, output_rows = tidyup_callback(column_headers, output_rows, scratch)
+    return column_headers, output_rows
+
+def process_fin_csv_rows_fn(args, config, input_format, rows, setup_callback, row_callback, tidyup_callback):
+    """For internal use by process_fin_csv_rows."""
+    return process_rows(args, config, input_format,
+                        rows,
+                        setup_callback, row_callback, tidyup_callback)
+
+def process_fin_csv_rows(args, config, setup_callback, row_callback, tidyup_callback):
+    """See process_rows for descriptions of the callbacks."""
+    return process_fin_csv(args, config,
+                           process_fin_csv_rows_fn,
+                           setup_callback, row_callback, tidyup_callback)
 
 def main():
     """Tests on the utilities"""
