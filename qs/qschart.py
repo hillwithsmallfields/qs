@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Time-stamp: <2017-12-12 19:19:19 jcgs>
+# Time-stamp: <2018-12-29 22:17:26 jcgs>
 
 # Program to chart my Quantified Self files.
 
@@ -9,6 +9,7 @@ import csv
 import datetime
 import qsutils
 import re
+import tempfile
 
 def handle_stones_row(row):
     return row['Stone']*14 + row['Lbs'] if 'Stone' in row and 'Lbs' in row else None
@@ -76,15 +77,40 @@ def main():
     epoch = datetime.datetime.utcfromtimestamp(0)
     data_rows = {}
 
+    wanted_columns =
+
     with open(args.mainfile) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             rowdate = parsetime(row['Date'])
             row['__DATE__'] = rowdate
             data_rows[rowdate] = row_handler(row)
-    results = { data_rows[date]
-                for date in data_rows.keys().sorted()
-                if row_filter(filter_control, data_rows[date]) }
+    results = [ [ row[col] for col in wanted_columns]
+                for row in [ data_rows[date]
+                             for date in sorted(data_rows.keys())
+                             if row_filter(filter_control, data_rows[date]) ] ]
+    with open(tempfile.NamedTemporaryFile(), 'w') as datafile:
+        dataname = datafile.name
+        datawriter = csv.writer(datafile)
+        for row in results:
+            datawriter.writerow(row)
+
+# set title "My weight, 80.74-104.42"
+# set terminal png size 2560,1920
+# set output "/tmp/all-weight-kg.png"
+# set timefmt x "%Y-%m-%d"
+# set xdata time
+# set format x "%Y-%m"
+# # set xrange [ "80.74":"104.42" ]
+# set xtics rotate by 45 border offset 0,.5 out nomirror 2419200
+# set ylabel "Kilograms"
+# set y2label "Kg change in week"
+# set ytics nomirror
+# set y2tics
+# set grid xtics
+# set datafile separator ","
+# plot "/tmp/plot-weight.dat" using 1:7 with line axes x1y1 lc 7 title "Weight", "/tmp/plot-weight.dat" using 1:12 with line axes x1y1 lc 1 title "Average (week)", "/tmp/plot-weight.dat" using 1:14 with line axes x1y2 lc 3 title "Change (average) in week"
+
 
 if __name__ == "__main__":
     main()
