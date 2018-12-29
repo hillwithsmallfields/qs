@@ -137,8 +137,8 @@ def main():
             infile.seek(0)
             for i in range(1, header_row_number):
                 dummy = infile.readline()
-            for row in csv.DictReader(infile):
-                row = {k:v for k,v in row.iteritems() if k != ''}
+            for row0 in csv.DictReader(infile):
+                row = {k:v for k,v in row0.iteritems() if k != ''}
                 if args.verbose:
                     print "processing transaction row", row
                 if in_payee_column not in row:
