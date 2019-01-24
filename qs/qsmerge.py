@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Time-stamp: <2017-11-27 20:10:15 jcgs>
+# Time-stamp: <2018-12-29 21:50:50 jcgs>
 
 # Program to merge my Quantified Self files.
 
@@ -107,7 +107,7 @@ def excel_date(date1):          # from http://stackoverflow.com/questions/957479
 file_type_handlers = {
     'weight': {
         'row_parsers': {
-            "Weight Tracker|weight-": weight_tracker_parser
+            "Weight Tracker|weight[-_]": weight_tracker_parser
         },
         'completer': weight_tracker_complete_row,
         'date': iso8601_date_only
@@ -137,7 +137,7 @@ def main():
     parser.add_argument("-t", "--type")
     parser.add_argument("-v", "--verbose", action='store_true')
     parser.add_argument("mainfile")
-    parser.add_argument('incoming', nargs='+')
+    parser.add_argument('incoming', nargs='*')
     args = parser.parse_args()
     if args.output is None:
         old_base, old_ext = os.path.splitext(args.mainfile)
@@ -199,6 +199,10 @@ def main():
         if args.debug:
             print "completing", date
         completer(by_date[date])
+    for row in by_date.values():
+        for colname in row.keys():
+            if colname not in fieldnames:
+                fieldnames.append(colname)
     with open(output, 'w') as outstream:
         writer = csv.DictWriter(outstream, fieldnames)
         writer.writeheader()
