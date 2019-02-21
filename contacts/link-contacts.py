@@ -8,7 +8,7 @@ import random
 fieldnames = ['Given name', 'Middle names', 'Surname', 'Title', 'Old name', 'AKA',
               'Birthday',
               'Gender',
-              'ID', 'Parents', 'Offspring', 'Siblings', 'Partners',
+              'ID', 'Parents', 'Offspring', 'Siblings', 'Partners', 'Ex-partners', 'Nationality',
               'Notes',
               'Group Membership', 'Other groups', 'Organizations',
               'E-mail 1', 'E-mail 2',
@@ -44,12 +44,16 @@ def name(person):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--analyze", action='store_true')
     parser.add_argument("input")
     parser.add_argument("output")
     args = parser.parse_args()
     by_id = {}
     without_id = []
     by_name = {}
+    by_nationality = {}
+    by_gender = {}
+    by_title = {}
     with io.open(args.input, 'r', encoding='utf-8') as input:
         contacts_reader = csv.DictReader(input)
         for row in contacts_reader:
@@ -57,6 +61,7 @@ def main():
             row['Offspring'] = row.get('Offspring', "").split()
             row['Siblings'] = row.get('Siblings', "").split()
             row['Partners'] = row.get('Partners', "").split()
+            row['Organizations'] = row.get('Organizations', "").split()
             n = make_name(row)
             row['_name_'] = n
             by_name[n] = row
@@ -72,6 +77,14 @@ def main():
             id = make_ID()
         person['ID'] = id
         by_id[id] = person
+
+    for id, person in by_id.iteritems():
+        by_nationality.get(person['Nationality'], []).append(id)
+        by_gender.get(person['Gender'], []).append(id)
+        by_title.get(person['Title'], []).append(id)
+
+    if args.analyze:
+        print len(by_nationality), "nationalities:", ", ".join(by_nationality.keys())
 
     for nm in sorted(by_name.keys()):
         person = by_name[nm]
