@@ -16,6 +16,9 @@ fieldnames = ['Given name', 'Middle names', 'Surname', 'Title', 'Old name', 'AKA
               'Phone 2 Type', 'Phone 2 Value',
               'Street', 'City', 'Region', 'Postal Code', 'Country', 'Extended Address']
 
+# Fields to split into lists
+multi_fields = ['Parents', 'Offspring', 'Siblings', 'Partners', 'Organizations']
+
 def make_name(person):
     return ' '.join([person.get('Given name', "")]
                     + person.get('Middle names', "").split()
@@ -57,11 +60,8 @@ def main():
     with io.open(args.input, 'r', encoding='utf-8') as input:
         contacts_reader = csv.DictReader(input)
         for row in contacts_reader:
-            row['Parents'] = row.get('Parents', "").split()
-            row['Offspring'] = row.get('Offspring', "").split()
-            row['Siblings'] = row.get('Siblings', "").split()
-            row['Partners'] = row.get('Partners', "").split()
-            row['Organizations'] = row.get('Organizations', "").split()
+            for multi in multi_fields:
+                row[multi] = row.get(multi, "").split()
             n = make_name(row)
             row['_name_'] = n
             by_name[n] = row
@@ -79,12 +79,24 @@ def main():
         by_id[id] = person
 
     for id, person in by_id.iteritems():
-        by_nationality.get(person['Nationality'], []).append(id)
-        by_gender.get(person['Gender'], []).append(id)
-        by_title.get(person['Title'], []).append(id)
+        nationality = person['Nationality']
+        if nationality not in by_nationality:
+            by_nationality[nationality] = []
+        by_nationality[nationality].append(id)
+        gender = person['Gender']
+        if gender not in by_gender:
+            by_gender[gender] = []
+        by_gender[gender].append(id)
+        title = person['Title']
+        if title not in by_title:
+            by_title[title] = []
+        by_title[title].append(id)
 
     if args.analyze:
-        print len(by_nationality), "nationalities:", ", ".join(by_nationality.keys())
+        print len(by_id), "people"
+        print len(by_nationality), "nationalities:", ", ".join([k + "(" + str(len(by_nationality[k])) + ")" for k in sorted(by_nationality.keys())])
+        print len(by_gender), "genders:", ", ".join([k + "(" + str(len(by_gender[k])) + ")" for k in sorted(by_gender.keys())])
+        print len(by_title), "titles:", ", ".join([k + "(" + str(len(by_title[k])) + ")" for k in sorted(by_title.keys())])
 
     for nm in sorted(by_name.keys()):
         person = by_name[nm]
@@ -107,10 +119,8 @@ def main():
         contacts_writer.writeheader()
         for nm in sorted(by_name.keys()):
             row = by_name[nm]
-            row['Parents'] = ' '.join(row['Parents'])
-            row['Offspring'] = ' '.join(row['Offspring'])
-            row['Siblings'] = ' '.join(row['Siblings'])
-            row['Partners'] = ' '.join(row['Partners'])
+            for multi in multi_fields:
+                row[multi] = ' '.join(row[multi])
             del row['_name_']
             contacts_writer.writerow(row)
 
