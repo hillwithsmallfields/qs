@@ -4,17 +4,23 @@ import argparse
 from backports import csv
 import io
 import random
+import operator
 
 fieldnames = ['Given name', 'Middle names', 'Surname', 'Title', 'Old name', 'AKA',
-              'Birthday',
+              'Birthday', 'Died',
+              'First contact', 'Last contact',
               'Gender',
               'ID', 'Parents', 'Offspring', 'Siblings', 'Partners', 'Ex-partners', 'Nationality',
               'Notes',
-              'Group Membership', 'Other groups', 'Organizations', 'Subjects', 'Jobs',
+              'Group Membership', 'Other groups', 'Organizations', 'Place met',
+              'Subjects', 'Jobs',
               'Primary email', 'Other emails',
               'Phone 1 Type', 'Phone 1 Value',
               'Phone 2 Type', 'Phone 2 Value',
               'Street', 'City', 'Region', 'Postal Code', 'Country', 'Extended Address']
+
+# Fields to split into lists
+multi_fields = ['Parents', 'Offspring', 'Siblings', 'Partners', 'Organizations']
 
 def make_name(person):
     return ' '.join([person.get('Given name', "")]
@@ -39,8 +45,26 @@ def partners(person):
 def siblings(person):
     return person['Siblings']
 
+def find_siblings(person, by_id):
+    sibs = siblings(person)
+    for sib in siblings(person):
+        print "Adding sibs of", sib
+        sibsibs = siblings(by_id[sib])
+        print "Who are", sibsibs
+        for sibsib in sibsibs:
+            if sibsib not in sibs:
+                sibs.append(sibsib)
+        print "sibs is now", sibs
+    yourself = person['ID']
+    if yourself in sibs:
+        sibs.remove(yourself)
+    return sibs
+
 def name(person):
     return person['_name_']
+
+def group_titles(title_map, titles):
+    return reduce(operator.add, map(len, map(lambda(title): title_map[title], titles)))
 
 def main():
     parser = argparse.ArgumentParser()
@@ -57,11 +81,8 @@ def main():
     with io.open(args.input, 'r', encoding='utf-8') as input:
         contacts_reader = csv.DictReader(input)
         for row in contacts_reader:
-            row['Parents'] = row.get('Parents', "").split()
-            row['Offspring'] = row.get('Offspring', "").split()
-            row['Siblings'] = row.get('Siblings', "").split()
-            row['Partners'] = row.get('Partners', "").split()
-            row['Organizations'] = row.get('Organizations', "").split()
+            for multi in multi_fields:
+                row[multi] = row.get(multi, "").split()
             n = make_name(row)
             row['_name_'] = n
             by_name[n] = row
@@ -79,12 +100,29 @@ def main():
         by_id[id] = person
 
     for id, person in by_id.iteritems():
-        by_nationality.get(person['Nationality'], []).append(id)
-        by_gender.get(person['Gender'], []).append(id)
-        by_title.get(person['Title'], []).append(id)
+        nationality = person['Nationality']
+        if nationality not in by_nationality:
+            by_nationality[nationality] = []
+        by_nationality[nationality].append(id)
+        gender = person['Gender']
+        if gender not in by_gender:
+            by_gender[gender] = []
+        by_gender[gender].append(id)
+        title = person['Title']
+        if title not in by_title:
+            by_title[title] = []
+        by_title[title].append(id)
 
     if args.analyze:
-        print len(by_nationality), "nationalities:", ", ".join(by_nationality.keys())
+        n_people = len(by_id)
+        print n_people, "people"
+        print len(by_nationality), "nationalities:", ", ".join([k + "(" + str(len(by_nationality[k])) + ")" for k in sorted(by_nationality.keys())])
+        print len(by_gender), "genders:", ", ".join([k + "(" + str(len(by_gender[k])) + ")" for k in sorted(by_gender.keys())])
+        print len(by_title), "titles:", ", ".join([k + "(" + str(len(by_title[k])) + ")" for k in sorted(by_title.keys())])
+        ordained = group_titles(by_title, ["Revd", "Revd Dr", "Revd Prof", "Rt Revd"])
+        doctored = group_titles(by_title, ["Dr", "Revd Dr", "Prof", "Revd Prof"])
+        print "%d ordained (%d%% of the people you know)" % (ordained, ordained*100 / n_people)
+        print "%d with doctorates (%d%% of the people you know)" % (doctored, doctored * 100 / n_people)
 
     for nm in sorted(by_name.keys()):
         person = by_name[nm]
@@ -97,7 +135,7 @@ def main():
             child = by_id[offspring_id]
             if person_id not in parents(child):
                 parents(child).append(person_id)
-        for sibling_id in siblings(person):
+        for sibling_id in find_siblings(person, by_id):
             sibling = by_id[sibling_id]
             if person_id not in siblings(sibling):
                 siblings(sibling).append(person_id)
@@ -107,10 +145,8 @@ def main():
         contacts_writer.writeheader()
         for nm in sorted(by_name.keys()):
             row = by_name[nm]
-            row['Parents'] = ' '.join(row['Parents'])
-            row['Offspring'] = ' '.join(row['Offspring'])
-            row['Siblings'] = ' '.join(row['Siblings'])
-            row['Partners'] = ' '.join(row['Partners'])
+            for multi in multi_fields:
+                row[multi] = ' '.join(row[multi])
             del row['_name_']
             contacts_writer.writerow(row)
 
