@@ -15,8 +15,8 @@ fieldnames = ['Given name', 'Middle names', 'Surname', 'Title', 'Old name', 'AKA
               'Group Membership', 'Other groups', 'Organizations', 'Place met',
               'Subjects', 'Jobs',
               'Primary email', 'Other emails',
-              'Phone 1 Type', 'Phone 1 Value',
-              'Phone 2 Type', 'Phone 2 Value',
+              'Primary phone Type', 'Primary phone Value',
+              'Secondary phone Type', 'Secondary phone Value',
               'Street', 'City', 'Region', 'Postal Code', 'Country', 'Extended Address']
 
 # Fields to split into lists
