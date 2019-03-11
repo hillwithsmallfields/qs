@@ -112,6 +112,12 @@ def main():
         person['Partners'] = normalize_to_IDs(partners(person))
 
     for person_id, person in by_id.iteritems():
+        partner_ids = partners(person)
+        if len(partner_ids) == 1: # don't try this on non-monogamists
+            partner = by_id[partner_ids[0]]
+            partners_partners = partners(partner)
+            if len(partners_partners) == 0: # again, for monogamists only
+                partner['Partners'].append(person_id)
         for parent_id in parents(person):
             parent = by_id[parent_id]
             if person_id not in offspring(parent):
