@@ -151,7 +151,7 @@ def main():
         print len(by_nationality), "nationalities:", ", ".join([k + "(" + str(len(by_nationality[k])) + ")" for k in sorted(by_nationality.keys())])
         print len(by_gender), "genders:", ", ".join([k + "(" + str(len(by_gender[k])) + ")" for k in sorted(by_gender.keys())])
         print len(by_title), "titles:", ", ".join([k + "(" + str(len(by_title[k])) + ")" for k in sorted(by_title.keys())])
-        ordained = group_titles(by_title, ["Revd", "Revd Dr", "Revd Prof", "Rt Revd"])
+        ordained = group_titles(by_title, ["Revd", "Revd Dr", "Revd Prof", "RtRevd"])
         doctored = group_titles(by_title, ["Dr", "Revd Dr", "Prof", "Revd Prof"])
         print "%d ordained (%d%% of the people you know)" % (ordained, ordained*100 / n_people)
         print "%d with doctorates (%d%% of the people you know)" % (doctored, doctored * 100 / n_people)
