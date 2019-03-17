@@ -75,6 +75,7 @@ def group_titles(title_map, titles):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--analyze", action='store_true')
+    parser.add_argument("--graph", action='store_true')
     parser.add_argument("input")
     parser.add_argument("output")
     args = parser.parse_args()
@@ -112,6 +113,12 @@ def main():
         person['Partners'] = normalize_to_IDs(partners(person))
 
     for person_id, person in by_id.iteritems():
+        partner_ids = partners(person)
+        if len(partner_ids) == 1: # don't try this on non-monogamists
+            partner = by_id[partner_ids[0]]
+            partners_partners = partners(partner)
+            if len(partners_partners) == 0: # again, for monogamists only
+                partner['Partners'].append(person_id)
         for parent_id in parents(person):
             parent = by_id[parent_id]
             if person_id not in offspring(parent):
@@ -148,6 +155,24 @@ def main():
         doctored = group_titles(by_title, ["Dr", "Revd Dr", "Prof", "Revd Prof"])
         print "%d ordained (%d%% of the people you know)" % (ordained, ordained*100 / n_people)
         print "%d with doctorates (%d%% of the people you know)" % (doctored, doctored * 100 / n_people)
+
+    if args.graph:
+        print "digraph {"
+        for id, person in by_id.iteritems():
+            their_partners = partners(person)
+            their_offspring = offspring(person)
+            their_parents = parents(person)
+            if len(their_partners) > 0 or len(their_offspring) > 0 or len(their_parents) > 0:
+                print "  ", id, '[label="' + person['_name_'] + '" shape=' + ("box" if person['Gender'] == 'm' else "diamond") + "]"
+            if len(their_partners) > 0:
+                print "    ", id, "->", "{", ",".join(their_partners), "}"
+                print "    {rank=same", id, " ".join(their_partners), "}"
+            if len(their_offspring) > 0:
+                print "    ", id, "->", "{", ",".join(their_offspring), "} [style=dotted]"
+                print "    {rank=same", " ".join(their_offspring), "}"
+            if len(their_parents) > 0:
+                print "    ", id, "->", "{", ",".join(their_parents), "} [style=dashed]"
+        print "}"
 
     with io.open(args.output, 'w', encoding='utf-8') as output:
         contacts_writer = csv.DictWriter(output, fieldnames)
