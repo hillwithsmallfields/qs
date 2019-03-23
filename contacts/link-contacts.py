@@ -11,7 +11,7 @@ fieldnames = ['Given name', 'Middle names', 'Surname', 'Title', 'Old name', 'AKA
               'Birthday', 'Died',
               'First contact', 'Last contact',
               'Gender',
-              'ID', 'Parents', 'Offspring', 'Siblings', 'Partners', 'Ex-partners', 'Nationality',
+              'ID', 'Parents', 'Offspring', 'Siblings', 'Partners', 'Ex-partners', 'Knows', 'Nationality',
               'Notes',
               'Group Membership', 'Other groups', 'Organizations', 'Place met',
               'Subjects', 'Jobs',
@@ -21,7 +21,10 @@ fieldnames = ['Given name', 'Middle names', 'Surname', 'Title', 'Old name', 'AKA
               'Street', 'City', 'Region', 'Postal Code', 'Country', 'Extended Address']
 
 # Fields to split into lists
-multi_fields = ['Parents', 'Offspring', 'Siblings', 'Partners', 'Organizations']
+multi_fields = ['Parents', 'Offspring', 'Siblings',
+                'Partners', 'Ex-partners',
+                'Knows',
+                'Organizations']
 
 def make_name(person):
     return ' '.join([person.get('Given name', "")]
@@ -111,6 +114,7 @@ def main():
         person['Offspring'] = normalize_to_IDs(offspring(person))
         person['Siblings'] = normalize_to_IDs(siblings(person))
         person['Partners'] = normalize_to_IDs(partners(person))
+        person['Knows'] = normalize_to_IDs(person['Knows'])
 
     for person_id, person in by_id.iteritems():
         partner_ids = partners(person)
@@ -131,6 +135,7 @@ def main():
             sibling = by_id[sibling_id]
             if person_id not in siblings(sibling):
                 siblings(sibling).append(person_id)
+        # todo: mutualize contacts
 
     if args.analyze:
         for id, person in by_id.iteritems():
