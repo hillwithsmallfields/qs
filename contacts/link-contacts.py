@@ -58,9 +58,9 @@ def normalize_to_IDs(people):
              for person in people ]
 
 def find_siblings(person, by_id):
-    sibs = siblings(person)
-    for sib in siblings(person):
-        sibsibs = siblings(by_id[sib])
+    sibs = person['Siblings']
+    for sib in person['Siblings']:
+        sibsibs = by_id[sib]['Siblings']
         for sibsib in sibsibs:
             if sibsib not in sibs:
                 sibs.append(sibsib)
@@ -92,12 +92,12 @@ def main():
         contacts_reader = csv.DictReader(input)
         for row in contacts_reader:
             for multi in multi_fields:
-                row[multi] = row.get(multi, "").split()
+                row[multi] = (row.get(multi, "") or "").split()
             n = make_name(row)
             row['_name_'] = n
             by_name[n] = row
             id = row.get('ID', "")
-            if id != "":
+            if id is not None and id != "":
                 by_id[id] = row
             else:
                 without_id.append(row)
@@ -110,31 +110,31 @@ def main():
         by_id[id] = person
 
     for person in by_id.values():
-        person['Parents'] = normalize_to_IDs(parents(person))
-        person['Offspring'] = normalize_to_IDs(offspring(person))
-        person['Siblings'] = normalize_to_IDs(siblings(person))
-        person['Partners'] = normalize_to_IDs(partners(person))
+        person['Parents'] = normalize_to_IDs(person['Parents'])
+        person['Offspring'] = normalize_to_IDs(person['Offspring'])
+        person['Siblings'] = normalize_to_IDs(person['Siblings'])
+        person['Partners'] = normalize_to_IDs(person['Partners'])
         person['Knows'] = normalize_to_IDs(person['Knows'])
 
     for person_id, person in by_id.iteritems():
-        partner_ids = partners(person)
+        partner_ids = person['Partners']
         if len(partner_ids) == 1: # don't try this on non-monogamists
             partner = by_id[partner_ids[0]]
-            partners_partners = partners(partner)
+            partners_partners = partner['Partners']
             if len(partners_partners) == 0: # again, for monogamists only
                 partner['Partners'].append(person_id)
-        for parent_id in parents(person):
+        for parent_id in person['Parents']:
             parent = by_id[parent_id]
-            if person_id not in offspring(parent):
-                offspring(parent).append(person_id)
-        for offspring_id in offspring(person):
+            if person_id not in parent['Offspring']:
+                parent['Offspring'].append(person_id)
+        for offspring_id in person['Offspring']:
             child = by_id[offspring_id]
-            if person_id not in parents(child):
-                parents(child).append(person_id)
+            if person_id not in child['Parents']:
+                child['Parents'].append(person_id)
         for sibling_id in find_siblings(person, by_id):
             sibling = by_id[sibling_id]
-            if person_id not in siblings(sibling):
-                siblings(sibling).append(person_id)
+            if person_id not in sibling['Siblings']:
+                sibling['Siblings'].append(person_id)
         # todo: mutualize contacts
 
     if args.analyze:
@@ -164,9 +164,9 @@ def main():
     if args.graph:
         print "digraph {"
         for id, person in by_id.iteritems():
-            their_partners = partners(person)
-            their_offspring = offspring(person)
-            their_parents = parents(person)
+            their_partners = person['Partners']
+            their_offspring = person['Offspring']
+            their_parents = person['Parents']
             if len(their_partners) > 0 or len(their_offspring) > 0 or len(their_parents) > 0:
                 print "  ", id, '[label="' + person['_name_'] + '" shape=' + ("box" if person['Gender'] == 'm' else "diamond") + "]"
             if len(their_partners) > 0:
@@ -184,6 +184,7 @@ def main():
         contacts_writer.writeheader()
         for nm in sorted(by_name.keys()):
             row = by_name[nm]
+            # print row
             for multi in multi_fields:
                 row[multi] = ' '.join(row[multi])
             del row['_name_']
