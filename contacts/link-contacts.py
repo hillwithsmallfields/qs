@@ -13,7 +13,7 @@ fieldnames = ['Given name', 'Middle names', 'Surname', 'Title', 'Old name', 'AKA
               'Gender',
               'ID', 'Parents', 'Offspring', 'Siblings', 'Partners', 'Ex-partners', 'Knows', 'Nationality',
               'Notes',
-              'Group Membership', 'Other groups', 'Organizations', 'Place met',
+              'Group Membership', 'Flags', 'Other groups', 'Organizations', 'Place met',
               'Subjects', 'Jobs',
               'Primary email', 'Other emails',
               'Primary phone Type', 'Primary phone Value',
