@@ -17,18 +17,23 @@ def siblings(person):
     return person['Siblings']
 
 def normalize_to_IDs(people, by_name):
-    return [ (person
-              if re.match("[G-Z][0-9][A-Z][0-9]", person)
-              else by_name[person.replace('_', ' ')]['ID'])
-             for person in people ]
+    return set([ (person
+                  if re.match("[G-Z][0-9][A-Z][0-9]", person)
+                  else by_name[person.replace('_', ' ')]['ID'])
+                 for person in people ])
 
 def find_siblings(person, by_id):
     sibs = person['Siblings']
-    for sib in person['Siblings']:
-        sibsibs = by_id[sib]['Siblings']
-        for sibsib in sibsibs:
-            if sibsib not in sibs:
-                sibs.append(sibsib)
+    more = True
+    if len(sibs) > 0:
+        while more:
+            for sib in list(person['Siblings']):
+                sibsibs = by_id[sib]['Siblings']
+                more = False
+                for sibsib in sibsibs:
+                    if sibsib not in sibs:
+                        sibs.add(sibsib)
+                        more = True
     yourself = person['ID']
     if yourself in sibs:
         sibs.remove(yourself)
@@ -48,6 +53,7 @@ def main():
     by_gender = {}
     by_title = {}
 
+    print "Reading contacts from", args.input
     by_id, by_name = contacts_data.read_contacts(args.input)
 
     for person in by_id.values():
@@ -60,22 +66,22 @@ def main():
     for person_id, person in by_id.iteritems():
         partner_ids = person['Partners']
         if len(partner_ids) == 1: # don't try this on non-monogamists
-            partner = by_id[partner_ids[0]]
+            partner = by_id[next(iter(partner_ids))]
             partners_partners = partner['Partners']
             if len(partners_partners) == 0: # again, for monogamists only
-                partner['Partners'].append(person_id)
+                partner['Partners'].add(person_id)
         for parent_id in person['Parents']:
             parent = by_id[parent_id]
             if person_id not in parent['Offspring']:
-                parent['Offspring'].append(person_id)
+                parent['Offspring'].add(person_id)
         for offspring_id in person['Offspring']:
             child = by_id[offspring_id]
             if person_id not in child['Parents']:
-                child['Parents'].append(person_id)
+                child['Parents'].add(person_id)
         for sibling_id in find_siblings(person, by_id):
             sibling = by_id[sibling_id]
             if person_id not in sibling['Siblings']:
-                sibling['Siblings'].append(person_id)
+                sibling['Siblings'].add(person_id)
         # todo: mutualize contacts
 
     if args.analyze:
