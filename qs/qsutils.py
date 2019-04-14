@@ -143,8 +143,8 @@ dictionary), a dictionary to fill in with the output rows (it will be
 output in the order of its keys), and the scratch data.
 
 The tidy_up function must take, and return, the header list and the
-output rows dictionary, and the scratch data.  It should not do the
-output; that will be done by this framework.
+output rows dictionary, and also take the scratch data.  It should not
+do the output; that will be done by this framework.
 
     """
     column_headers, scratch = (setup_callback(args, config,
