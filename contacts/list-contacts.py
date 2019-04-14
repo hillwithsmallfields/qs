@@ -8,9 +8,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--flag", action='append')
     parser.add_argument("-g", "--group", action='append')
-    parser.add_argument("-N", "--no-add-partners",
-                        help="""Without this option, if someone is selected but their partner isn't,
-                        their partner is added automatically to the selection.""")
+    parser.add_argument("-N", "--no-add-family",
+                        help="""Without this option, if someone is selected but their partner
+                        or children aren't, those are added automatically to the selection.""")
     parser.add_argument("-p", "--postal-addresses",
                         action='store_true',
                         help="""List people by address, grouping together those at the same address.
@@ -27,12 +27,21 @@ def main():
         groups = set(args.group)
         selected += [someone for someone in by_id.values()
                      if len((groups.intersection(someone['_groups_']))) > 0]
-    if not args.no_add_partners:
+    if not args.no_add_family:
         invited_ids = [whoever['ID'] for whoever in selected]
         for whoever in selected:
             for partner in whoever['Partners']:
                 if partner not in invited_ids:
+                    # todo: make this only if they are at the same address
                     selected.append(by_id[partner])
+        for whoever in selected:
+            print whoever['_name_'], "has offspring", whoever['Offspring']
+            for offspring in whoever['Offspring']:
+                print "  ", offspring
+                if offspring not in invited_ids:
+                    print "  -- needs inviting"
+                    # todo: make this only if they are at the same address
+                    selected.append(by_id[offspring])
     if args.postal_addresses:
         by_address = {}
         for contact in selected:
