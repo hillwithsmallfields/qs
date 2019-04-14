@@ -17,7 +17,7 @@ def main():
                         Without this, people are listed individually, with their email addresses.""")
     parser.add_argument("input")
     args = parser.parse_args()
-    by_id, by_name = contacts_data.read_contacts(args.input)
+    by_id, _ = contacts_data.read_contacts(args.input)
     selected = []
     if args.flag:
         flags = re.compile("[" + "".join(args.flag) + "]")
@@ -38,11 +38,13 @@ def main():
         for contact in selected:
             address = contacts_data.make_address(contact)
             if address in by_address:
-                by_address[address].append(contacts_data.make_name(contact))
+                by_address[address].append(contact)
             else:
-                by_address[address] = [contacts_data.make_name(contact)]
+                by_address[address] = [contact]
         for addr, residents in by_address.iteritems():
-            print ", ".join(residents[:-1])+" and "+residents[-1] if len(residents) >= 2 else residents[0]
+            # todo: sort residents to bring oldest (or most ancestral) to the start
+            names = [contacts_data.make_name(person) for person in residents]
+            print ", ".join(names[:-1])+" and "+names[-1] if len(names) >= 2 else names[0]
             print "  " + "\n  ".join([a for a in addr if a != ""])
             print ""
     else:
