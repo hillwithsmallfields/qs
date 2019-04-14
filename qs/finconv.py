@@ -53,12 +53,14 @@ def find_conversion(conversions, payee_name):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config",
-                        action='append')
+                        action='append',
+                        help="""Extra config file (may be given multiple times).""")
     parser.add_argument("-n", "--no-default-config",
                         action='store_true',
                         help="""Do not load the default config file.""")
     parser.add_argument("-f", "--format",
-                        default=None)
+                        default=None,
+                        help="""Format to use for the output file.""")
     parser.add_argument("-a", "--all-rows",
                         action='store_true',
                         help="""Convert all rows.
@@ -66,13 +68,15 @@ def main():
     parser.add_argument("-O", "--output-format",
                         default='financisto')
     parser.add_argument("-m", "--message",
-                        help="""Message to put in the note field.""")
+                        help="""Message to put in the note field of any rows which don't already have something there.""")
     parser.add_argument("-v", "--verbose",
                         action='store_true')
 
     outfile_handling = parser.add_mutually_exclusive_group(required=True)
-    outfile_handling.add_argument("-o", "--output")
-    outfile_handling.add_argument("-u", "--update")
+    outfile_handling.add_argument("-o", "--output",
+                                  help="""File to write combined data to.""")
+    outfile_handling.add_argument("-u", "--update",
+                                  help="""Name of file to read as primary data, and write combined data back to.""")
 
     parser.add_argument("input_files", nargs='*')
     args = parser.parse_args()
