@@ -19,7 +19,7 @@ fieldnames = ['Given name', 'Middle names', 'Surname', 'Title', 'Old name', 'AKA
               'Primary email', 'Other emails',
               'Primary phone Type', 'Primary phone Value',
               'Secondary phone Type', 'Secondary phone Value',
-              'Street', 'City', 'Region', 'Postal Code', 'Country', 'Extended Address']
+              'Street', 'Village/District', 'City', 'County', 'State', 'Postal Code', 'Country', 'Extended Address']
 
 # Fields to split into lists
 multi_fields = ['Parents', 'Offspring', 'Siblings',
@@ -36,8 +36,10 @@ def make_name(person):
 
 def make_address(person):
     return (person.get('Street', ""),
+            person.get('Village/District', ""),
             person.get('City', ""),
-            person.get('Region', ""),
+            person.get('County', ""),
+            person.get('State', ""),
             person.get('Postal Code', ""),
             person.get('Country'))
 
