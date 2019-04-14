@@ -3,7 +3,6 @@
 # Program to track discrepancies in finance spreadsheets
 
 import argparse
-import csv
 import os
 import qsutils
 
