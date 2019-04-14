@@ -4,18 +4,17 @@ import argparse
 import re
 import contacts_data
 
-def combine(contacts):
-    """Combine all contacts with the same address."""
-    return contacts
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--flag", action='append')
     parser.add_argument("-g", "--group", action='append')
-    parser.add_argument("-n", "--no-combine")
-    parser.add_argument("-N", "--no-add-partners")
-    parser.add_argument("-p", "--postal-addresses", action='store_true')
-    parser.add_argument("-e", "--email-addresses", action='store_true')
+    parser.add_argument("-N", "--no-add-partners",
+                        help="""Without this option, if someone is selected but their partner isn't,
+                        their partner is added automatically to the selection.""")
+    parser.add_argument("-p", "--postal-addresses",
+                        action='store_true',
+                        help="""List people by address, grouping together those at the same address.
+                        Without this, people are listed individually, with their email addresses.""")
     parser.add_argument("input")
     args = parser.parse_args()
     by_id, by_name = contacts_data.read_contacts(args.input)
@@ -34,17 +33,26 @@ def main():
             for partner in whoever['Partners']:
                 if partner not in invited_ids:
                     selected.append(by_id[partner])
-    if not args.no_combine:
-        selected = combine(selected)
-    postal_addresses = args.postal_addresses
-    email_addresses = args.email_addresses
-    for contact in selected:
-        if email_addresses:
-            email = contact['Primary email']
-            if email != "":
-                print email + " <" + contact['_name_'] + ">"
-        else:
-            print contact['_name_']
+    if args.postal_addresses:
+        by_address = {}
+        for contact in selected:
+            address = contacts_data.make_address(contact)
+            if address in by_address:
+                by_address[address].append(contacts_data.make_name(contact))
+            else:
+                by_address[address] = [contacts_data.make_name(contact)]
+        for addr, residents in by_address.iteritems():
+            print ", ".join(residents[:-1])+" and "+residents[-1] if len(residents) >= 2 else residents[0]
+            print "  " + "\n  ".join([a for a in addr if a != ""])
+            print ""
+    else:
+        for contact in selected:
+            if args.email_addresses:
+                email = contact['Primary email']
+                if email != "":
+                    print email + " <" + contact['_name_'] + ">"
+            else:
+                print contact['_name_']
 
 if __name__ == "__main__":
     main()
