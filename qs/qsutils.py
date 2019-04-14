@@ -85,6 +85,9 @@ def normalize_date(date_in):
     return date_in
 
 def process_fin_csv(args, config, callback, *callbackextraargs):
+    """Process a CSV file in one of my financial formats.
+    From an application, you should probably call process_fin_csv_rows
+    instead of this."""
     expanded_input_name = os.path.expanduser(os.path.expandvars(args.input_file))
     with open(expanded_input_name) as infile:
         if args.format and (args.format in config['formats']):
@@ -133,6 +136,9 @@ def process_rows(args, config, input_format,
                  setup_callback, row_callback, tidyup_callback):
     """Process CSV rows.
 
+From an application, you should probably call process_fin_csv_rows
+instead of this.
+
 The setup_callback must take the args structure (from argparse), the
 config dictionary tree, and the input_format, and return a list of
 columns wanted in the output, and a scratch data value (normally a
@@ -165,7 +171,8 @@ def process_fin_csv_rows_fn(args, config, input_format, rows, setup_callback, ro
                         setup_callback, row_callback, tidyup_callback)
 
 def process_fin_csv_rows(args, config, setup_callback, row_callback, tidyup_callback):
-    """See process_rows for descriptions of the callbacks."""
+    """See process_rows for descriptions of the callbacks.
+    This is the main entry point in this module."""
     return process_fin_csv(args, config,
                            process_fin_csv_rows_fn,
                            setup_callback, row_callback, tidyup_callback)
