@@ -34,6 +34,13 @@ def make_name(person):
                     + person.get('Middle names', "").split()
                     + [person.get('Surname', "")])
 
+def make_address(person):
+    return (person.get('Street', ""),
+            person.get('City', ""),
+            person.get('Region', ""),
+            person.get('Postal Code', ""),
+            person.get('Country'))
+
 def make_ID():
     return (str(unichr(random.randint(0, 19) + ord('G')))
             + str(unichr(random.randint(0, 9) + ord('0')))
