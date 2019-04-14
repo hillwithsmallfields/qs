@@ -25,7 +25,9 @@ fieldnames = ['Given name', 'Middle names', 'Surname', 'Title', 'Old name', 'AKA
 multi_fields = ['Parents', 'Offspring', 'Siblings',
                 'Partners', 'Ex-partners',
                 'Knows',
-                'Organizations']
+                'Group Membership',
+                'Organizations',
+                'Other groups']
 
 def make_name(person):
     return ' '.join([person.get('Given name', "")]
@@ -45,8 +47,6 @@ def read_contacts(filename):
     with io.open(filename, 'r', encoding='utf-8') as instream:
         contacts_reader = csv.DictReader(instream)
         for row in contacts_reader:
-            for multi in multi_fields:
-                row[multi] = (row.get(multi, "") or "").split()
             n = make_name(row)
             row['_name_'] = n
             by_name[n] = row
@@ -55,6 +55,10 @@ def read_contacts(filename):
                 by_id[uid] = row
             else:
                 without_id.append(row)
+            for multi in multi_fields:
+                row[multi] = set((row.get(multi, "") or "").split())
+            row['_groups_'] = row['Group Membership'].union(row['Organizations'],
+                                                            row['Other groups'])
 
     for person in without_id:
         uid = make_ID()
