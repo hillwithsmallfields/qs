@@ -99,8 +99,8 @@ def process_fin_csv(args, config, callback, *callbackextraargs):
 
         in_columns = input_format['columns']
         column_defaults = input_format.get('column-defaults', {})
-        in_date_column = in_columns['date']
         in_time_column = in_columns.get('time', None)
+        invert_columns = { v:k for k, v in in_columns.iteritems() }
 
         if args.verbose:
             print "Reading", expanded_input_name, "as format", input_format_name
@@ -111,14 +111,17 @@ def process_fin_csv(args, config, callback, *callbackextraargs):
             dummy = infile.readline()
         for row in csv.DictReader(infile):
             row = {k:v for k,v in row.iteritems() if k != ''}
-            row_date = normalize_date(row[in_date_column])
-            row_time = row[in_time_column] if in_time_column else column_defaults.get('time', "01:02:03")
+            for column in invert_columns:
+                if column in row: # canonicalize the names
+                    row[invert_columns[column]] = row[column]
+            row_date = normalize_date(row['date'])
+            row_time = row.get('time', column_defaults.get('time', "01:02:03"))
             row_timestamp = row_date+"T"+row_time
             rows[row_timestamp] = row
         if args.verbose:
             print "Read", len(rows), "rows from", expanded_input_name
         header, output_rows = callback(args, config, input_format, rows, *callbackextraargs)
-        if len(rows) > 0:
+        if output_rows and len(output_rows) > 0:
             expanded_output_name = os.path.expanduser(os.path.expandvars(args.output))
             with open(expanded_output_name, 'w') as outfile:
                 writer = csv.DictWriter(outfile, header)
@@ -146,11 +149,17 @@ dictionary) for use in the row handler and the tidy_up function.
 
 The row handler must take the row timestamp, the row data (as a
 dictionary), a dictionary to fill in with the output rows (it will be
-output in the order of its keys), and the scratch data.
+output in the order of its keys), and the scratch data.  In the row
+dictionary it is given, the indirections given in the `columns' part
+of the input format will have been done, for example if the format
+specifies `payee: Details', the `Details' column will have been copied
+into `payee'.
 
 The tidy_up function must take, and return, the header list and the
 output rows dictionary, and also take the scratch data.  It should not
-do the output; that will be done by this framework.
+do the output; that will be done by this framework.  Alternatively, it
+can do the output itself and return None, None to suppress the normal
+output.
 
     """
     column_headers, scratch = (setup_callback(args, config,
