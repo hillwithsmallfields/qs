@@ -4,12 +4,49 @@
 
 import argparse
 import csv
+import datetime
 import os
 import qsutils
 
 # See notes in finconv.py for config file format
 
 DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
+
+secs_per_day = 24 * 60 * 60
+
+def finperiodic_setup(args, config, input_format):
+    return ['payee'], {}
+
+def finperiodic_row(timestamp, row, output_rows, scratch):
+    timestamp = datetime.datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S")
+    payee = row['payee']
+    amount = row.get('amount',
+                     row.get('debits',
+                             row.get('credits')))
+    if payee in scratch:
+        scratch[payee][timestamp] = amount
+    else:
+        scratch[payee] = {timestamp: amount}
+
+def finperiodic_tidyup(columns, rows, scratch):
+    for payee, transactions in scratch.iteritems():
+        # print payee, transactions
+        dates = sorted(transactions.keys())
+        prev = dates[0]
+        intervals = []
+        for when in dates[1:]:
+            interval = int((when-prev).total_seconds() / secs_per_day)
+            if interval > 0:    # ignore further transactions on the same day
+                intervals.append(interval)
+            prev = when
+        if len(intervals) > 1:
+            counts = {}
+            for interval in intervals:
+                counts[interval] = counts.get(interval, 0) + 1
+            print payee
+            for k in sorted(counts.keys()):
+                print "  ", k, counts[k]
+    return None, None
 
 def main():
     parser = argparse.ArgumentParser()
@@ -38,6 +75,7 @@ def main():
 
     # todo: deduce format of input file; should normally be financisto, or have similar data
 
+    qsutils.process_fin_csv_rows(args, config, finperiodic_setup, finperiodic_row, finperiodic_tidyup)
 
 if __name__ == "__main__":
     main()
