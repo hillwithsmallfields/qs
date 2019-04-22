@@ -88,4 +88,5 @@ def write_contacts(filename, by_name):
             for multi in multi_fields:
                 row[multi] = ' '.join(row[multi])
             del row['_name_']
+            del row['_groups_']
             contacts_writer.writerow(row)
