@@ -52,6 +52,7 @@ def main():
     by_nationality = {}
     by_gender = {}
     by_title = {}
+    by_place_met = {}
 
     print "Reading contacts from", args.input
     by_id, by_name = contacts_data.read_contacts(args.input)
@@ -98,11 +99,16 @@ def main():
             if title not in by_title:
                 by_title[title] = []
             by_title[title].append(id)
+            place_met = person['Place met']
+            if place_met not in by_place_met:
+                by_place_met[place_met] = []
+            by_place_met[place_met].append(id)
         n_people = len(by_id)
         print n_people, "people"
         print len(by_nationality), "nationalities:", ", ".join([k + "(" + str(len(by_nationality[k])) + ")" for k in sorted(by_nationality.keys())])
         print len(by_gender), "genders:", ", ".join([k + "(" + str(len(by_gender[k])) + ")" for k in sorted(by_gender.keys())])
         print len(by_title), "titles:", ", ".join([k + "(" + str(len(by_title[k])) + ")" for k in sorted(by_title.keys())])
+        print len(by_place_met), "places met:", ", ".join([k + "(" + str(len(by_place_met[k])) + ")" for k in sorted(by_place_met.keys())])
         ordained = contacts_data.count_grouped_titles(by_title, ["Revd", "Revd Dr", "Revd Prof", "RtRevd"])
         doctored = contacts_data.count_grouped_titles(by_title, ["Dr", "Revd Dr", "Prof", "Revd Prof"])
         print "%d ordained (%d%% of the people you know)" % (ordained, ordained*100 / n_people)
