@@ -42,6 +42,15 @@ def find_siblings(person, by_id):
 def name(person):
     return person['_name_']
 
+def accumulate(person, aspect, by_aspect):
+    aspect = person[aspect]
+    if aspect not in by_aspect:
+        by_aspect[aspect] = []
+    by_aspect[aspect].append(id)
+
+def print_summary(by_aspect, label):
+    print len(by_aspect), label, ", ".join([k + "(" + str(len(by_aspect[k])) + ")" for k in sorted(by_aspect.keys())])
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--analyze", action='store_true')
@@ -87,28 +96,16 @@ def main():
 
     if args.analyze:
         for id, person in by_id.iteritems():
-            nationality = person['Nationality']
-            if nationality not in by_nationality:
-                by_nationality[nationality] = []
-            by_nationality[nationality].append(id)
-            gender = person['Gender']
-            if gender not in by_gender:
-                by_gender[gender] = []
-            by_gender[gender].append(id)
-            title = person['Title']
-            if title not in by_title:
-                by_title[title] = []
-            by_title[title].append(id)
-            place_met = person['Place met']
-            if place_met not in by_place_met:
-                by_place_met[place_met] = []
-            by_place_met[place_met].append(id)
+            accumulate(person, 'Nationality', by_nationality)
+            accumulate(person, 'Gender', by_gender)
+            accumulate(person, 'Title', by_title)
+            accumulate(person, 'Place met', by_place_met)
         n_people = len(by_id)
         print n_people, "people"
-        print len(by_nationality), "nationalities:", ", ".join([k + "(" + str(len(by_nationality[k])) + ")" for k in sorted(by_nationality.keys())])
-        print len(by_gender), "genders:", ", ".join([k + "(" + str(len(by_gender[k])) + ")" for k in sorted(by_gender.keys())])
-        print len(by_title), "titles:", ", ".join([k + "(" + str(len(by_title[k])) + ")" for k in sorted(by_title.keys())])
-        print len(by_place_met), "places met:", ", ".join([k + "(" + str(len(by_place_met[k])) + ")" for k in sorted(by_place_met.keys())])
+        print_summary(by_nationality, "nationalities:")
+        print_summary(by_gender, "genders:")
+        print_summary(by_title, "titles:")
+        print_summary(by_place_met, "places met:")
         ordained = contacts_data.count_grouped_titles(by_title, ["Revd", "Revd Dr", "Revd Prof", "RtRevd"])
         doctored = contacts_data.count_grouped_titles(by_title, ["Dr", "Revd Dr", "Prof", "Revd Prof"])
         print "%d ordained (%d%% of the people you know)" % (ordained, ordained*100 / n_people)
