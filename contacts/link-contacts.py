@@ -49,7 +49,17 @@ def accumulate(person, aspect, by_aspect):
     by_aspect[aspect].append(id)
 
 def print_summary(by_aspect, label):
-    print len(by_aspect), label, ", ".join([k + "(" + str(len(by_aspect[k])) + ")" for k in sorted(by_aspect.keys())])
+    by_frequency = {}
+    for k, v in by_aspect.iteritems():
+        frequency = len(v)
+        if frequency not in by_frequency:
+            by_frequency[frequency] = []
+        by_frequency[frequency].append(k)
+    print label, "; ".join(
+        [ "; ".join(
+            ["%s(%d)" % (bf, freq)
+             for bf in sorted(by_frequency[freq])])
+          for freq in reversed(sorted(by_frequency.keys()))])
 
 def main():
     parser = argparse.ArgumentParser()
