@@ -29,8 +29,8 @@ def rec_update(d, u, i=""):
 
 def load_config(verbose, *config_files):
     config = {}
-    for file in config_files:
-        with open(os.path.expanduser(os.path.expandvars(file))) as config_file:
+    for filename in config_files:
+        with open(os.path.expanduser(os.path.expandvars(filename))) as config_file:
             more_config = yaml.safe_load(config_file)
             rec_update(config, more_config)
     if verbose:
