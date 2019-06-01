@@ -46,6 +46,11 @@ def finperiodic_tidyup(columns, rows, scratch):
             print payee
             for k in sorted(counts.keys()):
                 print "  ", k, counts[k]
+            total = sum(counts)
+            approx_weekly = sum(counts[6:8]) / total
+            approx_monthly = sum(counts[26:34]) / total
+            print "approx_weekly", approx_weekly
+            print "approx_monthly", approx_monthly
     return None, None
 
 def main():
