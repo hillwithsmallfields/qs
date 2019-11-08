@@ -203,7 +203,7 @@ def main():
                     for outcol_descr in ['balance', 'category', 'parent', 'payee', 'location', 'project', 'message']:
                         if outcol_descr in out_columns:
                             if conversion and outcol_descr in conversion:
-                                out_row[out_columns[outcol_descr]] = conversion[outcol_descr]
+                                out_row[out_columns[outcol_descr]] = conversion[outcol_descr] # put a literal in this cell
                             else:
                                 if outcol_descr in in_columns or outcol_descr in out_column_defaults:
                                     output_column_naming = out_columns[outcol_descr]
