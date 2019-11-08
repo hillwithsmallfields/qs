@@ -45,6 +45,7 @@ import re
 DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
 
 def find_conversion(conversions, payee_name):
+    """Find a mapping from the input format to the output, for a named payee."""
     for key, value in conversions.iteritems():
         if re.match(key, payee_name):
             return value
@@ -91,9 +92,9 @@ def main():
     config = qsutils.load_config(args.verbose, *config_files)
 
     if args.update:
+        print "Will update", args.update, "from input files", infile_names
         infile_names = [args.update] + args.input_files
         outfile = args.update
-        print "Will update", args.update, "from input files", infile_names
     else:
         infile_names = args.input_files
         outfile = args.output
@@ -118,8 +119,7 @@ def main():
             else:
                 input_format_name, header_row_number = qsutils.deduce_stream_format(infile, config, args.verbose)
 
-            if first_file:
-                first_file = False
+            if first_file:      # cleared at the end of the iteration
                 if args.update:
                     output_format_name = input_format_name
                     print "updating, so set output_format_name to", output_format_name
@@ -143,7 +143,7 @@ def main():
             in_account_column = in_columns.get('account', None)
             default_account_name = input_format.get('name', None)
             in_time_column = in_columns.get('time', None)
-            conversions = input_format.get('conversions', {}) # lookup table for payees by name in input file to real name
+            conversions = input_format.get('conversions', {}) # lookup table for payees by name in input file to name in output file
             for i in range(1, header_row_number):
                 dummy = infile.readline()
             for row0 in csv.DictReader(infile):
@@ -157,8 +157,8 @@ def main():
                 conversion = find_conversion(conversions, payee_name)
                 # except in "all" mode, we're only importing amounts from payees
                 # for which we can convert the name-on-statement to the real name
-                if args.all_rows or conversion:
-                    currency = row.get('currency', input_format.get('currency', "?"))
+                if conversion or args.all_rows or (first_file and args.update):
+                    currency = row.get('currency', input_format.get('currency', "?")) # todo: this looks wrong, it shouldn't use a hardwired column name
                     if in_credits_column:
                         money_in = row[in_credits_column]
                         money_in = 0 if money_in == '' else float(money_in)
@@ -228,6 +228,7 @@ def main():
                     if args.verbose:
                         print "constructed", out_row
                     output_rows[row_timestamp] = out_row
+            first_file = False
 
     with open(os.path.expanduser(os.path.expandvars(outfile)), 'w') as outfile:
         writer = csv.DictWriter(outfile, output_format['column-sequence'])
