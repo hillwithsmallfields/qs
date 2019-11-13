@@ -173,17 +173,11 @@ output.
         column_headers, output_rows = tidyup_callback(column_headers, output_rows, scratch)
     return column_headers, output_rows
 
-def process_fin_csv_rows_fn(args, config, input_format, rows, setup_callback, row_callback, tidyup_callback):
-    """For internal use by process_fin_csv_rows."""
-    return process_rows(args, config, input_format,
-                        rows,
-                        setup_callback, row_callback, tidyup_callback)
-
 def process_fin_csv_rows(args, config, setup_callback, row_callback, tidyup_callback):
     """See process_rows for descriptions of the callbacks.
     This is the main entry point in this module."""
     return process_fin_csv(args, config,
-                           process_fin_csv_rows_fn,
+                           process_rows,
                            setup_callback, row_callback, tidyup_callback)
 
 def main():
