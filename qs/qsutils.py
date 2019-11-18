@@ -2,6 +2,7 @@
 # Common routines for my QS programs
 
 import csv
+import datetime
 import os
 import pprint
 import re
@@ -84,6 +85,8 @@ def normalize_date(date_in):
         return date_in.replace('/', '-')
     return date_in
 
+later = datetime.timedelta(0, 1)
+
 def process_fin_csv(args, config, callback, *callbackextraargs):
     """Process a CSV file in one of my financial formats.
     From an application, you should probably call process_fin_csv_rows
@@ -119,6 +122,9 @@ def process_fin_csv(args, config, callback, *callbackextraargs):
             row_date = normalize_date(row['date'])
             row_time = row.get('time', column_defaults.get('time', "01:02:03"))
             row_timestamp = row_date+"T"+row_time
+            # separate out rows that came in with the same timestamp
+            while row_timestamp in rows:
+                row_timestamp = (datetime.strptime(row_timestamp, "%Y-%m-%dT%H:%M:%S")+later).isoformat()
             rows[row_timestamp] = row
         if args.verbose:
             print "Read", len(rows), "rows from", expanded_input_name
