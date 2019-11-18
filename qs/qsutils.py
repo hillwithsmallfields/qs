@@ -100,7 +100,9 @@ def process_fin_csv(args, config, callback, *callbackextraargs):
         in_columns = input_format['columns']
         column_defaults = input_format.get('column-defaults', {})
         in_time_column = in_columns.get('time', None)
-        invert_columns = { v:k for k, v in in_columns.iteritems() }
+        invert_columns = { v:k for k, v in in_columns.iteritems()
+                           # temporarily: skip columns which have a more complex description; todo: fix this
+                           if isinstance(v, basestring) }
 
         if args.verbose:
             print "Reading", expanded_input_name, "as format", input_format_name
