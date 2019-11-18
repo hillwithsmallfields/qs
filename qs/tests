@@ -2,9 +2,9 @@
 TARBALL=~/qsfiles.tar
 ORIGINALS=~/common/qs-playpen
 SCRATCH=~/common/qs-scratch
-CONFIGDIR=~/open-projects/qs/conf
+CONFIGDIR=~/open-projects/github.com/hillwithsmallfields/qs/conf
 CONVDIR=~/common/finances
-QS=~/open-projects/qs/qs
+QS=~/open-projects/github.com/hillwithsmallfields/qs/qs
 if [ ! -f $TARBALL ]
 then
     echo making $TARBALL from $ORIGINALS

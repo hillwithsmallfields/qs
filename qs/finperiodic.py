@@ -80,7 +80,7 @@ def main():
 
     # todo: deduce format of input file; should normally be financisto, or have similar data
 
-    qsutils.process_fin_csv_rows(args, config, finperiodic_setup, finperiodic_row, finperiodic_tidyup)
+    qsutils.process_fin_csv(args, config, finperiodic_setup, finperiodic_row, finperiodic_tidyup)
 
 if __name__ == "__main__":
     main()

@@ -65,7 +65,7 @@ def main():
 
     config = qsutils.load_config(args.verbose, *config_files)
 
-    qsutils.process_fin_csv_rows(args, config, finsplit_setup, finsplit_row, finsplit_tidyup)
+    qsutils.process_fin_csv(args, config, finsplit_setup, finsplit_row, finsplit_tidyup)
 
 if __name__ == "__main__":
     main()

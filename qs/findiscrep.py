@@ -78,7 +78,7 @@ def main():
 
     config = qsutils.load_config(args.verbose, *config_files)
 
-    qsutils.process_fin_csv_rows(args, config, find_discrepancies_setup, find_discrepancies_row_callback, None)
+    qsutils.process_fin_csv(args, config, find_discrepancies_setup, find_discrepancies_row_callback, None)
 
 if __name__ == "__main__":
     main()

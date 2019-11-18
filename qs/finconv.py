@@ -173,12 +173,13 @@ def main():
                         print "Date column", in_date_column, "not present in row", row
                         return 1
                     row_date = qsutils.normalize_date(row[in_date_column])
-                    # todo: make these count up a second for each successive import
+                    if row_date == "":
+                        print "empty date from row", row
+                        continue
                     row_time = row[in_time_column] if in_time_column else out_column_defaults.get('time', "01:02:03")
                     row_timestamp = row_date+"T"+row_time
                     while row_timestamp in output_rows:
-                        row_time = (datetime.datetime.strptime(row_time, "%H:%M:%S") + datetime.timedelta(0,1)).strftime("%H:%M:%S")
-                        row_timestamp = row_date+"T"+row_time
+                        row_timestamp = (datetime.datetime.strptime(row_timestamp, "%Y-%m-%dT%H:%M:%S") + datetime.timedelta(0,1)).isoformat()
                     in_account = row[in_account_column] if in_account_column else default_account_name
                     if (not isinstance(outcol_amount, basestring)) and in_account not in outcol_amount:
                         print "----------------"
