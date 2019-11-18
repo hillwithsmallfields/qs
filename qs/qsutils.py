@@ -87,11 +87,9 @@ def normalize_date(date_in):
 
 later = datetime.timedelta(0, 1)
 
-def process_fin_csv(args, config, callback, *callbackextraargs):
-    """Process a CSV file in one of my financial formats.
-    From an application, you should probably call process_fin_csv_rows
-    instead of this."""
-    expanded_input_name = os.path.expanduser(os.path.expandvars(args.input_file))
+def read_fin_csv(args, config, input_filename):
+    """Read an account spreadsheet file."""
+    expanded_input_name = os.path.expanduser(os.path.expandvars(input_filename))
     with open(expanded_input_name) as infile:
         if args.format and (args.format in config['formats']):
             input_format_name = args.format
@@ -128,46 +126,59 @@ def process_fin_csv(args, config, callback, *callbackextraargs):
             rows[row_timestamp] = row
         if args.verbose:
             print "Read", len(rows), "rows from", expanded_input_name
-        header, output_rows = callback(args, config, input_format, rows, *callbackextraargs)
-        if output_rows and len(output_rows) > 0:
-            expanded_output_name = os.path.expanduser(os.path.expandvars(args.output))
-            with open(expanded_output_name, 'w') as outfile:
-                writer = csv.DictWriter(outfile, header)
-                writer.writeheader()
-                for timestamp in sorted(output_rows.keys()):
-                    writer.writerow({ k: (("%.2F" % v)
-                                          if type(v) is float
-                                          else v)
-                                      for k, v in output_rows[timestamp].iteritems()})
-                if args.verbose:
-                    print "Wrote", len(output_rows), "rows to", expanded_output_name
+    return input_format, rows
+
+def write_fin_csv(header, output_rows, filename):
+    """Write an account spreadsheet file.
+    Returns the name of the file it was written to."""
+    expanded_output_name = os.path.expanduser(os.path.expandvars(filename))
+    with open(expanded_output_name, 'w') as outfile:
+        writer = csv.DictWriter(outfile, header)
+        writer.writeheader()
+        for timestamp in sorted(output_rows.keys()):
+            writer.writerow({ k: (("%.2F" % v)
+                                  if type(v) is float
+                                  else v)
+                              for k, v in output_rows[timestamp].iteritems()})
+    return expanded_output_name
+
+def read_process_write_fin_csv(args, config, callback, *callbackextraargs):
+    """Process a CSV file in one of my financial formats.
+    From an application, you should probably call process_fin_csv
+    instead of this."""
+    input_format, rows = read_fin_csv(args, config, args.input_file)
+    header, output_rows = callback(args, config, input_format, rows, *callbackextraargs)
+    if output_rows and len(output_rows) > 0:
+        expanded_output_name = write_fin_csv(header, output_rows, args.output)
+    if args.verbose:
+        print "Wrote", len(output_rows), "rows to", expanded_output_name
 
 def process_rows(args, config, input_format,
                  rows,
                  setup_callback, row_callback, tidyup_callback):
     """Process CSV rows.
 
-From an application, you should probably call process_fin_csv_rows
-instead of this.
+    From an application, you should probably call process_fin_csv
+    instead of this.
 
-The setup_callback must take the args structure (from argparse), the
-config dictionary tree, and the input_format, and return a list of
-columns wanted in the output, and a scratch data value (normally a
-dictionary) for use in the row handler and the tidy_up function.
+    The setup_callback must take the args structure (from argparse), the
+    config dictionary tree, and the input_format, and return a list of
+    columns wanted in the output, and a scratch data value (normally a
+    dictionary) for use in the row handler and the tidy_up function.
 
-The row handler must take the row timestamp, the row data (as a
-dictionary), a dictionary to fill in with the output rows (it will be
-output in the order of its keys), and the scratch data.  In the row
-dictionary it is given, the indirections given in the `columns' part
-of the input format will have been done, for example if the format
-specifies `payee: Details', the `Details' column will have been copied
-into `payee'.
+    The row handler must take the row timestamp, the row data (as a
+    dictionary), a dictionary to fill in with the output rows (it will be
+    output in the order of its keys), and the scratch data.  In the row
+    dictionary it is given, the indirections given in the `columns' part
+    of the input format will have been done, for example if the format
+    specifies `payee: Details', the `Details' column will have been copied
+    into `payee'.
 
-The tidy_up function must take, and return, the header list and the
-output rows dictionary, and also take the scratch data.  It should not
-do the output; that will be done by this framework.  Alternatively, it
-can do the output itself and return None, None to suppress the normal
-output.
+    The tidy_up function must take, and return, the header list and the
+    output rows dictionary, and also take the scratch data.  It should not
+    do the output; that will be done by this framework.  Alternatively, it
+    can do the output itself and return None, None to suppress the normal
+    output.
 
     """
     column_headers, scratch = (setup_callback(args, config,
@@ -181,18 +192,12 @@ output.
         column_headers, output_rows = tidyup_callback(column_headers, output_rows, scratch)
     return column_headers, output_rows
 
-def process_fin_csv_rows_fn(args, config, input_format, rows, setup_callback, row_callback, tidyup_callback):
-    """For internal use by process_fin_csv_rows."""
-    return process_rows(args, config, input_format,
-                        rows,
-                        setup_callback, row_callback, tidyup_callback)
-
-def process_fin_csv_rows(args, config, setup_callback, row_callback, tidyup_callback):
+def process_fin_csv(args, config, setup_callback, row_callback, tidyup_callback):
     """See process_rows for descriptions of the callbacks.
     This is the main entry point in this module."""
-    return process_fin_csv(args, config,
-                           process_fin_csv_rows_fn,
-                           setup_callback, row_callback, tidyup_callback)
+    return read_process_write_fin_csv(args, config,
+                                      process_rows,
+                                      setup_callback, row_callback, tidyup_callback)
 
 def main():
     """Tests on the utilities"""
