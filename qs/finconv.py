@@ -51,6 +51,101 @@ def find_conversion(conversions, payee_name):
             return value
     return None
 
+def convert_spreadsheet(args, input_format, input_rows, output_format, output_rows):
+    """Process the rows of a spreadsheet, adding the results to another spreadsheet."""
+    in_columns = input_format['columns']
+    in_date_column = in_columns['date']
+    in_payee_column = in_columns['payee']
+    in_credits_column = in_columns.get('credits', None)
+    in_debits_column = in_columns.get('debits', None)
+    in_account_column = in_columns.get('account', None)
+    default_account_name = input_format.get('name', None)
+    in_time_column = in_columns.get('time', None)
+    conversions = input_format.get('conversions', {}) # lookup table for payees by name in input file to name in output file
+
+    for row in input_rows:
+        if args.verbose:
+            print "processing transaction row", row
+        if in_payee_column not in row:
+            print "payee field", in_payee_column, "missing from row", row
+            continue
+        payee_name = row[in_payee_column]
+        conversion = find_conversion(conversions, payee_name)
+        # except in "all" mode, we're only importing amounts from payees
+        # for which we can convert the name-on-statement to the real name
+        if conversion or args.all_rows or (first_file and args.update):
+            currency = row.get('currency', input_format.get('currency', "?")) # todo: this looks wrong, it shouldn't use a hardwired column name
+            if in_credits_column:
+                money_in = row[in_credits_column]
+                money_in = 0 if money_in == '' else float(money_in)
+            else:
+                money_in = 0
+            if in_debits_column:
+                money_out = row[in_debits_column]
+                money_out = 0 if money_out == '' else float(money_out)
+            else:
+                money_out = 0
+            if in_date_column not in row:
+                print "Date column", in_date_column, "not present in row", row
+                return 1
+            row_date = qsutils.normalize_date(row[in_date_column])
+            if row_date == "":
+                print "empty date from row", row
+                continue
+            row_time = row[in_time_column] if in_time_column else out_column_defaults.get('time', "01:02:03")
+            row_timestamp = row_date+"T"+row_time
+            while row_timestamp in output_rows:
+                row_timestamp = (datetime.datetime.strptime(row_timestamp, "%Y-%m-%dT%H:%M:%S") + datetime.timedelta(0,1)).isoformat()
+            in_account = row[in_account_column] if in_account_column else default_account_name
+            if (not isinstance(outcol_amount, basestring)) and in_account not in outcol_amount:
+                print "----------------"
+                print "unrecognized in_account", in_account, "in row", row
+                print "recognized values are:"
+                for colkey, colval in outcol_amount.iteritems():
+                    print "    ", colkey, colval
+            this_outcol_amount = outcol_amount if isinstance(outcol_amount, basestring) else outcol_amount.get(in_account, default_account_name or "Unknown")
+            out_row = {out_columns['date']: row_date,
+                       this_outcol_amount: money_in - money_out}
+            if out_currency_column:
+                this_out_currency_column = out_currency_column if isinstance(out_currency_column, basestring) else out_currency_column[in_account]
+                out_row[this_out_currency_column] = currency
+            if 'original_amount' in out_columns:
+                out_row[out_columns['original_amount']] = money_in - money_out
+            if 'original_currency' in out_columns:
+                out_row[out_columns['original_currency']] = output_format['currency']
+            if in_account and 'account' in out_columns:
+                out_row[out_columns['account']] = in_account
+            if 'time' in out_columns:
+                out_row[out_columns['time']] = row_time
+            for outcol_descr in ['balance', 'category', 'parent', 'payee', 'location', 'project', 'message']:
+                if outcol_descr in out_columns:
+                    if conversion and outcol_descr in conversion:
+                        out_row[out_columns[outcol_descr]] = conversion[outcol_descr] # put a literal in this cell
+                    else:
+                        if outcol_descr in in_columns or outcol_descr in out_column_defaults:
+                            output_column_naming = out_columns[outcol_descr]
+                            # allow for an input column deciding which output column to use
+                            if isinstance(output_column_naming, basestring):
+                                outcol_name = output_column_naming
+                            else:
+                                outcol_name = output_column_naming[default_account_name]
+                            try:
+                                in_column_selector = in_columns[outcol_descr] if outcol_descr in in_columns else None
+                                extra_value = row[in_column_selector] if in_column_selector in row else out_column_defaults[outcol_descr]
+                                # initially for financisto's category parents:
+                                if isinstance(extra_value, list):
+                                    extra_value = ':'.join(extra_value)
+                                out_row[out_columns[outcol_name]] = extra_value
+                            except KeyError:
+                                print "key", outcol_name, "not defined in", out_columns
+            if args.message and 'message' in out_columns:
+                message_column = out_columns['message']
+                if message_column not in out_row or not out_row[message_column]:
+                    out_row[message_column] = args.message
+            if args.verbose:
+                print "constructed", out_row
+            output_rows[row_timestamp] = out_row
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config",
@@ -134,110 +229,15 @@ def main():
                 outcol_amount = out_columns['amount']
                 out_currency_column = out_columns.get('currency', None)
                 default_account_name = output_format.get('name', None)
-            input_format = config['formats'][input_format_name]
-            in_columns = input_format['columns']
-            in_date_column = in_columns['date']
-            in_payee_column = in_columns['payee']
-            in_credits_column = in_columns.get('credits', None)
-            in_debits_column = in_columns.get('debits', None)
-            in_account_column = in_columns.get('account', None)
-            default_account_name = input_format.get('name', None)
-            in_time_column = in_columns.get('time', None)
-            conversions = input_format.get('conversions', {}) # lookup table for payees by name in input file to name in output file
+
             for i in range(1, header_row_number):
                 dummy = infile.readline()
-            input_rows = {}
-            for row0 in csv.DictReader(infile):
-                row = {k:v for k,v in row0.iteritems() if k != ''}
-                if args.verbose:
-                    print "processing transaction row", row
-                row_time = row[in_time_column] if in_time_column else out_column_defaults.get('time', "01:02:03")
-                row_timestamp = row_date+"T"+row_time
-                while row_timestamp in input_rows:
-                    row_timestamp = (datetime.datetime.strptime(row_timestamp, "%Y-%m-%dT%H:%M:%S") + datetime.timedelta(0,1)).isoformat()
-                input_rows[row_timestamp] = row
+            input_rows = [{k:v for k,v in row0.iteritems() if k != ''} for row0 in csv.DictReader(infile)]
 
-                # todo: a separate loop, going on the sorted keys
+            input_format = config['formats'][input_format_name]
 
-                if in_payee_column not in row:
-                    print "payee field", in_payee_column, "missing from row", row
-                    continue
-                payee_name = row[in_payee_column]
-                conversion = find_conversion(conversions, payee_name)
-                # except in "all" mode, we're only importing amounts from payees
-                # for which we can convert the name-on-statement to the real name
-                if conversion or args.all_rows or (first_file and args.update):
-                    currency = row.get('currency', input_format.get('currency', "?")) # todo: this looks wrong, it shouldn't use a hardwired column name
-                    if in_credits_column:
-                        money_in = row[in_credits_column]
-                        money_in = 0 if money_in == '' else float(money_in)
-                    else:
-                        money_in = 0
-                    if in_debits_column:
-                        money_out = row[in_debits_column]
-                        money_out = 0 if money_out == '' else float(money_out)
-                    else:
-                        money_out = 0
-                    if in_date_column not in row:
-                        print "Date column", in_date_column, "not present in row", row
-                        return 1
-                    row_date = qsutils.normalize_date(row[in_date_column])
-                    if row_date == "":
-                        print "empty date from row", row
-                        continue
-                    row_time = row[in_time_column] if in_time_column else out_column_defaults.get('time', "01:02:03")
-                    row_timestamp = row_date+"T"+row_time
-                    while row_timestamp in output_rows:
-                        row_timestamp = (datetime.datetime.strptime(row_timestamp, "%Y-%m-%dT%H:%M:%S") + datetime.timedelta(0,1)).isoformat()
-                    in_account = row[in_account_column] if in_account_column else default_account_name
-                    if (not isinstance(outcol_amount, basestring)) and in_account not in outcol_amount:
-                        print "----------------"
-                        print "unrecognized in_account", in_account, "in row", row
-                        print "recognized values are:"
-                        for colkey, colval in outcol_amount.iteritems():
-                            print "    ", colkey, colval
-                    this_outcol_amount = outcol_amount if isinstance(outcol_amount, basestring) else outcol_amount.get(in_account, default_account_name or "Unknown")
-                    out_row = {out_columns['date']: row_date,
-                               this_outcol_amount: money_in - money_out}
-                    if out_currency_column:
-                        this_out_currency_column = out_currency_column if isinstance(out_currency_column, basestring) else out_currency_column[in_account]
-                        out_row[this_out_currency_column] = currency
-                    if 'original_amount' in out_columns:
-                        out_row[out_columns['original_amount']] = money_in - money_out
-                    if 'original_currency' in out_columns:
-                        out_row[out_columns['original_currency']] = output_format['currency']
-                    if in_account and 'account' in out_columns:
-                        out_row[out_columns['account']] = in_account
-                    if 'time' in out_columns:
-                        out_row[out_columns['time']] = row_time
-                    for outcol_descr in ['balance', 'category', 'parent', 'payee', 'location', 'project', 'message']:
-                        if outcol_descr in out_columns:
-                            if conversion and outcol_descr in conversion:
-                                out_row[out_columns[outcol_descr]] = conversion[outcol_descr] # put a literal in this cell
-                            else:
-                                if outcol_descr in in_columns or outcol_descr in out_column_defaults:
-                                    output_column_naming = out_columns[outcol_descr]
-                                    # allow for an input column deciding which output column to use
-                                    if isinstance(output_column_naming, basestring):
-                                        outcol_name = output_column_naming
-                                    else:
-                                        outcol_name = output_column_naming[default_account_name]
-                                    try:
-                                        in_column_selector = in_columns[outcol_descr] if outcol_descr in in_columns else None
-                                        extra_value = row[in_column_selector] if in_column_selector in row else out_column_defaults[outcol_descr]
-                                        # initially for financisto's category parents:
-                                        if isinstance(extra_value, list):
-                                            extra_value = ':'.join(extra_value)
-                                        out_row[out_columns[outcol_name]] = extra_value
-                                    except KeyError:
-                                        print "key", outcol_name, "not defined in", out_columns
-                    if args.message and 'message' in out_columns:
-                        message_column = out_columns['message']
-                        if message_column not in out_row or not out_row[message_column]:
-                            out_row[message_column] = args.message
-                    if args.verbose:
-                        print "constructed", out_row
-                    output_rows[row_timestamp] = out_row
+            convert_spreadsheet(args, input_format, input_rows, output_format, output_rows)
+
             first_file = False
 
     with open(os.path.expanduser(os.path.expandvars(outfile)), 'w') as outfile:

@@ -28,10 +28,9 @@ def main():
     parser.add_argument("input_file")
     args = parser.parse_args()
 
+    # todo: use qsutils.load_config
     with open(os.path.expanduser(os.path.expandvars(args.config))) as config_file:
         config = yaml.safe_load(config_file)
-
-    print "config is", config
 
     time_periods = {}
     date_size = 10
