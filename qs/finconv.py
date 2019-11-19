@@ -146,10 +146,19 @@ def main():
             conversions = input_format.get('conversions', {}) # lookup table for payees by name in input file to name in output file
             for i in range(1, header_row_number):
                 dummy = infile.readline()
+            input_rows = {}
             for row0 in csv.DictReader(infile):
                 row = {k:v for k,v in row0.iteritems() if k != ''}
                 if args.verbose:
                     print "processing transaction row", row
+                row_time = row[in_time_column] if in_time_column else out_column_defaults.get('time', "01:02:03")
+                row_timestamp = row_date+"T"+row_time
+                while row_timestamp in input_rows:
+                    row_timestamp = (datetime.datetime.strptime(row_timestamp, "%Y-%m-%dT%H:%M:%S") + datetime.timedelta(0,1)).isoformat()
+                input_rows[row_timestamp] = row
+
+                # todo: a separate loop, going on the sorted keys
+
                 if in_payee_column not in row:
                     print "payee field", in_payee_column, "missing from row", row
                     continue
