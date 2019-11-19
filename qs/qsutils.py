@@ -29,11 +29,16 @@ def rec_update(d, u, i=""):
     return d
 
 def load_config(verbose, *config_files):
+    """Load config files.
+    You can give None and it will be skipped."""
     config = {}
     for filename in config_files:
-        with open(os.path.expanduser(os.path.expandvars(filename))) as config_file:
-            more_config = yaml.safe_load(config_file)
-            rec_update(config, more_config)
+        if filename:
+            filename = os.path.expanduser(os.path.expandvars(filename))
+            if os.path.exists(filename):
+                with open(filename) as config_file:
+                    more_config = yaml.safe_load(config_file)
+                    rec_update(config, more_config)
     if verbose:
         print "Read config:"
         print yaml.dump(config)

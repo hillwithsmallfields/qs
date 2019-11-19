@@ -183,14 +183,9 @@ def main():
     parser.add_argument("input_files", nargs='*')
     args = parser.parse_args()
 
-    config_files = ([DEFAULT_CONF]
-                    if os.path.exists(DEFAULT_CONF) and not args.no_default_config
-                    else [])
-
-    if args.config:
-        config_files += args.config
-
-    config = qsutils.load_config(args.verbose, *config_files)
+    config = qsutils.load_config(args.verbose,
+                                 DEFAULT_CONF if not args.no_default_config else None,
+                                 *args.config)
 
     if args.update:
         print "Will update", args.update, "from input files", infile_names

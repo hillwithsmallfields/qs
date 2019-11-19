@@ -72,12 +72,8 @@ def main():
     # todo: deduce format of input file; should normally be financisto, or have similar data
 
     qsutils.process_fin_csv(args, qsutils.load_config(args.verbose,
-                                                      *(([DEFAULT_CONF]
-                                                         if os.path.exists(DEFAULT_CONF) and not args.no_default_config
-                                                         else [])
-                                                        + ([args.config]
-                                                           if args.config
-                                                           else []))),
+                                                      DEFAULT_CONF if not args.no_default_config else None,
+                                                      *args.config),
                             finperiodic_setup,
                             finperiodic_row,
                             finperiodic_tidyup)

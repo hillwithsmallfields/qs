@@ -13,7 +13,11 @@ import yaml
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config",
-                        default="~/.qs-conf.yaml")
+                        action='append',
+                        help="""Extra config file (may be given multiple times).""")
+    parser.add_argument("-n", "--no-default-config",
+                        action='store_true',
+                        help="""Do not load the default config file.""")
     parser.add_argument("-f", "--format",
                         default='combined')
     parser.add_argument("-o", "--output")
@@ -28,9 +32,9 @@ def main():
     parser.add_argument("input_file")
     args = parser.parse_args()
 
-    # todo: use qsutils.load_config
-    with open(os.path.expanduser(os.path.expandvars(args.config))) as config_file:
-        config = yaml.safe_load(config_file)
+    config = qsutils.load_config(args.verbose,
+                                 DEFAULT_CONF if not args.no_default_config else None,
+                                 *args.config)
 
     time_periods = {}
     date_size = 10
