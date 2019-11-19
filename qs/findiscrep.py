@@ -75,7 +75,7 @@ def main():
                                                          else [])
                                                         + ([args.config]
                                                            if args.config
-o                                                           else []))),
+                                                           else []))),
                             find_discrepancies_setup,
                             find_discrepancies_row_callback,
                             None)
