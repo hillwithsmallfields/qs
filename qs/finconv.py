@@ -1,5 +1,4 @@
 #!/usr/bin/python
-
 # Program to filter finance spreadsheets and convert them between formats.
 
 # Originally written to add the automatic payments reported in my bank
@@ -51,7 +50,14 @@ def find_conversion(conversions, payee_name):
             return value
     return None
 
-def convert_spreadsheet(args, input_format, input_rows, output_format, output_rows):
+def convert_spreadsheet(args,
+                        input_format, input_rows,
+                        do_all,
+                        output_format,
+                        # todo: reduce the number of output control arguments
+                        out_columns, out_column_defaults,
+                        outcol_amount, out_currency_column, default_account_name,
+                        output_rows):
     """Process the rows of a spreadsheet, adding the results to another spreadsheet."""
     in_columns = input_format['columns']
     in_date_column = in_columns['date']
@@ -73,7 +79,7 @@ def convert_spreadsheet(args, input_format, input_rows, output_format, output_ro
         conversion = find_conversion(conversions, payee_name)
         # except in "all" mode, we're only importing amounts from payees
         # for which we can convert the name-on-statement to the real name
-        if conversion or args.all_rows or (first_file and args.update):
+        if conversion or do_all:
             currency = row.get('currency', input_format.get('currency', "?")) # todo: this looks wrong, it shouldn't use a hardwired column name
             if in_credits_column:
                 money_in = row[in_credits_column]
@@ -236,7 +242,13 @@ def main():
 
             input_format = config['formats'][input_format_name]
 
-            convert_spreadsheet(args, input_format, input_rows, output_format, output_rows)
+            convert_spreadsheet(args,
+                                input_format, input_rows,
+                                args.all_rows or (first_file and args.update),
+                                output_format,
+                                out_columns, out_column_defaults,
+                                outcol_amount, out_currency_column, default_account_name,
+                                output_rows)
 
             first_file = False
 
