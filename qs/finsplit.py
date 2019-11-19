@@ -54,18 +54,16 @@ def main():
 
     args = parser.parse_args()
 
-    print "args are", args
-
-    config_files = ([DEFAULT_CONF]
-                    if os.path.exists(DEFAULT_CONF) and not args.no_default_config
-                    else [])
-
-    if args.config:
-        config_files += args.config
-
-    config = qsutils.load_config(args.verbose, *config_files)
-
-    qsutils.process_fin_csv(args, config, finsplit_setup, finsplit_row, finsplit_tidyup)
+    qsutils.process_fin_csv(args, qsutils.load_config(args.verbose,
+                                                      *(([DEFAULT_CONF]
+                                                         if os.path.exists(DEFAULT_CONF) and not args.no_default_config
+                                                         else [])
+                                                        + ([args.config]
+                                                           if args.config
+                                                           else []))),
+                            finsplit_setup,
+                            finsplit_row,
+                            finsplit_tidyup)
 
 if __name__ == "__main__":
     main()

@@ -69,18 +69,18 @@ def main():
 
     args = parser.parse_args()
 
-    config_files = ([DEFAULT_CONF]
-                    if os.path.exists(DEFAULT_CONF) and not args.no_default_config
-                    else [])
-
-    if args.config:
-        config_files += args.config
-
-    config = qsutils.load_config(args.verbose, *config_files)
-
     # todo: deduce format of input file; should normally be financisto, or have similar data
 
-    qsutils.process_fin_csv(args, config, finperiodic_setup, finperiodic_row, finperiodic_tidyup)
+    qsutils.process_fin_csv(args, qsutils.load_config(args.verbose,
+                                                      *(([DEFAULT_CONF]
+                                                         if os.path.exists(DEFAULT_CONF) and not args.no_default_config
+                                                         else [])
+                                                        + ([args.config]
+                                                           if args.config
+                                                           else []))),
+                            finperiodic_setup,
+                            finperiodic_row,
+                            finperiodic_tidyup)
 
 if __name__ == "__main__":
     main()
