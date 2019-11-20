@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import csv
 import datetime
 import os.path
@@ -11,13 +13,24 @@ def trim_if_float(val):
 class cvs_sheet:
     """A spreadsheet with headers."""
 
-    def __init__(self, config, format_name=None, column_names={}, rows):
+    def __init__(self, config, format_name=None):
         self.config = config
         self.header_row_number = 0
-        self.format_name = None
-        self.format = None
-        self.column_names = column_names
-        self.rows = rows
+        self.format_name = format_name
+        self.format = config['formats'][format_name] if format_name else None
+        self.column_names = self.format['columns'] if self.format else {}
+        self.rows = {}
+        self.row_order = None
+        self.row_cursor = None
+
+    def __iter__(self):
+        self.row_order = sorted(self.rows.keys())
+        self.row_cursor = iter(self.row_order)
+        return self
+
+    def __next__(self):
+        self.row_cursor = next(self.row_cursor)
+        return self.rows[self.row_cursor]
 
     def _unused_timestamp_from(self, base_date, base_time):
         base_timestamp = base_date+"T"+base_time
@@ -28,15 +41,23 @@ class cvs_sheet:
                 else base_timestamp)
 
     def get_cell(self, row, canonical_colum_name, default_value=None):
-        return get(row, self.column_names[canonical_colum_name], default_value)
+        """Get a cell value from a row, using its canonical column name."""
+        return (get(row, self.column_names[canonical_colum_name], default_value)
+                if canonical_colum_name in self.column_names
+                else None)
+
+    def set_cell(self, row, canonical_colum_name, value):
+        """Set a cell value from in row, using its canonical column name.
+        If that column is not defined in this format, do nothing."""
+        if canonical_colum_name in self.column_names:
+            row[self.column_names[canonical_colum_name]] = value
 
     def get_row_timestamp(self, row):
-        # combine [column_names['date']] and [column_names['time']]
-        pass
+        return self.get_cell(row, 'date')+"T"+self.get_cell(row, 'time', self.default_time)
 
     def add_row(self, row):
-        # use _unused_timestamp_from and get_row_timestamp
-        pass
+        self.rows[this._unused_timestamp_from(self.get_cell(row, 'date'),
+                                              self.get_cell(row, 'time', self.default_time))] = row
 
     def read(self, filename):
         with open(os.path.expanduser(os.path.expandvars(filename))) as infile:
@@ -63,3 +84,35 @@ class cvs_sheet:
                 # select only the columns required for this sheet, and
                 # also trim out the unfortunately-represented floats
                 writer.writerow({ k: trim_if_float(row[sk]) for sk in colseq})
+
+# tests
+
+import argparse
+DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
+
+def main():
+    """Tests for this module."""
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--config",
+                        action='append',
+                        help="""Extra config file (may be given multiple times).""")
+    parser.add_argument("-n", "--no-default-config",
+                        action='store_true',
+                        help="""Do not load the default config file.""")
+    parser.add_argument("-v", "--verbose",
+                        action='store_true')
+    parser.add_argument("input_files", nargs='*')
+    args = parser.parse_args()
+    config = qsutils.load_config(args.verbose,
+                                 DEFAULT_CONF if not args.no_default_config else None,
+                                 *args.config)
+    for filename in args.input_files:
+        sheet = cvs_sheet(config)
+        print "sheet is", sheet
+        print "iter is", iter(sheet)
+        print "next value is", next(sheet)
+        for row in iter(sheet):
+            print row
+
+if __name__ == "__main__":
+    main()
