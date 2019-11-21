@@ -45,7 +45,7 @@ DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
 
 def find_conversion(conversions, payee_name):
     """Find a mapping from the input format to the output, for a named payee."""
-    for key, value in conversions.iteritems():
+    for key, value in conversions.items():
         if re.match(key, payee_name):
             return value
     return None
@@ -71,9 +71,9 @@ def convert_spreadsheet(args,
 
     for row in input_rows:
         if args.verbose:
-            print "processing transaction row", row
+            print("processing transaction row", row)
         if in_payee_column not in row:
-            print "payee field", in_payee_column, "missing from row", row
+            print("payee field", in_payee_column, "missing from row", row)
             continue
         payee_name = row[in_payee_column]
         conversion = find_conversion(conversions, payee_name)
@@ -92,11 +92,11 @@ def convert_spreadsheet(args,
             else:
                 money_out = 0
             if in_date_column not in row:
-                print "Date column", in_date_column, "not present in row", row
+                print("Date column", in_date_column, "not present in row", row)
                 return 1
             row_date = qsutils.normalize_date(row[in_date_column])
             if row_date == "":
-                print "empty date from row", row
+                print("empty date from row", row)
                 continue
             row_time = row[in_time_column] if in_time_column else out_column_defaults.get('time', "01:02:03")
             row_timestamp = row_date+"T"+row_time
@@ -104,11 +104,11 @@ def convert_spreadsheet(args,
                 row_timestamp = (datetime.datetime.strptime(row_timestamp, "%Y-%m-%dT%H:%M:%S") + datetime.timedelta(0,1)).isoformat()
             in_account = row[in_account_column] if in_account_column else default_account_name
             if (not isinstance(outcol_amount, basestring)) and in_account not in outcol_amount:
-                print "----------------"
-                print "unrecognized in_account", in_account, "in row", row
-                print "recognized values are:"
-                for colkey, colval in outcol_amount.iteritems():
-                    print "    ", colkey, colval
+                print("----------------")
+                print("unrecognized in_account", in_account, "in row", row)
+                print("recognized values are:")
+                for colkey, colval in outcol_amount.items():
+                    print("    ", colkey, colval)
             this_outcol_amount = outcol_amount if isinstance(outcol_amount, basestring) else outcol_amount.get(in_account, default_account_name or "Unknown")
             out_row = {out_columns['date']: row_date,
                        this_outcol_amount: money_in - money_out}
@@ -143,13 +143,13 @@ def convert_spreadsheet(args,
                                     extra_value = ':'.join(extra_value)
                                 out_row[out_columns[outcol_name]] = extra_value
                             except KeyError:
-                                print "key", outcol_name, "not defined in", out_columns
+                                print("key", outcol_name, "not defined in", out_columns)
             if args.message and 'message' in out_columns:
                 message_column = out_columns['message']
                 if message_column not in out_row or not out_row[message_column]:
                     out_row[message_column] = args.message
             if args.verbose:
-                print "constructed", out_row
+                print("constructed", out_row)
             output_rows[row_timestamp] = out_row
 
 def main():
@@ -188,7 +188,7 @@ def main():
                                  *args.config)
 
     if args.update:
-        print "Will update", args.update, "from input files", infile_names
+        print("Will update", args.update, "from input files", infile_names)
         infile_names = [args.update] + args.input_files
         outfile = args.update
     else:
@@ -196,7 +196,7 @@ def main():
         outfile = args.output
         output_format_name = args.output_format
         if args.verbose:
-            print "Will write new output file", outfile, "from input files", infile_names, "with provisional format", output_format_name
+            print("Will write new output file", outfile, "from input files", infile_names, "with provisional format", output_format_name)
 
     output_rows = {}
     first_file = True
@@ -204,7 +204,7 @@ def main():
     for input_file_name in infile_names:
         with open(os.path.expanduser(os.path.expandvars(input_file_name))) as infile:
             if args.verbose:
-                print "Reading file", os.path.expanduser(os.path.expandvars(input_file_name))
+                print("Reading file", os.path.expanduser(os.path.expandvars(input_file_name)))
             # Scan over the top rows looking for one that matches one
             # of our known headers.  We count how many rows it took,
             # so we can reposition the stream for the
@@ -218,14 +218,14 @@ def main():
             if first_file:      # cleared at the end of the iteration
                 if args.update:
                     output_format_name = input_format_name
-                    print "updating, so set output_format_name to", output_format_name
+                    print("updating, so set output_format_name to", output_format_name)
                 output_format = config['formats'][output_format_name]
                 out_columns = output_format['columns']
                 out_column_defaults = output_format.get('column-defaults', {})
                 if args.verbose:
-                    print "output format is", output_format
+                    print("output format is", output_format)
                 if 'amount' not in out_columns:
-                    print "An 'amount' label must be specified in the columns of the output format", output_format_name
+                    print("An 'amount' label must be specified in the columns of the output format", output_format_name)
                     return 1
                 outcol_amount = out_columns['amount']
                 out_currency_column = out_columns.get('currency', None)
@@ -233,7 +233,7 @@ def main():
 
             for i in range(1, header_row_number):
                 dummy = infile.readline()
-            input_rows = [{k:v for k,v in row0.iteritems() if k != ''} for row0 in csv.DictReader(infile)]
+            input_rows = [{k:v for k,v in row0.items() if k != ''} for row0 in csv.DictReader(infile)]
 
             input_format = config['formats'][input_format_name]
 
@@ -254,7 +254,7 @@ def main():
             writer.writerow({ k: (("%.2F" % v)
                                   if type(v) is float
                                   else v)
-                              for k, v in output_rows[timestamp].iteritems()})
+                              for k, v in output_rows[timestamp].items()})
     return 0
 
 if __name__ == "__main__":

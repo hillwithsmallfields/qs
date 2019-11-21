@@ -17,7 +17,7 @@ def deduce_file_type_from_headers(headers):
 
 # based on https://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
 def rec_update(d, u, i=""):
-    for k, v in u.iteritems():
+    for k, v in u.items():
         if isinstance(v, dict):
             d[k] = rec_update(d.get(k, {}), v, "  ")
         elif isinstance(v, list):
@@ -40,25 +40,25 @@ def load_config(verbose, *config_files):
                     more_config = yaml.safe_load(config_file)
                     rec_update(config, more_config)
     if verbose:
-        print "Read config:"
-        print yaml.dump(config)
+        print("Read config:")
+        print(yaml.dump(config))
     return config
 
 def deduce_format(first_row, formats, verbose=False):
     # take out some strange characters that Financisto is putting in
     condensed_row = [cell.lstrip("\357\273\277") for cell in first_row if cell != ""]
     if verbose:
-        print "Trying to deduce format using sample row", condensed_row
-    for format_name, format_def in formats.iteritems():
+        print("Trying to deduce format using sample row", condensed_row)
+    for format_name, format_def in formats.items():
         sequence = [col for col in format_def['column-sequence'] if col]
         if verbose:
-            print "  Comparing with", format_name, "sample row", sequence
+            print("  Comparing with", format_name, "sample row", sequence)
         if sequence == condensed_row:
             if verbose:
-                print "Format seems to be", format_name
+                print("Format seems to be", format_name)
             return format_name
     if verbose:
-        print "Could not deduce format"
+        print("Could not deduce format")
     return None
 
 def deduce_stream_format(infile, config, verbose):
@@ -75,7 +75,7 @@ def deduce_stream_format(infile, config, verbose):
         sampling_countdown -= 1
         if sampling_countdown <= 0:
             if verbose:
-                print "Giving up on deducing format"
+                print("Giving up on deducing format")
             break;
     infile.seek(0)
     return input_format_name, header_row_number
@@ -106,19 +106,19 @@ def read_fin_csv(args, config, input_filename):
         in_columns = input_format['columns']
         column_defaults = input_format.get('column-defaults', {})
         in_time_column = in_columns.get('time', None)
-        invert_columns = { v:k for k, v in in_columns.iteritems()
+        invert_columns = { v:k for k, v in in_columns.items()
                            # temporarily: skip columns which have a more complex description; todo: fix this
                            if isinstance(v, basestring) }
 
         if args.verbose:
-            print "Reading", expanded_input_name, "as format", input_format_name
+            print("Reading", expanded_input_name, "as format", input_format_name)
 
         rows = {}
         header_row_number = 0
         for _ in range(1, header_row_number):
             dummy = infile.readline()
         for row in csv.DictReader(infile):
-            row = {k:v for k,v in row.iteritems() if k != ''}
+            row = {k:v for k,v in row.items() if k != ''}
             for column in invert_columns:
                 if column in row: # canonicalize the names
                     row[invert_columns[column]] = row[column]
@@ -130,7 +130,7 @@ def read_fin_csv(args, config, input_filename):
                 row_timestamp = (datetime.datetime.strptime(row_timestamp, "%Y-%m-%dT%H:%M:%S")+later).isoformat()
             rows[row_timestamp] = row
         if args.verbose:
-            print "Read", len(rows), "rows from", expanded_input_name
+            print("Read", len(rows), "rows from", expanded_input_name)
     return input_format, rows
 
 def write_fin_csv(header, output_rows, filename):
@@ -144,7 +144,7 @@ def write_fin_csv(header, output_rows, filename):
             writer.writerow({ k: (("%.2F" % v)
                                   if type(v) is float
                                   else v)
-                              for k, v in output_rows[timestamp].iteritems()})
+                              for k, v in output_rows[timestamp].items()})
     return expanded_output_name
 
 def read_process_write_fin_csv(args, config, callback, *callbackextraargs):
@@ -156,7 +156,7 @@ def read_process_write_fin_csv(args, config, callback, *callbackextraargs):
     if output_rows and len(output_rows) > 0:
         expanded_output_name = write_fin_csv(header, output_rows, args.output)
     if args.verbose:
-        print "Wrote", len(output_rows), "rows to", expanded_output_name
+        print("Wrote", len(output_rows), "rows to", expanded_output_name)
 
 def process_rows(args, config, input_format,
                  rows,
@@ -208,21 +208,21 @@ def main():
     """Tests on the utilities"""
     a = {"one": 1, "two": 2, "three": 3, "teens": {"thirteen": 13, "fourteen": 14}, "listing": ["aon", "do", "tri"]}
     b = {"four": 4, "five": 5, "six": 6, "teens": {"fifteen": 15, "sixteen": 16}, "listing": ["caithair", "cuig", "se"]}
-    print "a is", a
-    print "b is", b
+    print("a is", a)
+    print("b is", b)
     rec_update(a, b, "")
-    print "a is now", a
+    print("a is now", a)
     with open("/home/jcgs/qsconf/accounts.yaml") as confile:
         config = yaml.safe_load(confile)
     with open("/home/jcgs/qsconf/conversions.yaml") as confile:
         conversions = yaml.safe_load(confile)
-    print "config is:"
-    print pprint.pformat(config)
-    print "conversions are:"
-    print pprint.pformat(conversions)
+    print("config is:")
+    print(pprint.pformat(config))
+    print("conversions are:")
+    print(pprint.pformat(conversions))
     rec_update(config, conversions)
-    print "overall config is:"
-    print pprint.pformat(config)
+    print("overall config is:")
+    print(pprint.pformat(config))
 
 if __name__ == "__main__":
     main()

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import csv
 import datetime
@@ -29,8 +29,7 @@ class cvs_sheet:
         return self
 
     def __next__(self):
-        self.row_cursor = next(self.row_cursor)
-        return self.rows[self.row_cursor]
+        return self.rows[next(self.row_cursor)]
 
     def _unused_timestamp_from(self, base_date, base_time):
         base_timestamp = base_date+"T"+base_time
@@ -108,11 +107,11 @@ def main():
                                  *args.config)
     for filename in args.input_files:
         sheet = cvs_sheet(config)
-        print "sheet is", sheet
-        print "iter is", iter(sheet)
-        print "next value is", next(sheet)
+        print("sheet is", sheet)
+        print("iter is", iter(sheet))
+        print("next value is", next(sheet))
         for row in iter(sheet):
-            print row
+            print(row)
 
 if __name__ == "__main__":
     main()

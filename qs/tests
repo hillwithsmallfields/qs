@@ -16,6 +16,12 @@ tar xf $TARBALL -C $SCRATCH
 IMPORTDATE=$(date --iso-8601)
 echo Running version from $QS
 
+$QS/csv_sheet.py \
+    --no-default-config \
+    --config $CONFIGDIR/accounts.yaml \
+    --config $CONVDIR/conversions.yaml \
+    $SCRATCH/handelsbanken.csv
+
 $QS/finconv.py \
     --no-default-config \
     --config $CONFIGDIR/accounts.yaml \
