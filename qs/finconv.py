@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Program to filter finance spreadsheets and convert them between formats.
 
 # Originally written to add the automatic payments reported in my bank
@@ -7,6 +7,7 @@
 
 import argparse
 import csv
+import csv_sheet
 import datetime
 import os
 import qsutils
@@ -51,7 +52,7 @@ def find_conversion(conversions, payee_name):
     return None
 
 def convert_spreadsheet(args,
-                        input_format, input_rows,
+                        input_sheet,
                         do_all,
                         output_format,
                         # todo: reduce the number of output control arguments
@@ -59,50 +60,41 @@ def convert_spreadsheet(args,
                         outcol_amount, out_currency_column, default_account_name,
                         output_rows):
     """Process the rows of a spreadsheet, adding the results to another spreadsheet."""
+    input_format = input_sheet.format
     in_columns = input_format['columns']
     in_date_column = in_columns['date']
     in_payee_column = in_columns['payee']
-    in_credits_column = in_columns.get('credits', None)
-    in_debits_column = in_columns.get('debits', None)
     in_account_column = in_columns.get('account', None)
     default_account_name = input_format.get('name', None)
     in_time_column = in_columns.get('time', None)
     conversions = input_format.get('conversions', {}) # lookup table for payees by name in input file to name in output file
 
-    for row in input_rows:
+    for row in input_sheet:
         if args.verbose:
             print("processing transaction row", row)
-        if in_payee_column not in row:
-            print("payee field", in_payee_column, "missing from row", row)
+        payee_name = input_sheet.get_cell(row, 'payee', None)
+        if payee_name is None:
+            print("payee field missing from row", row)
             continue
-        payee_name = row[in_payee_column]
         conversion = find_conversion(conversions, payee_name)
         # except in "all" mode, we're only importing amounts from payees
         # for which we can convert the name-on-statement to the real name
         if conversion or do_all:
             currency = row.get('currency', input_format.get('currency', "?")) # todo: this looks wrong, it shouldn't use a hardwired column name
-            if in_credits_column:
-                money_in = row[in_credits_column]
-                money_in = 0 if money_in == '' else float(money_in)
-            else:
-                money_in = 0
-            if in_debits_column:
-                money_out = row[in_debits_column]
-                money_out = 0 if money_out == '' else float(money_out)
-            else:
-                money_out = 0
+            money_in = input_sheet.get_cell(row, 'credits', 0)
+            money_out = input_sheet.get_cell(row, 'debits', 0)
             if in_date_column not in row:
                 print("Date column", in_date_column, "not present in row", row)
                 return 1
-            row_date = qsutils.normalize_date(row[in_date_column])
-            if row_date == "":
+            row_date = qsutils.normalize_date(input_sheet.get_cell(row, 'date', None))
+            if row_date is None:
                 print("empty date from row", row)
                 continue
-            row_time = row[in_time_column] if in_time_column else out_column_defaults.get('time', "01:02:03")
+            row_time = input_sheet.get_cell(row, 'time', out_column_defaults.get('time', "01:02:03"))
             row_timestamp = row_date+"T"+row_time
             while row_timestamp in output_rows:
                 row_timestamp = (datetime.datetime.strptime(row_timestamp, "%Y-%m-%dT%H:%M:%S") + datetime.timedelta(0,1)).isoformat()
-            in_account = row[in_account_column] if in_account_column else default_account_name
+            in_account = input_sheet.get_cell(row, 'account', default_account_name)
             if (not isinstance(outcol_amount, basestring)) and in_account not in outcol_amount:
                 print("----------------")
                 print("unrecognized in_account", in_account, "in row", row)
@@ -201,6 +193,21 @@ def main():
     output_rows = {}
     first_file = True
 
+    in_sheets = [csv_sheet.csv_sheet(config, input_filename=input_file_name)
+                 for input_file_name in infile_names]
+    out_sheet = csv_sheet.csv_sheet(config, format_name=in_sheets[0].format_name)
+
+    for input_sheet in in_sheets:
+        convert_spreadsheet(args,
+                            input_sheet,
+                            args.all_rows or (first_file and args.update),
+                            output_format,
+                            out_columns, out_column_defaults,
+                            outcol_amount, out_currency_column, default_account_name,
+                            output_rows)
+        first_file = False
+
+    
     for input_file_name in infile_names:
         with open(os.path.expanduser(os.path.expandvars(input_file_name))) as infile:
             if args.verbose:
