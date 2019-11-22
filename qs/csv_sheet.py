@@ -11,7 +11,15 @@ def trim_if_float(val):
             else val)
 
 class csv_sheet:
-    """A spreadsheet with headers."""
+    """A spreadsheet with headers and column name translation.
+
+    The name translation allows the caller to use a standard column naming
+    scheme even when the spreadsheets are read from sources with a mixture
+    of naming schemes (such as statements from multiple banks).
+
+    The rows are assumed to be timestamped, and can be iterated over,
+    and output, in time order.
+    """
 
     def __init__(self, config, format_name=None, input_filename=None):
         self.config = config
@@ -28,7 +36,7 @@ class csv_sheet:
 
     def __iter__(self):
         self.row_order = sorted(self.rows.keys())
-        self.row_cursor = 0
+        self.row_cursor = -1    # because we pre-increment it
         return self
 
     def __next__(self):
@@ -37,7 +45,23 @@ class csv_sheet:
             raise StopIteration
         return self.rows[self.row_order[self.row_cursor]]
 
+    def __str__(self):
+        return ("<" + self.format_name + " spreadsheet with "
+                + str(length(self.rows)) + " rows>")
+
+    def __repr__(self):
+        return ("<spreadsheet in " + self.format_name
+                + " format with " + str(length(self.rows)) + " rows"
+                ((" and columns ["
+                  + ", ".join(self.format['column-sequence'])
+                  + "]") if 'column-sequence' in self.format else "")
+                + ">")
+
     def _unused_timestamp_from(self, base_date, base_time):
+        """Return a timestamp at the given date and time, that is not already
+        used for a row. The soonest available time after the one specified is
+        used in case of clashes, which will usually retain the order in which
+        rows were added, even if only dates are given."""
         base_timestamp = base_date+"T"+base_time
         return (self._unused_timestamp_from((datetime.datetime.strptime(base_timestamp,
                                                                        "%Y-%m-%dT%H:%M:%S")
@@ -51,11 +75,11 @@ class csv_sheet:
                 if canonical_colum_name in self.column_names
                 else None)
 
-    def set_cell(self, row, canonical_colum_name, value):
+    def set_cell(self, row, canonical_column_name, value):
         """Set a cell value from in row, using its canonical column name.
         If that column is not defined in this format, do nothing."""
-        if canonical_colum_name in self.column_names:
-            row[self.column_names[canonical_colum_name]] = value
+        if canonical_column_name in self.column_names:
+            row[self.column_names[canonical_column_name]] = value
 
     def get_row_timestamp(self, row):
         return self.get_cell(row, 'date')+"T"+self.get_cell(row, 'time', self.default_time)
@@ -65,10 +89,12 @@ class csv_sheet:
                                               self.get_cell(row, 'time', self.default_time))] = row
 
     def read(self, filename):
+        """Read a spreadsheet, deducing the type.
+        A collection of header lines is scanned to find the type."""
         with open(os.path.expanduser(os.path.expandvars(filename))) as infile:
             self.format_name, self.header_row_number = qsutils.deduce_stream_format(infile, config, args.verbose)
             for i in range(1, self.header_row_number):
-                dummy = infile.readline()
+                _ = infile.readline()
             self.format = self.config['formats'][self.format_name]
             self.column_names = self.format['columns']
             self.default_time = (self.format['column_defaults'].get('time', "01:00:00")
@@ -80,6 +106,8 @@ class csv_sheet:
                          for row0 in csv.DictReader(infile)}
 
     def write(self, filename):
+        """Write a spreadsheet in a given format.
+        Any columns not used by that format are ignored."""
         with open(os.path.expanduser(os.path.expandvars(filename)), 'w') as outfile:
             colseq = self.format['column-sequence']
             writer = csv.DictWriter(outfile, colseq)
@@ -87,7 +115,7 @@ class csv_sheet:
             for timestamp in sorted(self.rows.keys()):
                 row = self.rows[timestamp]
                 # select only the columns required for this sheet, and
-                # also trim out the unfortunately-represented floats
+                # also round the unfortunately-represented floats
                 writer.writerow({sk: trim_if_float(row[sk]) for sk in colseq})
 
 # tests
@@ -112,10 +140,8 @@ def main():
                                  DEFAULT_CONF if not args.no_default_config else None,
                                  *args.config)
     for filename in args.input_files:
-        sheet = csv_sheet(config)
-        print("sheet is", sheet)
-        print("iter is", iter(sheet))
-        print("next value is", next(sheet))
+        sheet = csv_sheet(config, input_filename=filename)
+        print("sheet from", filename, "is", sheet)
         for row in iter(sheet):
             print(row)
 
