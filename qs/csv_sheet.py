@@ -13,23 +13,29 @@ def trim_if_float(val):
 class cvs_sheet:
     """A spreadsheet with headers."""
 
-    def __init__(self, config, format_name=None):
+    def __init__(self, config, format_name=None, input_filename=None):
         self.config = config
-        self.header_row_number = 0
-        self.format_name = format_name
-        self.format = config['formats'][format_name] if format_name else None
-        self.column_names = self.format['columns'] if self.format else {}
-        self.rows = {}
+        if input_file:
+            self.read(input_filename)
+        else:
+            self.header_row_number = 0
+            self.format_name = format_name
+            self.format = config['formats'][format_name] if format_name else None
+            self.column_names = self.format['columns'] if self.format else {}
+            self.rows = {}
         self.row_order = None
-        self.row_cursor = None
+        self.row_cursor = 0
 
     def __iter__(self):
         self.row_order = sorted(self.rows.keys())
-        self.row_cursor = iter(self.row_order)
+        self.row_cursor = 0
         return self
 
     def __next__(self):
-        return self.rows[next(self.row_cursor)]
+        self.row_cursor += 1
+        if self.row_cursor >= len(self.row_order):
+            raise StopIteration
+        return self.rows[self.row_order[self.row_cursor]]
 
     def _unused_timestamp_from(self, base_date, base_time):
         base_timestamp = base_date+"T"+base_time
