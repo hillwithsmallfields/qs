@@ -10,7 +10,7 @@ def trim_if_float(val):
             if type(val) is float
             else val)
 
-class cvs_sheet:
+class csv_sheet:
     """A spreadsheet with headers."""
 
     def __init__(self, config, format_name=None, input_filename=None):
@@ -88,7 +88,7 @@ class cvs_sheet:
                 row = self.rows[timestamp]
                 # select only the columns required for this sheet, and
                 # also trim out the unfortunately-represented floats
-                writer.writerow({ k: trim_if_float(row[sk]) for sk in colseq})
+                writer.writerow({sk: trim_if_float(row[sk]) for sk in colseq})
 
 # tests
 
@@ -112,7 +112,7 @@ def main():
                                  DEFAULT_CONF if not args.no_default_config else None,
                                  *args.config)
     for filename in args.input_files:
-        sheet = cvs_sheet(config)
+        sheet = csv_sheet(config)
         print("sheet is", sheet)
         print("iter is", iter(sheet))
         print("next value is", next(sheet))
