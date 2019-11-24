@@ -62,13 +62,13 @@ class csv_sheet:
                   + "]") if 'column-sequence' in self.format else "")
                 + ">")
 
-    def _unused_timestamp_from(self, base_date, base_time):
+    def unused_timestamp_from(self, base_date, base_time):
         """Return a timestamp at the given date and time, that is not already
         used for a row. The soonest available time after the one specified is
         used in case of clashes, which will usually retain the order in which
         rows were added, even if only dates are given."""
         base_timestamp = base_date+"T"+(base_time or self.default_time)
-        return (self._unused_timestamp_from((datetime.datetime.strptime(base_timestamp,
+        return (self.unused_timestamp_from((datetime.datetime.strptime(base_timestamp,
                                                                        "%Y-%m-%dT%H:%M:%S")
                                             + datetime.timedelta(0,1)).isoformat())
                 if base_timestamp in self.rows
@@ -78,7 +78,7 @@ class csv_sheet:
         """Get a cell value from a row, using its canonical column name."""
         return (row.get(self.column_names[canonical_colum_name], default_value)
                 if canonical_colum_name in self.column_names
-                else None)
+                else default_value)
 
     def set_cell(self, row, canonical_column_name, value):
         """Set a cell value from in row, using its canonical column name.
@@ -90,8 +90,8 @@ class csv_sheet:
         return self.get_cell(row, 'date')+"T"+self.get_cell(row, 'time', self.default_time)
 
     def add_row(self, row):
-        self.rows[self._unused_timestamp_from(self.get_cell(row, 'date'),
-                                              self.get_cell(row, 'time', self.default_time))] = row
+        self.rows[self.unused_timestamp_from(self.get_cell(row, 'date'),
+                                             self.get_cell(row, 'time', self.default_time))] = row
 
     def read(self, filename):
         """Read a spreadsheet, deducing the type.
@@ -105,8 +105,8 @@ class csv_sheet:
             self.default_time = (self.format['column_defaults'].get('time', "01:00:00")
                                  if 'column_defaults' in self.format
                                  else "01:00:00")
-            self.rows = {self._unused_timestamp_from(self.get_cell(row0, 'date'),
-                                                     self.get_cell(row0, 'time', self.default_time)):
+            self.rows = {self.unused_timestamp_from(self.get_cell(row0, 'date'),
+                                                    self.get_cell(row0, 'time', self.default_time)):
                          {k:v for k,v in row0.items() if k != ''}
                          for row0 in csv.DictReader(infile)}
 

@@ -54,11 +54,12 @@ def find_conversion(conversions, payee_name):
 def convert_spreadsheet(args,
                         input_sheet,
                         do_all,
-                        output_format,
+                        output_sheet,
                         # todo: reduce the number of output control arguments
-                        out_columns, out_column_defaults,
-                        outcol_amount, out_currency_column, default_account_name,
-                        output_rows):
+                        # out_columns, out_column_defaults,
+                        # outcol_amount, out_currency_column, default_account_name,
+                        # output_rows
+):
     """Process the rows of a spreadsheet, adding the results to another spreadsheet."""
     input_format = input_sheet.format
     in_columns = input_format['columns']
@@ -68,6 +69,9 @@ def convert_spreadsheet(args,
     default_account_name = input_format.get('name', None)
     in_time_column = in_columns.get('time', None)
     conversions = input_format.get('conversions', {}) # lookup table for payees by name in input file to name in output file
+    output_format = output_sheet.format
+    out_columns = output_format['columns']
+    out_column_defaults = output_format.get('column-defaults', {})
 
     for row in input_sheet:
         if args.verbose:
@@ -90,10 +94,9 @@ def convert_spreadsheet(args,
             if row_date is None:
                 print("empty date from row", row)
                 continue
+            print("Getting time from row", row, "with time column", input_sheet.column_names.get('time', "<unspecified>"))
             row_time = input_sheet.get_cell(row, 'time', out_column_defaults.get('time', "01:02:03"))
-            row_timestamp = row_date+"T"+row_time
-            while row_timestamp in output_rows:
-                row_timestamp = (datetime.datetime.strptime(row_timestamp, "%Y-%m-%dT%H:%M:%S") + datetime.timedelta(0,1)).isoformat()
+            row_timestamp = output_sheet.unused_timestamp_from(row_date, row_time)
             in_account = input_sheet.get_cell(row, 'account', default_account_name)
             if (not isinstance(outcol_amount, basestring)) and in_account not in outcol_amount:
                 print("----------------")
@@ -101,11 +104,15 @@ def convert_spreadsheet(args,
                 print("recognized values are:")
                 for colkey, colval in outcol_amount.items():
                     print("    ", colkey, colval)
-            this_outcol_amount = outcol_amount if isinstance(outcol_amount, basestring) else outcol_amount.get(in_account, default_account_name or "Unknown")
+            this_outcol_amount = (outcol_amount
+                                  if isinstance(outcol_amount, basestring)
+                                  else outcol_amount.get(in_account, default_account_name or "Unknown"))
             out_row = {out_columns['date']: row_date,
                        this_outcol_amount: money_in - money_out}
             if out_currency_column:
-                this_out_currency_column = out_currency_column if isinstance(out_currency_column, basestring) else out_currency_column[in_account]
+                this_out_currency_column = (out_currency_column
+                                            if isinstance(out_currency_column, basestring)
+                                            else out_currency_column[in_account])
                 out_row[this_out_currency_column] = currency
             if 'original_amount' in out_columns:
                 out_row[out_columns['original_amount']] = money_in - money_out
@@ -201,13 +208,9 @@ def main():
         convert_spreadsheet(args,
                             input_sheet,
                             args.all_rows or (first_file and args.update),
-                            output_format,
-                            out_columns, out_column_defaults,
-                            outcol_amount, out_currency_column, default_account_name,
-                            output_rows)
+                            out_sheet)
         first_file = False
 
-    
     for input_file_name in infile_names:
         with open(os.path.expanduser(os.path.expandvars(input_file_name))) as infile:
             if args.verbose:

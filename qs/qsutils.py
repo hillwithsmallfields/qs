@@ -155,8 +155,10 @@ def read_process_write_fin_csv(args, config, callback, *callbackextraargs):
     header, output_rows = callback(args, config, input_format, rows, *callbackextraargs)
     if output_rows and len(output_rows) > 0:
         expanded_output_name = write_fin_csv(header, output_rows, args.output)
-    if args.verbose:
-        print("Wrote", len(output_rows), "rows to", expanded_output_name)
+        if args.verbose:
+            print("Wrote", len(output_rows), "rows to", expanded_output_name)
+    elif args.verbose:
+        print("Nothing to write")
 
 def process_rows(args, config, input_format,
                  rows,

@@ -16,11 +16,15 @@ tar xf $TARBALL -C $SCRATCH
 IMPORTDATE=$(date --iso-8601)
 echo Running version from $QS
 
+echo Testing csv_sheet.py
+
 $QS/csv_sheet.py \
     --no-default-config \
     --config $CONFIGDIR/accounts.yaml \
     --config $CONVDIR/conversions.yaml \
     $SCRATCH/handelsbanken.csv
+
+echo Testing import of Handelsbanken data to Financisto
 
 $QS/finconv.py \
     --no-default-config \
@@ -33,6 +37,8 @@ $QS/finconv.py \
 
 echo -n produced importer file
 wc -c -l $SCRATCH/converter-output.csv
+
+echo Testing import of Handelsbanken data to combined
 
 $QS/finconv.py \
     --no-default-config \
@@ -47,6 +53,8 @@ $QS/finconv.py \
 echo -n produced combined file
 wc -c -l $SCRATCH/combiner-output.csv
 
+echo Testing fintrack
+
 $QS/fintrack.py \
     --no-default-config \
     --config $CONFIGDIR/accounts.yaml \
@@ -57,6 +65,8 @@ $QS/fintrack.py \
 
 echo -n produced tracker file
 wc -c -l $SCRATCH/tracker-output.csv
+
+echo Testing findiscrep
 
 $QS/findiscrep.py \
     --no-default-config \
