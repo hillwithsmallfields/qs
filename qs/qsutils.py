@@ -61,7 +61,7 @@ def deduce_format(first_row, formats, verbose=False):
         print("Could not deduce format")
     return None
 
-def deduce_stream_format(infile, config, verbose):
+def deduce_stream_format(infile, config, verbose=False):
     sampling_countdown = 12
     input_format_name = None
     header_row_number = 0
