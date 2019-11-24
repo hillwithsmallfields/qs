@@ -21,16 +21,21 @@ class csv_sheet:
     and output, in time order.
     """
 
-    def __init__(self, config, format_name=None, input_filename=None):
+    def __init__(self,
+                 config,
+                 format_name=None,
+                 input_filename=None,
+                 default_time="01:00:00"):
         self.config = config
-        if input_file:
+        self.default_time = default_time
+        self.rows = {}
+        self.header_row_number = 0
+        if input_filename:
             self.read(input_filename)
         else:
-            self.header_row_number = 0
             self.format_name = format_name
             self.format = config['formats'][format_name] if format_name else None
             self.column_names = self.format['columns'] if self.format else {}
-            self.rows = {}
         self.row_order = None
         self.row_cursor = 0
 
@@ -47,7 +52,7 @@ class csv_sheet:
 
     def __str__(self):
         return ("<" + self.format_name + " spreadsheet with "
-                + str(length(self.rows)) + " rows>")
+                + str(len(self.rows)) + " rows>")
 
     def __repr__(self):
         return ("<spreadsheet in " + self.format_name
@@ -62,7 +67,7 @@ class csv_sheet:
         used for a row. The soonest available time after the one specified is
         used in case of clashes, which will usually retain the order in which
         rows were added, even if only dates are given."""
-        base_timestamp = base_date+"T"+base_time
+        base_timestamp = base_date+"T"+(base_time or self.default_time)
         return (self._unused_timestamp_from((datetime.datetime.strptime(base_timestamp,
                                                                        "%Y-%m-%dT%H:%M:%S")
                                             + datetime.timedelta(0,1)).isoformat())
@@ -71,7 +76,7 @@ class csv_sheet:
 
     def get_cell(self, row, canonical_colum_name, default_value=None):
         """Get a cell value from a row, using its canonical column name."""
-        return (get(row, self.column_names[canonical_colum_name], default_value)
+        return (row.get(self.column_names[canonical_colum_name], default_value)
                 if canonical_colum_name in self.column_names
                 else None)
 
@@ -85,14 +90,14 @@ class csv_sheet:
         return self.get_cell(row, 'date')+"T"+self.get_cell(row, 'time', self.default_time)
 
     def add_row(self, row):
-        self.rows[this._unused_timestamp_from(self.get_cell(row, 'date'),
+        self.rows[self._unused_timestamp_from(self.get_cell(row, 'date'),
                                               self.get_cell(row, 'time', self.default_time))] = row
 
     def read(self, filename):
         """Read a spreadsheet, deducing the type.
         A collection of header lines is scanned to find the type."""
         with open(os.path.expanduser(os.path.expandvars(filename))) as infile:
-            self.format_name, self.header_row_number = qsutils.deduce_stream_format(infile, config, args.verbose)
+            self.format_name, self.header_row_number = qsutils.deduce_stream_format(infile, self.config)
             for i in range(1, self.header_row_number):
                 _ = infile.readline()
             self.format = self.config['formats'][self.format_name]
@@ -100,9 +105,9 @@ class csv_sheet:
             self.default_time = (self.format['column_defaults'].get('time', "01:00:00")
                                  if 'column_defaults' in self.format
                                  else "01:00:00")
-            self.rows = {this._unused_timestamp_from(self.get_cell(row0, 'date'),
+            self.rows = {self._unused_timestamp_from(self.get_cell(row0, 'date'),
                                                      self.get_cell(row0, 'time', self.default_time)):
-                         {k:v for k,v in row0.iteritems() if k != ''}
+                         {k:v for k,v in row0.items() if k != ''}
                          for row0 in csv.DictReader(infile)}
 
     def write(self, filename):
