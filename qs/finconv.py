@@ -72,6 +72,12 @@ def convert_spreadsheet(args,
     output_format = output_sheet.format
     out_columns = output_format['columns']
     out_column_defaults = output_format.get('column-defaults', {})
+    if 'amount' not in out_columns:
+        print("An 'amount' label must be specified in the columns of the output format", output_format_name)
+        return 1
+    outcol_amount = out_columns['amount']
+    out_currency_column = out_columns.get('currency', None)
+    default_account_name = output_format.get('name', "Unknown")
 
     for row in input_sheet:
         if args.verbose:
@@ -97,8 +103,26 @@ def convert_spreadsheet(args,
             print("Getting time from row", row, "with time column", input_sheet.column_names.get('time', "<unspecified>"))
             row_time = input_sheet.get_cell(row, 'time', out_column_defaults.get('time', "01:02:03"))
             row_timestamp = output_sheet.unused_timestamp_from(row_date, row_time)
+
+            # The 'account' column in the input, if present, indicates
+            # which account this transaction is on.
+            #
+            # In the output, we may either:
+            #
+            # * Translate this to a single other column, in which case
+            #   the output format will specify its name as the 'amount'
+            #
+            # * Put it into one of one of several account columns,
+            #   according to the 'account' cell of the input sheet.
+            #   In this case, the 'amount' of the output format must
+            #   be a mapping from input values of the 'account' cell
+            #   to column names for the output row.
+            #
+            # The output sheet can also have an 'account' column.
+
             in_account = input_sheet.get_cell(row, 'account', default_account_name)
-            if (not isinstance(outcol_amount, basestring)) and in_account not in outcol_amount:
+            if ((not isinstance(outcol_amount, basestring))
+                and in_account not in outcol_amount):
                 print("----------------")
                 print("unrecognized in_account", in_account, "in row", row)
                 print("recognized values are:")
@@ -106,9 +130,12 @@ def convert_spreadsheet(args,
                     print("    ", colkey, colval)
             this_outcol_amount = (outcol_amount
                                   if isinstance(outcol_amount, basestring)
-                                  else outcol_amount.get(in_account, default_account_name or "Unknown"))
+                                  else outcol_amount.get(in_account, default_account_name))
             out_row = {out_columns['date']: row_date,
                        this_outcol_amount: money_in - money_out}
+            if in_account and 'account' in out_columns:
+                out_row[out_columns['account']] = in_account
+
             if out_currency_column:
                 this_out_currency_column = (out_currency_column
                                             if isinstance(out_currency_column, basestring)
@@ -118,38 +145,47 @@ def convert_spreadsheet(args,
                 out_row[out_columns['original_amount']] = money_in - money_out
             if 'original_currency' in out_columns:
                 out_row[out_columns['original_currency']] = output_format['currency']
-            if in_account and 'account' in out_columns:
-                out_row[out_columns['account']] = in_account
             if 'time' in out_columns:
                 out_row[out_columns['time']] = row_time
+            # For this group of columns, there may be some literals in
+            # the "conversions" (payee descriptions) in the format
+            # description.  This is how payee names are translated
+            # from the naming scheme of the input sheet to that of the
+            # output sheet.
             for outcol_descr in ['balance', 'category', 'parent', 'payee', 'location', 'project', 'message']:
+                # Does the canonical name map to a column name in the output sheet?
                 if outcol_descr in out_columns:
+                    # The canonical name maps to a column name in the
+                    # output sheet; write a literal there from the
+                    # payee conversion description
                     if conversion and outcol_descr in conversion:
-                        out_row[out_columns[outcol_descr]] = conversion[outcol_descr] # put a literal in this cell
+                        out_row[out_columns[outcol_descr]] = conversion[outcol_descr]
                     else:
+                        # Otherwise, does the canonical name map to an input column name, or TODO ?something I don't understand?
                         if outcol_descr in in_columns or outcol_descr in out_column_defaults:
                             output_column_naming = out_columns[outcol_descr]
                             # allow for an input column deciding which output column to use
-                            if isinstance(output_column_naming, basestring):
-                                outcol_name = output_column_naming
-                            else:
-                                outcol_name = output_column_naming[default_account_name]
+                            outcol_name = (output_column_naming
+                                           if isinstance(output_column_naming, basestring)
+                                           else output_column_naming[default_account_name]) # TODO: should this be the row's account name (where given) instead of the default one?
                             try:
-                                in_column_selector = in_columns[outcol_descr] if outcol_descr in in_columns else None
-                                extra_value = row[in_column_selector] if in_column_selector in row else out_column_defaults[outcol_descr]
-                                # initially for financisto's category parents:
-                                if isinstance(extra_value, list):
-                                    extra_value = ':'.join(extra_value)
-                                out_row[out_columns[outcol_name]] = extra_value
+                                in_column_selector = (in_columns[outcol_descr]
+                                                      if outcol_descr in in_columns
+                                                      else None)
+                                extra_value = (row[in_column_selector]
+                                               if in_column_selector in row
+                                               else out_column_defaults[outcol_descr])
+                                # the join is initially for financisto's category parents:
+                                out_row[out_columns[outcol_name]] = (':'.join(extra_value)
+                                                                     if isinstance(extra_value, list)
+                                                                     else extra_value)
                             except KeyError:
                                 print("key", outcol_name, "not defined in", out_columns)
             if args.message and 'message' in out_columns:
                 message_column = out_columns['message']
                 if message_column not in out_row or not out_row[message_column]:
                     out_row[message_column] = args.message
-            if args.verbose:
-                print("constructed", out_row)
-            output_rows[row_timestamp] = out_row
+            output_sheet.add_row(out_row)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -193,16 +229,15 @@ def main():
     else:
         infile_names = args.input_files
         outfile = args.output
-        output_format_name = args.output_format
+        output_format_name =
         if args.verbose:
             print("Will write new output file", outfile, "from input files", infile_names, "with provisional format", output_format_name)
 
-    output_rows = {}
-    first_file = True
-
     in_sheets = [csv_sheet.csv_sheet(config, input_filename=input_file_name)
                  for input_file_name in infile_names]
-    out_sheet = csv_sheet.csv_sheet(config, format_name=in_sheets[0].format_name)
+    out_sheet = csv_sheet.csv_sheet(config, format_name=(in_sheets[0].format_name
+                                                         if args.update
+                                                         else args.output_format))
 
     for input_sheet in in_sheets:
         convert_spreadsheet(args,
@@ -210,52 +245,6 @@ def main():
                             args.all_rows or (first_file and args.update),
                             out_sheet)
         first_file = False
-
-    for input_file_name in infile_names:
-        with open(os.path.expanduser(os.path.expandvars(input_file_name))) as infile:
-            if args.verbose:
-                print("Reading file", os.path.expanduser(os.path.expandvars(input_file_name)))
-            # Scan over the top rows looking for one that matches one
-            # of our known headers.  We count how many rows it took,
-            # so we can reposition the stream for the
-            # dictionary-producing reader.
-            header_row_number = 0
-            if args.format and (args.format in config['formats']):
-                input_format_name = args.format
-            else:
-                input_format_name, header_row_number = qsutils.deduce_stream_format(infile, config, args.verbose)
-
-            if first_file:      # cleared at the end of the iteration
-                if args.update:
-                    output_format_name = input_format_name
-                    print("updating, so set output_format_name to", output_format_name)
-                output_format = config['formats'][output_format_name]
-                out_columns = output_format['columns']
-                out_column_defaults = output_format.get('column-defaults', {})
-                if args.verbose:
-                    print("output format is", output_format)
-                if 'amount' not in out_columns:
-                    print("An 'amount' label must be specified in the columns of the output format", output_format_name)
-                    return 1
-                outcol_amount = out_columns['amount']
-                out_currency_column = out_columns.get('currency', None)
-                default_account_name = output_format.get('name', None)
-
-            for i in range(1, header_row_number):
-                dummy = infile.readline()
-            input_rows = [{k:v for k,v in row0.items() if k != ''} for row0 in csv.DictReader(infile)]
-
-            input_format = config['formats'][input_format_name]
-
-            convert_spreadsheet(args,
-                                input_format, input_rows,
-                                args.all_rows or (first_file and args.update),
-                                output_format,
-                                out_columns, out_column_defaults,
-                                outcol_amount, out_currency_column, default_account_name,
-                                output_rows)
-
-            first_file = False
 
     with open(os.path.expanduser(os.path.expandvars(outfile)), 'w') as outfile:
         writer = csv.DictWriter(outfile, output_format['column-sequence'])
