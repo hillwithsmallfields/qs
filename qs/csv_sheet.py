@@ -80,6 +80,16 @@ class csv_sheet:
                 if canonical_colum_name in self.column_names
                 else default_value)
 
+    def get_numeric_cell(self, row, canonical_colum_name, default_value=None):
+        """Get a numeric cell value from a row, using its canonical column name."""
+        raw_value = (row.get(self.column_names[canonical_colum_name], default_value)
+                     if canonical_colum_name in self.column_names
+                     else default_value)
+        try:
+            return float(raw_value)
+        except:
+            return default_value
+
     def set_cell(self, row, canonical_column_name, value):
         """Set a cell value from in row, using its canonical column name.
         If that column is not defined in this format, do nothing."""
@@ -121,7 +131,7 @@ class csv_sheet:
                 row = self.rows[timestamp]
                 # select only the columns required for this sheet, and
                 # also round the unfortunately-represented floats
-                writer.writerow({sk: trim_if_float(row[sk]) for sk in colseq})
+                writer.writerow({sk: trim_if_float(row.get(sk, None)) for sk in colseq})
 
 # tests
 

@@ -91,8 +91,8 @@ def convert_spreadsheet(args,
         # for which we can convert the name-on-statement to the real name
         if conversion or do_all:
             currency = row.get('currency', input_format.get('currency', "?")) # todo: this looks wrong, it shouldn't use a hardwired column name
-            money_in = input_sheet.get_cell(row, 'credits', 0)
-            money_out = input_sheet.get_cell(row, 'debits', 0)
+            money_in = input_sheet.get_numeric_cell(row, 'credits', 0)
+            money_out = input_sheet.get_numeric_cell(row, 'debits', 0)
             if in_date_column not in row:
                 print("Date column", in_date_column, "not present in row", row)
                 return 1
@@ -100,7 +100,6 @@ def convert_spreadsheet(args,
             if row_date is None:
                 print("empty date from row", row)
                 continue
-            print("Getting time from row", row, "with time column", input_sheet.column_names.get('time', "<unspecified>"))
             row_time = input_sheet.get_cell(row, 'time', out_column_defaults.get('time', "01:02:03"))
             row_timestamp = output_sheet.unused_timestamp_from(row_date, row_time)
 
@@ -121,7 +120,7 @@ def convert_spreadsheet(args,
             # The output sheet can also have an 'account' column.
 
             in_account = input_sheet.get_cell(row, 'account', default_account_name)
-            if ((not isinstance(outcol_amount, basestring))
+            if ((not isinstance(outcol_amount, str))
                 and in_account not in outcol_amount):
                 print("----------------")
                 print("unrecognized in_account", in_account, "in row", row)
@@ -129,7 +128,7 @@ def convert_spreadsheet(args,
                 for colkey, colval in outcol_amount.items():
                     print("    ", colkey, colval)
             this_outcol_amount = (outcol_amount
-                                  if isinstance(outcol_amount, basestring)
+                                  if isinstance(outcol_amount, str)
                                   else outcol_amount.get(in_account, default_account_name))
             out_row = {out_columns['date']: row_date,
                        this_outcol_amount: money_in - money_out}
@@ -138,7 +137,7 @@ def convert_spreadsheet(args,
 
             if out_currency_column:
                 this_out_currency_column = (out_currency_column
-                                            if isinstance(out_currency_column, basestring)
+                                            if isinstance(out_currency_column, str)
                                             else out_currency_column[in_account])
                 out_row[this_out_currency_column] = currency
             if 'original_amount' in out_columns:
@@ -166,8 +165,8 @@ def convert_spreadsheet(args,
                             output_column_naming = out_columns[outcol_descr]
                             # allow for an input column deciding which output column to use
                             outcol_name = (output_column_naming
-                                           if isinstance(output_column_naming, basestring)
-                                           else output_column_naming[default_account_name]) # TODO: should this be the row's account name (where given) instead of the default one?
+                                           if isinstance(output_column_naming, str)
+                                           else output_column_naming.get(default_account_name)) # TODO: should this be the row's account name (where given) instead of the default one?
                             try:
                                 in_column_selector = (in_columns[outcol_descr]
                                                       if outcol_descr in in_columns
@@ -229,31 +228,27 @@ def main():
     else:
         infile_names = args.input_files
         outfile = args.output
-        output_format_name =
         if args.verbose:
-            print("Will write new output file", outfile, "from input files", infile_names, "with provisional format", output_format_name)
+            print("Will write new output file", outfile, "from input files", infile_names)
+
+    output_format_name = (in_sheets[0].format_name
+                          if args.update
+                          else args.output_format)
+    output_format = config['formats'][output_format_name]
 
     in_sheets = [csv_sheet.csv_sheet(config, input_filename=input_file_name)
                  for input_file_name in infile_names]
-    out_sheet = csv_sheet.csv_sheet(config, format_name=(in_sheets[0].format_name
-                                                         if args.update
-                                                         else args.output_format))
+    out_sheet = csv_sheet.csv_sheet(config, format_name=output_format_name)
 
-    for input_sheet in in_sheets:
+    for sheet_number, input_sheet in enumerate(in_sheets):
         convert_spreadsheet(args,
                             input_sheet,
-                            args.all_rows or (first_file and args.update),
+                            args.all_rows or (sheet_number == 1 and args.update),
                             out_sheet)
         first_file = False
 
-    with open(os.path.expanduser(os.path.expandvars(outfile)), 'w') as outfile:
-        writer = csv.DictWriter(outfile, output_format['column-sequence'])
-        writer.writeheader()
-        for timestamp in sorted(output_rows.keys()):
-            writer.writerow({ k: (("%.2F" % v)
-                                  if type(v) is float
-                                  else v)
-                              for k, v in output_rows[timestamp].items()})
+    out_sheet.write(os.path.expanduser(os.path.expandvars(outfile)))
+
     return 0
 
 if __name__ == "__main__":
