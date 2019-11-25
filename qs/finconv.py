@@ -179,7 +179,7 @@ def convert_spreadsheet(args,
                                                                      if isinstance(extra_value, list)
                                                                      else extra_value)
                             except KeyError:
-                                print("key", outcol_name, "not defined in", out_columns)
+                                print("key", outcol_name, "for", outcol_descr, "not defined in", out_columns, "with naming scheme", output_column_naming)
             if args.message and 'message' in out_columns:
                 message_column = out_columns['message']
                 if message_column not in out_row or not out_row[message_column]:
