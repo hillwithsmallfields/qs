@@ -54,30 +54,30 @@ def find_conversion(conversions, payee_name):
 def convert_spreadsheet(args,
                         input_sheet,
                         do_all,
-                        output_sheet,
-                        # todo: reduce the number of output control arguments
-                        # out_columns, out_column_defaults,
-                        # outcol_amount, out_currency_column, default_account_name,
-                        # output_rows
-):
+                        output_sheet):
     """Process the rows of a spreadsheet, adding the results to another spreadsheet."""
     input_format = input_sheet.format
     in_columns = input_format['columns']
     in_date_column = in_columns['date']
     in_payee_column = in_columns['payee']
     in_account_column = in_columns.get('account', None)
-    default_account_name = input_format.get('name', None)
+    # This is the name of the input spreadsheet, to help trace rows
+    # that don't have an account name cell:
+    default_account_name = input_format.get('name', "Unknown")
     in_time_column = in_columns.get('time', None)
     conversions = input_format.get('conversions', {}) # lookup table for payees by name in input file to name in output file
     output_format = output_sheet.format
     out_columns = output_format['columns']
     out_column_defaults = output_format.get('column-defaults', {})
+    # The 'amount' specification in the format says what to call the
+    # output column in which the amount of this transaction is
+    # written.  It may either be a string, or a mapping from an
+    # account name (such as "MyBank current") to a string.
     if 'amount' not in out_columns:
         print("An 'amount' label must be specified in the columns of the output format", output_format_name)
         return 1
-    outcol_amount = out_columns['amount']
+    outcol_for_amount = out_columns['amount']
     out_currency_column = out_columns.get('currency', None)
-    default_account_name = output_format.get('name', "Unknown")
 
     for row in input_sheet:
         if args.verbose:
@@ -119,19 +119,21 @@ def convert_spreadsheet(args,
             #
             # The output sheet can also have an 'account' column.
 
-            in_account = input_sheet.get_cell(row, 'account', default_account_name)
-            if ((not isinstance(outcol_amount, str))
-                and in_account not in outcol_amount):
+            in_account = input_sheet.get_cell(row, 'account',
+                                              default_account_name)
+            if ((not isinstance(outcol_for_amount, str))
+                and in_account not in outcol_for_amount):
                 print("----------------")
                 print("unrecognized in_account", in_account, "in row", row)
                 print("recognized values are:")
-                for colkey, colval in outcol_amount.items():
+                for colkey, colval in outcol_for_amount.items():
                     print("    ", colkey, colval)
-            this_outcol_amount = (outcol_amount
-                                  if isinstance(outcol_amount, str)
-                                  else outcol_amount.get(in_account, default_account_name))
+            this_outcol_for_amount = (outcol_for_amount
+                                      if isinstance(outcol_for_amount, str)
+                                      else outcol_for_amount.get(in_account,
+                                                                 default_account_name))
             out_row = {out_columns['date']: row_date,
-                       this_outcol_amount: money_in - money_out}
+                       this_outcol_for_amount: money_in - money_out}
             if in_account and 'account' in out_columns:
                 out_row[out_columns['account']] = in_account
 
@@ -151,35 +153,43 @@ def convert_spreadsheet(args,
             # description.  This is how payee names are translated
             # from the naming scheme of the input sheet to that of the
             # output sheet.
-            for outcol_descr in ['balance', 'category', 'parent', 'payee', 'location', 'project', 'message']:
+            for canonical_outcol in ['balance', 'category', 'parent', 'payee', 'location', 'project', 'message']:
                 # Does the canonical name map to a column name in the output sheet?
-                if outcol_descr in out_columns:
+                if canonical_outcol in out_columns:
                     # The canonical name maps to a column name in the
                     # output sheet; write a literal there from the
                     # payee conversion description
-                    if conversion and outcol_descr in conversion:
-                        out_row[out_columns[outcol_descr]] = conversion[outcol_descr]
+                    if conversion and canonical_outcol in conversion:
+                        out_row[out_columns[canonical_outcol]] = conversion[canonical_outcol]
                     else:
-                        # Otherwise, does the canonical name map to an input column name, or TODO ?something I don't understand?
-                        if outcol_descr in in_columns or outcol_descr in out_column_defaults:
-                            output_column_naming = out_columns[outcol_descr]
-                            # allow for an input column deciding which output column to use
+                        if ( # does the canonical name map to an input column name?
+                            canonical_outcol in in_columns
+                            # does the canonically named column have a default output value?
+                            or canonical_outcol in out_column_defaults
+                           ):
+                            # the canonical column name can either map
+                            # to a string naming an output column, or
+                            # to a mapping from account name to output
+                            # column
+                            output_column_naming = out_columns[canonical_outcol]
                             outcol_name = (output_column_naming
                                            if isinstance(output_column_naming, str)
-                                           else output_column_naming.get(default_account_name)) # TODO: should this be the row's account name (where given) instead of the default one?
+                                           # allow for an input column deciding which output column to use
+                                           else output_column_naming.get(in_account))
                             try:
-                                in_column_selector = (in_columns[outcol_descr]
-                                                      if outcol_descr in in_columns
+                                # TODO: add comments with example values
+                                in_column_selector = (in_columns[canonical_outcol]
+                                                      if canonical_outcol in in_columns
                                                       else None)
                                 extra_value = (row[in_column_selector]
                                                if in_column_selector in row
-                                               else out_column_defaults[outcol_descr])
+                                               else out_column_defaults[canonical_outcol])
                                 # the join is initially for financisto's category parents:
                                 out_row[out_columns[outcol_name]] = (':'.join(extra_value)
                                                                      if isinstance(extra_value, list)
                                                                      else extra_value)
                             except KeyError:
-                                print("key", outcol_name, "for", outcol_descr, "not defined in", out_columns, "with naming scheme", output_column_naming)
+                                print("key", outcol_name, "for", canonical_outcol, "not defined in", out_columns, "with naming scheme", output_column_naming)
             if args.message and 'message' in out_columns:
                 message_column = out_columns['message']
                 if message_column not in out_row or not out_row[message_column]:
