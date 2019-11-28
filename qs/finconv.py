@@ -51,10 +51,29 @@ def find_conversion(conversions, payee_name):
             return value
     return None
 
+def add_to_period(out_row, by_periods, date_length):
+    """Add this row to the transactions for a given period.
+    The period is produced by truncating the date string.  The
+    parameter by_periods is a dictionary mapping dates to maps of
+    payees to lists of transaction rows.  Returns True if there was
+    already a transaction in that period for that payee, which can be
+    used for avoiding making duplicate entries."""
+    month = row_date[:date_length]
+    if month not in by_periods:
+        by_periods[month] = {}
+    month_by_payees = by_periods[month]
+    if payee in month_by_payees:
+        month_by_payees[payee].append(out_row)
+        return True
+    else:
+        month_by_payees[payee] = [out_row]
+        return False
+
 def convert_spreadsheet(args,
                         input_sheet,
                         do_all,
-                        output_sheet):
+                        output_sheet,
+                        by_period=None, period_string_length=7):
     """Process the rows of a spreadsheet, adding the results to another spreadsheet."""
     input_format = input_sheet.format
     in_columns = input_format['columns']
@@ -194,6 +213,9 @@ def convert_spreadsheet(args,
                 message_column = out_columns['message']
                 if message_column not in out_row or not out_row[message_column]:
                     out_row[message_column] = args.message
+            payee = output_sheet.get_cell(out_row, 'payee', "Unknown")
+            if by_period is not None:
+                add_to_period(out_row, by_months, period_string_length)
             output_sheet.add_row(out_row)
 
 def main():
@@ -250,11 +272,16 @@ def main():
                  for input_file_name in infile_names]
     out_sheet = csv_sheet.csv_sheet(config, format_name=output_format_name)
 
+    by_years = {}
+    by_months = {}
+    by_days = {}
+
     for sheet_number, input_sheet in enumerate(in_sheets):
         convert_spreadsheet(args,
                             input_sheet,
                             args.all_rows or (sheet_number == 1 and args.update),
-                            out_sheet)
+                            out_sheet,
+                            by_years, by_months, by_days)
         first_file = False
 
     out_sheet.write(os.path.expanduser(os.path.expandvars(outfile)))
