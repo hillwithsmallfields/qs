@@ -10,7 +10,7 @@ class account:
                  name,
                  currency=None,
                  opening_balance=0,
-                 transactions=None):
+                 transactions=None, accumulate=False):
         self.name = name
         self.currency = currency
         self.opening_balance = opening_balance
@@ -18,6 +18,8 @@ class account:
         self.by_day = {}
         self.by_month = {}
         self.by_year = {}
+        if transactions is not None:
+            self.add_sheet(transactions, accumulate)
 
     def add_to_period(self, sheet, row,
                       period, period_str_len,
