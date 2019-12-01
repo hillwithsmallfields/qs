@@ -13,6 +13,7 @@ def find_conversion(conversions, payee_name):
     return None
 
 def construct_canonical_row(input_sheet, row, output_sheet, out_column_defaults, message=None):
+    # todo: stop using output_sheet; get that data some other way, to make it usable from account.add_sheet
     input_format = input_sheet.format
     in_columns = input_format['columns']
     in_date_column = in_columns['date']
