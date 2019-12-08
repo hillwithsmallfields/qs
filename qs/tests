@@ -24,6 +24,14 @@ $QS/csv_sheet.py \
     --config $CONVDIR/conversions.yaml \
     $SCRATCH/handelsbanken.csv
 
+echo Testing canonical_sheet.py
+
+$QS/canonical_sheet.py \
+    --no-default-config \
+    --config $CONFIGDIR/accounts.yaml \
+    --config $CONVDIR/conversions.yaml \
+    $SCRATCH/handelsbanken.csv
+
 echo Testing import of Handelsbanken data to Financisto
 
 $QS/finconv.py \

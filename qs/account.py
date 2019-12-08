@@ -33,7 +33,6 @@ class account:
         date and the same payee, this row is not added.
         If accumulate is given, if there is an existing row for the same
         date and the same payee, this row is merged into that one."""
-        # todo: use conversion.construct_canonical_row
         row_date = sheet.get_cell(row, 'date')[:period_str_len]
         payee = sheet.get_cell(row, 'payee')
         if row_date in period:
