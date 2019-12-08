@@ -1,4 +1,4 @@
-import csv_sheet
+import canonical_sheet
 
 class account:
     """A financial account, with the transactions that have happened on it.
@@ -22,7 +22,7 @@ class account:
             self.add_sheet(transactions, accumulate)
 
     def add_to_period(self, sheet, row,
-                      period, period_str_len,
+                      by_period, period_str_len,
                       de_duplicate=False,
                       accumulate=False):
         """Add a row from a sheet to a period in an account.
@@ -33,44 +33,44 @@ class account:
         date and the same payee, this row is not added.
         If accumulate is given, if there is an existing row for the same
         date and the same payee, this row is merged into that one."""
-        row_date = sheet.get_cell(row, 'date')[:period_str_len]
-        payee = sheet.get_cell(row, 'payee')
-        if row_date in period:
-            date_transactions = period[row_date]
+        row_date = row['date'][:period_str_len]
+        payee = row['payee']
+        if row_date in by_period:
+            date_transactions = by_period[row_date]
             if payee in date_transactions:
                 if de_duplicate:
-                    amount = sheet.get_cell(row, 'amount')
+                    amount = row['amount']
                     for existing_row in date_transactions[payee]:
                         if sheet.get_cell(existing_row, 'amount') == amount:
                             return False
                 if accumulate:
-                    date_transactions[payee][0]['amount'] += sheet.get_cell(row, 'amount')
+                    date_transactions[payee][0]['amount'] += row['amount']
                 else:
                     date_transactions[payee].append(row)
             else:
                 date_transactions[payee] = [row]
         else:
-            period[row_date] = {payee: [row]}
+            by_period[row_date] = {payee: [row]}
         return True
 
     def add_sheet(self, sheet,
-                  de_duplicate_by_day=False,
-                  de_duplicate_by_month=False,
-                  de_duplicate_by_year=False,
+                  de_duplicate,
                   accumulate=False):
-        """Add all the rows of the given sheet to this account.
-        No kind of de-duplication is done."""
+        """Add all the rows of the given sheet to this account."""
         for row in sheet.iter():
             self.all.append(row)
-            self.add_to_period(sheet, row,
-                               self.by_day, 10,
-                               de_duplicate=de_duplicate_by_day,
-                               accumulate=accumulate)
-            self.add_to_period(sheet, row,
-                               self.by_month, 7,
-                               de_duplicate=de_duplicate_by_month,
-                               accumulate=accumulate)
-            self.add_to_period(sheet, row,
-                               self.by_year, 4,
-                               de_duplicate=de_duplicate_by_year,
-                               accumulate=accumulate)
+            if de_duplicate == 'day':
+                self.add_to_period(sheet, row,
+                                   self.by_day, 10,
+                                   de_duplicate=de_duplicate_by_day,
+                                   accumulate=accumulate)
+            elif de_duplicate == 'month':
+                self.add_to_period(sheet, row,
+                                   self.by_month, 7,
+                                   de_duplicate=de_duplicate_by_month,
+                                   accumulate=accumulate)
+            elif de_duplicate == 'year':
+                self.add_to_period(sheet, row,
+                                   self.by_year, 4,
+                                   de_duplicate=de_duplicate_by_year,
+                                   accumulate=accumulate)
