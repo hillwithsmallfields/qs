@@ -157,8 +157,10 @@ def main():
     for filename in args.input_files:
         sheet = csv_sheet(config, input_filename=filename)
         print("sheet from", filename, "is", sheet)
+        print("---- begin", sheet.format_name, "rows ----")
         for row in iter(sheet):
             print(row)
+        print("---- end", sheet.format_name, "rows ----")
 
 if __name__ == "__main__":
     main()

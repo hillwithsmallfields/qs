@@ -162,9 +162,11 @@ def main():
     for filename in args.input_files:
         print("reading and converting", filename)
         sheet = canonical_sheet(config, input_sheet=filename)
-        print("sheet from", filename, "is", sheet)
+        print("canonical sheet from", filename, "is", sheet)
+        print("---- begin canonical rows ----")
         for row in sheet:
             print(row)
+        print("---- end canonical rows ----")
 
 if __name__ == "__main__":
     main()
