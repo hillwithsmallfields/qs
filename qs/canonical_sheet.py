@@ -26,22 +26,31 @@ class canonical_sheet:
     def __init__(self,
                  config,
                  input_sheet=None,
-                 reference_sheet=None):
-        print("Making canonical_sheet with input_sheet", input_sheet)
+                 convert_all=False,
+                 reference_sheet=None,
+                 verbose=False):
+        if verbose:
+            print("Making canonical_sheet with input_sheet", input_sheet)
         self.rows = {}
         self.row_order = None
         self.row_cursor = 0
         if isinstance(input_sheet, str):
-            print("Reading", input_sheet, "for conversion")
+            if verbose:
+                print("Reading", input_sheet, "for conversion")
             input_sheet = csv_sheet.csv_sheet(config, input_filename=input_sheet)
         if isinstance(input_sheet, csv_sheet.csv_sheet):
-            print("converting", input_sheet)
+            if verbose:
+                print("converting", input_sheet)
             for in_row in input_sheet:
                 can_row = self.row_to_canonical(input_sheet, in_row,
-                                                reference_sheet=reference_sheet)
-                print("made", can_row, "from", in_row)
+                                                reference_sheet=reference_sheet,
+                                                convert_all=convert_all,
+                                                verbose=verbose)
+                if verbose:
+                    print("made", can_row, "from", in_row)
                 if can_row:
-                    print("storing", can_row)
+                    if verbose:
+                        print("storing", can_row)
                     self.rows[can_row['timestamp']] = can_row
 
     def __iter__(self):
@@ -55,6 +64,9 @@ class canonical_sheet:
             raise StopIteration
         return self.rows[self.row_order[self.row_cursor]]
 
+    def __len__(self):
+        return len(self.rows)
+
     def __str__(self):
         return ("<canonical spreadsheet with "
                 + str(len(self.rows)) + " rows>")
@@ -64,11 +76,11 @@ class canonical_sheet:
                          convert_all=False,
                          out_column_defaults=None,
                          reference_sheet=None,
-                         message=None):
+                         message=None,
+                         verbose=False):
         """Convert an input row from its own format to our standard format.
         If convert_all is False, convert only the rows with payees for whom
         the input sheet's format configuration has a conversion entry."""
-        print("converting a row of", input_sheet)
         if reference_sheet is None:
             reference_sheet = input_sheet
         input_format = input_sheet.format
@@ -76,11 +88,13 @@ class canonical_sheet:
         in_date_column = in_columns['date']
         in_account_column = in_columns.get('account', None)
         if in_date_column not in row:
-            print("Date column", in_date_column, "not present in row", row)
+            if verbose:
+                print("Date column", in_date_column, "not present in row", row)
             return None
         row_date = qsutils.normalize_date(input_sheet.get_cell(row, 'date', None))
         if row_date is None:
-            print("empty date from row", row)
+            if verbose:
+                print("empty date from row", row)
             return None
         # This is the name of the input spreadsheet, to help trace rows
         # that don't have an account name cell:
@@ -90,9 +104,12 @@ class canonical_sheet:
         payee_name = input_sheet.get_cell(row, 'payee', None)
         conversion = find_conversion(conversions, payee_name)
         if conversion is None and not convert_all:
+            if verbose:
+                print("no conversion for row", row)
             return None
         if payee_name is None:
-            print("payee field missing from row", row)
+            if verbose:
+                print("payee field missing from row", row)
             return None
         row_time = input_sheet.get_cell(row, 'time', ("01:02:03"
                                                       if out_column_defaults is None
@@ -160,13 +177,14 @@ def main():
                                  DEFAULT_CONF if not args.no_default_config else None,
                                  *args.config)
     for filename in args.input_files:
-        print("reading and converting", filename)
-        sheet = canonical_sheet(config, input_sheet=filename)
-        print("canonical sheet from", filename, "is", sheet)
-        print("---- begin canonical rows ----")
-        for row in sheet:
-            print(row)
-        print("---- end canonical rows ----")
+        for all_rows in (False, True):
+            print("reading and converting", filename)
+            sheet = canonical_sheet(config, input_sheet=filename, convert_all=all_rows)
+            print("canonical sheet from", filename, "is", sheet)
+            print("---- begin", len(sheet), "all" if all_rows else "filtered", "canonical rows ----")
+            for row in sheet:
+                print(row)
+            print("---- end canonical rows ----")
 
 if __name__ == "__main__":
     main()

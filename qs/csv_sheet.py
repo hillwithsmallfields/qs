@@ -50,6 +50,9 @@ class csv_sheet:
             raise StopIteration
         return self.rows[self.row_order[self.row_cursor]]
 
+    def __len__(self):
+        return len(self.rows)
+
     def __str__(self):
         return ("<" + self.format_name + " spreadsheet with "
                 + str(len(self.rows)) + " rows>")
@@ -157,7 +160,7 @@ def main():
     for filename in args.input_files:
         sheet = csv_sheet(config, input_filename=filename)
         print("sheet from", filename, "is", sheet)
-        print("---- begin", sheet.format_name, "rows ----")
+        print("---- begin", len(sheet), sheet.format_name, "rows ----")
         for row in iter(sheet):
             print(row)
         print("---- end", sheet.format_name, "rows ----")
