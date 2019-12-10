@@ -221,3 +221,25 @@ If an existing Weight Tracker file is given, any entries in it are
 skipped from the output, as the point of the program is to fill in
 gaps in the app's data from other data (e.g. from before I started to
 use the app).
+
+Program internals
+=================
+
+"format" generally refers to a set of column headings, such as that
+for the statements from a particular bank.
+
+csv_sheet.py handles reading and writing of spreadsheets in their
+native formats.
+
+canonical_sheet.py converts spreadsheets to a standard format that
+other parts of the package use internally.  This is close to the
+format used by the "financisto" mobile app.
+
+formatted_sheet.py handles conversions back from the canonical format.
+
+account.py adds the transaction handling for an account.
+
+payee.py handles the transactions to and from a particular entity for
+a particular account.  If you make transactions with a real-world
+entity from multiple accounts, these are separate payees from this
+class's view.
