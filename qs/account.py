@@ -59,3 +59,23 @@ class account:
                     or not static_payee.already_seen(when, how_much)):
                     row_payee.add_transaction(when, how_much)
                     self.all_transactions.append(row)
+
+    def accumulate_sheet(self, original_sheet):
+        """Fill this sheet from original_sheet grouping together all the payments on the same day."""
+        # todo: check handling of first and last entries, what happens with singletons, etc
+        for orig_payee in original_sheet.payees:
+            acc_payee = payee.payee(orig_payee.name)
+            sequence = sorted(orig_payee.by_timestamp.keys())
+            if len(sequence) == 0:
+                continue
+            day = sequence[0].day # todo: this should be a timestamp itself
+            day_total = orig_payee.by_timestamp[sequence[0]]
+            for ts in sequence[1:]:
+                if ts.day == day:
+                    day_total += orig_payee.by_timestamp[ts]
+                else:
+                    acc_payee.add_transaction(day, day_total)
+                    day = ts.day
+                    day_total = orig_payee.by_timestamp[ts]
+            # Record the final day's transactions
+            acc_payee.add_transaction(day, day_total)
