@@ -10,25 +10,30 @@ class payee:
         self.allowable_before = datetime.timedelta(3, 0)
         self.allowable_after = datetime.timedelta(1, 0)
 
-    def apparently_same(self, timestamp, of_that_amount):
+    def timestamp_matches_one_in_list(self, timestamp, of_that_amount):
         """Return whether there are any transactions in a timestamp list near
         enough in time to count as the same."""
         for when in of_that_amount:
             delta = when.subtract(timestamp)
             if ((delta == 0)
                 or (delta > 0 and delta < self.allowable_after)
-                or -delta < self.allowable_before:
+                or (-delta < self.allowable_before)):
                 return True
         return False
 
-    def add_transaction(self, timestamp, amount):
-        """Record a transaction with this payee, if not already done.
-        If the transaction appears to have been done already,
-        ignore it and return False.
-        Return True if the transaction was newly recorded."""
+    def already_seen(self, timestamp, amount):
+        """Return whether a transaction of a given amount, around a given
+        time, matches any to this payee.
+        """
         sized = self.by_amount.get(amount, None)
-        if sized and self.apparently_same(timestamp, sized):
-            return False:
+        if sized and self.timestamp_matches_one_in_list(timestamp, sized):
+            return True:
+
+    def add_transaction(self, timestamp, amount):
+        """Record a transaction with this payee.
+        You should first check that it is not a duplicate,
+        using self.already_seen."""
+        sized = self.by_amount.get(amount, None)
         if amount in self.by_amount:
             self.by_amount[amount].append(timestamp)
         else:
@@ -37,4 +42,3 @@ class payee:
             self.by_timestamp[timestamp].append(amount)
         else:
             self.by_timestamp[timestamp] = [amount]
-        return True
