@@ -44,6 +44,10 @@ class account:
         """
 
         for row in sheet.iter():
+
+            # TODO: filter rows according to whether they are for this account
+
+
             payee_name = row['payee']
             row_payee = self.payees.get(payee_name, None)
             if row_payee is None:
