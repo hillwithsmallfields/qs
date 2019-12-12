@@ -56,7 +56,7 @@ def main():
 
     qsutils.process_fin_csv(args, qsutils.load_config(args.verbose,
                                                       DEFAULT_CONF if not args.no_default_config else None,
-                                                      *args.config),
+                                                      *args.config or ()),
                             finsplit_setup,
                             finsplit_row,
                             finsplit_tidyup)
