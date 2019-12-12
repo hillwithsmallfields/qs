@@ -70,9 +70,9 @@ class csv_sheet:
         used for a row. The soonest available time after the one specified is
         used in case of clashes, which will usually retain the order in which
         rows were added, even if only dates are given."""
-        base_timestamp = base_date+"T"+(base_time or self.default_time)
-        return (self.unused_timestamp_from((datetime.datetime.strptime(base_timestamp,
-                                                                       "%Y-%m-%dT%H:%M:%S")
+        base_timestamp = datetime.datetime.strptime(base_date+"T"+(base_time or self.default_time),
+                                                    "%Y-%m-%dT%H:%M:%S")
+        return (self.unused_timestamp_from((base_timestamp
                                             + datetime.timedelta(0,1)).isoformat())
                 if base_timestamp in self.rows
                 else base_timestamp)
