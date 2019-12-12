@@ -111,6 +111,9 @@ def main():
                         help="""Message to put in the note field of any rows which don't already have something there.""")
     parser.add_argument("-v", "--verbose",
                         action='store_true')
+    parser.add_argument("-r", "--reference", # TODO: for outfile_handling?
+                        default=None,
+                        help="""Name of the reference spreadsheet.""")
 
     outfile_handling = parser.add_mutually_exclusive_group(required=True)
     outfile_handling.add_argument("-o", "--output",
@@ -128,10 +131,12 @@ def main():
     if args.update:
         print("Will update", args.update, "from input files", infile_names)
         infile_names = [args.update] + args.input_files
+        reference_filename = args.update
         outfile = args.update
     else:
         infile_names = args.input_files
         outfile = args.output
+        reference_filename = args.reference
         if args.verbose:
             print("Will write new output file", outfile, "from input files", infile_names)
 
@@ -140,6 +145,7 @@ def main():
                           else args.output_format)
     output_format = config['formats'][output_format_name]
 
+    reference_sheet = account.account(transactions=account.account(csv_sheet.csv_sheet(config, input_filename=reference_filename)), accumulate=True)
     in_sheets = [csv_sheet.csv_sheet(config, input_filename=input_file_name)
                  for input_file_name in infile_names]
     out_sheet = csv_sheet.csv_sheet(config, format_name=output_format_name)
