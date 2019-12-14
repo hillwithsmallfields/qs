@@ -70,12 +70,12 @@ class csv_sheet:
         used for a row. The soonest available time after the one specified is
         used in case of clashes, which will usually retain the order in which
         rows were added, even if only dates are given."""
-        base_timestamp = datetime.datetime.strptime(base_date+"T"+(base_time or self.default_time),
-                                                    "%Y-%m-%dT%H:%M:%S")
-        return (self.unused_timestamp_from((base_timestamp
-                                            + datetime.timedelta(0,1)).isoformat())
-                if base_timestamp in self.rows
-                else base_timestamp)
+        base_time = (base_time or self.default_time)
+        timestamp = datetime.datetime.strptime(base_date+"T"+base_time,
+                                               "%Y-%m-%dT%H:%M:%S")
+        while timestamp in self.rows:
+            timestamp += datetime.timedelta(0,1)
+        return timestamp
 
     def get_cell(self, row, canonical_colum_name, default_value=None):
         """Get a cell value from a row, using its canonical column name."""
@@ -157,6 +157,7 @@ def main():
                                  qsutils.DEFAULT_CONF if not args.no_default_config else None,
                                  *args.config)
     for filename in args.input_files:
+        print("reading test data from", filename)
         sheet = csv_sheet(config, input_filename=filename)
         print("sheet from", filename, "is", sheet)
         print("---- begin", len(sheet), sheet.format_name, "rows ----")
