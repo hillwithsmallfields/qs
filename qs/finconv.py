@@ -42,8 +42,6 @@ import qsutils
 
 # todo: add to format 'accounts' which indicates which of the columns are accounts
 
-DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
-
 def add_to_period(out_row, by_periods, date_length):
     """Add this row to the transactions for a given period.
     The period is produced by truncating the date string.  The
@@ -125,7 +123,7 @@ def main():
     args = parser.parse_args()
 
     config = qsutils.load_config(args.verbose,
-                                 DEFAULT_CONF if not args.no_default_config else None,
+                                 qsutils.DEFAULT_CONF if not args.no_default_config else None,
                                  *args.config or ())
 
     if args.update:
@@ -138,7 +136,7 @@ def main():
         outfile = args.output
         reference_filename = args.reference
         if args.verbose:
-            print("Will write new output file", outfile, "from input files", infile_names)
+            print("Will write new output file", outfile, "from input files", infile_names, "using", reference_filename, "as reference")
 
     output_format_name = (in_sheets[0].format_name
                           if args.update

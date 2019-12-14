@@ -28,6 +28,8 @@ def rec_update(d, u, i=""):
             d[k] = v
     return d
 
+DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
+
 def load_config(verbose, *config_files):
     """Load config files.
     You can give None and it will be skipped."""

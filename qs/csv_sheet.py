@@ -139,7 +139,6 @@ class csv_sheet:
 # tests
 
 import argparse
-DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
 
 def main():
     """Tests for this module."""
@@ -155,7 +154,7 @@ def main():
     parser.add_argument("input_files", nargs='*')
     args = parser.parse_args()
     config = qsutils.load_config(args.verbose,
-                                 DEFAULT_CONF if not args.no_default_config else None,
+                                 qsutils.DEFAULT_CONF if not args.no_default_config else None,
                                  *args.config)
     for filename in args.input_files:
         sheet = csv_sheet(config, input_filename=filename)

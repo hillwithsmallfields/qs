@@ -9,8 +9,6 @@ import qsutils
 
 # See notes in finconv.py for config file format
 
-DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config",
@@ -37,7 +35,7 @@ def main():
     args = parser.parse_args()
 
     config = qsutils.load_config(args.verbose,
-                                 DEFAULT_CONF if not args.no_default_config else None,
+                                 qsutils.DEFAULT_CONF if not args.no_default_config else None,
                                  *args.config or ())
 
     if args.update:

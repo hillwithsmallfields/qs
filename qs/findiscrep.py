@@ -8,8 +8,6 @@ import qsutils
 
 # See notes in finconv.py for config file format
 
-DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
-
 def find_discrepancies_row_callback(timestamp, row, output_rows, scratch):
     output_row = {}
     comparing_dates = scratch['comparing_dates']
@@ -70,7 +68,7 @@ def main():
     args = parser.parse_args()
 
     qsutils.process_fin_csv(args, qsutils.load_config(args.verbose,
-                                                      DEFAULT_CONF if not args.no_default_config else None,
+                                                      qsutils.DEFAULT_CONF if not args.no_default_config else None,
                                                       *args.config or ()),
                             find_discrepancies_setup,
                             find_discrepancies_row_callback,

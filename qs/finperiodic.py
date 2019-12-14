@@ -10,8 +10,6 @@ import qsutils
 
 # See notes in finconv.py for config file format
 
-DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
-
 secs_per_day = 24 * 60 * 60
 
 def finperiodic_setup(args, config, input_format):
@@ -72,7 +70,7 @@ def main():
     # todo: deduce format of input file; should normally be financisto, or have similar data
 
     qsutils.process_fin_csv(args, qsutils.load_config(args.verbose,
-                                                      DEFAULT_CONF if not args.no_default_config else None,
+                                                      qsutils.DEFAULT_CONF if not args.no_default_config else None,
                                                       *args.config or ()),
                             finperiodic_setup,
                             finperiodic_row,

@@ -9,8 +9,6 @@ import qsutils
 
 # See notes in finconv.py for config file format
 
-DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
-
 def finsplit_setup(args, config, input_format):
     in_columns = input_format['columns']
     print "in_columns are", in_columns
@@ -55,7 +53,7 @@ def main():
     args = parser.parse_args()
 
     qsutils.process_fin_csv(args, qsutils.load_config(args.verbose,
-                                                      DEFAULT_CONF if not args.no_default_config else None,
+                                                      qsutils.DEFAULT_CONF if not args.no_default_config else None,
                                                       *args.config or ()),
                             finsplit_setup,
                             finsplit_row,

@@ -7,8 +7,6 @@ import csv_sheet
 import datetime
 import qsutils
 
-DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
-
 weekday_names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 def main():
@@ -33,7 +31,7 @@ def main():
     parser.add_argument("input_files", nargs='*')
     args = parser.parse_args()
     config = qsutils.load_config(args.verbose,
-                                 DEFAULT_CONF if not args.no_default_config else None,
+                                 qsutils.DEFAULT_CONF if not args.no_default_config else None,
                                  *args.config or ())
     with open(args.output, 'w') as outstream:
         writer = csv.DictWriter(outstream, fieldnames=['File', 'From date', 'From weekday', 'To', 'Period'])
