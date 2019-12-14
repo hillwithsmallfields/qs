@@ -3,12 +3,12 @@
 import canonical_sheet
 import csv_sheet
 
-class formatted_sheet(csv_sheet):
+class formatted_sheet(csv_sheet.csv_sheet):
 
     def __init__(self,
                  config,
                  format_name,
                  canonical_input):
-        super().__init__()
-        for row_timestamp, row in canonical_input.items():
+        super().__init__(config, format_name=format_name)
+        for row_timestamp, row in canonical_input:
             self.rows[row_timestamp] = canonical_input.row_from_canonical(self.format, row)

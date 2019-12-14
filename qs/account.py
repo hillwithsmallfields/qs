@@ -30,13 +30,31 @@ class account:
         self.all_transactions = []
         self.parent = parent_account
         self.payees = {}
-        if isinstance(transactions, canonical_sheet):
+        if isinstance(transactions, canonical_sheet.canonical_sheet):
             self.add_sheet(transactions, accumulate)
         elif isinstance(transactions, account) and accumulate:
             self.accumulate_sheet(transactions)
 
+    def add_row(self, row):
+        payee_name = row['payee']
+        row_payee = self.payees.get(payee_name, None)
+        if row_payee is None:
+            row_payee = payee.payee(payee_name)
+            self.payees[payee_name] = row_payee
+        when = row['timestamp']
+        how_much = row['amount']
+        if not row_payee.already_seen(when, how_much):
+            static_payee = (self.parent.payees.get(payee_name, None)
+                            if self.parent
+                            else None)
+            if (static_payee is None
+                or not static_payee.already_seen(when, how_much)):
+                row_payee.add_transaction(when, how_much)
+                self.all_transactions.append(row)
+
+
     def add_sheet(self, sheet,
-                  de_duplicate,
+                  de_duplicate=False,
                   accumulate=False):
         """Add all the rows of the given sheet to this account.
 
@@ -47,22 +65,8 @@ class account:
 
             # TODO: filter rows according to whether they are for this account
 
+            self.add_row(row)
 
-            payee_name = row['payee']
-            row_payee = self.payees.get(payee_name, None)
-            if row_payee is None:
-                row_payee = payee.payee(payee_name)
-                self.payees[payee_name] = row_payee
-            when = row['timestamp']
-            how_much = row['amount']
-            if not row_payee.already_seen(when, how_much):
-                static_payee = (self.parent.payees.get(payee_name, None)
-                                if self.parent
-                                else None)
-                if (static_payee is None
-                    or not static_payee.already_seen(when, how_much)):
-                    row_payee.add_transaction(when, how_much)
-                    self.all_transactions.append(row)
 
     def accumulate_sheet(self, original_sheet):
         """Fill this sheet from original_sheet grouping together all the payments on the same day."""

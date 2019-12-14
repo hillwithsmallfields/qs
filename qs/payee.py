@@ -14,9 +14,9 @@ class payee:
         """Return whether there are any transactions in a timestamp list near
         enough in time to count as the same."""
         for when in of_that_amount:
-            delta = when.subtract(timestamp)
-            if ((delta == 0)
-                or (delta > 0 and delta < self.allowable_after)
+            delta = when - timestamp
+            if (when == timestamp
+                or (when > timestamp and delta < self.allowable_after)
                 or (-delta < self.allowable_before)):
                 return True
         return False
@@ -27,7 +27,7 @@ class payee:
         """
         sized = self.by_amount.get(amount, None)
         if sized and self.timestamp_matches_one_in_list(timestamp, sized):
-            return True:
+            return True
 
     def add_transaction(self, timestamp, amount):
         """Record a transaction with this payee.

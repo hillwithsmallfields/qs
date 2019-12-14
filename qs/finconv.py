@@ -5,11 +5,12 @@
 # statements to my financisto (Android app) accounts, as I haven't
 # been in the habit of doing them as they come in.
 
+import account
 import argparse
-import conversion
 import csv
-import csv_sheet
+import canonical_sheet
 import datetime
+import formatted_sheet
 import os
 import qsutils
 
@@ -39,54 +40,6 @@ import qsutils
 #     columns:
 #       date: date
 #       payee: payee
-
-# todo: add to format 'accounts' which indicates which of the columns are accounts
-
-def add_to_period(out_row, by_periods, date_length):
-    """Add this row to the transactions for a given period.
-    The period is produced by truncating the date string.  The
-    parameter by_periods is a dictionary mapping dates to maps of
-    payees to lists of transaction rows.  Returns True if there was
-    already a transaction in that period for that payee, which can be
-    used for avoiding making duplicate entries."""
-    month = row_date[:date_length]
-    if month not in by_periods:
-        by_periods[month] = {}
-    month_by_payees = by_periods[month]
-    if payee in month_by_payees:
-        month_by_payees[payee].append(out_row)
-        return True
-    else:
-        month_by_payees[payee] = [out_row]
-        return False
-
-def convert_spreadsheet(input_sheet,
-                        do_all,
-                        output_sheet,
-                        by_period=None, period_string_length=7,
-                        verbose=False, message=None):
-    """Process the rows of a spreadsheet, adding the results to another spreadsheet."""
-    # The 'amount' specification in the format says what to call the
-    # output column in which the amount of this transaction is
-    # written.  It may either be a string, or a mapping from an
-    # account name (such as "MyBank current") to a string.
-    if 'amount' not in output_sheet.format['columns']:
-        print("An 'amount' label must be specified in the columns of the output format",
-              output_sheet.format.format_name)
-        return 1
-
-    for row in input_sheet:
-        if verbose:
-            print("processing transaction row", row)
-        out_row = conversion.construct_canonical_row(
-            input_sheet, row,
-            output_sheet, output_sheet.format.get('column-defaults', {}),
-            message)
-        if out_row is None:
-            continue
-        if by_period is not None:
-            add_to_period(out_row, by_months, period_string_length)
-        output_sheet.add_row(out_row)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -143,23 +96,29 @@ def main():
                           else args.output_format)
     output_format = config['formats'][output_format_name]
 
-    reference_sheet = account.account(transactions=account.account(csv_sheet.csv_sheet(config, input_filename=reference_filename)), accumulate=True)
-    in_sheets = [csv_sheet.csv_sheet(config, input_filename=input_file_name)
+    accounts = {}
+
+    reference_sheet = canonical_sheet.canonical_sheet(
+        config,
+        input_sheet=reference_filename,
+        convert_all=True)
+    in_sheets = [canonical_sheet.canonical_sheet(config,
+                                                 input_sheet=input_file_name)
                  for input_file_name in infile_names]
-    out_sheet = csv_sheet.csv_sheet(config, format_name=output_format_name)
+    out_sheet = canonical_sheet.canonical_sheet(
+        config)
 
-    by_years = {}
-    by_months = {}
-    by_days = {}
+    for in_sheet in in_sheets:
+        for row in in_sheet:
+            account_name = row['account']
+            print("    account", account_name, "row", str(row)[:72], "...")
+            if account not in accounts:
+                accounts[account] = account.account(account_name)
+            accounts[account].add_row(row)
 
-    for sheet_number, input_sheet in enumerate(in_sheets):
-        convert_spreadsheet(input_sheet,
-                            args.all_rows or (sheet_number == 1 and args.update),
-                            out_sheet,
-                            verbose=args.verbose, message=args.message)
-        first_file = False
-
-    out_sheet.write(os.path.expanduser(os.path.expandvars(outfile)))
+    formatted_sheet.formatted_sheet(config,
+                                    output_format_name,
+                                    out_sheet).write(os.path.expanduser(os.path.expandvars(outfile)))
 
     return 0
 

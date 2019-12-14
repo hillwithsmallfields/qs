@@ -85,46 +85,40 @@ class canonical_sheet:
             reference_sheet = input_sheet
         input_format = input_sheet.format
         in_columns = input_format['columns']
-        in_date_column = in_columns['date']
-        in_account_column = in_columns.get('account', None)
-        if in_date_column not in row:
-            if verbose:
-                print("Date column", in_date_column, "not present in row", row)
-            return None
         row_date = qsutils.normalize_date(input_sheet.get_cell(row, 'date', None))
         if row_date is None:
             if verbose:
                 print("empty date from row", row)
             return None
-        # This is the name of the input spreadsheet, to help trace rows
-        # that don't have an account name cell:
-        default_account_name = input_format.get('name', "Unknown")
-        in_time_column = in_columns.get('time', None)
-        conversions = input_format.get('conversions', {}) # lookup table for payees by name in input file to canonical name
         payee_name = input_sheet.get_cell(row, 'payee', None)
-        conversion = find_conversion(conversions, payee_name)
-        if conversion is None and not convert_all:
-            if verbose:
-                print("no conversion for row", row)
-            return None
         if payee_name is None:
             if verbose:
                 print("payee field missing from row", row)
             return None
-        row_time = input_sheet.get_cell(row, 'time', ("01:02:03"
-                                                      if out_column_defaults is None
-                                                      else out_column_defaults.get('time', "01:02:03")))
+        conversion = find_conversion(input_format.get('conversions', {}),
+                                     payee_name)
+        if conversion is None and not convert_all:
+            if verbose:
+                print("no conversion for row", row)
+            return None
+        row_time = input_sheet.get_cell(
+            row, 'time', ("01:02:03"
+                          if out_column_defaults is None
+                          else out_column_defaults.get('time', "01:02:03")))
         money_in = input_sheet.get_numeric_cell(row, 'credits', 0)
         money_out = input_sheet.get_numeric_cell(row, 'debits', 0)
-        out_row = {'date': row_date,
-                   'time': row_time,
-                   'timestamp': reference_sheet.unused_timestamp_from(row_date, row_time),
-                   'amount': money_in - money_out,
-                   'account': input_sheet.get_cell(row, 'account',
-                                                   default_account_name),
-                   'currency': row.get('currency', input_format.get('currency', "?")),
-                   'original_amount': money_in - money_out,
-                   'original_currency': row.get('original_currency', input_format.get('original_currency', "?"))}
+        out_row = {
+            'date': row_date,
+            'time': row_time,
+            'timestamp': reference_sheet.unused_timestamp_from(row_date, row_time),
+            'amount': money_in - money_out,
+            'account': (input_sheet.get_cell(row, 'account', None)
+                        or input_format.get('name', "Unknown")),
+            'currency': row.get('currency',
+                                input_format.get('currency', "?")),
+            'original_amount': money_in - money_out,
+            'original_currency': row.get('original_currency',
+                                         input_format.get('original_currency', "?"))}
         if message:
             out_row['message'] = message
         # For this group of columns, there may be some literals in
@@ -132,7 +126,8 @@ class canonical_sheet:
         # description.  This is how payee names are translated
         # from the naming scheme of the input sheet to that of the
         # output sheet.
-        for canonical_outcol in ['balance', 'category', 'parent', 'payee', 'location', 'project', 'message']:
+        for canonical_outcol in ['balance', 'category', 'parent',
+                                 'payee', 'location', 'project', 'message']:
             # does the canonically named column have a default output value?
             if conversion and canonical_outcol in conversion:
                 out_row[canonical_outcol] = conversion[canonical_outcol]
