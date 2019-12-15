@@ -96,26 +96,31 @@ def main():
                           else args.output_format)
     output_format = config['formats'][output_format_name]
 
+    base_accounts = {}
     accounts = {}
 
-    print("loading", base_filename, "as base sheet")
+    if args.verbose:
+        print("loading", base_filename, "as base sheet")
     base_sheet = canonical_sheet.canonical_sheet(
         config,
         input_sheet=base_filename,
-        convert_all=True)
+        convert_all=True,
+        verbose=args.verbose)
     for row in base_sheet:
         account_name = row['account']
         if account_name not in accounts:
             accounts[account_name] = account.account(account_name)
-        accounts[account_name].add_row(row)
+        base_accounts[account_name].add_row(row)
 
-    print("loading", infile_names, "as input sheets")
+    if args.verbose:
+        print("loading", infile_names, "as input sheets")
     in_sheets = [canonical_sheet.canonical_sheet(config,
                                                  input_sheet=input_file_name,
+                                                 convert_all=True,
                                                  verbose=args.verbose)
                  for input_file_name in infile_names]
-    out_sheet = canonical_sheet.canonical_sheet(
-        config)
+
+    out_sheet = canonical_sheet.canonical_sheet(config)
 
     for in_sheet in in_sheets:
         for row in in_sheet:

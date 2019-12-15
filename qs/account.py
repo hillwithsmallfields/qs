@@ -76,36 +76,29 @@ class account:
                 row_payee.add_transaction(when, how_much)
                 self.all_transactions.append(row)
 
-    def add_sheet(self, sheet,
-                  de_duplicate=False,
-                  accumulate=False):
-        """Add all the rows of the given sheet to this account.
-
-        If accumulate is given, all the row amounts for that payee for that period are summed.
-        """
-
+    def add_sheet(self, sheet):
+        """Add all the rows of the given sheet to this account."""
         for row in sheet.iter():
-
             # TODO: filter rows according to whether they are for this account
-
             self.add_row(row)
 
-    def accumulate_sheet(self, original_sheet):
-        """Fill this sheet from original_sheet grouping together all the payments on the same day."""
-        # todo: check handling of first and last entries, what happens with singletons, etc
-        for orig_payee in original_sheet.payees:
-            acc_payee = payee.payee(orig_payee.name)
-            sequence = sorted(orig_payee.by_timestamp.keys())
-            if len(sequence) == 0:
+    def combine_same_day_entries(self, original_sheet):
+        """For each payee, convert all the entries on the same day to one total."""
+        for name, orig_payee in original_sheet.payees.items():
+            by_timestamp = orig_payee.by_timestamp
+            if len(by_timestamp) <= 1:
                 continue
-            day = sequence[0].day # todo: this should be a timestamp itself
-            day_total = orig_payee.by_timestamp[sequence[0]]
-            for ts in sequence[1:]:
+            acc_payee = payee.payee(orig_payee.name)
+            timestamps = sorted(by_timestamp.keys())
+            day = timestamps[0].day
+            day_total = by_timestamp[timestamps[0]]
+            for ts in timestamps[1:]:
                 if ts.day == day:
-                    day_total += orig_payee.by_timestamp[ts]
+                    day_total += by_timestamp[ts]
                 else:
                     acc_payee.add_transaction(day, day_total)
                     day = ts.day
-                    day_total = orig_payee.by_timestamp[ts]
+                    day_total = by_timestamp[ts]
             # Record the final day's transactions
             acc_payee.add_transaction(day, day_total)
+            original_sheet.payees[name] = acc_payee
