@@ -62,9 +62,9 @@ def main():
                         help="""Message to put in the note field of any rows which don't already have something there.""")
     parser.add_argument("-v", "--verbose",
                         action='store_true')
-    parser.add_argument("-r", "--reference", # TODO: for outfile_handling?
+    parser.add_argument("-r", "--base", # TODO: for outfile_handling?
                         default=None,
-                        help="""Name of the reference spreadsheet.""")
+                        help="""Name of the base spreadsheet.""")
 
     outfile_handling = parser.add_mutually_exclusive_group(required=True)
     outfile_handling.add_argument("-o", "--output",
@@ -82,14 +82,14 @@ def main():
     if args.update:
         print("Will update", args.update, "from input files", infile_names)
         infile_names = [args.update] + args.input_files
-        reference_filename = args.update
+        base_filename = args.update
         outfile = args.update
     else:
         infile_names = args.input_files
         outfile = args.output
-        reference_filename = args.reference
+        base_filename = args.base
         if args.verbose:
-            print("Will write new output file", outfile, "from input files", infile_names, "using", reference_filename, "as reference")
+            print("Will write new output file", outfile, "from input files", infile_names, "using", base_filename, "as base")
 
     output_format_name = (in_sheets[0].format_name
                           if args.update
@@ -98,12 +98,21 @@ def main():
 
     accounts = {}
 
-    reference_sheet = canonical_sheet.canonical_sheet(
+    print("loading", base_filename, "as base sheet")
+    base_sheet = canonical_sheet.canonical_sheet(
         config,
-        input_sheet=reference_filename,
+        input_sheet=base_filename,
         convert_all=True)
+    for row in base_sheet:
+        account_name = row['account']
+        if account_name not in accounts:
+            accounts[account_name] = account.account(account_name)
+        accounts[account_name].add_row(row)
+
+    print("loading", infile_names, "as input sheets")
     in_sheets = [canonical_sheet.canonical_sheet(config,
-                                                 input_sheet=input_file_name)
+                                                 input_sheet=input_file_name,
+                                                 verbose=args.verbose)
                  for input_file_name in infile_names]
     out_sheet = canonical_sheet.canonical_sheet(
         config)
@@ -111,10 +120,16 @@ def main():
     for in_sheet in in_sheets:
         for row in in_sheet:
             account_name = row['account']
-            print("    account", account_name, "row", str(row)[:72], "...")
-            if account not in accounts:
-                accounts[account] = account.account(account_name)
-            accounts[account].add_row(row)
+            if account_name not in accounts:
+                accounts[account_name] = account.account(account_name)
+            accounts[account_name].add_row(row)
+
+    for accname, accdata in accounts.items():
+        print("    Account", accname)
+        for payee in accdata:
+            print("        ", payee)
+            for when in sorted(payee.by_timestamp.keys()):
+                print("            ", when, " ".join(map(str,payee.by_timestamp[when])))
 
     formatted_sheet.formatted_sheet(config,
                                     output_format_name,

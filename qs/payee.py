@@ -7,8 +7,13 @@ class payee:
         self.name = name
         self.by_timestamp = {}
         self.by_amount = {}
+        self.balance = 0
         self.allowable_before = datetime.timedelta(3, 0)
         self.allowable_after = datetime.timedelta(1, 0)
+
+    def __str__(self):
+        return ("<payee " + ("unknown" if self.name == "" else self.name)
+                + " balance " + str(self.balance) + ">")
 
     def timestamp_matches_one_in_list(self, timestamp, of_that_amount):
         """Return whether there are any transactions in a timestamp list near
@@ -26,8 +31,7 @@ class payee:
         time, matches any to this payee.
         """
         sized = self.by_amount.get(amount, None)
-        if sized and self.timestamp_matches_one_in_list(timestamp, sized):
-            return True
+        return sized and self.timestamp_matches_one_in_list(timestamp, sized)
 
     def add_transaction(self, timestamp, amount):
         """Record a transaction with this payee.
@@ -42,3 +46,4 @@ class payee:
             self.by_timestamp[timestamp].append(amount)
         else:
             self.by_timestamp[timestamp] = [amount]
+        self.balance += amount

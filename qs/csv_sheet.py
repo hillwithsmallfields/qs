@@ -25,16 +25,21 @@ class csv_sheet:
                  config,
                  format_name=None,
                  input_filename=None,
-                 default_time="01:00:00"):
+                 default_time="01:00:00",
+                 verbose=False):
         self.config = config
         self.default_time = default_time
         self.rows = {}
+        self.verbose = verbose
         self.header_row_number = 0
         if input_filename:
-            self.read(input_filename)
+            if not self.read(input_filename):
+                print("Could not construct csv_sheet from", input_filename)
         else:
             self.format_name = format_name
-            self.format = config['formats'][format_name] if format_name else None
+            self.format = (config['formats'][format_name]
+                           if format_name in config['formats']
+                           else None)
             self.column_names = self.format['columns'] if self.format else {}
         self.row_order = None
         self.row_cursor = 0
@@ -110,10 +115,14 @@ class csv_sheet:
         """Read a spreadsheet, deducing the type.
         A collection of header lines is scanned to find the type."""
         with open(os.path.expanduser(os.path.expandvars(filename))) as infile:
-            self.format_name, self.header_row_number = qsutils.deduce_stream_format(infile, self.config)
+            self.format_name, self.header_row_number = qsutils.deduce_stream_format(infile, self.config, verbose=self.verbose)
             for i in range(1, self.header_row_number):
                 _ = infile.readline()
-            self.format = self.config['formats'][self.format_name]
+            if self.format_name not in self.config['formats']:
+                print("Format name", self.format_name, "not known in", self.config['formats'].keys())
+            self.format = (self.config['formats'][self.format_name]
+                           if self.format_name in self.config['formats']
+                           else self.config['formats']['Default'])
             self.column_names = self.format['columns']
             self.default_time = (self.format['column_defaults'].get('time', "01:00:00")
                                  if 'column_defaults' in self.format
@@ -122,6 +131,7 @@ class csv_sheet:
                                                     self.get_cell(row0, 'time', self.default_time)):
                          {k:v for k,v in row0.items() if k != ''}
                          for row0 in csv.DictReader(infile)}
+            return True
 
     def write(self, filename):
         """Write a spreadsheet in a given format.

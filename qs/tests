@@ -56,8 +56,8 @@ echo -n produced importer file
 wc -c -l $SCRATCH/converter-output.csv
 
 echo
-echo Testing import of Handelsbanken data to combined
-echo ================================================
+echo Testing import of Financisto and Handelsbanken data to combined
+echo ===============================================================
 echo
 
 $QS/finconv.py \
@@ -67,7 +67,7 @@ $QS/finconv.py \
     --all-rows \
     --output $SCRATCH/combiner-output.csv \
     --output-format combined \
-    $SCRATCH/financisto.csv \
+    --base $SCRATCH/financisto.csv \
     $SCRATCH/handelsbanken.csv
 
 echo -n produced combined file

@@ -29,27 +29,27 @@ class canonical_sheet:
                  convert_all=False,
                  reference_sheet=None,
                  verbose=False):
-        if verbose:
+        self.verbose = verbose
+        if self.verbose:
             print("Making canonical_sheet with input_sheet", input_sheet)
         self.rows = {}
         self.row_order = None
         self.row_cursor = 0
         if isinstance(input_sheet, str):
-            if verbose:
+            if self.verbose:
                 print("Reading", input_sheet, "for conversion")
-            input_sheet = csv_sheet.csv_sheet(config, input_filename=input_sheet)
+            input_sheet = csv_sheet.csv_sheet(config, input_filename=input_sheet, verbose=self.verbose)
         if isinstance(input_sheet, csv_sheet.csv_sheet):
-            if verbose:
+            if self.verbose:
                 print("converting", input_sheet)
             for in_row in input_sheet:
                 can_row = self.row_to_canonical(input_sheet, in_row,
                                                 reference_sheet=reference_sheet,
-                                                convert_all=convert_all,
-                                                verbose=verbose)
-                if verbose:
+                                                convert_all=convert_all)
+                if self.verbose:
                     print("made", can_row, "from", in_row)
                 if can_row:
-                    if verbose:
+                    if self.verbose:
                         print("storing", can_row)
                     self.rows[can_row['timestamp']] = can_row
 
@@ -76,8 +76,7 @@ class canonical_sheet:
                          convert_all=False,
                          out_column_defaults=None,
                          reference_sheet=None,
-                         message=None,
-                         verbose=False):
+                         message=None):
         """Convert an input row from its own format to our standard format.
         If convert_all is False, convert only the rows with payees for whom
         the input sheet's format configuration has a conversion entry."""
@@ -87,18 +86,18 @@ class canonical_sheet:
         in_columns = input_format['columns']
         row_date = qsutils.normalize_date(input_sheet.get_cell(row, 'date', None))
         if row_date is None:
-            if verbose:
+            if self.verbose:
                 print("empty date from row", row)
             return None
         payee_name = input_sheet.get_cell(row, 'payee', None)
         if payee_name is None:
-            if verbose:
+            if self.verbose:
                 print("payee field missing from row", row)
             return None
         conversion = find_conversion(input_format.get('conversions', {}),
                                      payee_name)
         if conversion is None and not convert_all:
-            if verbose:
+            if self.verbose:
                 print("no conversion for row", row)
             return None
         row_time = input_sheet.get_cell(
