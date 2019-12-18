@@ -31,7 +31,7 @@ class account:
         self.currency = currency
         self.opening_balance = opening_balance
         self.balance = self.opening_balance
-        self.all_transactions = []
+        self.all_transactions = {}
         self.base = base_account
         self.payees = {}
         if isinstance(transactions, canonical_sheet.canonical_sheet):
@@ -74,7 +74,7 @@ class account:
                 or not static_payee.already_seen(when, how_much)):
                 self.balance -= how_much
                 row_payee.add_transaction(when, how_much)
-                self.all_transactions.append(row)
+                self.all_transactions[when] = row
 
     def add_sheet(self, sheet):
         """Add all the rows of the given sheet to this account."""
@@ -82,23 +82,48 @@ class account:
             # TODO: filter rows according to whether they are for this account
             self.add_row_if_new(row)
 
-    def combine_same_day_entries(self):
-        """For each payee, convert all the entries on the same day to one total."""
+    def combine_same_period_entries(self, period=lambda dt: dt.day):
+        """For each payee, convert all the entries in the same period (day, by
+        default) to one total."""
         for name, orig_payee in self.payees.items():
             by_timestamp = orig_payee.by_timestamp
             if len(by_timestamp) <= 1:
                 continue
             acc_payee = payee.payee(orig_payee.name)
             timestamps = sorted(by_timestamp.keys())
-            day = timestamps[0].day
-            day_total = by_timestamp[timestamps[0]]
+            period = period(timestamps[0])
+            period_total = by_timestamp[timestamps[0]]
             for ts in timestamps[1:]:
-                if ts.day == day:
-                    day_total += by_timestamp[ts]
+                if period(ts) == period:
+                    period_total += by_timestamp[ts]
                 else:
-                    acc_payee.add_transaction(day, day_total)
-                    day = ts.day
-                    day_total = by_timestamp[ts]
-            # Record the final day's transactions
-            acc_payee.add_transaction(day, day_total)
+                    acc_payee.add_transaction(period, period_total)
+                    period = period(ts)
+                    period_total = by_timestamp[ts]
+            # Record the final period's transactions
+            acc_payee.add_transaction(period, period_total)
             self.payees[name] = acc_payee
+        transactions_by_period = {}
+        timestamps = sorted(self.all_transactions.keys())
+        period = period(timestamps[0])
+        period_total = self.all_transactions[timestamps[0]]
+        for ts in timestamps[1:]:
+            if period(ts) == period:
+                period_total += self.all_transactions[ts]
+            else:
+                transactions_by_period[period] = period_total
+                period = period(ts)
+                period_total = self.all_transactions[ts]
+        # Record the final period's transactions
+        transactions_by_period[period] = period_total
+        self.all_transactions = transactions_by_period
+
+    def compare_by_period(self, other):
+        all_keys = set(self.all_transactions.keys()) | set(other.all_transactions.keys())
+        discrepancies = {}
+        for period in all_transactions:
+            in_self = self.all_transactions.get(period, None)
+            in_other = other.all_transactions.get(period, None)
+            if in_self and in_other:
+                discrepancies[period] = in_self - in_other
+        return discrepancies

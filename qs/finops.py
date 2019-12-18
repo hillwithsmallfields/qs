@@ -145,11 +145,20 @@ def main():
                         base_account=base_accounts.get(account_name, None))
                 accounts[account_name].add_row_if_new(row)
 
+    combine_by_month = ('combine_by_month' in actions
+                        or ('discrepancies' in outputs_section
+                            and 'combine_by_day' not in actions))
+
     if 'combine_by_day' in actions:
         for ba in base_accounts:
             ba.combine_same_day_entries()
         for a in accounts:
-            a.combine_same_day_entries()
+            a.combine_same_period_entries()
+    elif combine_by_month:
+        for ba in base_accounts:
+            ba.combine_same_day_entries(period = lambda ts: ts.month)
+        for a in accounts:
+            a.combine_same_period_entries(period = lambda ts: ts.month)
 
     outputs_section = config.get('outputs', {})
 
@@ -165,6 +174,19 @@ def main():
                         for payee in accounts[acc_name]]
             write_fin_csv(['Payee', 'Date', 'Amounts'],
                           out_data,
+                          output_filename)
+    if 'discrepancies' in outputs_section:
+        for acc_names, output_filename in outputs_section['accounts']:
+            acc_name_a, acc_name_b = acc_names.split(',')
+            if acc_name_a not in accounts:
+                print("Account name", acc_name_a, "not found among", sorted(accounts.keys()))
+                continue
+            if acc_name_b not in accounts:
+                print("Account name", acc_name_b, "not found among", sorted(accounts.keys()))
+                continue
+            write_fin_csv(['Period', 'Discrepancy'],
+                          {k: ['Period': k, 'Discrepancy': v]
+                           for k, v in accounts[acc_name_a].compare_by_period(accounts[acc_name_b]),item()},
                           output_filename)
 
     # out_sheet = canonical_sheet.canonical_sheet(config)
