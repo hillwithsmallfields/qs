@@ -8,11 +8,11 @@ class account:
     a spreadsheet as defined in csv_sheet.py; the transactions in that
     spreadsheet will be added to this account.
 
-    May be given a parent account.  In this case, the parent account
+    May be given a base account.  In this case, the base account
     is also used for looking at whether a transaction being added has
     already been done, so the transactions added to this account will
-    be only those not in the parent, and this account can then be used
-    as a delta to merge with the account from which the parent was
+    be only those not in the base, and this account can then be used
+    as a delta to merge with the account from which the base was
     derived.
 
     Iterating over an account object will yield all the payees from
@@ -22,7 +22,7 @@ class account:
 
     def __init__(self,
                  name,
-                 parent_account=None,
+                 base_account=None,
                  currency=None,
                  opening_balance=0,
                  transactions=None,
@@ -32,7 +32,7 @@ class account:
         self.opening_balance = opening_balance
         self.balance = self.opening_balance
         self.all_transactions = []
-        self.parent = parent_account
+        self.base = base_account
         self.payees = {}
         if isinstance(transactions, canonical_sheet.canonical_sheet):
             self.add_sheet(transactions, accumulate)
@@ -58,7 +58,7 @@ class account:
     def __len__(self):
         return len(self.payees)
 
-    def add_row(self, row):
+    def add_row_if_new(self, row):
         payee_name = row['payee']
         row_payee = self.payees.get(payee_name, None)
         if row_payee is None:
@@ -67,8 +67,8 @@ class account:
         when = row['timestamp']
         how_much = -row['amount']
         if not row_payee.already_seen(when, how_much):
-            static_payee = (self.parent.payees.get(payee_name, None)
-                            if self.parent
+            static_payee = (self.base.payees.get(payee_name, None)
+                            if self.base
                             else None)
             if (static_payee is None
                 or not static_payee.already_seen(when, how_much)):
@@ -80,11 +80,11 @@ class account:
         """Add all the rows of the given sheet to this account."""
         for row in sheet.iter():
             # TODO: filter rows according to whether they are for this account
-            self.add_row(row)
+            self.add_row_if_new(row)
 
-    def combine_same_day_entries(self, original_sheet):
+    def combine_same_day_entries(self):
         """For each payee, convert all the entries on the same day to one total."""
-        for name, orig_payee in original_sheet.payees.items():
+        for name, orig_payee in self.payees.items():
             by_timestamp = orig_payee.by_timestamp
             if len(by_timestamp) <= 1:
                 continue
@@ -101,4 +101,4 @@ class account:
                     day_total = by_timestamp[ts]
             # Record the final day's transactions
             acc_payee.add_transaction(day, day_total)
-            original_sheet.payees[name] = acc_payee
+            self.payees[name] = acc_payee

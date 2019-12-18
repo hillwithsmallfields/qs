@@ -15,6 +15,14 @@ def deduce_file_type_from_headers(headers):
         return 'finances'
     return 'unknown'
 
+def resolve_filename(filename, directory):
+    """Try to get an absolute form of a filename, using a suggested directory."""
+    filename = os.path.expandvars(filename)
+    return (filename
+            if os.path.isabs(filename)
+            else os.path.join(os.path.expanduser(directory),
+                              os.path.expanduser(filename)))
+
 # based on https://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
 def rec_update(d, u, i=""):
     for k, v in u.items():
@@ -28,6 +36,14 @@ def rec_update(d, u, i=""):
             d[k] = v
     return d
 
+def string_to_bool(string):
+    if string in ['yes', 'Yes', 'YES', 'true', 'true', 'TRUE', '1', True, 1]:
+        return True
+    if string in ['no', 'no', 'NO', 'false', 'false', 'FALSE', '0', '', None, False, 0]:
+        return False
+    print("Value", string, "not understood as boolean, treating as False")
+    return False
+
 DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
 
 def load_config(verbose, base_config, *config_files):
@@ -37,7 +53,7 @@ def load_config(verbose, base_config, *config_files):
         base_config = {}
     for filename in config_files:
         if filename:
-            filename = os.path.expanduser(os.path.expandvars(filename))
+            filename = resolve_filename(filename)
             if os.path.exists(filename):
                 with open(filename) as config_file:
                     rec_update(base_config, yaml.safe_load(config_file))

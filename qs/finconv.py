@@ -111,7 +111,7 @@ def main():
         account_name = row['account']
         if account_name not in accounts:
             accounts[account_name] = account.account(account_name)
-        base_accounts[account_name].add_row(row)
+        base_accounts[account_name].add_row_if_new(row)
 
     if args.verbose:
         print("loading", infile_names, "as input sheets")
@@ -128,7 +128,7 @@ def main():
             account_name = row['account']
             if account_name not in accounts:
                 accounts[account_name] = account.account(account_name)
-            accounts[account_name].add_row(row)
+            accounts[account_name].add_row_if_new(row)
 
     for accname, accdata in accounts.items():
         print("    Account", accname)
