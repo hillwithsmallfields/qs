@@ -30,21 +30,21 @@ def rec_update(d, u, i=""):
 
 DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
 
-def load_config(verbose, *config_files):
+def load_config(verbose, base_config, *config_files):
     """Load config files.
     You can give None and it will be skipped."""
-    config = {}
+    if base_config is None:
+        base_config = {}
     for filename in config_files:
         if filename:
             filename = os.path.expanduser(os.path.expandvars(filename))
             if os.path.exists(filename):
                 with open(filename) as config_file:
-                    more_config = yaml.safe_load(config_file)
-                    rec_update(config, more_config)
+                    rec_update(base_config, yaml.safe_load(config_file))
     if verbose:
         print("Read config:")
-        print(yaml.dump(config))
-    return config
+        print(yaml.dump(base_config))
+    return base_config
 
 def deduce_format(first_row, formats, verbose=False):
     # take out some strange characters that Financisto is putting in

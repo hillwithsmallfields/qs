@@ -167,6 +167,7 @@ def main():
     parser.add_argument("input_files", nargs='*')
     args = parser.parse_args()
     config = qsutils.load_config(args.verbose,
+                                 None,
                                  qsutils.DEFAULT_CONF if not args.no_default_config else None,
                                  *args.config)
     for filename in args.input_files:

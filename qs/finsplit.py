@@ -53,6 +53,7 @@ def main():
     args = parser.parse_args()
 
     qsutils.process_fin_csv(args, qsutils.load_config(args.verbose,
+                                                      None,
                                                       qsutils.DEFAULT_CONF if not args.no_default_config else None,
                                                       *args.config or ()),
                             finsplit_setup,
