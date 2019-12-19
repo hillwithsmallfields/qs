@@ -12,6 +12,7 @@ import canonical_sheet
 import datetime
 import formatted_sheet
 import os
+import pprint
 import qsutils
 
 # This program is driven by scripts written in yaml format.
@@ -76,16 +77,13 @@ def main():
 
     config = qsutils.load_config(args.verbose,
                                  None,
+                                 None,
                                  qsutils.DEFAULT_CONF if not args.no_default_config else None,
                                  *args.config or ())
-
     script = {}
+    qsutils.load_multiple_yaml(script, os.getcwd(), args.script_files)
 
-    for script_file in args.script_files:
-        filename = qsutils.resolve_filename(script_file)
-        if os.path.exists(filename):
-            with open(filename) as script_handle:
-                rec_update(script, yaml.safe_load(script_handle))
+    print("script is", pprint.pformat(script))
 
     actions = script.get('actions', [])
 
@@ -94,11 +92,8 @@ def main():
         confdir = config_section.get('directory', os.getcwd())
         qsutils.load_config(args.verbose,
                             config,
-                            qsutils.DEFAULT_CONF if not args.no_default_config else None,
-                            [filename
-                             if os.path.isabs(filename)
-                             else os.path.join(confdir, filename)
-                             for filename in config_section.get('files', ())])
+                            confdir,
+                            *config_section.get('files', ()))
 
     # output_format_name = (in_sheets[0].format_name
     #                       if args.update
@@ -107,12 +102,14 @@ def main():
 
     base_accounts = {}
 
-    if 'base' in config:
-        base_section = config['base']
+    if 'base' in script:
+        base_section = script['base']
         base_dir = base_section.get('directory', os.getcwd())
-        for base_filename in base_section.get('files', ()):
+        for base_filename, account_name in base_section.get('files', {}).items():
+            if account_name == "":
+                account_name = None
             if args.verbose:
-                print("loading", base_filename, "as base sheet")
+                print("loading", base_filename, "as base sheet for account", account_name)
             for row in canonical_sheet.canonical_sheet(
                     config,
                     input_sheet=qsutils.resolve_filename(base_filename,
@@ -126,17 +123,20 @@ def main():
 
     accounts = {}
 
-    if 'incoming' in config:
-        incoming_section = config['incoming']
+    if 'incoming' in script:
+        incoming_section = script['incoming']
         incoming_dir = incoming_section.get('directory', os.getcwd())
-        for incoming_filename in incoming_section.get('files', ()):
+        for incoming_filename, account_name in incoming_section.get('files', {}).items():
+            if account_name == "":
+                account_name = None
             if args.verbose:
-                print("loading", incoming_filename, "as incoming sheet")
+                print("loading", incoming_filename, "as incoming sheet for account", account_name)
             for row in canonical_sheet.canonical_sheet(
                     config,
                     input_sheet=qsutils.resolve_filename(incoming_filename,
                                                          incoming_dir),
                     convert_all=True,
+                    account_name_override=account_name,
                     verbose=args.verbose):
                 account_name = row['account']
                 if account_name not in accounts:
@@ -144,6 +144,8 @@ def main():
                         account_name,
                         base_account=base_accounts.get(account_name, None))
                 accounts[account_name].add_row_if_new(row)
+
+    outputs_section = script.get('outputs', {})
 
     combine_by_month = ('combine_by_month' in actions
                         or ('discrepancies' in outputs_section
@@ -160,8 +162,6 @@ def main():
         for a in accounts:
             a.combine_same_period_entries(period = lambda ts: ts.month)
 
-    outputs_section = config.get('outputs', {})
-
     if 'accounts' in outputs_section:
         for acc_name, output_filename in outputs_section['accounts']:
             if acc_name not in accounts:
@@ -175,18 +175,22 @@ def main():
             write_fin_csv(['Payee', 'Date', 'Amounts'],
                           out_data,
                           output_filename)
+
+    print("base_accounts are now", base_accounts)
+    print("accounts are now", accounts)
+
     if 'discrepancies' in outputs_section:
         for acc_names, output_filename in outputs_section['accounts']:
-            acc_name_a, acc_name_b = acc_names.split(',')
-            if acc_name_a not in accounts:
-                print("Account name", acc_name_a, "not found among", sorted(accounts.keys()))
+            base_name, acc_name = acc_names.split(',')
+            if base_name not in base_accounts:
+                print("Account name", base_name, "not found among", sorted(base_accounts.keys()))
                 continue
-            if acc_name_b not in accounts:
-                print("Account name", acc_name_b, "not found among", sorted(accounts.keys()))
+            if acc_name not in accounts:
+                print("Account name", acc_name, "not found among", sorted(accounts.keys()))
                 continue
             write_fin_csv(['Period', 'Discrepancy'],
-                          {k: ['Period': k, 'Discrepancy': v]
-                           for k, v in accounts[acc_name_a].compare_by_period(accounts[acc_name_b]),item()},
+                          {k: {'Period': k, 'Discrepancy': v}
+                           for k, v in base_accounts[base_name].compare_by_period(accounts[acc_name]).items()},
                           output_filename)
 
     # out_sheet = canonical_sheet.canonical_sheet(config)

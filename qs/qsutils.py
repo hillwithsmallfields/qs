@@ -15,12 +15,12 @@ def deduce_file_type_from_headers(headers):
         return 'finances'
     return 'unknown'
 
-def resolve_filename(filename, directory):
+def resolve_filename(filename, directory=None):
     """Try to get an absolute form of a filename, using a suggested directory."""
     filename = os.path.expandvars(filename)
     return (filename
             if os.path.isabs(filename)
-            else os.path.join(os.path.expanduser(directory),
+            else os.path.join(os.path.expanduser(directory or os.getcwd()),
                               os.path.expanduser(filename)))
 
 # based on https://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
@@ -44,19 +44,23 @@ def string_to_bool(string):
     print("Value", string, "not understood as boolean, treating as False")
     return False
 
+def load_multiple_yaml(target_dict, suggested_dir, yaml_files):
+    for yaml_file in yaml_files:
+        if yaml_file is None:
+            continue
+        filename = resolve_filename(yaml_file, suggested_dir)
+        if os.path.exists(filename):
+            with open(filename) as yaml_handle:
+                rec_update(target_dict, yaml.safe_load(yaml_handle))
+
 DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
 
-def load_config(verbose, base_config, *config_files):
+def load_config(verbose, base_config, suggested_dir, *config_files):
     """Load config files.
     You can give None and it will be skipped."""
     if base_config is None:
         base_config = {}
-    for filename in config_files:
-        if filename:
-            filename = resolve_filename(filename)
-            if os.path.exists(filename):
-                with open(filename) as config_file:
-                    rec_update(base_config, yaml.safe_load(config_file))
+    load_multiple_yaml(base_config, suggested_dir, config_files)
     if verbose:
         print("Read config:")
         print(yaml.dump(base_config))

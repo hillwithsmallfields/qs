@@ -32,6 +32,7 @@ def main():
     args = parser.parse_args()
     config = qsutils.load_config(args.verbose,
                                  None,
+                                 None,
                                  qsutils.DEFAULT_CONF if not args.no_default_config else None,
                                  *args.config or ())
     with open(args.output, 'w') as outstream:

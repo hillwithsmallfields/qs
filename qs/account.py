@@ -26,18 +26,22 @@ class account:
                  currency=None,
                  opening_balance=0,
                  transactions=None,
-                 accumulate=False):
+                 copy_metadata_from=None):
         self.name = name
-        self.currency = currency
-        self.opening_balance = opening_balance
-        self.balance = self.opening_balance
+        if copy_metadata_from:
+            self.currency = copy_metadata_from.currency
+            self.opening_balance = copy_metadata_from.opening_balance
+            self.balance = copy_metadata_from.balance
+            self.base = copy_metadata_from.base
+        else:
+            self.currency = currency
+            self.opening_balance = opening_balance
+            self.balance = self.opening_balance
+            self.base = base_account
         self.all_transactions = {}
-        self.base = base_account
         self.payees = {}
         if isinstance(transactions, canonical_sheet.canonical_sheet):
-            self.add_sheet(transactions, accumulate)
-        elif isinstance(transactions, account) and accumulate:
-            self.accumulate_sheet(transactions)
+            self.add_sheet(transactions)
 
     def __str__(self):
         return ("<account " + self.name
@@ -79,12 +83,18 @@ class account:
     def add_sheet(self, sheet):
         """Add all the rows of the given sheet to this account."""
         for row in sheet.iter():
-            # TODO: filter rows according to whether they are for this account
-            self.add_row_if_new(row)
+            if row.get('account', None) == self.name:
+                self.add_row_if_new(row)
 
     def combine_same_period_entries(self, period=lambda dt: dt.day):
-        """For each payee, convert all the entries in the same period (day, by
-        default) to one total."""
+        """Produce an account base on this one, with just one entry per period
+        (day, by default).
+
+        For each payee, convert all the entries in the same period to one total.
+        For all the transactions in all_transactions, do likewise.
+
+        """
+        combined = account(self.name, copy_metadata_from=self)
         for name, orig_payee in self.payees.items():
             by_timestamp = orig_payee.by_timestamp
             if len(by_timestamp) <= 1:
@@ -102,7 +112,7 @@ class account:
                     period_total = by_timestamp[ts]
             # Record the final period's transactions
             acc_payee.add_transaction(period, period_total)
-            self.payees[name] = acc_payee
+            combined.payees[name] = acc_payee
         transactions_by_period = {}
         timestamps = sorted(self.all_transactions.keys())
         period = period(timestamps[0])
@@ -116,7 +126,8 @@ class account:
                 period_total = self.all_transactions[ts]
         # Record the final period's transactions
         transactions_by_period[period] = period_total
-        self.all_transactions = transactions_by_period
+        combined.all_transactions = transactions_by_period
+        return combined
 
     def compare_by_period(self, other):
         all_keys = set(self.all_transactions.keys()) | set(other.all_transactions.keys())
