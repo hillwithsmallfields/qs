@@ -8,6 +8,13 @@ import re
 # formats.  This may involve renaming columns, and filling in default
 # values derived from the payee.
 
+def templated_name(template, name):
+    return (name
+            if template is None or template == "%s"
+            else (template
+                  if "%s" not in template
+                  else template % name))
+
 def find_conversion(conversions, payee_name):
     """Find a mapping from the input format to the output, for a named payee."""
     for key, value in conversions.items():
@@ -114,8 +121,9 @@ class canonical_sheet:
             'time': row_time,
             'timestamp': reference_sheet.unused_timestamp_from(row_date, row_time),
             'amount': money_in - money_out,
-            'account': account_name_template % ((input_sheet.get_cell(row, 'account', None)
-                                                 or input_format.get('name', "Unknown"))),
+            'account': templated_name(account_name_template,
+                                      (input_sheet.get_cell(row, 'account', None)
+                                       or input_format.get('name', "Unknown"))),
             'currency': row.get('currency',
                                 input_format.get('currency', "?")),
             'original_amount': money_in - money_out,

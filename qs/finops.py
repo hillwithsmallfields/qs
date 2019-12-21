@@ -10,6 +10,7 @@ import argparse
 import csv
 import canonical_sheet
 import datetime
+import finfuns
 import formatted_sheet
 import os
 import pprint
@@ -100,7 +101,7 @@ def main():
     #                       else args.output_format)
     # output_format = config['formats'][output_format_name]
 
-    base_accounts = {}
+    variables = {}
 
     if 'base' in script:
         base_section = script['base']
@@ -117,11 +118,9 @@ def main():
                     convert_all=True,
                     verbose=args.verbose):
                 account_name = row['account']
-                if account_name not in base_accounts:
-                    base_accounts[account_name] = account.account(account_name)
-                base_accounts[account_name].add_row_if_new(row)
-
-    accounts = {}
+                if account_name not in variables:
+                    variables[account_name] = account.account(account_name)
+                variables[account_name].add_row_if_new(row)
 
     if 'incoming' in script:
         incoming_section = script['incoming']
@@ -139,14 +138,17 @@ def main():
                     account_name_template=account_name,
                     verbose=args.verbose):
                 account_name = row['account']
-                if account_name not in accounts:
-                    accounts[account_name] = account.account(
+                if account_name not in variables:
+                    variables[account_name] = account.account(
                         account_name,
                         base_account=base_accounts.get(account_name, None))
-                accounts[account_name].add_row_if_new(row)
+                variables[account_name].add_row_if_new(row)
 
     for command in script.get('commands', []):
         print("Executing command", command)
+        command = finfuns.add_package_prefixes(command)
+        print("Converted command to", command)
+        exec(command)
 
     return 0
 

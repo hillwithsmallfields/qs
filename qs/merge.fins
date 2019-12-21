@@ -10,3 +10,5 @@ incoming:
   directory: ~/common/qs-scratch
   files:
      handelsbanken.csv: Handelsbanken current account
+commands:
+  - list_accounts("/tmp/account-names")
