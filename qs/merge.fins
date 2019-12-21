@@ -10,13 +10,3 @@ incoming:
   directory: ~/common/qs-scratch
   files:
      handelsbanken.csv: Handelsbanken current account
-derivatives:
-  Handelsbanken current account base by day: combine-daily base/Handelsbanken current account
-  Handelsbanken current account base by month: combine-monthly base/Handelsbanken current account
-  Handelsbanken current account by day: combine-daily Handelsbanken current account
-  Handelsbanken current account by month: combine-monthly Handelsbanken current account
-outputs:
-  accounts:
-    'financisto': /tmp/financisto-new.csv
-  discrepancies:
-    Handelsbanken current account base by day,Handelsbanken current account by day: /tmp/hb-discrep.csv
