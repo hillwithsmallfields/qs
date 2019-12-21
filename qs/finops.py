@@ -136,7 +136,7 @@ def main():
                     input_sheet=qsutils.resolve_filename(incoming_filename,
                                                          incoming_dir),
                     convert_all=True,
-                    account_name_override=account_name,
+                    account_name_template=account_name,
                     verbose=args.verbose):
                 account_name = row['account']
                 if account_name not in accounts:
@@ -144,6 +144,9 @@ def main():
                         account_name,
                         base_account=base_accounts.get(account_name, None))
                 accounts[account_name].add_row_if_new(row)
+
+    for command in script.get('commands', []):
+        print("Executing command", command)
 
     outputs_section = script.get('outputs', {})
 

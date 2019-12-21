@@ -5,7 +5,7 @@ config:
 base:
    directory: ~/common/qs-scratch
    files:
-     financisto.csv:
+     financisto.csv: base-%s
 incoming:
   directory: ~/common/qs-scratch
   files:

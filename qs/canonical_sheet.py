@@ -27,7 +27,7 @@ class canonical_sheet:
                  config,
                  input_sheet=None,
                  convert_all=False,
-                 account_name_override=None,
+                 account_name_template=None,
                  reference_sheet=None,
                  verbose=False):
         self.verbose = verbose
@@ -46,7 +46,7 @@ class canonical_sheet:
             for in_row in input_sheet:
                 can_row = self.row_to_canonical(input_sheet, in_row,
                                                 reference_sheet=reference_sheet,
-                                                account_name_override=account_name_override,
+                                                account_name_template=account_name_template,
                                                 convert_all=convert_all)
                 if self.verbose:
                     print("made", can_row, "from", in_row)
@@ -78,7 +78,7 @@ class canonical_sheet:
                          convert_all=False,
                          out_column_defaults=None,
                          reference_sheet=None,
-                         account_name_override=None,
+                         account_name_template=None,
                          message=None):
         """Convert an input row from its own format to our standard format.
         If convert_all is False, convert only the rows with payees for whom
@@ -114,9 +114,8 @@ class canonical_sheet:
             'time': row_time,
             'timestamp': reference_sheet.unused_timestamp_from(row_date, row_time),
             'amount': money_in - money_out,
-            'account': (input_sheet.get_cell(row, 'account', None)
-                        or account_name_override
-                        or input_format.get('name', "Unknown")),
+            'account': account_name_template % ((input_sheet.get_cell(row, 'account', None)
+                                                 or input_format.get('name', "Unknown"))),
             'currency': row.get('currency',
                                 input_format.get('currency', "?")),
             'original_amount': money_in - money_out,
