@@ -146,7 +146,7 @@ def main():
 
     for command in script.get('commands', []):
         print("Executing command", command)
-        command = finfuns.add_package_prefixes(command)
+        command = finfuns.convert_to_Python(command)
         print("Converted command to", command)
         exec(command)
 
