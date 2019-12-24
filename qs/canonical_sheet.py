@@ -22,6 +22,18 @@ def find_conversion(conversions, payee_name):
             return value
     return None
 
+def tracking_setup(args, config, fmt):
+    # todo: fill these in
+    return [], {}
+
+def tracking_do_row(row_ts, row_data, output_rows_dict, scratch):
+    # todo: fill these in
+    pass
+
+def tracking_tidyup(headers, scratch):
+    # todo: fill these in
+    return headers, scratch
+
 class canonical_sheet:
     """A financial data-only spreadsheet with a standard set of column names.
 
@@ -61,6 +73,9 @@ class canonical_sheet:
                     if self.verbose:
                         print("storing", can_row)
                     self.rows[can_row['timestamp']] = can_row
+        elif isinstance(input_sheet, canonical_sheet):
+            # take a copy
+            self.rows = {k: {vk: vv for vk, vv in v.items()} for k, v in input_sheet.rows.items()}
 
     def __iter__(self):
         self.row_order = sorted(self.rows.keys())
@@ -159,6 +174,14 @@ class canonical_sheet:
         return {output_column_name: row.get(canonical_column_name, None)
                 for canonical_column_name, output_column_name
                 in output_format['columns'].items()}
+
+    def add_tracking_column(self, source_column, tracking_column):
+        """Return a copy of a sheet with a tracking column added."""
+        copy = canonical_sheet(self)
+        qsutils.process_rows(None, copy.config, None,
+                             copy.rows,
+                             tracking_setup, tracking_do_row, tracking_tidyup)
+        return copy
 
 # tests
 
