@@ -2,6 +2,7 @@
 
 import csv
 import datetime
+import ordered_set
 import os.path
 import qsutils
 
@@ -145,6 +146,19 @@ class csv_sheet:
                 # select only the columns required for this sheet, and
                 # also round the unfortunately-represented floats
                 writer.writerow({sk: trim_if_float(row.get(sk, None)) for sk in colseq})
+
+    def write_all_columns(self, filename):
+        """Write a spreadsheet in a given format.
+        The column list is generated from the row contents,
+        with the columns in the order they are first seen."""
+        with open(os.path.expanduser(os.path.expandvars(filename)), 'w') as outfile:
+            colseq = ordered_set.OrderedSet()
+            for row in self.rows.values():
+                colseq |= row
+            writer = csv.DictWriter(outfile, colseq)
+            writer.writeheader()
+            for timestamp in sorted(self.rows.keys()):
+                writer.writerow(self.rows[timestamp])
 
 # tests
 
