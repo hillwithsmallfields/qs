@@ -23,15 +23,18 @@ def find_conversion(conversions, payee_name):
     return None
 
 def tracking_setup(app_data, fmt):
-    # todo: fill these in; app_data will have 'source' and 'tracking' bound
-    return [], {}
+    return [], {'source': app_data['source']
+                'tracking': app_data['tracking']
+                'total': 0.0}
 
 def tracking_do_row(row_ts, row_data, output_rows_dict, scratch):
-    # todo: fill these in
-    pass
+    scratch['total'] += row_data[scratch['source']]
+    row_data[scratch['tracking']] = scratch['total']
+    if 'discrepancy_with' in scratch:
+        row_data[scratch['discrepancy_to'] = (
+            scratch['total'] - row_data[scratch['discrepancy_with']])
 
 def tracking_tidyup(headers, scratch):
-    # todo: fill these in
     return headers, scratch
 
 class canonical_sheet:
@@ -175,11 +178,18 @@ class canonical_sheet:
                 for canonical_column_name, output_column_name
                 in output_format['columns'].items()}
 
-    def add_tracking_column(self, source_column, tracking_column):
+    def add_tracking_column(self, source_column, tracking_column,
+                            discrepancy_with_column=None,
+                            discrepancy_out_column=None):
         """Return a copy of a sheet with a tracking column added."""
         copy = canonical_sheet(self)
-        qsutils.process_rows({'source': source_column,
-                              'tracking': tracking_column},
+        app_data = {'source': source_column,
+                    'tracking': tracking_column}
+        if discrepancy_with_column:
+            app_data['discrepancy_with'] = discrepancy_with_column
+            app_data['discrepancy_to'] = (discrepancy_out_column
+                                          or (discrepancy_with_column + "_gap"))
+        qsutils.process_rows(app_data,
                              None,
                              copy.rows,
                              tracking_setup, tracking_do_row, tracking_tidyup)
