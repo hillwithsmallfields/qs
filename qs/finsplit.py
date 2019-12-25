@@ -9,7 +9,8 @@ import qsutils
 
 # See notes in finconv.py for config file format
 
-def finsplit_setup(args, config, input_format):
+def finsplit_setup(app_data, input_format):
+    args = app_data['args']
     in_columns = input_format['columns']
     print "in_columns are", in_columns
     return ['date'], {'split_by': input_format['columns']['payee'
@@ -52,11 +53,15 @@ def main():
 
     args = parser.parse_args()
 
-    qsutils.process_fin_csv(args, qsutils.load_config(args.verbose,
-                                                      None,
-                                                      None,
-                                                      qsutils.DEFAULT_CONF if not args.no_default_config else None,
-                                                      *args.config or ()),
+    qsutils.process_fin_csv({'args': args,
+                             'config': qsutils.load_config(
+                                 args.verbose,
+                                 None,
+                                 None,
+                                 (qsutils.DEFAULT_CONF
+                                  if not args.no_default_config
+                                  else None),
+                                 *args.config or ())},
                             finsplit_setup,
                             finsplit_row,
                             finsplit_tidyup)

@@ -22,8 +22,8 @@ def find_conversion(conversions, payee_name):
             return value
     return None
 
-def tracking_setup(args, config, fmt):
-    # todo: fill these in
+def tracking_setup(app_data, fmt):
+    # todo: fill these in; app_data will have 'source' and 'tracking' bound
     return [], {}
 
 def tracking_do_row(row_ts, row_data, output_rows_dict, scratch):
@@ -178,7 +178,9 @@ class canonical_sheet:
     def add_tracking_column(self, source_column, tracking_column):
         """Return a copy of a sheet with a tracking column added."""
         copy = canonical_sheet(self)
-        qsutils.process_rows(None, copy.config, None,
+        qsutils.process_rows({'source': source_column,
+                              'tracking': tracking_column},
+                             None,
                              copy.rows,
                              tracking_setup, tracking_do_row, tracking_tidyup)
         return copy

@@ -35,7 +35,8 @@ def find_discrepancies_row_callback(timestamp, row, output_rows, scratch):
         output_row['date'] = row_date
         output_rows[row_date] = output_row
 
-def find_discrepancies_setup(args, config, input_format):
+def find_discrepancies_setup(app_data, input_format):
+    args = app_data['args']
     """Set up the scratch data for finding discrepancies."""
     outputs = ['date']
     comparisons = input_format['comparisons'].keys()
@@ -67,11 +68,15 @@ def main():
 
     args = parser.parse_args()
 
-    qsutils.process_fin_csv(args, qsutils.load_config(args.verbose,
-                                                      None,
-                                                      None,
-                                                      qsutils.DEFAULT_CONF if not args.no_default_config else None,
-                                                      *args.config or ()),
+    qsutils.process_fin_csv({'args': args,
+                             'config': qsutils.load_config(
+                                 args.verbose,
+                                 None,
+                                 None,
+                                 (qsutils.DEFAULT_CONF
+                                  if not args.no_default_config
+                                  else None),
+                                 *args.config or ())},
                             find_discrepancies_setup,
                             find_discrepancies_row_callback,
                             None)

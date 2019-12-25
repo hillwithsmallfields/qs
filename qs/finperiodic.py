@@ -12,7 +12,7 @@ import qsutils
 
 secs_per_day = 24 * 60 * 60
 
-def finperiodic_setup(args, config, input_format):
+def finperiodic_setup(app_data, input_format):
     return ['payee'], {}
 
 def finperiodic_row(timestamp, row, output_rows, scratch):
@@ -69,11 +69,15 @@ def main():
 
     # todo: deduce format of input file; should normally be financisto, or have similar data
 
-    qsutils.process_fin_csv(args, qsutils.load_config(args.verbose,
-                                                      None,
-                                                      None,
-                                                      qsutils.DEFAULT_CONF if not args.no_default_config else None,
-                                                      *args.config or ()),
+    qsutils.process_fin_csv({'args': args,
+                             'config': qsutils.load_config(
+                                 args.verbose,
+                                 None,
+                                 None,
+                                 (qsutils.DEFAULT_CONF
+                                  if not args.no_default_config
+                                  else None),
+                                 *args.config or ())},
                             finperiodic_setup,
                             finperiodic_row,
                             finperiodic_tidyup)

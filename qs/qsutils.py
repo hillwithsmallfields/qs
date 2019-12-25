@@ -169,12 +169,13 @@ def write_fin_csv(header, output_rows, filename):
                               for k, v in output_rows[timestamp].items()})
     return expanded_output_name
 
-def read_process_write_fin_csv(args, config, callback, *callbackextraargs):
+def read_process_write_fin_csv(app_data, callback, *callbackextraargs):
     """Process a CSV file in one of my financial formats.
     From an application, you should probably call process_fin_csv
     instead of this."""
-    input_format, rows = read_fin_csv(args, config, args.input_file)
-    header, output_rows = callback(args, config, input_format, rows, *callbackextraargs)
+    input_format, rows = read_fin_csv(app_data['args'], app_data['config'],
+                                      args.input_file)
+    header, output_rows = callback(app_data, input_format, rows, *callbackextraargs)
     if output_rows and len(output_rows) > 0:
         expanded_output_name = write_fin_csv(header, output_rows, args.output)
         if args.verbose:
@@ -182,12 +183,13 @@ def read_process_write_fin_csv(args, config, callback, *callbackextraargs):
     elif args.verbose:
         print("Nothing to write")
 
-def process_rows(args, config, input_format,
+def process_rows(app_data, input_format,
                  rows,
                  setup_callback, row_callback, tidyup_callback):
     """Process CSV rows.
 
-    From an application, you should probably call process_fin_csv
+    For using this as the core of an application that uses files for
+    its input and output, you should probably call process_fin_csv
     instead of this.
 
     The setup_callback must take the args structure (from argparse), the
@@ -210,23 +212,26 @@ def process_rows(args, config, input_format,
     output.
 
     """
-    column_headers, scratch = (setup_callback(args, config,
-                                             input_format)
+    column_headers, scratch = (setup_callback(app_data, input_format)
                                if setup_callback
                                else ([],{}))
     output_rows = {}
     for timestamp in sorted(rows.keys()):
         row_callback(timestamp, rows[timestamp], output_rows, scratch)
     if tidyup_callback:
-        column_headers, output_rows = tidyup_callback(column_headers, output_rows, scratch)
+        column_headers, output_rows = tidyup_callback(column_headers,
+                                                      output_rows,
+                                                      scratch)
     return column_headers, output_rows
 
-def process_fin_csv(args, config, setup_callback, row_callback, tidyup_callback):
+def process_fin_csv(app_data, setup_callback, row_callback, tidyup_callback):
     """See process_rows for descriptions of the callbacks.
     This is the main entry point in this module."""
-    return read_process_write_fin_csv(args, config,
+    return read_process_write_fin_csv(app_data,
                                       process_rows,
-                                      setup_callback, row_callback, tidyup_callback)
+                                      setup_callback,
+                                      row_callback,
+                                      tidyup_callback)
 
 def main():
     """Tests on the utilities"""
