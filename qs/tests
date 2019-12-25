@@ -39,6 +39,17 @@ $QS/canonical_sheet.py \
     $SCRATCH/handelsbanken.csv
 
 echo
+echo Testing tracked_sheet.py
+echo ==========================
+echo
+
+$QS/tracked_sheet.py \
+    --no-default-config \
+    --config $CONFIGDIR/accounts.yaml \
+    --config $CONVDIR/conversions.yaml \
+    $SCRATCH/handelsbanken.csv
+
+echo
 echo Testing import of Handelsbanken data to Financisto
 echo ==================================================
 echo
