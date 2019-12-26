@@ -12,14 +12,15 @@ def trim_if_float(val):
             else val)
 
 class csv_sheet:
-    """A spreadsheet with headers and column name translation.
+    """The contents of a CSV spreadsheet with headers.
 
-    The name translation allows the caller to use a standard column naming
-    scheme even when the spreadsheets are read from sources with a mixture
-    of naming schemes (such as statements from multiple banks).
+    The 'format' describes the column names, and maps them to a
+    standard set of names.  (The class canonical_csv uses the standard
+    names.)
 
     The rows are assumed to be timestamped, and can be iterated over,
     and output, in time order.
+
     """
 
     def __init__(self,
@@ -71,14 +72,17 @@ class csv_sheet:
                   + "]") if 'column-sequence' in self.format else "")
                 + ">")
 
-    def unused_timestamp_from(self, base_date, base_time):
+    def unused_timestamp_from(self, base_date, base_time=None):
         """Return a timestamp at the given date and time, that is not already
         used for a row. The soonest available time after the one specified is
         used in case of clashes, which will usually retain the order in which
         rows were added, even if only dates are given."""
-        base_time = (base_time or self.default_time)
-        timestamp = datetime.datetime.strptime(base_date+"T"+base_time,
-                                               "%Y-%m-%dT%H:%M:%S")
+        if 'T' in base_date:    # allow base_date to be a whole timestamp
+            timestamp = base_date
+        else:
+            base_time = (base_time or self.default_time)
+            timestamp = datetime.datetime.strptime(base_date+"T"+base_time,
+                                                   "%Y-%m-%dT%H:%M:%S")
         while timestamp in self.rows:
             timestamp += datetime.timedelta(0,1)
         return timestamp
