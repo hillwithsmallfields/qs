@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import account
 import csv_sheet
 import qsutils
 import re
@@ -168,10 +169,12 @@ class canonical_sheet:
                 for canonical_column_name, output_column_name
                 in output_format['columns'].items()}
 
-    def distribute_to_accounts(self):
-        accounts = {}
-        added_row_lists = {}
-        for row in self.rows:
+    def distribute_to_accounts(self, accounts={}, added_row_lists={}):
+        """Distribute the rows of the sheet to account values.
+        Returns a dictionary of accounts, and a dictionary of the rows
+        that were added this time.
+        Initial values for the dictionaries may be passed in."""
+        for row in self.rows.values():
             account_name = row['account']
             if account_name not in accounts:
                 accounts[account_name] = account.account(account_name)
@@ -197,10 +200,20 @@ def main():
             print("reading and converting", filename)
             sheet = canonical_sheet(config, input_sheet=filename, convert_all=all_rows)
             print("canonical sheet from", filename, "is", sheet)
-            print("---- begin", len(sheet), "all" if all_rows else "filtered", "canonical rows ----")
+            print("---- begin sample of", len(sheet), "all" if all_rows else "filtered", "canonical rows ----")
+            countdown = 16
             for row in sheet:
                 print(row)
+                countdown -= 1
+                if countdown == 0:
+                    break;
             print("---- end canonical rows ----")
+            accounts, added_row_lists = sheet.distribute_to_accounts()
+            print("account names for", "unfiltered" if all_rows else "filtered", filename, "are", sorted(accounts.keys()), "and added_row_lists are", sorted(added_row_lists.keys()))
+            for k in sorted(accounts.keys()):
+                print(k, accounts[k])
+            for k in sorted(added_row_lists.keys()):
+                print(k, added_row_lists[k][:8])
 
 if __name__ == "__main__":
     main()

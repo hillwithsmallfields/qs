@@ -1,4 +1,7 @@
+#!/usr/bin/python3
+
 import canonical_sheet
+import qsutils
 import payee
 
 class account:
@@ -157,3 +160,23 @@ class account:
             if in_self and in_other:
                 discrepancies[period] = in_self - in_other
         return discrepancies
+
+# tests
+
+import argparse
+
+def main():
+    """Tests for this module."""
+    parser = qsutils.program_argparser()
+    parser.add_argument("base")
+    parser.add_argument("additional_files", nargs='*')
+    args = parser.parse_args()
+    config = qsutils.program_load_config(args)
+    accounts, added_row_lists = canonical_sheet.canonical_sheet(args.base).distribute_to_accounts()
+    print("Starting with", args.base, "accounts are", accounts, "and added_row_lists are", added_row_lists)
+    for filename in args.additional_files:
+        accounts, added_row_lists = canonical_sheet.canonical_sheet(filename).distribute_to_accounts(accounts, [])
+        print("After adding", filename, "accounts are", accounts, "and added_row_lists are", added_row_lists)
+
+if __name__ == "__main__":
+    main()

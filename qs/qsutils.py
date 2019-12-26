@@ -175,7 +175,7 @@ def read_process_write_fin_csv(app_data, callback, *callbackextraargs):
     From an application, you should probably call process_fin_csv
     instead of this."""
     input_format, rows = read_fin_csv(app_data['args'], app_data['config'],
-                                      args.input_file)
+                                      app_data['args'].input_file)
     header, output_rows = callback(app_data, input_format, rows, *callbackextraargs)
     if output_rows and len(output_rows) > 0:
         expanded_output_name = write_fin_csv(header, output_rows, args.output)

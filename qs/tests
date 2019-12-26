@@ -28,6 +28,9 @@ $QS/csv_sheet.py \
     $SCRATCH/handelsbanken.csv
 
 echo
+echo End of testing csv_sheet.py
+echo ===========================
+echo
 echo Testing canonical_sheet.py
 echo ==========================
 echo
@@ -36,8 +39,12 @@ $QS/canonical_sheet.py \
     --no-default-config \
     --config $CONFIGDIR/accounts.yaml \
     --config $CONVDIR/conversions.yaml \
-    $SCRATCH/handelsbanken.csv
+    $SCRATCH/handelsbanken.csv \
+    $SCRATCH/financisto.csv
 
+echo
+echo End of testing canonical_sheet.py
+echo =================================
 echo
 echo Testing tracked_sheet.py
 echo ==========================
@@ -49,6 +56,25 @@ $QS/tracked_sheet.py \
     --config $CONVDIR/conversions.yaml \
     $SCRATCH/handelsbanken.csv
 
+echo
+echo End of testing tracked_sheet.py
+echo ===============================
+echo
+echo
+echo Testing accounts
+echo ================
+echo
+
+$QS/account.py \
+    --no-default-config \
+    --config $CONFIGDIR/accounts.yaml \
+    --config $CONVDIR/conversions.yaml \
+    $SCRATCH/financisto.csv \
+    $SCRATCH/handelsbanken.csv
+
+echo
+echo End of testing accounts
+echo =======================
 echo
 echo Testing import of Handelsbanken data to Financisto
 echo ==================================================
@@ -66,6 +92,9 @@ $QS/finconv.py \
 echo -n produced importer file
 wc -c -l $SCRATCH/converter-output.csv
 
+echo
+echo End of testing import of Handelsbanken data to Financisto
+echo =========================================================
 echo
 echo Testing import of Financisto and Handelsbanken data to combined
 echo ===============================================================
@@ -85,6 +114,9 @@ echo -n produced combined file
 wc -c -l $SCRATCH/combiner-output.csv
 
 echo
+echo End of testing import of Financisto and Handelsbanken data to combined
+echo ======================================================================
+echo
 echo Testing fintrack
 echo ================
 echo
@@ -101,6 +133,9 @@ echo -n produced tracker file
 wc -c -l $SCRATCH/tracker-output.csv
 
 echo
+echo End of testing fintrack
+echo =======================
+echo
 echo Testing findiscrep
 echo ==================
 echo
@@ -113,6 +148,9 @@ $QS/findiscrep.py \
     --output $SCRATCH/discrepancies.csv \
     $SCRATCH/tracker-output.csv
 
+echo
+echo End of testing findiscrep
+echo =========================
 echo
 echo End of tests
 echo ============
