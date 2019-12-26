@@ -168,6 +168,20 @@ class canonical_sheet:
                 for canonical_column_name, output_column_name
                 in output_format['columns'].items()}
 
+    def distribute_to_accounts(self):
+        accounts = {}
+        added_row_lists = {}
+        for row in self.rows:
+            account_name = row['account']
+            if account_name not in accounts:
+                accounts[account_name] = account.account(account_name)
+            added_row = accounts[account_name].add_row_if_new(row)
+            if added_row:
+                if account_name not in added_row_lists:
+                    added_row_lists[account_name] = []
+                added_row_lists[account_name].append(added_row)
+        return accounts, added_row_lists
+
 # tests
 
 import argparse
