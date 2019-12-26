@@ -10,12 +10,8 @@ import qsutils
 # See notes in finconv.py for config file format
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--config",
-                        action='append')
-    parser.add_argument("-n", "--no-default-config",
-                        action='store_true',
-                        help="""Do not load the default config file.""")
+    parser = qsutils.program_argparser()
+    parser.add_argument("input_files", nargs='*')
     parser.add_argument("-f", "--format",
                         default=None)
     parser.add_argument("-a", "--all-rows",
@@ -24,8 +20,6 @@ def main():
                         Otherwise only the rows for which payee name conversions are given will be converted.""")
     parser.add_argument("-O", "--output-format",
                         default='financisto')
-    parser.add_argument("-v", "--verbose",
-                        action='store_true')
 
     outfile_handling = parser.add_mutually_exclusive_group(required=True)
     outfile_handling.add_argument("-o", "--output")
@@ -34,11 +28,7 @@ def main():
     parser.add_argument("input_file", nargs="?")
     args = parser.parse_args()
 
-    config = qsutils.load_config(args.verbose,
-                                 None,
-                                 None,
-                                 qsutils.DEFAULT_CONF if not args.no_default_config else None,
-                                 *args.config or ())
+    config = qsutils.program_load_config(args)
 
     if args.update:
         infile_name = args.update

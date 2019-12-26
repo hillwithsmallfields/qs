@@ -42,13 +42,7 @@ import qsutils
 #       payee: payee
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--config",
-                        action='append',
-                        help="""Extra config file (may be given multiple times).""")
-    parser.add_argument("-n", "--no-default-config",
-                        action='store_true',
-                        help="""Do not load the default config file.""")
+    parser = qsutils.program_argparser()
     parser.add_argument("-f", "--format",
                         default=None,
                         help="""Format to use for the output file.""")
@@ -60,8 +54,6 @@ def main():
                         default='financisto')
     parser.add_argument("-m", "--message",
                         help="""Message to put in the note field of any rows which don't already have something there.""")
-    parser.add_argument("-v", "--verbose",
-                        action='store_true')
     parser.add_argument("-r", "--base", # TODO: for outfile_handling?
                         default=None,
                         help="""Name of the base spreadsheet.""")
@@ -75,11 +67,7 @@ def main():
     parser.add_argument("input_files", nargs='*')
     args = parser.parse_args()
 
-    config = qsutils.load_config(args.verbose,
-                                 None,
-                                 None,
-                                 qsutils.DEFAULT_CONF if not args.no_default_config else None,
-                                 *args.config or ())
+    config = qsutils.program_load_config(args)
 
     if args.update:
         print("Will update", args.update, "from input files", infile_names)

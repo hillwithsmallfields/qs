@@ -63,24 +63,11 @@ import qsutils
 #       payee: payee
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--config",
-                        action='append',
-                        help="""Extra config file (may be given multiple times).""")
-    parser.add_argument("-n", "--no-default-config",
-                        action='store_true',
-                        help="""Do not load the default config file.""")
-    parser.add_argument("-v", "--verbose",
-                        action='store_true')
-
+    parser = qsutils.program_argparser()
     parser.add_argument("script_files", nargs='*')
     args = parser.parse_args()
 
-    config = qsutils.load_config(args.verbose,
-                                 None,
-                                 None,
-                                 qsutils.DEFAULT_CONF if not args.no_default_config else None,
-                                 *args.config or ())
+    config = qsutils.program_load_config(args)
     script = {}
     qsutils.load_multiple_yaml(script, os.getcwd(), args.script_files)
 

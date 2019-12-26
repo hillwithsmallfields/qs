@@ -33,14 +33,8 @@ def finsplit_tidyup(columns, rows, scratch):
     return columns + sorted(scratch['verticals']), rows
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--config",
-                        action='append')
-    parser.add_argument("-n", "--no-default-config",
-                        action='store_true',
-                        help="""Do not load the default config file.""")
-    parser.add_argument("-v", "--verbose",
-                        action='store_true')
+    parser = qsutils.program_argparser()
+    parser.add_argument("input_files", nargs='*')
     parser.add_argument("-o", "--output")
     parser.add_argument("-f", "--format",
                         default=None)
@@ -54,14 +48,7 @@ def main():
     args = parser.parse_args()
 
     qsutils.process_fin_csv({'args': args,
-                             'config': qsutils.load_config(
-                                 args.verbose,
-                                 None,
-                                 None,
-                                 (qsutils.DEFAULT_CONF
-                                  if not args.no_default_config
-                                  else None),
-                                 *args.config or ())},
+                             'config': qsutils.program_load_config(args)},
                             finsplit_setup,
                             finsplit_row,
                             finsplit_tidyup)

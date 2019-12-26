@@ -10,7 +10,7 @@ import qsutils
 weekday_names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = qsutils.program_argparser()
     parser.add_argument("-g", "--gap",
                         type=int, default=3,
                         help="""The minimum length of gap to report, in days.""")
@@ -20,21 +20,9 @@ def main():
     parser.add_argument("-o", "--output",
                         default="gaps.csv",
                         help="""The output filename.""")
-    parser.add_argument("-c", "--config",
-                        action='append',
-                        help="""Extra config file (may be given multiple times).""")
-    parser.add_argument("-n", "--no-default-config",
-                        action='store_true',
-                        help="""Do not load the default config file.""")
-    parser.add_argument("-v", "--verbose",
-                        action='store_true')
     parser.add_argument("input_files", nargs='*')
     args = parser.parse_args()
-    config = qsutils.load_config(args.verbose,
-                                 None,
-                                 None,
-                                 qsutils.DEFAULT_CONF if not args.no_default_config else None,
-                                 *args.config or ())
+    config = qsutils.program_load_config(args)
     with open(args.output, 'w') as outstream:
         writer = csv.DictWriter(outstream, fieldnames=['File', 'From date', 'From weekday', 'To', 'Period'])
         writer.writeheader()

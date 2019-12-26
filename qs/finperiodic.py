@@ -52,14 +52,10 @@ def finperiodic_tidyup(columns, rows, scratch):
     return None, None
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--config",
-                        action='append')
-    parser.add_argument("-n", "--no-default-config",
-                        action='store_true',
-                        help="""Do not load the default config file.""")
-    parser.add_argument("-v", "--verbose",
-                        action='store_true')
+    parser = qsutils.program_argparser()
+    parser.add_argument("input_files", nargs='*')
+    args = parser.parse_args()
+    config = qsutils.program_load_config(args)
     parser.add_argument("-o", "--output")
     parser.add_argument("-f", "--format",
                         default=None)
@@ -74,9 +70,7 @@ def main():
                                  args.verbose,
                                  None,
                                  None,
-                                 (qsutils.DEFAULT_CONF
-                                  if not args.no_default_config
-                                  else None),
+                                 qsutils.program_load_config(args),
                                  *args.config or ())},
                             finperiodic_setup,
                             finperiodic_row,

@@ -11,32 +11,10 @@ import yaml
 # See notes in finconv.py for config file format
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--config",
-                        action='append',
-                        help="""Extra config file (may be given multiple times).""")
-    parser.add_argument("-n", "--no-default-config",
-                        action='store_true',
-                        help="""Do not load the default config file.""")
-    parser.add_argument("-f", "--format",
-                        default='combined')
-    parser.add_argument("-o", "--output")
-    parser.add_argument("-k", "--key",
-                        help="""Key to group by,""",
-                        default="payee")
-    period_size = parser.add_mutually_exclusive_group()
-    period_size.add_argument("-m", "--monthly",
-                             help="""Group by months instead of days.""")
-    period_size.add_argument("-y", "--yearly",
-                             help="""Group by years instead of days.""")
-    parser.add_argument("input_file")
+    parser = qsutils.program_argparser()
+    parser.add_argument("input_files", nargs='*')
     args = parser.parse_args()
-
-    config = qsutils.load_config(args.verbose,
-                                 None,
-                                 None,
-                                 qsutils.DEFAULT_CONF if not args.no_default_config else None,
-                                 *args.config or ())
+    config = qsutils.program_load_config(args)
 
     time_periods = {}
     date_size = 10
