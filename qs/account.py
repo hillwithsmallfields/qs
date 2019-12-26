@@ -63,6 +63,11 @@ class account:
         return len(self.payees)
 
     def add_row_if_new(self, row):
+        """Add a row to the account if it belongs to this account
+        and was not already recorded.
+
+        If it was added, return it, otherwise return None.
+        """
         payee_name = row['payee']
         row_payee = self.payees.get(payee_name, None)
         if row_payee is None:
@@ -70,7 +75,9 @@ class account:
             self.payees[payee_name] = row_payee
         when = row['timestamp']
         how_much = -row['amount']
-        if not row_payee.already_seen(when, how_much):
+        if row_payee.already_seen(when, how_much):
+            return None
+        else:
             static_payee = (self.base.payees.get(payee_name, None)
                             if self.base
                             else None)
@@ -79,15 +86,27 @@ class account:
                 self.balance -= how_much
                 row_payee.add_transaction(when, how_much)
                 self.all_transactions[when] = row
+                return row
+            return None
 
     def add_sheet(self, sheet):
-        """Add all the rows of the given sheet to this account."""
+        """Add to this account all the rows of the given sheet
+        that belong to the account and were not already recorded in it.
+
+        Return a canonical_sheet containing only the rows that were added."""
+        added_rows = []
         for row in sheet.iter():
             if row.get('account', None) == self.name:
-                self.add_row_if_new(row)
+                was_new = self.add_row_if_new(row)
+                if was_new:
+                    added_rows.append(was_new)
+        if len(added_rows) == 0:
+            return None
+        else:
+            return canonical_sheet.canonical_sheet(None, input_sheet=added_rows)
 
     def combine_same_period_entries(self, period=lambda dt: dt.day):
-        """Produce an account base on this one, with just one entry per period
+        """Produce an account based on this one, with just one entry per period
         (day, by default).
 
         For each payee, convert all the entries in the same period to one total.
