@@ -30,6 +30,9 @@ class canonical_sheet:
     translating payee names between naming schemes.
     """
 
+    # not subclassed from csv_sheet, because that has a 'format' and
+    # the point of this class is to avoid that.
+
     def __init__(self,
                  config,
                  input_sheet=None,
@@ -64,6 +67,8 @@ class canonical_sheet:
         elif isinstance(input_sheet, canonical_sheet):
             # take a copy
             self.rows = {k: {vk: vv for vk, vv in v.items()} for k, v in input_sheet.rows.items()}
+        elif type(input_sheet) == list:
+            self.rows = input_sheet
 
     def __iter__(self):
         self.row_order = sorted(self.rows.keys())
