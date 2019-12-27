@@ -99,7 +99,7 @@ def main():
     for row in base_sheet:
         account_name = row['account']
         if account_name not in accounts:
-            accounts[account_name] = account.account(account_name)
+            base_accounts[account_name] = account.account(account_name)
         base_accounts[account_name].add_row_if_new(row)
 
     if args.verbose:
