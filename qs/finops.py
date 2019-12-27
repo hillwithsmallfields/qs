@@ -88,7 +88,9 @@ def main():
     #                       else args.output_format)
     # output_format = config['formats'][output_format_name]
 
-    variables = {}
+    # Making variables of these names allows us to hack everything in
+    # a symbol-like position to be a variable reference:
+    variables = {'True': True, 'False': False, 'None': None}
 
     if 'base' in script:
         base_section = script['base']

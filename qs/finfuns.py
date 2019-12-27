@@ -1,8 +1,11 @@
 # Financial spreadsheet functions
 
+import diff_sheet
 import re
 
-functions = ['list_accounts',
+functions = ['compare',
+             'list_accounts',
+             'write_all_columns',
              'write_csv']
 
 functions_regexp = re.compile(r"\b(" + "|".join(functions) + r")\(")
@@ -23,3 +26,13 @@ def list_accounts(variables, filename):
 
 def write_csv(value, filename):
     value.write_csv(filename)
+
+def write_all_columns(value, filename):
+    value.write_all_columns(filename)
+
+def compare(result_column,
+            sheet_a, column_a, track_a,
+            sheet_b, column_b, track_b):
+    return diff_sheet.diff_sheet(result_column,
+                                 sheet_a, column_a, track_a,
+                                 sheet_b, column_b, track_b)
