@@ -15,6 +15,11 @@ class payee:
         return ("<payee " + ("unknown" if self.name == "" else self.name)
                 + " balance " + str(self.balance) + ">")
 
+    def transactions_string(self, separator=','):
+        """Return a string representing the transactions for this payee."""
+        return separator.join([trim_if_float(self.by_timestamp[ts])
+                               for ts in sorted(self.by_timestamp.keys())])
+
     def timestamp_matches_one_in_list(self, timestamp, of_that_amount):
         """Return whether there are any transactions in a timestamp list near
         enough in time to count as the same."""

@@ -9,6 +9,11 @@ import pprint
 import re
 import yaml
 
+def trim_if_float(val):
+    return (("%.2F" % val)
+            if type(val) is float
+            else val)
+
 def deduce_file_type_from_headers(headers):
     if 'Kg' in headers:
         return 'weight'

@@ -34,6 +34,24 @@ class canonical_sheet:
     # not subclassed from csv_sheet, because that has a 'format' and
     # the point of this class is to avoid that.
 
+    canonical_column_sequence = [
+        'date',
+        'time',
+        'timestamp',
+        'payee',
+        'amount',
+        'account',
+        'balance',
+        'currency',
+        'original_amount',
+        'original_currency',
+        'category',
+        'parent',
+        'location',
+        'project',
+        'message'
+    ]
+
     def __init__(self,
                  config,
                  input_sheet=None,
@@ -184,6 +202,19 @@ class canonical_sheet:
                     added_row_lists[account_name] = []
                 added_row_lists[account_name].append(added_row)
         return accounts, added_row_lists
+
+    def write_csv(self, filename):
+        """Write a canonical spreadsheet to a file.
+        Any columns not in the canonical format are ignored."""
+        with open(os.path.expanduser(os.path.expandvars(filename)), 'w') as outfile:
+            writer = csv.DictWriter(outfile, canonical_column_sequence)
+            writer.writeheader()
+            for timestamp in sorted(self.rows.keys()):
+                row = self.rows[timestamp]
+                # select only the columns required for this sheet, and
+                # also round the unfortunately-represented floats
+                writer.writerow({sk: qsutils.trim_if_float(row.get(sk, None))
+                                 for sk in canonical_column_sequence})
 
 # tests
 

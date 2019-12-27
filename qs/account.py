@@ -21,6 +21,9 @@ class account:
     Iterating over an account object will yield all the payees from
     that account.
 
+    Writing it to a CSV file will list the payees and what they were
+    paid.
+
     """
 
     def __init__(self,
@@ -160,6 +163,19 @@ class account:
             if in_self and in_other:
                 discrepancies[period] = in_self - in_other
         return discrepancies
+
+    def write_csv(self, filename):
+        """Write a account to a CSV file.
+        Each row is a payee and their payments."""
+        with open(os.path.expanduser(os.path.expandvars(filename)), 'w') as outfile:
+            colseq = ['payee','balance','transactions']
+            writer = csv.DictWriter(outfile, colseq)
+            writer.writeheader()
+            for payee_name in sorted(self.payees.keys()):
+                payee = self.payees[payee_name]
+                row = [payee_name, payee.balance, payee.transactions_string(separator=';')]
+                # round the unfortunately-represented floats
+                writer.writerow({sk: qsutils.trim_if_float(row.get(sk, None)) for sk in colseq})
 
 # tests
 

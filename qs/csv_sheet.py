@@ -6,11 +6,6 @@ import ordered_set
 import os.path
 import qsutils
 
-def trim_if_float(val):
-    return (("%.2F" % val)
-            if type(val) is float
-            else val)
-
 class csv_sheet:
     """The contents of a CSV spreadsheet with headers.
 
@@ -138,7 +133,7 @@ class csv_sheet:
                          for row0 in csv.DictReader(infile)}
             return True
 
-    def write(self, filename):
+    def write_csv(self, filename):
         """Write a spreadsheet in a given format.
         Any columns not used by that format are ignored."""
         with open(os.path.expanduser(os.path.expandvars(filename)), 'w') as outfile:
@@ -149,7 +144,7 @@ class csv_sheet:
                 row = self.rows[timestamp]
                 # select only the columns required for this sheet, and
                 # also round the unfortunately-represented floats
-                writer.writerow({sk: trim_if_float(row.get(sk, None)) for sk in colseq})
+                writer.writerow({sk: qsutils.trim_if_float(row.get(sk, None)) for sk in colseq})
 
     def write_all_columns(self, filename):
         """Write a spreadsheet in a given format.

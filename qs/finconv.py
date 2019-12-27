@@ -128,7 +128,7 @@ def main():
 
     formatted_sheet.formatted_sheet(config,
                                     output_format_name,
-                                    out_sheet).write(os.path.expanduser(os.path.expandvars(outfile)))
+                                    out_sheet).write_csv(os.path.expanduser(os.path.expandvars(outfile)))
 
     return 0
 
