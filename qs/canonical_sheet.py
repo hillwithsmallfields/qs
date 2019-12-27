@@ -168,7 +168,7 @@ class canonical_sheet:
             # does the canonically named column have a default output value?
             if conversion and canonical_outcol in conversion:
                 out_row[canonical_outcol] = conversion[canonical_outcol]
-            # otherwise, can we copy if from an input cell?
+            # otherwise, can we copy it from an input cell?
             elif canonical_outcol in in_columns:
                 out_row[canonical_outcol] = input_sheet.get_cell(row, canonical_outcol)
             # otherwise, are we given this as a default by our caller?
