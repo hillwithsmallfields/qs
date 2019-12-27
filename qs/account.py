@@ -172,11 +172,17 @@ def main():
     parser.add_argument("additional_files", nargs='*')
     args = parser.parse_args()
     config = qsutils.program_load_config(args)
-    accounts, added_row_lists = canonical_sheet.canonical_sheet(args.base).distribute_to_accounts()
-    print("Starting with", args.base, "accounts are", accounts, "and added_row_lists are", added_row_lists)
+    accounts, added_row_lists = canonical_sheet.canonical_sheet(
+        config, input_sheet=args.base, convert_all=True).distribute_to_accounts()
+    print("Starting with", args.base, "accounts are", sorted(accounts.keys()), "and added_row_lists are", sorted(added_row_lists.keys()))
+    for added_name in sorted(added_row_lists.keys()):
+        print("    ", added_name, len(added_row_lists[added_name]))
     for filename in args.additional_files:
-        accounts, added_row_lists = canonical_sheet.canonical_sheet(filename).distribute_to_accounts(accounts, [])
-        print("After adding", filename, "accounts are", accounts, "and added_row_lists are", added_row_lists)
+        accounts, added_row_lists = canonical_sheet.canonical_sheet(
+            config, input_sheet=filename, convert_all=True).distribute_to_accounts(accounts, {})
+        print("After adding", filename, "accounts are", sorted(accounts.keys()), "and added_row_lists are", sorted(added_row_lists.keys()))
+        for added_name in sorted(added_row_lists.keys()):
+            print("    ", added_name, len(added_row_lists[added_name]))
 
 if __name__ == "__main__":
     main()
