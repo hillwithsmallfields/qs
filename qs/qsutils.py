@@ -183,10 +183,10 @@ def read_process_write_fin_csv(app_data, callback, *callbackextraargs):
                                       app_data['args'].input_file)
     header, output_rows = callback(app_data, input_format, rows, *callbackextraargs)
     if output_rows and len(output_rows) > 0:
-        expanded_output_name = write_fin_csv(header, output_rows, args.output)
-        if args.verbose:
+        expanded_output_name = write_fin_csv(header, output_rows, app_data['args'].output)
+        if app_data['args'].verbose:
             print("Wrote", len(output_rows), "rows to", expanded_output_name)
-    elif args.verbose:
+    elif app_data['args'].verbose:
         print("Nothing to write")
 
 def process_rows(app_data, input_format,
