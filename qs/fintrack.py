@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 # Program to track finance spreadsheets
 
@@ -33,13 +33,13 @@ def main():
     if args.update:
         infile_name = args.update
         outfile_name = args.update
-        print "Will update", args.update, "from input file", infile_name
+        print("Will update", args.update, "from input file", infile_name)
     else:
         infile_name = args.input_file
         outfile_name = args.output
         output_format_name = args.output_format
         if args.verbose:
-            print "Will write new output file", outfile_name, "from input file", infile_name, "with provisional format", output_format_name
+            print("Will write new output file", outfile_name, "from input file", infile_name, "with provisional format", output_format_name)
 
     output_format = config['formats'][output_format_name]
 
@@ -56,6 +56,7 @@ def main():
     with open(os.path.expanduser(os.path.expandvars(outfile_name)), 'w') as outfile:
         writer = csv.DictWriter(outfile, output_format['column-sequence'])
         writer.writeheader()
+        print("infile_name is", infile_name)
         with open(os.path.expanduser(os.path.expandvars(infile_name))) as infile:
             for row in csv.DictReader(infile):
                 for tracker, tracked in trackers.iteritems():

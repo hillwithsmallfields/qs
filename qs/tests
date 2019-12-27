@@ -71,6 +71,7 @@ echo -n produced combined file
 wc -c -l $SCRATCH/combiner-output.csv
 
 $QS/fintrack.py \
+    --verbose \
     --no-default-config \
     --config $CONFIGDIR/accounts.yaml \
     --config $CONVDIR/conversions.yaml \
