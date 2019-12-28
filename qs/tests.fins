@@ -1,0 +1,15 @@
+config:
+  files:
+    - ~/open-projects/github.com/hillwithsmallfields/qs/conf/accounts.yaml
+    - ~/common/finances/conversions.yaml
+base:
+   directory: ~/common/qs-scratch
+   files:
+     financisto.csv: base-%s
+incoming:
+  directory: ~/common/qs-scratch
+  files:
+     handelsbanken.csv: Handelsbanken current account
+commands:
+  - list_accounts("/tmp/account-names")
+  - write_csv(Handelsbanken current account, "/tmp/handelsbanken.csv")

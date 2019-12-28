@@ -3,7 +3,7 @@
 import csv_sheet
 import canonical_sheet
 
-class diff_sheet(csv_sheet):
+class diff_sheet(csv_sheet.csv_sheet):
 
     """A sheet representing the timeline of differences between columns in
     two input sheets (or they could be the same sheet)."""
@@ -43,8 +43,7 @@ class diff_sheet(csv_sheet):
             self.rows[ts] = row
 
     def write_csv(self, filename):
-
-    """Write a differences spreadsheet to a file."""
+        """Write a differences spreadsheet to a file."""
         with open(os.path.expanduser(os.path.expandvars(filename)), 'w') as outfile:
             colseq = ['timestamp', result_column,
                       'amount_a', 'balance_a',

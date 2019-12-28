@@ -256,7 +256,7 @@ def program_load_config(args):
                        None,
                        None,
                        DEFAULT_CONF if not args.no_default_config else None,
-                       *args.config)
+                       *args.config or [])
 
 def main():
     """Tests on the utilities"""

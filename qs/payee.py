@@ -1,4 +1,5 @@
 import datetime
+import qsutils
 
 class payee:
     """A named endpoint for transactions to or from an account."""
@@ -17,8 +18,10 @@ class payee:
 
     def transactions_string(self, separator=','):
         """Return a string representing the transactions for this payee."""
-        return separator.join([trim_if_float(self.by_timestamp[ts])
-                               for ts in sorted(self.by_timestamp.keys())])
+        return separator.join([
+            separator.join([qsutils.trim_if_float(a)
+                            for a in self.by_timestamp[ts]])
+            for ts in sorted(self.by_timestamp.keys())])
 
     def timestamp_matches_one_in_list(self, timestamp, of_that_amount):
         """Return whether there are any transactions in a timestamp list near

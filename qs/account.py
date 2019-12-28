@@ -1,8 +1,10 @@
 #!/usr/bin/python3
 
 import canonical_sheet
-import qsutils
+import csv
+import os
 import payee
+import qsutils
 
 class account:
     """A financial account, with the transactions that have happened on it.
@@ -169,13 +171,13 @@ class account:
         Each row is a payee and their payments."""
         with open(os.path.expanduser(os.path.expandvars(filename)), 'w') as outfile:
             colseq = ['payee','balance','transactions']
-            writer = csv.DictWriter(outfile, colseq)
-            writer.writeheader()
+            writer = csv.writer(outfile, colseq)
+            writer.writerow(colseq)
             for payee_name in sorted(self.payees.keys()):
                 payee = self.payees[payee_name]
                 row = [payee_name, payee.balance, payee.transactions_string(separator=';')]
                 # round the unfortunately-represented floats
-                writer.writerow({sk: qsutils.trim_if_float(row.get(sk, None)) for sk in colseq})
+                writer.writerow(row)
 
 # tests
 
