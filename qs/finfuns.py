@@ -8,6 +8,7 @@ import re
 functions = ['add_sheet',
              'by_day',
              'by_month',
+             'by_year',
              'compare',
              'list_accounts',
              'set',
@@ -35,6 +36,10 @@ def by_day(variables, original):
 def by_month(variables, original):
     return original.combine_same_period_entries(qsutils.granularity_month,
                                                 time_chars=7)
+
+def by_year(variables, original):
+    return original.combine_same_period_entries(qsutils.granularity_year,
+                                                time_chars=4)
 
 def compare(variables,
             result_column,

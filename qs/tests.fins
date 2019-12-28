@@ -13,3 +13,6 @@ commands:
   - write_csv(statement for Handelsbanken current account, "/tmp/handelsbanken-statement.csv")
   - write_csv(by_day(app Handelsbanken current account), "/tmp/handelsbanken-daily.csv")
   - write_csv(by_month(app Handelsbanken current account), "/tmp/handelsbanken-monthly.csv")
+  - write_csv(by_year(app Handelsbanken current account), "/tmp/handelsbanken-yearly.csv")
+  # this one isn't getting converted into Python correctly
+  - write_csv(add_sheet(app Handelsbanken current account, statement for handelsbanken), "/tmp/handelsbanken-added-from-statement.csv")

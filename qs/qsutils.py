@@ -20,6 +20,9 @@ def granularity_day(overprecise):
 def granularity_month(overprecise):
     return datetime.datetime(overprecise.year, overprecise.month, 1)
 
+def granularity_year(overprecise):
+    return datetime.datetime(overprecise.year, 1, 1)
+
 def deduce_file_type_from_headers(headers):
     if 'Kg' in headers:
         return 'weight'
