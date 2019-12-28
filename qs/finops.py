@@ -92,45 +92,24 @@ def main():
     # a symbol-like position to be a variable reference:
     variables = {'True': True, 'False': False, 'None': None}
 
-    if 'base' in script:
-        base_section = script['base']
-        base_dir = base_section.get('directory', os.getcwd())
-        for base_filename, account_name in base_section.get('files', {}).items():
-            if account_name == "":
-                account_name = None
+    if 'inputs' in script:
+        input_section = script['inputs']
+        input_dir = input_section.get('directory', os.getcwd())
+        for input_filename, account_name_template in input_section.get('files', {}).items():
+            if account_name_template == "":
+                account_name_template = "%s"
             if args.verbose:
-                print("loading", base_filename, "as base sheet for account", account_name)
+                print("loading", input_filename, "as input sheet for accounts templated with", account_name_template)
             for row in canonical_sheet.canonical_sheet(
                     config,
-                    input_sheet=qsutils.resolve_filename(base_filename,
-                                                         base_dir),
+                    input_sheet=qsutils.resolve_filename(input_filename,
+                                                         input_dir),
                     convert_all=True,
+                    account_name_template=account_name_template,
                     verbose=args.verbose):
                 account_name = row['account']
                 if account_name not in variables:
                     variables[account_name] = account.account(account_name)
-                variables[account_name].add_row_if_new(row)
-
-    if 'incoming' in script:
-        incoming_section = script['incoming']
-        incoming_dir = incoming_section.get('directory', os.getcwd())
-        for incoming_filename, account_name in incoming_section.get('files', {}).items():
-            if account_name == "":
-                account_name = None
-            if args.verbose:
-                print("loading", incoming_filename, "as incoming sheet for account", account_name)
-            for row in canonical_sheet.canonical_sheet(
-                    config,
-                    input_sheet=qsutils.resolve_filename(incoming_filename,
-                                                         incoming_dir),
-                    convert_all=True,
-                    account_name_template=account_name,
-                    verbose=args.verbose):
-                account_name = row['account']
-                if account_name not in variables:
-                    variables[account_name] = account.account(
-                        account_name,
-                        base_account=base_accounts.get(account_name, None))
                 variables[account_name].add_row_if_new(row)
 
     for command in script.get('commands', []):

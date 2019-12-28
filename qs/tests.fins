@@ -2,14 +2,12 @@ config:
   files:
     - ~/open-projects/github.com/hillwithsmallfields/qs/conf/accounts.yaml
     - ~/common/finances/conversions.yaml
-base:
-   directory: ~/common/qs-scratch
-   files:
-     financisto.csv: base-%s
-incoming:
+inputs:
   directory: ~/common/qs-scratch
   files:
-     handelsbanken.csv: Handelsbanken current account
+    financisto.csv:      app %s
+    handelsbanken.csv:   statement for %s
 commands:
   - list_accounts("/tmp/account-names")
-  - write_csv(Handelsbanken current account, "/tmp/handelsbanken.csv")
+  - write_csv(app Handelsbanken current account, "/tmp/handelsbanken-app.csv")
+  - write_csv(statement for Handelsbanken current account, "/tmp/handelsbanken-statement.csv")
