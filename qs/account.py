@@ -2,6 +2,9 @@
 
 import canonical_sheet
 import csv
+import datetime
+import functools
+import operator
 import os
 import payee
 import qsutils
@@ -36,6 +39,7 @@ class account:
                  transactions=None,
                  copy_metadata_from=None):
         self.name = name
+        self.time_chars = 19
         if copy_metadata_from:
             self.currency = copy_metadata_from.currency
             self.opening_balance = copy_metadata_from.opening_balance
@@ -113,7 +117,9 @@ class account:
         else:
             return canonical_sheet.canonical_sheet(None, input_sheet=added_rows)
 
-    def combine_same_period_entries(self, period=lambda dt: dt.day):
+    def combine_same_period_entries(self,
+                                    period,
+                                    time_chars=19):
         """Produce an account based on this one, with just one entry per period
         (day, by default).
 
@@ -122,38 +128,42 @@ class account:
 
         """
         combined = account(self.name, copy_metadata_from=self)
+        # first, all the payees; these are amounts
         for name, orig_payee in self.payees.items():
             by_timestamp = orig_payee.by_timestamp
             if len(by_timestamp) <= 1:
                 continue
             acc_payee = payee.payee(orig_payee.name)
             timestamps = sorted(by_timestamp.keys())
-            period = period(timestamps[0])
-            period_total = by_timestamp[timestamps[0]]
+            period_start = period(timestamps[0])
+            period_total = functools.reduce(operator.add, by_timestamp[timestamps[0]], 0)
             for ts in timestamps[1:]:
-                if period(ts) == period:
-                    period_total += by_timestamp[ts]
+                if period(ts) == period_start:
+                    period_total += functools.reduce(operator.add, by_timestamp[ts], 0)
                 else:
-                    acc_payee.add_transaction(period, period_total)
-                    period = period(ts)
-                    period_total = by_timestamp[ts]
+                    acc_payee.add_transaction(period_start, period_total)
+                    period_start = period(ts)
+                    period_total = functools.reduce(operator.add, by_timestamp[ts], 0)
             # Record the final period's transactions
-            acc_payee.add_transaction(period, period_total)
+            acc_payee.add_transaction(period_start, period_total)
             combined.payees[name] = acc_payee
+        # then the overview; these are whole rows
         transactions_by_period = {}
         timestamps = sorted(self.all_transactions.keys())
-        period = period(timestamps[0])
-        period_total = self.all_transactions[timestamps[0]]
+        period_start = period(timestamps[0])
+        period_total = self.all_transactions[timestamps[0]].get('amount', 0)
         for ts in timestamps[1:]:
-            if period(ts) == period:
-                period_total += self.all_transactions[ts]
+            if period(ts) == period_start:
+                period_total += self.all_transactions[ts].get('amount', 0)
             else:
-                transactions_by_period[period] = period_total
-                period = period(ts)
-                period_total = self.all_transactions[ts]
+                transactions_by_period[period_start] = period_total
+                period_start = period(ts)
+                period_total = self.all_transactions[ts].get('amount', 0)
+            last_ts = ts
         # Record the final period's transactions
-        transactions_by_period[period] = period_total
+        transactions_by_period[period_start] = period_total
         combined.all_transactions = transactions_by_period
+        combined.time_chars = time_chars
         return combined
 
     def compare_by_period(self, other):
@@ -175,7 +185,7 @@ class account:
             writer.writerow(colseq)
             for payee_name in sorted(self.payees.keys()):
                 payee = self.payees[payee_name]
-                row = [payee_name, payee.balance, payee.transactions_string(separator=';')]
+                row = [payee_name, qsutils.trim_if_float(payee.balance), payee.transactions_string(separator='; ', time_chars=self.time_chars)]
                 # round the unfortunately-represented floats
                 writer.writerow(row)
 

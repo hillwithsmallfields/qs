@@ -1,10 +1,16 @@
 # Financial spreadsheet functions
 
+import datetime
 import diff_sheet
+import qsutils
 import re
 
-functions = ['compare',
+functions = ['add_sheet',
+             'by_day',
+             'by_month',
+             'compare',
              'list_accounts',
+             'set',
              'write_all_columns',
              'write_csv']
 
@@ -19,6 +25,25 @@ def convert_to_Python(command):
 
 # The functions
 
+def add_sheet(variables, account, sheet):
+    return account.add_sheet(sheet)
+
+def by_day(variables, original):
+    return original.combine_same_period_entries(qsutils.granularity_day,
+                                                time_chars=10)
+
+def by_month(variables, original):
+    return original.combine_same_period_entries(qsutils.granularity_month,
+                                                time_chars=7)
+
+def compare(variables,
+            result_column,
+            sheet_a, column_a, track_a,
+            sheet_b, column_b, track_b):
+    return diff_sheet.diff_sheet(result_column,
+                                 sheet_a, column_a, track_a,
+                                 sheet_b, column_b, track_b)
+
 def list_accounts(variables, filename=None):
     varnames = sorted(variables.keys())
     if filename:
@@ -28,21 +53,15 @@ def list_accounts(variables, filename=None):
     return varnames
 
 def set(variables, name, value):
+    if name in variables:
+        print("Overwriting", name)
     variables[name] = value
-    return value
-
-def write_csv(variables, value, filename):
-    value.write_csv(filename)
     return value
 
 def write_all_columns(variables, value, filename):
     value.write_all_columns(filename)
     return value
 
-def compare(variables,
-            result_column,
-            sheet_a, column_a, track_a,
-            sheet_b, column_b, track_b):
-    return diff_sheet.diff_sheet(result_column,
-                                 sheet_a, column_a, track_a,
-                                 sheet_b, column_b, track_b)
+def write_csv(variables, value, filename):
+    value.write_csv(filename)
+    return value

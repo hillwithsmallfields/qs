@@ -11,3 +11,5 @@ commands:
   - list_accounts("/tmp/account-names")
   - write_csv(app Handelsbanken current account, "/tmp/handelsbanken-app.csv")
   - write_csv(statement for Handelsbanken current account, "/tmp/handelsbanken-statement.csv")
+  - write_csv(by_day(app Handelsbanken current account), "/tmp/handelsbanken-daily.csv")
+  - write_csv(by_month(app Handelsbanken current account), "/tmp/handelsbanken-monthly.csv")

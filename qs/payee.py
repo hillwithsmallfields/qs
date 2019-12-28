@@ -6,8 +6,8 @@ class payee:
 
     def __init__(self, name):
         self.name = name
-        self.by_timestamp = {}
-        self.by_amount = {}
+        self.by_timestamp = {}  # dictionary of timestamps to lists of amounts
+        self.by_amount = {}     # dictionary of amounts to lists of timestamps
         self.balance = 0
         self.allowable_before = datetime.timedelta(3, 0)
         self.allowable_after = datetime.timedelta(1, 0)
@@ -16,11 +16,14 @@ class payee:
         return ("<payee " + ("unknown" if self.name == "" else self.name)
                 + " balance " + str(self.balance) + ">")
 
-    def transactions_string(self, separator=','):
+    def transactions_string(self, separator=',', time_chars=19):
         """Return a string representing the transactions for this payee."""
         return separator.join([
-            separator.join([qsutils.trim_if_float(a)
-                            for a in self.by_timestamp[ts]])
+            ('@'
+             + str(ts)[:time_chars]
+             + ': '
+             + separator.join([qsutils.trim_if_float(a)
+                               for a in self.by_timestamp[ts]]))
             for ts in sorted(self.by_timestamp.keys())])
 
     def timestamp_matches_one_in_list(self, timestamp, of_that_amount):
@@ -45,7 +48,6 @@ class payee:
         """Record a transaction with this payee.
         You should first check that it is not a duplicate,
         using self.already_seen."""
-        sized = self.by_amount.get(amount, None)
         if amount in self.by_amount:
             self.by_amount[amount].append(timestamp)
         else:

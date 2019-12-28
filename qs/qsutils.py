@@ -14,6 +14,12 @@ def trim_if_float(val):
             if type(val) is float
             else val)
 
+def granularity_day(overprecise):
+    return datetime.datetime(overprecise.year, overprecise.month, overprecise.day)
+
+def granularity_month(overprecise):
+    return datetime.datetime(overprecise.year, overprecise.month, 1)
+
 def deduce_file_type_from_headers(headers):
     if 'Kg' in headers:
         return 'weight'
