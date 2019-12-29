@@ -107,7 +107,7 @@ class account:
 
         Return a canonical_sheet containing only the rows that were added."""
         added_rows = []
-        for row in sheet.iter():
+        for row in sheet:
             if row.get('account', None) == self.name:
                 was_new = self.add_row_if_new(row)
                 if was_new:
