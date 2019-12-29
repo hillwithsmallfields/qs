@@ -16,13 +16,13 @@ functions = ['add_sheet',
              'write_csv']
 
 functions_regexp = re.compile(r"\b(" + "|".join(functions) + r")\(")
-variables_regexp = re.compile(r"([(,]) *([A-Za-z][A-Za-z0-9_ ]+) *([,)])")
+variables_regexp = re.compile(r"([(,]) *([A-Za-z][A-Za-z0-9_ ]+) *(?=[,)])")
 
 def convert_to_Python(command):
     """Add package prefixes to a Python string."""
     return functions_regexp.sub(r"finfuns.\1(variables, ",
                                 variables_regexp.sub(
-                                    r"\1variables['\2']\3",command))
+                                    r"\1variables['\2']",command))
 
 # The functions
 
