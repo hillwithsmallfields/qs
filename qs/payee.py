@@ -21,19 +21,21 @@ class payee:
                 + " balance " + str(self.balance) + ">")
 
     def __iter__(self):
-        self.ordered = sorted(self.by_amount.keys())
-        self.cursor = -1        # because we pre-increment it
+        self.ordered = sorted(self.by_timestamp.keys())
+        self.cursor = 0
+        self.current = self.by_timestamp[self.ordered[0]]
+        self.subcursor = -1
         return self
 
     def __next__(self):
         self.subcursor += 1
-        if self.current is None or self.subcursor >= len(self.current):
+        if self.subcursor >= len(self.current):
             self.cursor += 1
             if self.cursor >= len(self.ordered):
                 raise StopIteration
-            self.current = self.order[self.cursor]
-            self.subcursor = 0
-        return (self.cursor, self.current[self.subcursor])
+            self.current = self.by_timestamp[self.ordered[self.cursor]]
+            self.subcursor = -1
+        return (self.ordered[self.cursor], self.current[self.subcursor])
 
     def transactions_string(self, separator=',', time_chars=19):
         """Return a string representing the transactions for this payee."""
