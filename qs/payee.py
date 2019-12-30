@@ -9,12 +9,31 @@ class payee:
         self.by_timestamp = {}  # dictionary of timestamps to lists of amounts
         self.by_amount = {}     # dictionary of amounts to lists of timestamps
         self.balance = 0
+        self.ordered = None
+        self.cursor = -1
+        self.current = None
+        self.subcursor = -1
         self.allowable_before = datetime.timedelta(3, 0)
         self.allowable_after = datetime.timedelta(1, 0)
 
     def __str__(self):
         return ("<payee " + ("unknown" if self.name == "" else self.name)
                 + " balance " + str(self.balance) + ">")
+
+    def __iter__(self):
+        self.ordered = sorted(self.by_amount.keys())
+        self.cursor = -1        # because we pre-increment it
+        return self
+
+    def __next__(self):
+        self.subcursor += 1
+        if self.current is None or self.subcursor >= len(self.current):
+            self.cursor += 1
+            if self.cursor >= len(self.ordered):
+                raise StopIteration
+            self.current = self.order[self.cursor]
+            self.subcursor = 0
+        return (self.cursor, self.current[self.subcursor])
 
     def transactions_string(self, separator=',', time_chars=19):
         """Return a string representing the transactions for this payee."""
