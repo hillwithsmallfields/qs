@@ -84,6 +84,14 @@ class account:
     def __len__(self):
         return len(self.payees)
 
+    def payees_matching(self, pattern):
+        """Return a list of payees with names matching a regexp."""
+        compiled_pattern = re.compile(pattern)
+        return {name:self.payees[name]
+                for name in [payee_name
+                             for payee_name in self.payees.keys()
+                             if compiled_pattern.search(payee_name)]}
+
     def add_row_if_new(self, row):
         """Add a row to the account if it belongs to this account
         and was not already recorded.
@@ -112,7 +120,7 @@ class account:
                 row_payee.add_transaction(when, how_much)
                 self.all_transactions[when] = row
                 if tracing:
-                    print("  Adding", row)
+                    print("  Adding transaction of", row['amount'], "with", row['payee'], "at", row['timestamp'].date())
                 return row
             if tracing:
                 print("  Already seen", row)
@@ -136,13 +144,14 @@ class account:
                 if tracing:
                     print("  want to merge payments from", payee.name, "to account")
                 for timestamp, row in payee:
-                    if not payee.already_seen(timestamp, row['amount']):
+                    seen = payee.already_seen(timestamp, row['amount'])
+                    if not seen:
                         if tracing:
                             print("    adding new transaction of", row['amount'], "with", payee.name, "at", row['timestamp'])
                         pass    # todo: how do I get a suitable result?
                     else:
                         if tracing:
-                            print("    already got transaction of", row['amount'], "with", payee.name, "at", row['timestamp'])
+                            print("    already got transaction of", row['amount'], "with", payee.name, "at", row['timestamp'].date(), "existing one is", seen['timestamp'].date())
         if len(added_rows) == 0:
             return None
         else:

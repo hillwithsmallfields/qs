@@ -12,6 +12,7 @@ functions = ['add_sheet',
              'by_year',
              'compare',
              'list_accounts',
+             'payees',
              'set',
              'write_all_columns',
              'write_csv']
@@ -63,6 +64,14 @@ def list_accounts(variables, filename=None):
             for name in varnames:
                 writer.writerow([name, type(variables[name]).__name__])
     return varnames
+
+def payees(variables, original, output, pattern):
+    with open(output, 'w') as outfile:
+        colseq = ['payee', 'transactions']
+        writer = csv.writer(outfile, colseq)
+        writer.writerow(colseq)
+        for name, details in original.payees_matching(pattern).items():
+            writer.writerow([name, details.transactions_string(separator='; ', time_chars=10)])
 
 def set(variables, name, value):
     if name in variables:

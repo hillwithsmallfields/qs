@@ -4,7 +4,7 @@ config:
     - ~/common/finances/conversions.yaml
   debug:
     trace:
-      - ORACLE GLOBAL SERV
+      - ORACLE
       - TREVOR POTTS
       - D.DR SOUTH STAFFS WATER
       - D.DR E.ON
@@ -21,5 +21,6 @@ commands:
   - write_csv(by_day(app Handelsbanken current account), "/tmp/handelsbanken-daily.csv")
   - write_csv(by_month(app Handelsbanken current account), "/tmp/handelsbanken-monthly.csv")
   - write_csv(by_year(app Handelsbanken current account), "/tmp/handelsbanken-yearly.csv")
-  # this one isn't getting converted into Python correctly
   - write_csv(add_sheet(app Handelsbanken current account, statement for Handelsbanken current account), "/tmp/handelsbanken-added-from-statement.csv")
+  - payees(statement for Handelsbanken current account, "/tmp/statements-oracle.csv", "ORACLE")
+  - payees(app Handelsbanken current account, "/tmp/app-oracle.csv", "ORACLE")
