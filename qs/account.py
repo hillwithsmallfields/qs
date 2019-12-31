@@ -107,19 +107,44 @@ class account:
 
         Return a canonical_sheet containing only the rows that were added."""
         added_rows = []
-        for row in sheet:
-            if row.get('account', None) == self.name:
-                was_new = self.add_row_if_new(row)
-                if was_new:
-                    added_rows.append(was_new)
+        if isinstance(sheet, canonical_sheet.canonical_sheet):
+            for row in sheet:
+                if row.get('account', None) == self.name:
+                    was_new = self.add_row_if_new(row)
+                    if was_new:
+                        added_rows.append(was_new)
+        elif isinstance(sheet, account):
+            for payee in sheet:
+                print("want to add payments from", payee, "to account")
+                for timestamp, row in payee:
+                    print("  looking at adding", row)
+                    if not payee.already_seen(timestamp, row['amount']):
+                        print("    will add", row)
+                        pass    # todo: how do I get a suitable result?
+                    else:
+                        print("    not adding", row)
         if len(added_rows) == 0:
             return None
         else:
             return canonical_sheet.canonical_sheet(None, input_sheet=added_rows)
 
+    def already_seen(self, payee, timestamp, amount):
+        """Return whether a transaction of a given amount, around a given
+        time, matches any to a payee of this account.
+        """
+        payee = self.payees.get(payee_name, None)
+        if payee is None:
+            return False
+        return payee.already_seen(timestamp, amount)
+
+    def new_transactions_from(self, other_account):
+        """Return which transactions in another account are new."""
+        pass                    # todo: write this
+
     def combine_same_period_entries(self,
                                     period,
-                                    time_chars=19):
+                                    time_chars=19,
+                                    comment=None):
         """Produce an account based on this one, with just one entry per period
         (day, by default).
 
@@ -136,16 +161,21 @@ class account:
             acc_payee = payee.payee(orig_payee.name)
             timestamps = sorted(by_timestamp.keys())
             period_start = period(timestamps[0])
-            period_total = functools.reduce(operator.add, by_timestamp[timestamps[0]], 0)
+            period_total = functools.reduce(operator.add,
+                                            [x['amount'] for x in by_timestamp[timestamps[0]]], 0)
             for ts in timestamps[1:]:
                 if period(ts) == period_start:
-                    period_total += functools.reduce(operator.add, by_timestamp[ts], 0)
+                    period_total += functools.reduce(operator.add,
+                                                     [x['amount'] for x in by_timestamp[ts]], 0)
                 else:
-                    acc_payee.add_transaction(period_start, period_total)
+                    acc_payee.add_transaction(period_start, period_total,
+                                              comment=comment)
                     period_start = period(ts)
-                    period_total = functools.reduce(operator.add, by_timestamp[ts], 0)
+                    period_total = functools.reduce(operator.add,
+                                                    [x['amount'] for x in by_timestamp[ts]], 0)
             # Record the final period's transactions
-            acc_payee.add_transaction(period_start, period_total)
+            acc_payee.add_transaction(period_start, period_total,
+                                      comment=comment)
             combined.payees[name] = acc_payee
         # then the overview; these are whole rows
         transactions_by_period = {}
@@ -167,7 +197,8 @@ class account:
         return combined
 
     def compare_by_period(self, other):
-        all_keys = set(self.all_transactions.keys()) | set(other.all_transactions.keys())
+        all_keys = (set(self.all_transactions.keys())
+                    | set(other.all_transactions.keys()))
         discrepancies = {}
         for period in all_transactions:
             in_self = self.all_transactions.get(period, None)

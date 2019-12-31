@@ -6,8 +6,8 @@ class payee:
 
     def __init__(self, name):
         self.name = name
-        self.by_timestamp = {}  # dictionary of timestamps to lists of amounts
-        self.by_amount = {}     # dictionary of amounts to lists of timestamps
+        self.by_timestamp = {}  # dictionary of timestamps to lists of rows
+        self.by_amount = {}     # dictionary of amounts to lists of rows
         self.balance = 0
         self.ordered = None
         self.cursor = -1
@@ -43,19 +43,23 @@ class payee:
             ('@'
              + str(ts)[:time_chars]
              + ': '
-             + separator.join([qsutils.trim_if_float(a)
+             + separator.join([qsutils.trim_if_float(a['amount'])
                                for a in self.by_timestamp[ts]]))
             for ts in sorted(self.by_timestamp.keys())])
 
     def timestamp_matches_one_in_list(self, timestamp, of_that_amount):
-        """Return whether there are any transactions in a timestamp list near
-        enough in time to count as the same."""
-        for when in of_that_amount:
+        """Return whether there are any transactions in a timestamped row list
+        near enough in time to count as the same.
+        """
+        for row in of_that_amount:
+            when = row['timestamp']
             delta = when - timestamp
             if (when == timestamp
                 or (when > timestamp and delta < self.allowable_after)
-                or (-delta < self.allowable_before)):
+                or (-delta < self.allowable_before)): # implicitly when < timestamp
+                # print("        match between", timestamp, "and", when, "for amount", row['amount'], "in row", row)
                 return True
+        # print("        No match for", timestamp, "in", of_that_amount)
         return False
 
     def already_seen(self, timestamp, amount):
@@ -65,16 +69,24 @@ class payee:
         sized = self.by_amount.get(amount, None)
         return sized and self.timestamp_matches_one_in_list(timestamp, sized)
 
-    def add_transaction(self, timestamp, amount):
+    def add_row(self, row):
         """Record a transaction with this payee.
         You should first check that it is not a duplicate,
         using self.already_seen."""
+        timestamp = row['timestamp']
+        amount = row['amount']
         if amount in self.by_amount:
-            self.by_amount[amount].append(timestamp)
+            self.by_amount[amount].append(row)
         else:
-            self.by_amount[amount] = [timestamp]
+            self.by_amount[amount] = [row]
         if timestamp in self.by_timestamp:
-            self.by_timestamp[timestamp].append(amount)
+            self.by_timestamp[timestamp].append(row)
         else:
-            self.by_timestamp[timestamp] = [amount]
+            self.by_timestamp[timestamp] = [row]
         self.balance += amount
+
+    def add_transaction(self, timestamp, amount, comment=None):
+        row = {'timestamp': timestamp, 'amount': amount, 'payee': self.name}
+        if comment:
+            row['message'] = comment
+        self.add_row(row)
