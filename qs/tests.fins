@@ -2,6 +2,13 @@ config:
   files:
     - ~/open-projects/github.com/hillwithsmallfields/qs/conf/accounts.yaml
     - ~/common/finances/conversions.yaml
+  debug:
+    trace:
+      - ORACLE GLOBAL SERV
+      - TREVOR POTTS
+      - D.DR SOUTH STAFFS WATER
+      - D.DR E.ON
+      - D.DR NHSBSA PPC
 inputs:
   directory: ~/common/qs-scratch
   files:

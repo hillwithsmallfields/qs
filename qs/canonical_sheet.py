@@ -60,6 +60,7 @@ class canonical_sheet:
                  reference_sheet=None,
                  verbose=False):
         self.verbose = verbose
+        self.config = config
         if self.verbose:
             print("Making canonical_sheet with input_sheet", input_sheet)
         self.rows = {}
@@ -70,6 +71,7 @@ class canonical_sheet:
                 print("Reading", input_sheet, "for conversion")
             input_sheet = csv_sheet.csv_sheet(config, input_filename=input_sheet, verbose=self.verbose)
         if isinstance(input_sheet, csv_sheet.csv_sheet):
+            self.config = input_sheet.config
             if self.verbose:
                 print("converting", input_sheet)
             for in_row in input_sheet:

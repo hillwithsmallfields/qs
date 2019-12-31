@@ -109,7 +109,7 @@ def main():
                     verbose=args.verbose):
                 account_name = row['account']
                 if account_name not in variables:
-                    variables[account_name] = account.account(account_name)
+                    variables[account_name] = account.account(account_name, config=config_section)
                 variables[account_name].add_row_if_new(row)
 
     for command in script.get('commands', []):

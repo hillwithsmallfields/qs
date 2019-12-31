@@ -8,6 +8,7 @@ import operator
 import os
 import payee
 import qsutils
+import re
 
 class account:
     """A financial account, with the transactions that have happened on it.
@@ -37,9 +38,16 @@ class account:
                  currency=None,
                  opening_balance=0,
                  transactions=None,
-                 copy_metadata_from=None):
+                 copy_metadata_from=None,
+                 config=None):
         self.name = name
         self.time_chars = 19
+        self.config = config
+        tracing = config and config.get('debug', {}).get('trace', None)
+        if tracing:
+            self.tracing = re.compile('|'.join(tracing))
+        else:
+            self.tracing = None
         if copy_metadata_from:
             self.currency = copy_metadata_from.currency
             self.opening_balance = copy_metadata_from.opening_balance
@@ -52,7 +60,9 @@ class account:
             self.base = base_account
         self.all_transactions = {}
         self.payees = {}
-        if isinstance(transactions, canonical_sheet.canonical_sheet):
+        if (isinstance(transactions, canonical_sheet.canonical_sheet)
+            or isinstance(transactions, account)):
+            self.config = transactions.config
             self.add_sheet(transactions)
 
     def __str__(self):
@@ -81,6 +91,7 @@ class account:
         If it was added, return it, otherwise return None.
         """
         payee_name = row['payee']
+        tracing = self.tracing and self.tracing.search(payee_name)
         row_payee = self.payees.get(payee_name, None)
         if row_payee is None:
             row_payee = payee.payee(payee_name)
@@ -88,6 +99,8 @@ class account:
         when = row['timestamp']
         how_much = -row['amount']
         if row_payee.already_seen(when, how_much):
+            if tracing:
+                print("  Already seen", row)
             return None
         else:
             static_payee = (self.base.payees.get(payee_name, None)
@@ -98,7 +111,11 @@ class account:
                 self.balance -= how_much
                 row_payee.add_transaction(when, how_much)
                 self.all_transactions[when] = row
+                if tracing:
+                    print("  Adding", row)
                 return row
+            if tracing:
+                print("  Already seen", row)
             return None
 
     def add_sheet(self, sheet):
@@ -115,14 +132,17 @@ class account:
                         added_rows.append(was_new)
         elif isinstance(sheet, account):
             for payee in sheet:
-                print("want to add payments from", payee, "to account")
+                tracing = self.tracing and self.tracing.search(payee.name)
+                if tracing:
+                    print("  want to merge payments from", payee.name, "to account")
                 for timestamp, row in payee:
-                    print("  looking at adding", row)
                     if not payee.already_seen(timestamp, row['amount']):
-                        print("    will add", row)
+                        if tracing:
+                            print("    adding new transaction of", row['amount'], "with", payee.name, "at", row['timestamp'])
                         pass    # todo: how do I get a suitable result?
                     else:
-                        print("    not adding", row)
+                        if tracing:
+                            print("    already got transaction of", row['amount'], "with", payee.name, "at", row['timestamp'])
         if len(added_rows) == 0:
             return None
         else:
