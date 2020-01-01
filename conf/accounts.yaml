@@ -17,7 +17,6 @@ formats:
       time:     time
       payee:    payee
       amount:   amount
-      credits:  amount
       account:  account
       currency: currency
       category: category

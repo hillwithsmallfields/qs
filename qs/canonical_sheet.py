@@ -77,7 +77,6 @@ class canonical_sheet:
         if isinstance(input_sheet, csv_sheet.csv_sheet):
             self.config = input_sheet.config
             self.origin_files = input_sheet.origin_files
-            print("canonical_sheet.init from csv origin_files now", self.origin_files)
             if self.verbose:
                 print("converting", input_sheet)
             for in_row in input_sheet:
@@ -93,7 +92,6 @@ class canonical_sheet:
                     self.rows[can_row['timestamp']] = can_row
         elif isinstance(input_sheet, canonical_sheet):
             self.origin_files = input_sheet.origin_files
-            print("canonical_sheet.init copy origin_files now", self.origin_files)
             # take a copy
             self.rows = {k: {vk: vv for vk, vv in v.items()} for k, v in input_sheet.rows.items()}
         elif isinstance(input_sheet, account.account):
@@ -203,9 +201,11 @@ class canonical_sheet:
 
     def row_from_canonical(self, output_format, canonical_row):
         """Convert a row from our standard format to a specified one."""
-        return {output_column_name: canonical_row.get(canonical_column_name, None)
-                for canonical_column_name, output_column_name
-                in output_format['columns'].items()}
+        result = {output_column_name: canonical_row.get(canonical_column_name, None)
+                  for canonical_column_name, output_column_name
+                  in output_format['columns'].items()}
+        # todo: handling of separate money in / money out columns
+        return result
 
     def distribute_to_accounts(self, accounts={}, added_row_lists={}):
         """Distribute the rows of the sheet to account values.
