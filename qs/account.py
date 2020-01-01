@@ -149,7 +149,7 @@ class account:
                 if tracing:
                     print("  want to merge payments from", payee.name, "into account", self.name)
                 for timestamp, row in payee:
-                    seen = payee.already_seen(timestamp, row['amount'])
+                    seen = payee.name in self.payees and self.payees[payee.name].already_seen(timestamp, row['amount'])
                     if not seen:
                         if tracing:
                             print("    adding new transaction of", row['amount'], "with", payee.name, "at", row['timestamp'])
