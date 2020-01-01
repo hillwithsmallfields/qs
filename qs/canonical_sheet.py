@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 
 import account
+import csv
 import csv_sheet
+import os
 import qsutils
 import re
 
@@ -94,8 +96,8 @@ class canonical_sheet:
             print("canonical_sheet.init copy origin_files now", self.origin_files)
             # take a copy
             self.rows = {k: {vk: vv for vk, vv in v.items()} for k, v in input_sheet.rows.items()}
-        elif type(input_sheet) == list:
-            print("made canonical_sheet from row list")
+        elif type(input_sheet) == dict:
+            print("made canonical_sheet from row dict")
             self.rows = input_sheet
 
     def __iter__(self):
@@ -217,14 +219,14 @@ class canonical_sheet:
         """Write a canonical spreadsheet to a file.
         Any columns not in the canonical format are ignored."""
         with open(os.path.expanduser(os.path.expandvars(filename)), 'w') as outfile:
-            writer = csv.DictWriter(outfile, canonical_column_sequence)
+            writer = csv.DictWriter(outfile, canonical_sheet.canonical_column_sequence)
             writer.writeheader()
             for timestamp in sorted(self.rows.keys()):
                 row = self.rows[timestamp]
                 # select only the columns required for this sheet, and
                 # also round the unfortunately-represented floats
                 writer.writerow({sk: qsutils.trim_if_float(row.get(sk, None))
-                                 for sk in canonical_column_sequence})
+                                 for sk in canonical_sheet.canonical_column_sequence})
 
 # tests
 

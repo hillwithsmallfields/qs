@@ -136,13 +136,13 @@ class account:
 
         Return a canonical_sheet containing only the rows that were added."""
         self.origin_files += sheet.origin_files
-        added_rows = []
+        added_rows = {}
         if isinstance(sheet, canonical_sheet.canonical_sheet):
             for row in sheet:
                 if row.get('account', None) == self.name:
                     was_new = self.add_row_if_new(row)
                     if was_new:
-                        added_rows.append(was_new)
+                        added_rows[was_new['timestamp']] = was_new
         elif isinstance(sheet, account):
             for payee in sheet:
                 tracing = self.tracing and self.tracing.search(payee.name)
@@ -153,7 +153,7 @@ class account:
                     if not seen:
                         if tracing:
                             print("    adding new transaction of", row['amount'], "with", payee.name, "at", row['timestamp'])
-                        pass    # todo: how do I get a suitable result?
+                        added_rows[row['timestamp']] = row
                     else:
                         if tracing:
                             print("    already got transaction of",
