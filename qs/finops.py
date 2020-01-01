@@ -112,7 +112,7 @@ def main():
                 account_name = row['account']
                 if account_name not in variables:
                     variables[account_name] = account.account(account_name,
-                                                              config=config_section,
+                                                              config=config,
                                                               origin_files=filename_as_list)
                 variables[account_name].add_row_if_new(row)
 

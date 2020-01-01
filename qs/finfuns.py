@@ -1,8 +1,10 @@
 # Financial spreadsheet functions
 
+import canonical_sheet
 import csv
 import datetime
 import diff_sheet
+import formatted_sheet
 import qsutils
 import re
 
@@ -11,9 +13,11 @@ functions = ['add_sheet',
              'by_month',
              'by_year',
              'compare',
+             'format_sheet',
              'list_accounts',
              'payees',
              'set',
+             'sheet',
              'write_all_columns',
              'write_csv']
 
@@ -54,6 +58,11 @@ def compare(variables,
                                  sheet_a, column_a, track_a,
                                  sheet_b, column_b, track_b)
 
+def format_sheet(variables, input_sheet, format_name):
+    return formatted_sheet.formatted_sheet(input_sheet.config,
+                                           format_name,
+                                           input_sheet)
+
 def list_accounts(variables, filename=None):
     varnames = sorted(variables.keys())
     if filename:
@@ -78,6 +87,11 @@ def set(variables, name, value):
         print("Overwriting", name)
     variables[name] = value
     return value
+
+def sheet(variables, account):
+    """Convert an account to a canonical sheet."""
+    can = canonical_sheet.canonical_sheet(account.config, input_sheet=account)
+    return can
 
 def write_all_columns(variables, value, filename):
     if value:

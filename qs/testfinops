@@ -18,4 +18,4 @@ echo Running version from $QS
 
 ./finops.py tests.fins
 
-wc /tmp/account-names /tmp/handelsbanken-app.csv /tmp/handelsbanken-statement.csv /tmp/handelsbanken-daily.csv /tmp/handelsbanken-monthly.csv /tmp/handelsbanken-yearly.csv /tmp/handelsbanken-added-from-statement.csv /tmp/statements-oracle.csv /tmp/app-oracle.csv
+wc /tmp/account-names /tmp/handelsbanken-app.csv /tmp/handelsbanken-statement.csv /tmp/handelsbanken-daily.csv /tmp/handelsbanken-monthly.csv /tmp/handelsbanken-yearly.csv /tmp/handelsbanken-added-from-statement.csv /tmp/statements-oracle.csv /tmp/app-oracle.csv /tmp/handelsbanken-statement-as-financisto.csv
