@@ -58,6 +58,7 @@ class canonical_sheet:
                  convert_all=False,
                  account_name_template=None,
                  reference_sheet=None,
+                 origin_files=[],
                  verbose=False):
         self.verbose = verbose
         self.config = config
@@ -66,12 +67,15 @@ class canonical_sheet:
         self.rows = {}
         self.row_order = None
         self.row_cursor = 0
+        self.origin_files = origin_files
         if isinstance(input_sheet, str):
             if self.verbose:
                 print("Reading", input_sheet, "for conversion")
             input_sheet = csv_sheet.csv_sheet(config, input_filename=input_sheet, verbose=self.verbose)
         if isinstance(input_sheet, csv_sheet.csv_sheet):
             self.config = input_sheet.config
+            self.origin_files = input_sheet.origin_files
+            print("canonical_sheet.init from csv origin_files now", self.origin_files)
             if self.verbose:
                 print("converting", input_sheet)
             for in_row in input_sheet:
@@ -86,9 +90,12 @@ class canonical_sheet:
                         print("storing", can_row)
                     self.rows[can_row['timestamp']] = can_row
         elif isinstance(input_sheet, canonical_sheet):
+            self.origin_files = input_sheet.origin_files
+            print("canonical_sheet.init copy origin_files now", self.origin_files)
             # take a copy
             self.rows = {k: {vk: vv for vk, vv in v.items()} for k, v in input_sheet.rows.items()}
         elif type(input_sheet) == list:
+            print("made canonical_sheet from row list")
             self.rows = input_sheet
 
     def __iter__(self):
@@ -157,7 +164,8 @@ class canonical_sheet:
                                 input_format.get('currency', "?")),
             'original_amount': money_in - money_out,
             'original_currency': row.get('original_currency',
-                                         input_format.get('original_currency', "?"))}
+                                         input_format.get('original_currency', "?")),
+            'sheet': self}
         if message:
             out_row['message'] = message
         # For this group of columns, there may be some literals in

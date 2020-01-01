@@ -100,16 +100,20 @@ def main():
                 account_name_template = "%s"
             if args.verbose:
                 print("loading", input_filename, "as input sheet for accounts templated with", account_name_template)
+            filename_as_list = [input_filename]
             for row in canonical_sheet.canonical_sheet(
                     config,
                     input_sheet=qsutils.resolve_filename(input_filename,
                                                          input_dir),
                     convert_all=True,
                     account_name_template=account_name_template,
+                    origin_files=filename_as_list,
                     verbose=args.verbose):
                 account_name = row['account']
                 if account_name not in variables:
-                    variables[account_name] = account.account(account_name, config=config_section)
+                    variables[account_name] = account.account(account_name,
+                                                              config=config_section,
+                                                              origin_files=filename_as_list)
                 variables[account_name].add_row_if_new(row)
 
     for command in script.get('commands', []):

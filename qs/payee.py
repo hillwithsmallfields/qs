@@ -85,8 +85,11 @@ class payee:
             self.by_timestamp[timestamp] = [row]
         self.balance += amount
 
-    def add_transaction(self, timestamp, amount, comment=None):
-        row = {'timestamp': timestamp, 'amount': amount, 'payee': self.name}
+    def add_transaction(self, timestamp, amount, origin_sheet, comment=None):
+        row = {'timestamp': timestamp,
+               'amount': amount,
+               'payee': self.name,
+               'sheet': origin_sheet}
         if comment:
             row['message'] = comment
         self.add_row(row)

@@ -29,6 +29,7 @@ class csv_sheet:
         self.rows = {}
         self.verbose = verbose
         self.header_row_number = 0
+        self.origin_files = []
         if input_filename:
             if not self.read(input_filename):
                 print("Could not construct csv_sheet from", input_filename)
@@ -82,10 +83,10 @@ class csv_sheet:
             timestamp += datetime.timedelta(0,1)
         return timestamp
 
-    def get_cell(self, row, canonical_colum_name, default_value=None):
+    def get_cell(self, row, canonical_column_name, default_value=None):
         """Get a cell value from a row, using its canonical column name."""
-        return (row.get(self.column_names[canonical_colum_name], default_value)
-                if canonical_colum_name in self.column_names
+        return (row.get(self.column_names[canonical_column_name], default_value)
+                if canonical_column_name in self.column_names
                 else default_value)
 
     def get_numeric_cell(self, row, canonical_colum_name, default_value=None):
@@ -116,6 +117,7 @@ class csv_sheet:
         A collection of header lines is scanned to find the type."""
         with open(os.path.expanduser(os.path.expandvars(filename))) as infile:
             self.format_name, self.header_row_number = qsutils.deduce_stream_format(infile, self.config, verbose=self.verbose)
+            sheet_marker = {'sheet': self}
             for i in range(1, self.header_row_number):
                 _ = infile.readline()
             if self.format_name not in self.config['formats']:
@@ -131,7 +133,11 @@ class csv_sheet:
                                                     self.get_cell(row0, 'time', self.default_time)):
                          {k:v for k,v in row0.items() if k != ''}
                          for row0 in csv.DictReader(infile)}
-            return True
+        for row in self.rows.values():
+            row.update(sheet_marker)
+        self.origin_files.append(filename)
+        print("csv_sheet.read origin files now", self.origin_files)
+        return True
 
     def write_csv(self, filename):
         """Write a spreadsheet in a given format.

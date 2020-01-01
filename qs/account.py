@@ -39,10 +39,12 @@ class account:
                  opening_balance=0,
                  transactions=None,
                  copy_metadata_from=None,
-                 config=None):
+                 config=None,
+                 origin_files=[]):
         self.name = name
         self.time_chars = 19
         self.config = config
+        self.origin_files = origin_files
         tracing = config and config.get('debug', {}).get('trace', None)
         if tracing:
             self.tracing = re.compile('|'.join(tracing))
@@ -53,6 +55,7 @@ class account:
             self.opening_balance = copy_metadata_from.opening_balance
             self.balance = copy_metadata_from.balance
             self.base = copy_metadata_from.base
+            self.origin_files = copy_metadata_from.origin_files
         else:
             self.currency = currency
             self.opening_balance = opening_balance
@@ -67,6 +70,7 @@ class account:
 
     def __str__(self):
         return ("<account " + self.name
+                + " from " + '&'.join(self.origin_files)
                 + " " + str(self.balance)
                 + " payees " + ",".join([k if k != "" else "unknown" for k in self.payees.keys()]) + ">")
 
@@ -117,7 +121,7 @@ class account:
             if (static_payee is None
                 or not static_payee.already_seen(when, how_much)):
                 self.balance -= how_much
-                row_payee.add_transaction(when, how_much)
+                row_payee.add_transaction(when, how_much, self)
                 self.all_transactions[when] = row
                 if tracing:
                     print("  Adding transaction of", row['amount'], "with", row['payee'], "at", row['timestamp'].date())
@@ -131,6 +135,7 @@ class account:
         that belong to the account and were not already recorded in it.
 
         Return a canonical_sheet containing only the rows that were added."""
+        self.origin_files += sheet.origin_files
         added_rows = []
         if isinstance(sheet, canonical_sheet.canonical_sheet):
             for row in sheet:
@@ -142,7 +147,7 @@ class account:
             for payee in sheet:
                 tracing = self.tracing and self.tracing.search(payee.name)
                 if tracing:
-                    print("  want to merge payments from", payee.name, "to account")
+                    print("  want to merge payments from", payee.name, "into account", self.name)
                 for timestamp, row in payee:
                     seen = payee.already_seen(timestamp, row['amount'])
                     if not seen:
@@ -151,7 +156,12 @@ class account:
                         pass    # todo: how do I get a suitable result?
                     else:
                         if tracing:
-                            print("    already got transaction of", row['amount'], "with", payee.name, "at", row['timestamp'].date(), "existing one is", seen['timestamp'].date())
+                            print("    already got transaction of",
+                                  row['amount'], "with", payee.name,
+                                  "at", row['timestamp'].date(),
+                                  "from", row['sheet'].name,
+                                  "existing one is", seen['timestamp'].date(),
+                                  "from", seen['sheet'].name)
         if len(added_rows) == 0:
             return None
         else:
@@ -198,12 +208,14 @@ class account:
                                                      [x['amount'] for x in by_timestamp[ts]], 0)
                 else:
                     acc_payee.add_transaction(period_start, period_total,
+                                              self,
                                               comment=comment)
                     period_start = period(ts)
                     period_total = functools.reduce(operator.add,
                                                     [x['amount'] for x in by_timestamp[ts]], 0)
             # Record the final period's transactions
             acc_payee.add_transaction(period_start, period_total,
+                                      self,
                                       comment=comment)
             combined.payees[name] = acc_payee
         # then the overview; these are whole rows
