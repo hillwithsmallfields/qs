@@ -25,3 +25,4 @@ commands:
   - payees(statement for Handelsbanken current account, "/tmp/statements-oracle.csv", "ORACLE")
   - payees(app Handelsbanken current account, "/tmp/app-oracle.csv", "ORACLE")
   - write_csv(format_sheet(sheet(statement for Handelsbanken current account), "financisto"), "/tmp/handelsbanken-statement-as-financisto.csv")
+  - write_csv(format_sheet(sheet(add_sheet(app Handelsbanken current account, statement for Handelsbanken current account)), "financisto"), "/tmp/handelsbanken-added-from-statement-as-financisto.csv")

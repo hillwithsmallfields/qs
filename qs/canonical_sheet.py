@@ -101,8 +101,12 @@ class canonical_sheet:
                 for timestamp, row in payee:
                     self.rows[timestamp] = row
         elif type(input_sheet) == dict:
-            print("made canonical_sheet from row dict")
             self.rows = input_sheet
+            if len(input_sheet) > 0:
+                for sample in input_sheet.values():
+                    if 'sheet' in sample:
+                        self.config = sample['sheet'].config
+                        break
 
     def __iter__(self):
         self.row_order = sorted(self.rows.keys())
