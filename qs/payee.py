@@ -87,6 +87,8 @@ class payee:
 
     def add_transaction(self, timestamp, amount, origin_sheet, comment=None):
         row = {'timestamp': timestamp,
+               'date': timestamp.date(),
+               'time': timestamp.time(),
                'amount': amount,
                'payee': self.name,
                'sheet': origin_sheet}
