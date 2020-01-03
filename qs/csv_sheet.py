@@ -136,7 +136,6 @@ class csv_sheet:
         for row in self.rows.values():
             row.update(sheet_marker)
         self.origin_files.append(filename)
-        print("csv_sheet.read origin files now", self.origin_files)
         return True
 
     def write_csv(self, filename):

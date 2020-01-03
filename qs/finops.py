@@ -71,7 +71,8 @@ def main():
     script = {}
     qsutils.load_multiple_yaml(script, os.getcwd(), args.script_files)
 
-    print("script is", pprint.pformat(script))
+    if args.verbose:
+        print("script is", pprint.pformat(script))
 
     actions = script.get('actions', [])
 
@@ -117,9 +118,11 @@ def main():
                 variables[account_name].add_row_if_new(row)
 
     for command in script.get('commands', []):
-        print("Executing command", command)
+        if args.verbose:
+            print("Executing command", command)
         command = finfuns.convert_to_Python(command)
-        print("Converted command to", command)
+        if args.verbose:
+            print("Converted command to", command)
         exec(command)
 
     return 0
