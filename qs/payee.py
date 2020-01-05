@@ -92,6 +92,7 @@ class payee:
                'amount': amount,
                'payee': self.name,
                'sheet': origin_sheet}
+        # todo: check for flags applying to this
         if comment:
             row['message'] = comment
         self.add_row(row)

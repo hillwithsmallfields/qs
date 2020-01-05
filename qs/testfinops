@@ -16,6 +16,6 @@ tar xf $TARBALL -C $SCRATCH
 IMPORTDATE=$(date --iso-8601)
 echo Running version from $QS
 
-./finops.py tests.fins
+./finops.py --confirm-script tests.fins
 
-wc /tmp/account-names /tmp/handelsbanken-app.csv /tmp/handelsbanken-statement.csv /tmp/handelsbanken-daily.csv /tmp/handelsbanken-monthly.csv /tmp/handelsbanken-yearly.csv /tmp/handelsbanken-added-from-statement.csv /tmp/statements-oracle.csv /tmp/app-oracle.csv /tmp/handelsbanken-statement-as-financisto.csv /tmp/handelsbanken-added-from-statement-as-financisto.csv
+wc /tmp/account-names /tmp/handelsbanken-app.csv /tmp/handelsbanken-statement.csv /tmp/handelsbanken-app-daily.csv /tmp/handelsbanken-statement-daily.csv /tmp/handelsbanken-app-monthly.csv /tmp/handelsbanken-statement-monthly.csv /tmp/handelsbanken-app-yearly.csv /tmp/handelsbanken-statement-yearly.csv /tmp/handelsbanken-added-from-statement.csv /tmp/statements-oracle.csv /tmp/app-oracle.csv /tmp/handelsbanken-statement-as-financisto.csv /tmp/handelsbanken-added-from-statement-as-financisto.csv /tmp/handelsbanken-added-from-statement-as-financisto-by-daily-summaries.csv

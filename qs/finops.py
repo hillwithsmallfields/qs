@@ -64,6 +64,7 @@ import qsutils
 
 def main():
     parser = qsutils.program_argparser()
+    parser.add_argument("--confirm-script", action='store_true')
     parser.add_argument("script_files", nargs='*')
     args = parser.parse_args()
 
@@ -71,7 +72,7 @@ def main():
     script = {}
     qsutils.load_multiple_yaml(script, os.getcwd(), args.script_files)
 
-    if args.verbose:
+    if args.confirm_script:
         print("script is", pprint.pformat(script))
 
     actions = script.get('actions', [])
@@ -118,10 +119,10 @@ def main():
                 variables[account_name].add_row_if_new(row)
 
     for command in script.get('commands', []):
-        if args.verbose:
+        if args.confirm_script:
             print("Executing command", command)
         command = finfuns.convert_to_Python(command)
-        if args.verbose:
+        if args.confirm_script:
             print("Converted command to", command)
         exec(command)
 

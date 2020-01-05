@@ -21,8 +21,9 @@ def templated_name(template, name):
 def find_conversion(conversions, payee_name):
     """Find a mapping from the input format to the output, for a named payee."""
     for key, value in conversions.items():
-        if re.match(key, payee_name):
+        if re.search(key, payee_name):
             return value
+    print("no conversion for", payee_name)
     return None
 
 class canonical_sheet:
@@ -150,6 +151,7 @@ class canonical_sheet:
             return None
         conversion = find_conversion(input_format.get('conversions', {}),
                                      payee_name)
+        # print("input format is", input_format)
         if conversion is None and not convert_all:
             if self.verbose:
                 print("no conversion for row", row)
@@ -197,6 +199,8 @@ class canonical_sheet:
                 out_row[canonical_outcol] = (':'.join(extra_value)
                                              if isinstance(extra_value, list)
                                              else extra_value)
+        if conversion and 'flags' in conversion:
+            out_row['flags'] = set(conversion['flags'].split())
         return out_row
 
     def row_from_canonical(self, output_format, canonical_row):
@@ -235,6 +239,11 @@ class canonical_sheet:
                 # also round the unfortunately-represented floats
                 writer.writerow({sk: qsutils.trim_if_float(row.get(sk, None))
                                  for sk in canonical_sheet.canonical_column_sequence})
+
+    def write_debug(self, filename):
+        """Write a account to a file, for debugging."""
+        with open(os.path.expanduser(os.path.expandvars(filename)), 'w') as outfile:
+            outfile.write(str(self))
 
 # tests
 

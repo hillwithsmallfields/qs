@@ -16,7 +16,7 @@ formats:
       date:     date
       time:     time
       payee:    payee
-      amount:   amount
+      credits:   amount
       account:  account
       currency: currency
       category: category
@@ -73,3 +73,4 @@ formats:
         Kristi's card:                 Kristi's gift card
       category:  category
       parent:    parent
+  

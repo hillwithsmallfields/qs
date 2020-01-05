@@ -130,25 +130,37 @@ class account:
                 print("  Already seen", row)
             return None
 
-    def add_sheet(self, sheet):
+    def add_sheet(self, sheet, flags=None):
         """Add to this account all the rows of the given sheet
         that belong to the account and were not already recorded in it.
 
-        Return a canonical_sheet containing only the rows that were added."""
+        The flags argument allows filtering on metadata from the
+        conversions file.
+
+        Return a canonical_sheet containing only the rows that were added.
+
+        """
         self.origin_files += sheet.origin_files
+        flags = flags and set(flags.split())
         added_rows = {}
         if isinstance(sheet, canonical_sheet.canonical_sheet):
+            print("Adding canonical sheet to account")
             for row in sheet:
-                if row.get('account', None) == self.name:
-                    was_new = self.add_row_if_new(row)
-                    if was_new:
-                        added_rows[was_new['timestamp']] = was_new
+                print("flags", flags, "row flags", row.get('flags', "<>"))
+                if (flags is None
+                    or ('flags' in row
+                        and flags.intersection(row['flags']))):
+                    if row.get('account', None) == self.name:
+                        was_new = self.add_row_if_new(row)
+                        if was_new:
+                            added_rows[was_new['timestamp']] = was_new
         elif isinstance(sheet, account):
             for payee in sheet:
                 tracing = self.tracing and self.tracing.search(payee.name)
                 if tracing:
                     print("  want to merge payments from", payee.name, "into account", self.name)
                 for timestamp, row in payee:
+                    # print("  considering", row)
                     seen = payee.name in self.payees and self.payees[payee.name].already_seen(timestamp, row['amount'])
                     if not seen:
                         if tracing:
@@ -260,6 +272,11 @@ class account:
                 row = [payee_name, qsutils.trim_if_float(payee.balance), payee.transactions_string(separator='; ', time_chars=self.time_chars)]
                 # round the unfortunately-represented floats
                 writer.writerow(row)
+
+    def write_debug(self, filename):
+        """Write a account to a file, for debugging."""
+        with open(os.path.expanduser(os.path.expandvars(filename)), 'w') as outfile:
+            outfile.write(str(self))
 
 # tests
 

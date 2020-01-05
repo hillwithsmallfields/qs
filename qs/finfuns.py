@@ -19,7 +19,8 @@ functions = ['add_sheet',
              'set',
              'sheet',
              'write_all_columns',
-             'write_csv']
+             'write_csv',
+             'write_debug']
 
 functions_regexp = re.compile(r"\b(" + "|".join(functions) + r")\(")
 variables_regexp = re.compile(r"([(,]) *([A-Za-z][A-Za-z0-9_ ]+) *(?=[,)])")
@@ -32,8 +33,8 @@ def convert_to_Python(command):
 
 # The functions
 
-def add_sheet(variables, account, sheet):
-    return account.add_sheet(sheet)
+def add_sheet(variables, account, sheet, flags=None):
+    return account.add_sheet(sheet, flags=flags)
 
 def by_day(variables, original):
     return original.combine_same_period_entries(qsutils.granularity_day,
@@ -103,6 +104,13 @@ def write_all_columns(variables, value, filename):
 def write_csv(variables, value, filename):
     if value:
         value.write_csv(filename)
+    else:
+        print("Nothing to write to", filename)
+    return value
+
+def write_debug(variables, value, filename):
+    if value:
+        value.write_debug(filename)
     else:
         print("Nothing to write to", filename)
     return value

@@ -39,6 +39,7 @@ class csv_sheet:
                            if format_name in config['formats']
                            else None)
             self.column_names = self.format['columns'] if self.format else {}
+        print("setting up format for csv sheet from", input_filename, "format is", self.format)
         self.row_order = None
         self.row_cursor = 0
 
@@ -62,10 +63,10 @@ class csv_sheet:
 
     def __repr__(self):
         return ("<spreadsheet in " + self.format_name
-                + " format with " + str(length(self.rows)) + " rows"
-                ((" and columns ["
-                  + ", ".join(self.format['column-sequence'])
-                  + "]") if 'column-sequence' in self.format else "")
+                + " format with " + str(len(self.rows)) + " rows"
+                + ((" and columns ["
+                    + ", ".join(self.format['column-sequence'])
+                    + "]") if 'column-sequence' in self.format else "")
                 + ">")
 
     def unused_timestamp_from(self, base_date, base_time=None):
@@ -89,10 +90,10 @@ class csv_sheet:
                 if canonical_column_name in self.column_names
                 else default_value)
 
-    def get_numeric_cell(self, row, canonical_colum_name, default_value=None):
+    def get_numeric_cell(self, row, canonical_column_name, default_value=None):
         """Get a numeric cell value from a row, using its canonical column name."""
-        raw_value = (row.get(self.column_names[canonical_colum_name], default_value)
-                     if canonical_colum_name in self.column_names
+        raw_value = (row.get(self.column_names[canonical_column_name], default_value)
+                     if canonical_column_name in self.column_names
                      else default_value)
         try:
             return float(raw_value)
@@ -117,6 +118,7 @@ class csv_sheet:
         A collection of header lines is scanned to find the type."""
         with open(os.path.expanduser(os.path.expandvars(filename))) as infile:
             self.format_name, self.header_row_number = qsutils.deduce_stream_format(infile, self.config, verbose=self.verbose)
+            print("Detected", self.format_name, "spreadsheet in", filename)
             sheet_marker = {'sheet': self}
             for i in range(1, self.header_row_number):
                 _ = infile.readline()
@@ -163,6 +165,11 @@ class csv_sheet:
             writer.writeheader()
             for timestamp in sorted(self.rows.keys()):
                 writer.writerow(self.rows[timestamp])
+
+    def write_debug(self, filename):
+        """Write a account to a file, for debugging."""
+        with open(os.path.expanduser(os.path.expandvars(filename)), 'w') as outfile:
+            outfile.write(str(self))
 
 # tests
 
