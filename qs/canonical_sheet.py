@@ -205,10 +205,16 @@ class canonical_sheet:
 
     def row_from_canonical(self, output_format, canonical_row):
         """Convert a row from our standard format to a specified one."""
+        columns = output_format['columns']
+        if 'credits' in columns:
+            amount = canonical_row['amount']
+            if 'debits' in columns:
+                canonical_row['credits' if amount > 0 else 'debits'] = amount
+            else:
+                canonical_row['credits'] = amount
         result = {output_column_name: canonical_row.get(canonical_column_name, None)
                   for canonical_column_name, output_column_name
-                  in output_format['columns'].items()}
-        # todo: handling of separate money in / money out columns
+                  in columns.items()}
         return result
 
     def distribute_to_accounts(self, accounts={}, added_row_lists={}):
