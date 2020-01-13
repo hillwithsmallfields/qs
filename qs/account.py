@@ -121,7 +121,7 @@ class account:
             if (static_payee is None
                 or not static_payee.already_seen(when, how_much)):
                 self.balance -= how_much
-                row_payee.add_transaction(when, how_much, self)
+                row_payee.add_transaction(when, how_much, self, flags=row.get('flags', None))
                 self.all_transactions[when] = row
                 if tracing:
                     print("  Adding transaction of", row['amount'], "with", row['payee'], "at", row['timestamp'].date())
@@ -144,7 +144,7 @@ class account:
         flags = flags and set(flags.split())
         added_rows = {}
         if isinstance(sheet, canonical_sheet.canonical_sheet):
-            print("Adding canonical sheet to account")
+            print("Adding canonical sheet from files", sheet.origin_files, "to account", self.name, "with flags", flags)
             for row in sheet:
                 print("flags", flags, "row flags", row.get('flags', "<>"))
                 if (flags is None
@@ -155,12 +155,16 @@ class account:
                         if was_new:
                             added_rows[was_new['timestamp']] = was_new
         elif isinstance(sheet, account):
+            print("Adding account", sheet.name, "to account", self.name, "with flags", flags)
             for payee in sheet:
                 tracing = self.tracing and self.tracing.search(payee.name)
                 if tracing:
                     print("  want to merge payments from", payee.name, "into account", self.name)
                 for timestamp, row in payee:
-                    # print("  considering", row)
+                    print("  considering", row)
+                    if flags and 'flags' in row and not flags.intersection(row['flags']):
+                        print("  skipping", row, "because of flags")
+                        continue
                     seen = payee.name in self.payees and self.payees[payee.name].already_seen(timestamp, row['amount'])
                     if not seen:
                         if tracing:
@@ -214,10 +218,17 @@ class account:
             period_start = period(timestamps[0])
             period_total = functools.reduce(operator.add,
                                             [x['amount'] for x in by_timestamp[timestamps[0]]], 0)
+            flags = []
+            for x in by_timestamp[timestamps[0]]:
+                if 'flags' in x:
+                    flags.append(x['flags'])
             for ts in timestamps[1:]:
                 if period(ts) == period_start:
                     period_total += functools.reduce(operator.add,
                                                      [x['amount'] for x in by_timestamp[ts]], 0)
+                    for x in by_timestamp[ts]:
+                        if 'flags' in x:
+                            flags.append(x['flags'])
                 else:
                     acc_payee.add_transaction(period_start, period_total,
                                               self,
@@ -228,7 +239,14 @@ class account:
             # Record the final period's transactions
             acc_payee.add_transaction(period_start, period_total,
                                       self,
-                                      comment=comment)
+                                      comment=comment,
+                                      flags=(",".join(
+                                          list(set(functools.reduce(
+                                              operator.add,
+                                              [list(x)
+                                               for x in flags]))))
+                                             if len(flags) > 0
+                                             else None))
             combined.payees[name] = acc_payee
         # then the overview; these are whole rows
         transactions_by_period = {}

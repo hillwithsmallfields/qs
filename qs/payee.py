@@ -85,14 +85,16 @@ class payee:
             self.by_timestamp[timestamp] = [row]
         self.balance += amount
 
-    def add_transaction(self, timestamp, amount, origin_sheet, comment=None):
+    def add_transaction(self, timestamp, amount, origin_sheet,
+                        comment=None, flags=None):
         row = {'timestamp': timestamp,
                'date': timestamp.date(),
                'time': timestamp.time(),
                'amount': amount,
                'payee': self.name,
                'sheet': origin_sheet}
-        # todo: check for flags applying to this
         if comment:
             row['message'] = comment
+        if flags:
+            row['flags'] = flags
         self.add_row(row)
