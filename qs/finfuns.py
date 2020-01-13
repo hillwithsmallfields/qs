@@ -67,7 +67,7 @@ def format_sheet(variables, input_sheet, format_name):
 def list_accounts(variables, filename=None):
     varnames = sorted(variables.keys())
     if filename:
-        with open(filename, 'w') as outfile:
+        with open(qsutils.resolve_filename(filename), 'w') as outfile:
             colseq = ['variable', 'type']
             writer = csv.writer(outfile, colseq)
             writer.writerow(colseq)
@@ -76,7 +76,7 @@ def list_accounts(variables, filename=None):
     return varnames
 
 def payees(variables, original, output, pattern):
-    with open(output, 'w') as outfile:
+    with open(qsutils.resolve_filename(output), 'w') as outfile:
         colseq = ['payee', 'transactions']
         writer = csv.writer(outfile, colseq)
         writer.writerow(colseq)
@@ -96,21 +96,21 @@ def sheet(variables, account):
 
 def write_all_columns(variables, value, filename):
     if value:
-        value.write_all_columns(filename)
+        value.write_all_columns(qsutils.resolve_filename(filename))
     else:
         print("Nothing to write to", filename)
     return value
 
 def write_csv(variables, value, filename):
     if value:
-        value.write_csv(filename)
+        value.write_csv(qsutils.resolve_filename(filename))
     else:
         print("Nothing to write to", filename)
     return value
 
 def write_debug(variables, value, filename):
     if value:
-        value.write_debug(filename)
+        value.write_debug(qsutils.resolve_filename(filename))
     else:
         print("Nothing to write to", filename)
     return value

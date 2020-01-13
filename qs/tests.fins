@@ -13,10 +13,10 @@ config:
 inputs:
   directory: ~/common/qs-scratch
   files:
-    financisto.csv:      app %s
-    handelsbanken.csv:   statement for %s
+    financisto-$SELECTION.csv:      app %s
+    handelsbanken-$SELECTION.csv:   statement for %s
 commands:
-  - list_accounts("/tmp/account-names")
+  - list_accounts("/tmp/initial-account-names")
   - write_debug(app Handelsbanken current account, "/tmp/handelsbanken-app.txt")
   - write_csv(app Handelsbanken current account, "/tmp/handelsbanken-app.csv")
   - write_debug(statement for Handelsbanken current account, "/tmp/handelsbanken-statement.txt")
@@ -29,7 +29,10 @@ commands:
   - write_csv(by_year(statement for Handelsbanken current account), "/tmp/handelsbanken-statement-yearly.csv")
   - write_csv(format_sheet(sheet(statement for Handelsbanken current account), "financisto"), "/tmp/handelsbanken-statement-as-financisto.csv")
   - write_csv(add_sheet(app Handelsbanken current account, statement for Handelsbanken current account), "/tmp/handelsbanken-added-from-statement.csv")
-  - write_csv(format_sheet(sheet(add_sheet(app Handelsbanken current account, statement for Handelsbanken current account, "regular")), "financisto"), "/tmp/handelsbanken-added-from-statement-as-financisto.csv")
-  - write_csv(format_sheet(sheet(add_sheet(by_day(app Handelsbanken current account), by_day(statement for Handelsbanken current account), "regular")), "financisto"), "/tmp/handelsbanken-added-from-statement-as-financisto-by-daily-summaries.csv")
+  - write_csv(format_sheet(sheet(add_sheet(app Handelsbanken current account, statement for Handelsbanken current account)), "financisto"), "/tmp/handelsbanken-added-from-statement-as-financisto.csv")
+  - write_csv(format_sheet(sheet(add_sheet(by_day(app Handelsbanken current account), by_day(statement for Handelsbanken current account))), "financisto"), "/tmp/handelsbanken-added-from-statement-as-financisto-by-daily-summaries.csv")
+  - write_csv(format_sheet(sheet(add_sheet(app Handelsbanken current account, statement for Handelsbanken current account, "regular")), "financisto"), "/tmp/handelsbanken-regular-added-from-statement-as-financisto.csv")
+  - write_csv(format_sheet(sheet(add_sheet(by_day(app Handelsbanken current account), by_day(statement for Handelsbanken current account), "regular")), "financisto"), "/tmp/handelsbanken-regular-added-from-statement-as-financisto-by-daily-summaries.csv")
   - payees(statement for Handelsbanken current account, "/tmp/statements-oracle.csv", "ORACLE")
   - payees(app Handelsbanken current account, "/tmp/app-oracle.csv", "ORACLE")
+  - list_accounts("/tmp/final-account-names")
