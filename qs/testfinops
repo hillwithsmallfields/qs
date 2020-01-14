@@ -16,9 +16,11 @@ tar xf $TARBALL -C $SCRATCH
 IMPORTDATE=$(date --iso-8601)
 echo Running version from $QS
 
+SELECTIONS=${1-1-month 1-year full}
+
 export SELECTION
 
-for SELECTION in 1-month 1-year full
+for SELECTION in $SELECTIONS
 do
     export OUTPUT=/tmp/finout/$SELECTION
     echo Running $SELECTION tests with output to $OUTPUT
