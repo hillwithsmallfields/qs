@@ -16,7 +16,15 @@ tar xf $TARBALL -C $SCRATCH
 IMPORTDATE=$(date --iso-8601)
 echo Running version from $QS
 
-export SELECTION=full
-./finops.py --confirm-script tests.fins
+export SELECTION
 
-wc /tmp/account-names /tmp/handelsbanken-app.csv /tmp/handelsbanken-statement.csv /tmp/handelsbanken-app-daily.csv /tmp/handelsbanken-statement-daily.csv /tmp/handelsbanken-app-monthly.csv /tmp/handelsbanken-statement-monthly.csv /tmp/handelsbanken-app-yearly.csv /tmp/handelsbanken-statement-yearly.csv /tmp/handelsbanken-added-from-statement.csv /tmp/statements-oracle.csv /tmp/app-oracle.csv /tmp/handelsbanken-statement-as-financisto.csv /tmp/handelsbanken-added-from-statement-as-financisto.csv /tmp/handelsbanken-added-from-statement-as-financisto-by-daily-summaries.csv /tmp/handelsbanken-regular-added-from-statement-as-financisto.csv /tmp/handelsbanken-regular-added-from-statement-as-financisto-by-daily-summaries.csv
+for SELECTION in 1-month 1-year full
+do
+    export OUTPUT=/tmp/finout/$SELECTION
+    echo Running $SELECTION tests with output to $OUTPUT
+    mkdir -p $OUTPUT
+    rm -fr $OUTPUT/*
+    ./finops.py --confirm-script tests.fins
+    
+    wc $OUTPUT/initial-account-names $OUTPUT/handelsbanken-app.csv $OUTPUT/handelsbanken-statement.csv $OUTPUT/handelsbanken-app-daily.csv $OUTPUT/handelsbanken-statement-daily.csv $OUTPUT/handelsbanken-app-monthly.csv $OUTPUT/handelsbanken-statement-monthly.csv $OUTPUT/handelsbanken-app-yearly.csv $OUTPUT/handelsbanken-statement-yearly.csv $OUTPUT/handelsbanken-added-from-statement.csv $OUTPUT/statements-oracle.csv $OUTPUT/app-oracle.csv $OUTPUT/handelsbanken-statement-as-financisto.csv $OUTPUT/handelsbanken-added-from-statement-as-financisto.csv $OUTPUT/handelsbanken-added-from-statement-as-financisto-by-daily-summaries.csv $OUTPUT/handelsbanken-regular-added-from-statement-as-financisto.csv $OUTPUT/handelsbanken-regular-added-from-statement-as-financisto-by-daily-summaries.csv $OUTPUT/final-account-names
+done
