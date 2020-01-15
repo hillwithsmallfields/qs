@@ -15,18 +15,22 @@ rm -rf $SCRATCH/*
 tar xf $TARBALL -C $SCRATCH
 IMPORTDATE=$(date --iso-8601)
 echo Running version from $QS
+OUTBASE=/tmp/finout
+rm -rf $OUTBASE/*
 
-SELECTIONS=${1-1-month 1-year full}
+SCRIPT=${1-tests.fins}
+
+SELECTIONS=${2-1-month 1-year full}
 
 export SELECTION
 
 for SELECTION in $SELECTIONS
 do
-    export OUTPUT=/tmp/finout/$SELECTION
+    export OUTPUT=$OUTBASE/$SELECTION
     echo Running $SELECTION tests with output to $OUTPUT
     mkdir -p $OUTPUT
     rm -fr $OUTPUT/*
-    ./finops.py --confirm-script tests.fins
+    ./finops.py --verbose --confirm-script $SCRIPT
     
-    wc $OUTPUT/initial-account-names $OUTPUT/handelsbanken-app.csv $OUTPUT/handelsbanken-statement.csv $OUTPUT/handelsbanken-app-daily.csv $OUTPUT/handelsbanken-statement-daily.csv $OUTPUT/handelsbanken-app-monthly.csv $OUTPUT/handelsbanken-statement-monthly.csv $OUTPUT/handelsbanken-app-yearly.csv $OUTPUT/handelsbanken-statement-yearly.csv $OUTPUT/handelsbanken-added-from-statement.csv $OUTPUT/statements-oracle.csv $OUTPUT/app-oracle.csv $OUTPUT/handelsbanken-statement-as-financisto.csv $OUTPUT/handelsbanken-added-from-statement-as-financisto.csv $OUTPUT/handelsbanken-added-from-statement-as-financisto-by-daily-summaries.csv $OUTPUT/handelsbanken-regular-added-from-statement-as-financisto.csv $OUTPUT/handelsbanken-regular-added-from-statement-as-financisto-by-daily-summaries.csv $OUTPUT/final-account-names
+    find $OUTBASE -name "*.csv" | xargs wc
 done

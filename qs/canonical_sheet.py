@@ -23,7 +23,7 @@ def find_conversion(conversions, payee_name):
     for key, value in conversions.items():
         if re.search(key, payee_name):
             return value
-    print("no conversion for", payee_name)
+    print("no conversion for payee", payee_name)
     return None
 
 class canonical_sheet:
