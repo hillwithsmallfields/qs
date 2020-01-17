@@ -1,0 +1,21 @@
+config:
+  files:
+    - ~/open-projects/github.com/hillwithsmallfields/qs/conf/accounts.yaml
+    - ~/common/finances/conversions.yaml
+  debug:
+    trace:
+      - ORACLE
+      - TREVOR POTTS
+      - D.DR SOUTH STAFFS WATER
+      - D.DR E.ON
+      - D.DR NHSBSA PPC
+      - WRESTLERS
+inputs:
+  directory: ~/common/qs-scratch
+  files:
+    financisto-$SELECTION.csv:      app %s
+    handelsbanken-$SELECTION.csv:   statement for %s
+commands:
+  - write_csv(format_sheet(sheet(add_sheet(app Handelsbanken current account, statement for Handelsbanken current account, "regular")), "financisto"), "$OUTPUT/handelsbanken-regular-added-from-statement-as-financisto.csv")
+  - write_csv(format_sheet(sheet(add_sheet(by_day(app Handelsbanken current account), by_day(statement for Handelsbanken current account), "regular")), "financisto"), "$OUTPUT/handelsbanken-regular-added-from-statement-as-financisto-by-daily-summaries.csv")
+  - list_accounts("$OUTPUT/final-account-names")
