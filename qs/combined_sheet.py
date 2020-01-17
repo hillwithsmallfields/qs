@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
-import csv_sheet
+import base_sheet
 
-class combined_sheet(csv_sheet.csv_sheet):
+class combined_sheet(base_sheet.base_sheet):
 
     """A spreadsheet made by merging several sheets by timestamp."""
 

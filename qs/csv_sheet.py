@@ -1,12 +1,12 @@
 #!/usr/bin/python3
 
+import base_sheet
 import csv
-import datetime
 import ordered_set
 import os.path
 import qsutils
 
-class csv_sheet:
+class csv_sheet(base_sheet.base_sheet):
     """The contents of a CSV spreadsheet with headers.
 
     The 'format' describes the column names, and maps them to a
@@ -24,9 +24,8 @@ class csv_sheet:
                  input_filename=None,
                  default_time="01:00:00",
                  verbose=False):
-        self.config = config
+        super().__init__(config)
         self.default_time = default_time
-        self.rows = {}
         self.verbose = verbose
         self.header_row_number = 0
         self.origin_files = []
@@ -68,21 +67,6 @@ class csv_sheet:
                     + ", ".join(self.format['column-sequence'])
                     + "]") if 'column-sequence' in self.format else "")
                 + ">")
-
-    def unused_timestamp_from(self, base_date, base_time=None):
-        """Return a timestamp at the given date and time, that is not already
-        used for a row. The soonest available time after the one specified is
-        used in case of clashes, which will usually retain the order in which
-        rows were added, even if only dates are given."""
-        if 'T' in base_date:    # allow base_date to be a whole timestamp
-            timestamp = base_date
-        else:
-            base_time = (base_time or self.default_time)
-            timestamp = datetime.datetime.strptime(base_date+"T"+base_time,
-                                                   "%Y-%m-%dT%H:%M:%S")
-        while timestamp in self.rows:
-            timestamp += datetime.timedelta(0,1)
-        return timestamp
 
     def get_cell(self, row, canonical_column_name, default_value=None):
         """Get a cell value from a row, using its canonical column name."""

@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import account
+import base_sheet
 import csv
 import csv_sheet
 import os
@@ -26,7 +27,7 @@ def find_conversion(conversions, payee_name):
     print("no conversion for payee", payee_name)
     return None
 
-class canonical_sheet:
+class canonical_sheet(base_sheet.base_sheet):
     """A financial data-only spreadsheet with a standard set of column names.
 
     This is the result of reading in a CSV file from a finance
@@ -63,11 +64,10 @@ class canonical_sheet:
                  reference_sheet=None,
                  origin_files=[],
                  verbose=False):
+        super().__init__(config)
         self.verbose = verbose
-        self.config = config
         if self.verbose:
             print("Making canonical_sheet with input_sheet", input_sheet)
-        self.rows = {}
         self.row_order = None
         self.row_cursor = 0
         self.origin_files = origin_files
@@ -124,6 +124,9 @@ class canonical_sheet:
     def __str__(self):
         return ("<canonical spreadsheet with "
                 + str(len(self.rows)) + " rows>")
+
+    def get_row_timestamp(self, row):
+        return row.get('timestamp', None)
 
     def row_to_canonical(self,
                          input_sheet, row,
