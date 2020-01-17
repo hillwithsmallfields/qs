@@ -82,7 +82,7 @@ class canonical_sheet(base_sheet.base_sheet):
                 print("converting", input_sheet)
             for in_row in input_sheet:
                 can_row = self.row_to_canonical(input_sheet, in_row,
-                                                reference_sheet=reference_sheet,
+                                                reference_sheet=self,
                                                 account_name_template=account_name_template,
                                                 convert_all=convert_all)
                 if self.verbose:

@@ -15,12 +15,15 @@ class base_sheet:
         used for a row. The soonest available time after the one specified is
         used in case of clashes, which will usually retain the order in which
         rows were added, even if only dates are given."""
+        print("  given", base_date, base_time)
         if 'T' in base_date:    # allow base_date to be a whole timestamp
             timestamp = base_date
         else:
             base_time = (base_time or self.default_time)
             timestamp = datetime.datetime.strptime(base_date+"T"+base_time,
                                                    "%Y-%m-%dT%H:%M:%S")
+        print("  made", timestamp)
         while timestamp in self.rows:
             timestamp += datetime.timedelta(0,1)
+            print("    bumped to", timestamp)
         return timestamp

@@ -115,10 +115,17 @@ class csv_sheet(base_sheet.base_sheet):
             self.default_time = (self.format['column_defaults'].get('time', "01:00:00")
                                  if 'column_defaults' in self.format
                                  else "01:00:00")
-            self.rows = {self.unused_timestamp_from(self.get_cell(row0, 'date'),
-                                                    self.get_cell(row0, 'time', self.default_time)):
-                         {k:v for k,v in row0.items() if k != ''}
-                         for row0 in csv.DictReader(infile)}
+            # We can't construct this with a dictionary comprehension,
+            # because unused_timestamp_from needs to see the entries
+            # so far as the dictionary is filled in, and the
+            # comprehension mechanism constructs all the values then
+            # puts them all in place:
+            for row0 in csv.DictReader(infile):
+                canonized = {k:v for k,v in row0.items() if k != ''}
+                unique_ts = self.unused_timestamp_from(self.get_cell(row0, 'date'),
+                                                       self.get_cell(row0, 'time', self.default_time))
+                canonized['timestamp'] = unique_ts
+                self.rows[unique_ts] = canonized
         for row in self.rows.values():
             row.update(sheet_marker)
         self.origin_files.append(filename)
