@@ -81,16 +81,21 @@ class canonical_sheet(base_sheet.base_sheet):
             if self.verbose:
                 print("converting", input_sheet)
             for in_row in input_sheet:
-                can_row = self.row_to_canonical(input_sheet, in_row,
-                                                reference_sheet=self,
-                                                account_name_template=account_name_template,
-                                                convert_all=convert_all)
+                can_row, is_new = self.row_to_canonical(
+                    input_sheet, in_row,
+                    reference_sheet=self,
+                    account_name_template=account_name_template,
+                    convert_all=convert_all)
                 if self.verbose:
                     print("made", can_row, "from", in_row)
                 if can_row:
-                    if self.verbose:
-                        print("storing", can_row)
-                    self.rows[can_row['timestamp']] = can_row
+                    if is_new:
+                        if self.verbose:
+                            print("storing", can_row)
+                        self.rows[can_row['timestamp']] = can_row
+                    else:
+                        if self.verbose:
+                            print("skipping row as duplicate", can_row)
         elif isinstance(input_sheet, canonical_sheet):
             self.origin_files = input_sheet.origin_files
             # take a copy
@@ -168,7 +173,10 @@ class canonical_sheet(base_sheet.base_sheet):
         out_row = {
             'date': row_date,
             'time': row_time,
-            'timestamp': reference_sheet.unused_timestamp_from(row_date, row_time),
+            # we don't bump the timestamp to be unique yet, to give
+            # the new row a chance to be identical to an earlier
+            # attempt, if we are fed exactly the same thing twice.
+            'timestamp': reference_sheet.timestamp_from(row_date, row_time),
             'amount': money_in - money_out,
             'account': templated_name(account_name_template,
                                       (input_sheet.get_cell(row, 'account', None)
@@ -204,7 +212,14 @@ class canonical_sheet(base_sheet.base_sheet):
                                              else extra_value)
         if conversion and 'flags' in conversion:
             out_row['flags'] = set(conversion['flags'].split())
-        return out_row
+        if self.rows.get(out_row['timestamp'], None) == out_row:
+            # we have just created an exact duplicate of an existing row
+            return out_row, False
+        # not a duplicate, so give it a unique timestamp so it can't
+        # overwrite an existing (but not identical) row with the same
+        # timestamp
+        out_row['timestamp'] = reference_sheet.unused_timestamp_from(row_date, row_time)
+        return out_row, True
 
     def row_from_canonical(self, output_format, canonical_row):
         """Convert a row from our standard format to a specified one."""
