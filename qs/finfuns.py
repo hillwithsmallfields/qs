@@ -33,8 +33,8 @@ def convert_to_Python(command):
 
 # The functions
 
-def add_sheet(variables, account, sheet, flags=None):
-    return account.add_sheet(sheet, flags=flags)
+def add_sheet(variables, account, sheet, flags=None, trace_sheet_name=None):
+    return account.add_sheet(sheet, flags=flags, trace_sheet_name=trace_sheet_name)
 
 def by_day(variables, original):
     return original.combine_same_period_entries(qsutils.granularity_day,

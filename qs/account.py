@@ -9,6 +9,7 @@ import os
 import payee
 import qsutils
 import re
+import trace_sheet
 
 class account:
     """A financial account, with the transactions that have happened on it.
@@ -130,7 +131,7 @@ class account:
                 print("  Already seen", row)
             return None
 
-    def add_sheet(self, sheet, flags=None):
+    def add_sheet(self, sheet, flags=None, trace_sheet_name=None):
         """Add to this account all the rows of the given sheet
         that belong to the account and were not already recorded in it.
 
@@ -141,6 +142,7 @@ class account:
 
         """
         self.origin_files += sheet.origin_files
+        trace = trace_sheet.trace_sheet(sheet.config, trace_sheet_name) if trace_sheet_name else None
         flags = flags and set(flags.split())
         added_rows = {}
         if isinstance(sheet, canonical_sheet.canonical_sheet):
@@ -164,11 +166,15 @@ class account:
                     print("  considering", row)
                     if flags and 'flags' in row and not flags.intersection(row['flags']):
                         print("  skipping", row, "because of flags")
+                        if trace:
+                            trace.add_row(row, "skipping", "wrong flags")
                         continue
                     seen = payee.name in self.payees and self.payees[payee.name].already_seen(timestamp, row['amount'])
                     if not seen:
                         if tracing:
                             print("    adding new transaction of", row['amount'], "with", payee.name, "at", row['timestamp'])
+                        if trace:
+                            trace.add_row(row, "adding", "flags ok and not seen before")
                         added_rows[row['timestamp']] = row
                     else:
                         if tracing:
@@ -178,6 +184,10 @@ class account:
                                   "from", row['sheet'].name,
                                   "existing one is", seen['timestamp'].date(),
                                   "from", seen['sheet'].name)
+                        if trace:
+                            trace.add_row(row, "skipping", "already seen")
+        if trace:
+            trace.write_csv()
         if len(added_rows) == 0:
             return None
         else:
