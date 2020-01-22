@@ -116,7 +116,9 @@ def main():
                     variables[account_name] = account.account(account_name,
                                                               config=config,
                                                               origin_files=filename_as_list)
-                variables[account_name].add_row_if_new(row)
+                added, why_not = variables[account_name].add_row_if_new(row)
+                if not added:
+                    print("duplicate found in", input_filename, "incoming", why_not[0], "existing", why_not[1])
 
     for command in script.get('commands', []):
         if args.confirm_script:

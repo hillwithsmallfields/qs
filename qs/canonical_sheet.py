@@ -212,6 +212,7 @@ class canonical_sheet(base_sheet.base_sheet):
                                              else extra_value)
         if conversion and 'flags' in conversion:
             out_row['flags'] = set(conversion['flags'].split())
+            print("Added flags", conversion['flags'], "from conversion", out_row)
         if self.rows.get(out_row['timestamp'], None) == out_row:
             # we have just created an exact duplicate of an existing row
             return out_row, False
@@ -244,7 +245,7 @@ class canonical_sheet(base_sheet.base_sheet):
             account_name = row['account']
             if account_name not in accounts:
                 accounts[account_name] = account.account(account_name)
-            added_row = accounts[account_name].add_row_if_new(row)
+            added_row, why_not = accounts[account_name].add_row_if_new(row)
             if added_row:
                 if account_name not in added_row_lists:
                     added_row_lists[account_name] = []

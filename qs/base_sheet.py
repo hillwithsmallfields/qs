@@ -4,6 +4,7 @@ import csv
 import datetime
 import ordered_set
 import os.path
+import qsutils
 
 class base_sheet:
 
@@ -50,4 +51,5 @@ class base_sheet:
             writer = csv.DictWriter(outfile, colseq)
             writer.writeheader()
             for timestamp in sorted(self.rows.keys()):
-                writer.writerow(self.rows[timestamp])
+                row = self.rows[timestamp]
+                writer.writerow({sk: qsutils.trim_if_float(row.get(sk, None)) for sk in colseq})

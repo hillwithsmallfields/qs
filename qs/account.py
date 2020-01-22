@@ -101,7 +101,9 @@ class account:
         """Add a row to the account if it belongs to this account
         and was not already recorded.
 
-        If it was added, return it, otherwise return None.
+        If it was added, return it and None, otherwise return None and
+        a tuple of this row and the existing one that caused it not to
+        be added.
         """
         payee_name = row['payee']
         tracing = self.tracing and self.tracing.search(payee_name)
@@ -111,25 +113,27 @@ class account:
             self.payees[payee_name] = row_payee
         when = row['timestamp']
         how_much = -row['amount']
-        if row_payee.already_seen(when, how_much):
+        previously = row_payee.already_seen(when, how_much)
+        if previously:
             if tracing:
-                print("  Already seen", row)
-            return None
+                print("  Already seen", row, "as", previously)
+            return None, (row, previously)
         else:
             static_payee = (self.base.payees.get(payee_name, None)
                             if self.base
                             else None)
+            previously = static_payee and static_payee.already_seen(when, how_much)
             if (static_payee is None
-                or not static_payee.already_seen(when, how_much)):
+                or not previously):
                 self.balance -= how_much
                 row_payee.add_transaction(when, how_much, self, flags=row.get('flags', None))
                 self.all_transactions[when] = row
                 if tracing:
                     print("  Adding transaction of", row['amount'], "with", row['payee'], "at", row['timestamp'].date())
-                return row
+                return row, None
             if tracing:
-                print("  Already seen", row)
-            return None
+                print("  Already seen", row, "as", previously)
+            return None, (row, previously)
 
     def add_sheet(self, sheet, flags=None, trace_sheet_name=None):
         """Add to this account all the rows of the given sheet
@@ -144,6 +148,7 @@ class account:
         self.origin_files += sheet.origin_files
         trace = trace_sheet.trace_sheet(sheet.config, trace_sheet_name) if trace_sheet_name else None
         flags = flags and set(flags.split())
+        print("flags for add_sheet are", flags)
         added_rows = {}
         if isinstance(sheet, canonical_sheet.canonical_sheet):
             print("Adding canonical sheet from files", sheet.origin_files, "to account", self.name, "with flags", flags)
@@ -153,9 +158,14 @@ class account:
                     or ('flags' in row
                         and flags.intersection(row['flags']))):
                     if row.get('account', None) == self.name:
-                        was_new = self.add_row_if_new(row)
+                        was_new, why_not = self.add_row_if_new(row)
                         if was_new:
                             added_rows[was_new['timestamp']] = was_new
+                            trace.add_row(was_new, "newness", "added as new")
+                        else:
+                            trace.add_row(was_new, "newness", "skipped as dup")
+                else:
+                    trace.add_row(row, "skipped unflagged", "%s %s" % (flags, row['flags']))
         elif isinstance(sheet, account):
             print("Adding account", sheet.name, "to account", self.name, "with flags", flags)
             for payee in sheet:
@@ -163,18 +173,18 @@ class account:
                 if tracing:
                     print("  want to merge payments from", payee.name, "into account", self.name)
                 for timestamp, row in payee:
-                    print("  considering", row)
-                    if flags and 'flags' in row and not flags.intersection(row['flags']):
+                    print("  considering", row, "flags", flags)
+                    if flags and ('flags' not in row or not flags.intersection(row['flags'])):
                         print("  skipping", row, "because of flags")
                         if trace:
-                            trace.add_row(row, "skipping", "wrong flags")
+                            trace.add_row(row, "skipped unflagged", "%s %s" % (flags, row.get('flags', None)))
                         continue
                     seen = payee.name in self.payees and self.payees[payee.name].already_seen(timestamp, row['amount'])
                     if not seen:
                         if tracing:
                             print("    adding new transaction of", row['amount'], "with", payee.name, "at", row['timestamp'])
                         if trace:
-                            trace.add_row(row, "adding", "flags ok and not seen before")
+                            trace.add_row(row, "adding (acct)", "flags %s ok by %s and not seen before" % (row.get('flags', None), flags))
                         added_rows[row['timestamp']] = row
                     else:
                         if tracing:

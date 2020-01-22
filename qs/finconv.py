@@ -91,16 +91,18 @@ def main():
 
     if args.verbose:
         print("loading", base_filename, "as base sheet")
-    base_sheet = canonical_sheet.canonical_sheet(
+    foundation_sheet = canonical_sheet.canonical_sheet(
         config,
         input_sheet=base_filename,
         convert_all=True,
         verbose=args.verbose)
-    for row in base_sheet:
+    for row in foundation_sheet:
         account_name = row['account']
         if account_name not in accounts:
             base_accounts[account_name] = account.account(account_name)
-        base_accounts[account_name].add_row_if_new(row)
+        added, why_not = base_accounts[account_name].add_row_if_new(row)
+        if args.verbose and not added:
+            print("Duplicate found:", why_not)
 
     if args.verbose:
         print("loading", infile_names, "as input sheets")
@@ -112,19 +114,24 @@ def main():
 
     out_sheet = canonical_sheet.canonical_sheet(config)
 
+    # distribute data from sheets to accounts
     for in_sheet in in_sheets:
         for row in in_sheet:
             account_name = row['account']
             if account_name not in accounts:
                 accounts[account_name] = account.account(account_name)
-            accounts[account_name].add_row_if_new(row)
+            added, why_not = accounts[account_name].add_row_if_new(row)
+            if args.verbose and not added:
+                print("Duplicate found:", why_not)
 
+    print("Account list begins")
     for accname, accdata in accounts.items():
         print("    Account", accname)
         for payee in accdata:
             print("        ", payee)
             for when in sorted(payee.by_timestamp.keys()):
                 print("            ", when, " ".join(map(str,payee.by_timestamp[when])))
+    print("Account list ends")
 
     formatted_sheet.formatted_sheet(config,
                                     output_format_name,

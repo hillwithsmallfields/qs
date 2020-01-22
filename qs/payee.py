@@ -97,4 +97,5 @@ class payee:
             row['message'] = comment
         if flags:
             row['flags'] = flags
+            print("added flags", flags, "to row", row)
         self.add_row(row)

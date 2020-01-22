@@ -1,7 +1,9 @@
 #!/usr/bin/python
 # Common routines for my QS programs
 
+import account
 import argparse
+import base_sheet
 import csv
 import datetime
 import os
@@ -12,7 +14,10 @@ import yaml
 def trim_if_float(val):
     return (("%.2F" % val)
             if type(val) is float
-            else val)
+            else (None
+                  if (isinstance(val, base_sheet.base_sheet)
+                      or isinstance(val, account.account))
+                  else val))
 
 def granularity_day(overprecise):
     return datetime.datetime(overprecise.year, overprecise.month, overprecise.day)
