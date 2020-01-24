@@ -174,6 +174,8 @@ class account:
                     print("  want to merge payments from", payee.name, "into account", self.name)
                 for timestamp, row in payee:
                     print("  considering", row, "flags", flags)
+                    if 'flags' in row: # debug
+                        print("  intersection", flags.intersection(row['flags'])) # debug
                     if flags and ('flags' not in row or not flags.intersection(row['flags'])):
                         print("  skipping", row, "because of flags")
                         if trace:
