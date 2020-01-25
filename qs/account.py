@@ -186,8 +186,13 @@ class account:
                         if tracing:
                             print("    adding new transaction of", row['amount'], "with", payee.name, "at", row['timestamp'])
                         if trace:
-                            trace.add_row(row, "adding (acct)", "flags %s ok by %s and not seen before" % (row.get('flags', None), flags))
+                            trace.add_row(row,
+                                          "adding (acct)",
+                                          "flags %s ok by %s and not seen before, ts is %s" % (row.get('flags', None),
+                                                                                               flags,
+                                                                                               row['timestamp']))
                         added_rows[row['timestamp']] = row
+                        print("now got", len(added_rows), "rows")
                     else:
                         if tracing:
                             print("    already got transaction of",
@@ -198,11 +203,14 @@ class account:
                                   "from", seen['sheet'].name)
                         if trace:
                             trace.add_row(row, "skipping", "already seen")
+        print("at end, got", len(added_rows), "rows")
         if trace:
             trace.write_csv()
         if len(added_rows) == 0:
+            print("No rows to return")
             return None
         else:
+            print("converting added", len(added_rows), "rows to a sheet")
             return canonical_sheet.canonical_sheet(None, input_sheet=added_rows)
 
     def already_seen(self, payee, timestamp, amount):

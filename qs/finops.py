@@ -126,7 +126,11 @@ def main():
         command = finfuns.convert_to_Python(command)
         if args.confirm_script:
             print("Converted command to", command)
-        exec(command)
+        try:
+            exec(command)
+        except Exception as err:
+            print("Error", err, "while running command", command)
+            raise err
 
     return 0
 
