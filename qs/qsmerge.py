@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
-# Time-stamp: <2018-12-29 21:50:50 jcgs>
+# Time-stamp: <2020-02-04 21:05:36 jcgs>
 
 # Program to merge my Quantified Self files.
 
@@ -25,12 +25,12 @@ def weight_tracker_complete_row(row):
         elif 'Stone' in row and row['Stone'] != '' and 'Lbs' in row and row['Lbs'] != '':
             row['Lbs total'] = float(row['Stone']) * 14 + float(row['Lbs'])
         else:
-            print "Could not derive 'Lbs total' for", row.get('Date', "<unknown date>"), "as neither 'Kg' nor 'Stone'+'Lbs' given"
+            print("Could not derive 'Lbs total' for", row.get('Date', "<unknown date>"), "as neither 'Kg' nor 'Stone'+'Lbs' given")
     if 'Kg' not in row or row['Kg'] == '':
         if 'Lbs total' in row and row['Lbs total'] != '':
             row['Kg'] = float(row['Lbs total']) / 2.20462
         else:
-            print "Could not derive 'Kg' for", row.get('Date', "<unknown date>"), "as 'Lbs total' not given or derived"
+            print("Could not derive 'Kg' for", row.get('Date', "<unknown date>"), "as 'Lbs total' not given or derived")
     if 'Lbs' not in row or row['Lbs'] == '':
         if 'Lbs total' in row and row['Lbs total'] != '':
             row['Lbs'] = int(row['Lbs total']) % 14
@@ -146,8 +146,8 @@ def main():
     else:
         output = args.output
     if args.verbose:
-        print "Main input is", args.mainfile, "and output is", output
-        print "Incoming files are", args.incoming
+        print("Main input is", args.mainfile, "and output is", output)
+        print("Incoming files are", args.incoming)
     with open(args.mainfile) as csvheaderprobe:
         probereader = csv.reader(csvheaderprobe)
         for row in probereader:
@@ -156,7 +156,7 @@ def main():
     if args.type is None:
         file_type = qsutils.deduce_file_type_from_headers(fieldnames)
         if args.verbose:
-            print "Deduced file type", file_type
+            print("Deduced file type", file_type)
     else:
         file_type = args.type
     handler = file_type_handlers[file_type]
@@ -167,12 +167,12 @@ def main():
             row['Date'] = row_date
             by_date[row_date] = row
             if args.debug:
-                print "mainfile raw date", row['Date'], "converted to", row_date
+                print("mainfile raw date", row['Date'], "converted to", row_date)
         csvfile.close()
     for incoming_file in args.incoming:
         row_parser = find_row_parser_for(file_type, incoming_file)
         if row_parser is None:
-            print "Skipping", incoming_file, "as I don't have a parser for it"
+            print("Skipping", incoming_file, "as I don't have a parser for it")
         else:
             with open(incoming_file) as incoming:
                 inreader = csv.reader(incoming)
@@ -182,22 +182,22 @@ def main():
                         new_row_date = handler['date'](new_row['Date'])
                         new_row['Date'] = new_row_date
                         if args.debug:
-                            print "incoming raw date", new_row['Date'], "-->", new_row_date
+                            print("incoming raw date", new_row['Date'], "-->", new_row_date)
                         if new_row_date in by_date:
                             if args.debug:
-                                print "merging row"
+                                print("merging row")
                             existing_row = by_date[new_row_date]
                             for key, value in new_row.iteritems():
                                 existing_row[key] = value
                         else:
                             if args.debug:
-                                print "adding row"
+                                print("adding row")
                             by_date[new_row_date] = new_row
     completer = handler['completer']
     sorted_dates = sorted(by_date.keys())
     for date in sorted_dates:
         if args.debug:
-            print "completing", date
+            print("completing", date)
         completer(by_date[date])
     for row in by_date.values():
         for colname in row.keys():

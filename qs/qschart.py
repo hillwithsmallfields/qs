@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 # Program to chart my Quantified Self files.
 
@@ -54,11 +54,11 @@ def main():
                 break               # read only the first row
         file_type = qsutils.deduce_file_type_from_headers(fieldnames)
         if args.verbose:
-            print "Deduced file type", file_type
+            print("Deduced file type", file_type)
     else:
         file_type = args.type
     if file_type not in ROW_HANDLERS:
-        print "No handler for type", file_type
+        print("No handler for type", file_type)
         return
 
     row_handler = ROW_HANDLERS[file_type]
