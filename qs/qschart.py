@@ -1,7 +1,5 @@
 #!/usr/bin/python
 
-# Time-stamp: <2018-12-29 22:17:26 jcgs>
-
 # Program to chart my Quantified Self files.
 
 import argparse
@@ -20,14 +18,14 @@ ROW_HANDLERS = {
 }
 
 def row_filter(filter_control, row):
-    if 'start' in filter_control:
-        if row['__DATE__'] < filter_control['start']:
+    if 'begin' in filter_control:
+        if row['__DATE__'] < filter_control['begin']:
             return False
     if 'end' in filter_control:
         if row['__DATE__'] > filter_control['end']:
             return False
     if 'match' in filter_control:
-        if not filter_control['regexp'].match(row['match']):
+        if not filter_control['regexp'].match(row[filter_control['match']]):
             return False
     return True
 
@@ -110,7 +108,6 @@ def main():
 # set grid xtics
 # set datafile separator ","
 # plot "/tmp/plot-weight.dat" using 1:7 with line axes x1y1 lc 7 title "Weight", "/tmp/plot-weight.dat" using 1:12 with line axes x1y1 lc 1 title "Average (week)", "/tmp/plot-weight.dat" using 1:14 with line axes x1y2 lc 3 title "Change (average) in week"
-
 
 if __name__ == "__main__":
     main()
