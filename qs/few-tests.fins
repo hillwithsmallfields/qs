@@ -17,5 +17,8 @@ inputs:
     handelsbanken-$SELECTION.csv:   statement for %s
 commands:
   - write_csv(format_sheet(sheet(add_sheet(app Handelsbanken current account, statement for Handelsbanken current account, "regular", "$OUTPUT/trace-add-regular.csv")), "financisto"), "$OUTPUT/handelsbanken-regular-added-from-statement-as-financisto.csv")
+  - show(by_day(app Handelsbanken current account), "$OUTPUT/by_day")
+  - write_csv(format_sheet(sheet(by_day(app Handelsbanken current account)), "financisto"), "$OUTPUT/handelsbanks-from-app-daily.csv")
+  - write_csv(format_sheet(sheet(by_day(statement for Handelsbanken current account)), "financisto"), "$OUTPUT/handelsbanks-from-statement-daily.csv")
   - write_csv(format_sheet(sheet(add_sheet(by_day(app Handelsbanken current account), by_day(statement for Handelsbanken current account), "regular", "$OUTPUT/trace-add-daily-regular.csv")), "financisto"), "$OUTPUT/handelsbanken-regular-added-from-statement-as-financisto-by-daily-summaries.csv")
   - list_accounts("$OUTPUT/final-account-names")

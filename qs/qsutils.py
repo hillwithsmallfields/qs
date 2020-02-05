@@ -40,8 +40,11 @@ def resolve_filename(filename, directory=None):
     filename = os.path.expandvars(filename)
     return (filename
             if os.path.isabs(filename)
-            else os.path.join(os.path.expanduser(directory or os.getcwd()),
-                              os.path.expanduser(filename)))
+            else os.path.join(
+                    os.path.expandvars(
+                        os.path.expanduser(directory or os.getcwd())),
+                    os.path.expandvars(
+                        os.path.expanduser(filename))))
 
 # based on https://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
 def rec_update(d, u, i=""):

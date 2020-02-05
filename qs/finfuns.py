@@ -18,6 +18,7 @@ functions = ['add_sheet',
              'payees',
              'set',
              'sheet',
+             'show',
              'write_all_columns',
              'write_csv',
              'write_debug']
@@ -93,6 +94,11 @@ def sheet(variables, account):
     """Convert an account to a canonical sheet."""
     can = canonical_sheet.canonical_sheet(account.config, input_sheet=account)
     return can
+
+def show(variables, value, filename):
+    """Output any of the types we handle, for debugging."""
+    with open(qsutils.resolve_filename(filename), 'w') as output:
+        output.write(str(value))
 
 def write_all_columns(variables, value, filename):
     if value:

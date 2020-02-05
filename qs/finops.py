@@ -122,6 +122,7 @@ def main():
 
     for command in script.get('commands', []):
         if args.confirm_script:
+            print("---")
             print("Executing command", command)
         command = finfuns.convert_to_Python(command)
         if args.confirm_script:
