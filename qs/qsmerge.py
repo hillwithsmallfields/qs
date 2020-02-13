@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Time-stamp: <2020-02-04 21:05:36 jcgs>
+# Time-stamp: <2020-02-09 15:17:18 jcgs>
 
 # Program to merge my Quantified Self files.
 
@@ -25,12 +25,12 @@ def weight_tracker_complete_row(row):
         elif 'Stone' in row and row['Stone'] != '' and 'Lbs' in row and row['Lbs'] != '':
             row['Lbs total'] = float(row['Stone']) * 14 + float(row['Lbs'])
         else:
-            print("Could not derive 'Lbs total' for", row.get('Date', "<unknown date>"), "as neither 'Kg' nor 'Stone'+'Lbs' given")
+            print("Warning: Could not derive 'Lbs total' for", row.get('Date', "<unknown date>"), "as neither 'Kg' nor 'Stone'+'Lbs' given in", row)
     if 'Kg' not in row or row['Kg'] == '':
         if 'Lbs total' in row and row['Lbs total'] != '':
             row['Kg'] = float(row['Lbs total']) / 2.20462
         else:
-            print("Could not derive 'Kg' for", row.get('Date', "<unknown date>"), "as 'Lbs total' not given or derived")
+            print("Warning: Could not derive 'Kg' for", row.get('Date', "<unknown date>"), "as 'Lbs total' not given or derived in", row)
     if 'Lbs' not in row or row['Lbs'] == '':
         if 'Lbs total' in row and row['Lbs total'] != '':
             row['Lbs'] = int(row['Lbs total']) % 14
@@ -100,7 +100,7 @@ def iso8601_date_only(timestamp):
 
 def excel_date(date1):          # from http://stackoverflow.com/questions/9574793/how-to-convert-a-python-datetime-datetime-to-excel-serial-date-number
     temp = datetime.datetime(1899, 12, 31)
-    parts = map(int, date1.split('-'))
+    parts = [int(x) for x in date1.split('-')]
     delta = datetime.datetime(parts[0], parts[1], parts[2]) - temp
     return float(delta.days) + (float(delta.seconds) / 86400)
 
@@ -124,7 +124,7 @@ file_type_handlers = {
 }
 
 def find_row_parser_for(file_type, filename):
-    for pattern, parser in file_type_handlers[file_type]['row_parsers'].iteritems():
+    for pattern, parser in file_type_handlers[file_type]['row_parsers'].items():
         if re.search(pattern, filename):
             return parser
     return None
@@ -187,7 +187,7 @@ def main():
                             if args.debug:
                                 print("merging row")
                             existing_row = by_date[new_row_date]
-                            for key, value in new_row.iteritems():
+                            for key, value in new_row.items():
                                 existing_row[key] = value
                         else:
                             if args.debug:

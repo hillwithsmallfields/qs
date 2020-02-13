@@ -100,7 +100,22 @@ def deduce_format(first_row, formats, verbose=False):
             print("  Comparing with", format_name, "sample row", sequence)
         if sequence == condensed_row:
             if verbose:
-                print("Format seems to be", format_name)
+                print("Format seems to be", format_name, "(by headers)")
+            return format_name
+    for format_name, format_def in formats.items():
+        if 'column-patterns' not in format_def:
+            continue
+        patterns = [col for col in format_def['column-patterns'] if col]
+        if verbose:
+            print("  Comparing with", format_name, "against patterns", patterns)
+        all_matching = True
+        for pattern, cell in zip(patterns, condensed_row):
+            if not re.match(pattern, cell):
+                all_matching = False
+                break
+        if all_matching:
+            if verbose:
+                print("Format seems to be", format_name, "(by patterns)")
             return format_name
     if verbose:
         print("Could not deduce format")
