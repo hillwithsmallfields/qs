@@ -9,7 +9,6 @@ class formatted_sheet(csv_sheet.csv_sheet):
                  config,
                  format_name,
                  canonical_input):
-        print("making", format_name, "formatted_sheet from", canonical_input, "with config", config)
         super().__init__(config, format_name=format_name)
         for row in canonical_input:
             self.rows[row['timestamp']] = canonical_input.row_from_canonical(self.format, row)

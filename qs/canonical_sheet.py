@@ -24,7 +24,6 @@ def find_conversion(conversions, payee_name):
     for key, value in conversions.items():
         if re.search(key, payee_name):
             return value
-    print("no conversion for payee", payee_name)
     return None
 
 class canonical_sheet(base_sheet.base_sheet):
@@ -212,7 +211,6 @@ class canonical_sheet(base_sheet.base_sheet):
                                              else extra_value)
         if conversion and 'flags' in conversion:
             out_row['flags'] = set(conversion['flags'].split())
-            print("Added flags", conversion['flags'], "from conversion", out_row)
         if self.rows.get(out_row['timestamp'], None) == out_row:
             # we have just created an exact duplicate of an existing row
             return out_row, False

@@ -57,9 +57,7 @@ class payee:
             if (when == timestamp
                 or (when > timestamp and delta < self.allowable_after)
                 or (-delta < self.allowable_before)): # implicitly when < timestamp
-                # print("        match between", timestamp, "and", when, "for amount", row['amount'], "in row", row)
                 return row
-        # print("        No match for", timestamp, "in", of_that_amount)
         return False
 
     def already_seen(self, timestamp, amount):
@@ -97,5 +95,4 @@ class payee:
             row['message'] = comment
         if flags:
             row['flags'] = flags
-            print("added flags", flags, "to row", row)
         self.add_row(row)

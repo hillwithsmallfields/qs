@@ -30,7 +30,7 @@ do
     echo Running $SELECTION tests with output to $OUTPUT
     mkdir -p $OUTPUT
     rm -fr $OUTPUT/*
-    ./finops.py --verbose --confirm-script $SCRIPT
+    ./finops.py --confirm-script $SCRIPT
     
     find $OUTBASE -name "*.csv" -o -name "*.txt" | xargs wc
 done

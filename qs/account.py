@@ -149,12 +149,9 @@ class account:
         self.origin_files += sheet.origin_files
         trace = trace_sheet.trace_sheet(sheet.config, trace_sheet_name) if trace_sheet_name else None
         flags = flags and set(flags.split())
-        print("flags for add_sheet are", flags)
         added_rows = {}
         if isinstance(sheet, canonical_sheet.canonical_sheet):
-            print("Adding canonical sheet from files", sheet.origin_files, "to account", self.name, "with flags", flags)
             for row in sheet:
-                print("flags", flags, "row flags", row.get('flags', "<>"))
                 if (flags is None
                     or ('flags' in row
                         and flags.intersection(row['flags']))):
@@ -168,17 +165,12 @@ class account:
                 else:
                     trace.add_row(row, "skipped unflagged", "%s %s" % (flags, row['flags']))
         elif isinstance(sheet, account):
-            print("Adding account", sheet.name, "to account", self.name, "with flags", flags)
             for payee in sheet:
                 tracing = self.tracing and self.tracing.search(payee.name)
                 if tracing:
                     print("  want to merge payments from", payee.name, "into account", self.name)
                 for timestamp, row in payee:
-                    print("  considering", row, "flags", flags)
-                    if 'flags' in row: # debug
-                        print("  intersection", flags.intersection(row['flags'])) # debug
                     if flags and ('flags' not in row or not flags.intersection(row['flags'])):
-                        print("  skipping", row, "because of flags")
                         if trace:
                             trace.add_row(row, "skipped unflagged", "%s %s" % (flags, row.get('flags', None)))
                         continue
@@ -193,7 +185,6 @@ class account:
                                                                                                flags,
                                                                                                row['timestamp']))
                         added_rows[row['timestamp']] = row
-                        print("now got", len(added_rows), "rows")
                     else:
                         if tracing:
                             print("    already got transaction of",
@@ -204,14 +195,11 @@ class account:
                                   "from", seen['sheet'].name)
                         if trace:
                             trace.add_row(row, "skipping", "already seen")
-        print("at end, got", len(added_rows), "rows")
         if trace:
             trace.write_csv()
         if len(added_rows) == 0:
-            print("No rows to return")
             return None
         else:
-            print("converting added", len(added_rows), "rows to a sheet")
             return canonical_sheet.canonical_sheet(None, input_sheet=added_rows)
 
     def already_seen(self, payee, timestamp, amount):

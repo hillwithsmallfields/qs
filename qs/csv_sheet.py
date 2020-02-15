@@ -37,7 +37,6 @@ class csv_sheet(base_sheet.base_sheet):
                            if format_name in config['formats']
                            else None)
             self.column_names = self.format['columns'] if self.format else {}
-        print("setting up format for csv sheet from", input_filename, "format is", self.format)
         self.row_order = None
         self.row_cursor = 0
 

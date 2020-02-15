@@ -85,8 +85,6 @@ def main():
                                      confdir,
                                      *config_section.get('files', ()))
 
-    print("config is", config)
-
     # output_format_name = (in_sheets[0].format_name
     #                       if args.update
     #                       else args.output_format)
@@ -120,7 +118,9 @@ def main():
                                                               origin_files=filename_as_list)
                 added, why_not = variables[account_name].add_row_if_new(row)
                 if not added:
-                    print("duplicate found in", input_filename, "incoming", why_not[0], "existing", why_not[1])
+                    print("duplicate found in", input_filename)
+                    print("  incoming", qsutils.dict_to_string_sorted_by_key(why_not[0]))
+                    print("  existing", qsutils.dict_to_string_sorted_by_key(why_not[1]))
 
     for command in script.get('commands', []):
         if args.confirm_script:
