@@ -47,17 +47,17 @@ def resolve_filename(filename, directory=None):
                         os.path.expanduser(filename))))
 
 # based on https://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
-def rec_update(d, u, i=""):
+def rec_update(basedict, u):
     for k, v in u.items():
         if isinstance(v, dict):
-            d[k] = rec_update(d.get(k, {}), v, "  ")
+            basedict[k] = rec_update(basedict.get(k, {}), v)
         elif isinstance(v, list):
-            d[k] = d.get(k, []) + [(ve if ve != 'None' else None) for ve in v]
+            basedict[k] = basedict.get(k, []) + [(ve if ve != 'None' else None) for ve in v]
         elif v == 'None':
-            d[k] = None
+            basedict[k] = None
         else:
-            d[k] = v
-    return d
+            basedict[k] = v
+    return basedict
 
 def string_to_bool(string):
     if string in ['yes', 'Yes', 'YES', 'true', 'true', 'TRUE', '1', True, 1]:
@@ -88,6 +88,9 @@ def load_config(verbose, base_config, suggested_dir, *config_files):
         print("Read config:")
         print(yaml.dump(base_config))
     return base_config
+
+def combine_configs(conf_a, conf_b):
+    return rec_update(rec_update({}, conf_a), conf_b)
 
 def deduce_format(first_row, formats, verbose=False):
     # take out some strange characters that Financisto is putting in

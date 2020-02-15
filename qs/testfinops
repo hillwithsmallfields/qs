@@ -32,5 +32,5 @@ do
     rm -fr $OUTPUT/*
     ./finops.py --verbose --confirm-script $SCRIPT
     
-    find $OUTBASE -name "*.csv" | xargs wc
+    find $OUTBASE -name "*.csv" -o -name "*.txt" | xargs wc
 done

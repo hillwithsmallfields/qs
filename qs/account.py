@@ -52,6 +52,7 @@ class account:
         else:
             self.tracing = None
         if copy_metadata_from:
+            self.config = copy_metadata_from.config
             self.currency = copy_metadata_from.currency
             self.opening_balance = copy_metadata_from.opening_balance
             self.balance = copy_metadata_from.balance

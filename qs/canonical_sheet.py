@@ -76,7 +76,7 @@ class canonical_sheet(base_sheet.base_sheet):
                 print("Reading", input_sheet, "for conversion")
             input_sheet = csv_sheet.csv_sheet(config, input_filename=input_sheet, verbose=self.verbose)
         if isinstance(input_sheet, csv_sheet.csv_sheet):
-            self.config = input_sheet.config
+            self.config = qsutils.combine_configs(input_sheet.config, config)
             self.origin_files = input_sheet.origin_files
             if self.verbose:
                 print("converting", input_sheet)

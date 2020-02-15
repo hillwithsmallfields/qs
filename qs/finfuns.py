@@ -8,6 +8,12 @@ import formatted_sheet
 import qsutils
 import re
 
+class ConfigRequired(Exception):
+    pass
+
+    def __init__(self, function_name):
+        self.function_name = function_name
+
 functions = ['add_sheet',
              'by_day',
              'by_month',
@@ -61,6 +67,11 @@ def compare(variables,
                                  sheet_b, column_b, track_b)
 
 def format_sheet(variables, input_sheet, format_name):
+    if input_sheet is None:
+        return None
+    if input_sheet.config is None:
+        print("missing format in format_sheet")
+        raise ConfigRequired("format_sheet")
     return formatted_sheet.formatted_sheet(input_sheet.config,
                                            format_name,
                                            input_sheet)
@@ -92,6 +103,11 @@ def set(variables, name, value):
 
 def sheet(variables, account):
     """Convert an account to a canonical sheet."""
+    if account is None:
+        return None
+    if account.config is None:
+        print("Config required in sheet")
+        raise ConfigRequired("sheet")
     can = canonical_sheet.canonical_sheet(account.config, input_sheet=account)
     return can
 

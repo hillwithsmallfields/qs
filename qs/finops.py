@@ -80,10 +80,12 @@ def main():
     if 'config' in script:
         config_section = script['config']
         confdir = config_section.get('directory', os.getcwd())
-        qsutils.load_config(args.verbose,
-                            config,
-                            confdir,
-                            *config_section.get('files', ()))
+        config = qsutils.load_config(args.verbose,
+                                     config,
+                                     confdir,
+                                     *config_section.get('files', ()))
+
+    print("config is", config)
 
     # output_format_name = (in_sheets[0].format_name
     #                       if args.update
