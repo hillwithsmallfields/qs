@@ -49,6 +49,11 @@ def resolve_filename(filename, directory=None):
 def dict_to_string_sorted_by_key(d):
     return "{" + ", ".join([str(k) + ": " + str(d[k]) for k in sorted(d.keys())]) + "}"
 
+main_keys = ['date', 'time', 'payee', 'amount']
+
+def row_as_string_main_keys(row):
+    return "{" + ", ".join([str(k) + ": " + str(row.get(k, "?")) for k in main_keys]) + "}"
+
 # based on https://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
 def rec_update(basedict, u):
     for k, v in u.items():
