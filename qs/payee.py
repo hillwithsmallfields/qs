@@ -84,13 +84,22 @@ class payee:
         self.balance += amount
 
     def add_transaction(self, timestamp, amount, origin_sheet,
-                        comment=None, flags=None):
+                        comment=None, flags=None, extra=None):
         row = {'timestamp': timestamp,
                'date': timestamp.date(),
                'time': timestamp.time(),
                'amount': amount,
                'payee': self.name,
                'sheet': origin_sheet}
+        if extra:
+            for column in ['category', 'parent',
+                           'project', 'location',
+                           'original_amount', 'original_currency',
+                           'message']:
+                if column in extra:
+                    value = extra[column]
+                    if value is not None and value != "" and value != 0:
+                        row[column] = value
         if comment:
             row['message'] = comment
         if flags:

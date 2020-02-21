@@ -127,7 +127,7 @@ class account:
             if (static_payee is None
                 or not previously):
                 self.balance -= how_much
-                row_payee.add_transaction(when, how_much, self, flags=row.get('flags', None))
+                row_payee.add_transaction(when, how_much, self, flags=row.get('flags', None), extra=row)
                 self.all_transactions[when] = row
                 if tracing:
                     print("  Adding transaction of", row['amount'], "with", row['payee'], "at", row['timestamp'].date())
