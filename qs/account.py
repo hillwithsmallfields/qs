@@ -127,10 +127,10 @@ class account:
             if (static_payee is None
                 or not previously):
                 self.balance -= how_much
-                row_payee.add_transaction(when, how_much, self, flags=row.get('flags', None), extra=row)
-                self.all_transactions[when] = row
                 if tracing:
                     print("  Adding transaction of", row['amount'], "with", row['payee'], "at", row['timestamp'].date())
+                row_payee.add_transaction(when, how_much, self, flags=row.get('flags', None), extra=row)
+                self.all_transactions[when] = row
                 return row, None
             if tracing:
                 print("  Already seen", row, "as", previously)
@@ -230,9 +230,9 @@ class account:
         # first, all the payees; these are amounts
         for name, orig_payee in self.payees.items():
             by_timestamp = orig_payee.by_timestamp
-            if len(by_timestamp) <= 1:
+            if len(by_timestamp) < 1:
                 continue
-            acc_payee = payee.payee(orig_payee.name)
+            acc_payee = payee.payee(orig_payee.name + " (combined)")
             timestamps = sorted(by_timestamp.keys())
             period_start = period(timestamps[0])
             period_total = functools.reduce(operator.add,

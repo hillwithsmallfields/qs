@@ -102,7 +102,11 @@ class canonical_sheet(base_sheet.base_sheet):
         elif isinstance(input_sheet, account.account):
             for payee in input_sheet:
                 for timestamp, row in payee:
-                    self.rows[timestamp] = row
+                    adjusted_timestamp = self.unused_timestamp_from(timestamp)
+                    row['timestamp'] = adjusted_timestamp
+                    row['date'] = adjusted_timestamp.date()
+                    row['time'] = adjusted_timestamp.time()
+                    self.rows[adjusted_timestamp] = row
         elif type(input_sheet) == dict:
             self.rows = input_sheet
             if len(input_sheet) > 0:

@@ -4,6 +4,8 @@ import qsutils
 class payee:
     """A named endpoint for transactions to or from an account."""
 
+    payee_id = 0
+
     def __init__(self, name):
         self.name = name
         self.by_timestamp = {}  # dictionary of timestamps to lists of rows
@@ -15,10 +17,12 @@ class payee:
         self.subcursor = -1
         self.allowable_before = datetime.timedelta(3, 0)
         self.allowable_after = datetime.timedelta(1, 0)
+        self.payee_id = payee.payee_id
+        payee.payee_id += 1
 
     def __str__(self):
         return ("<payee " + ("unknown" if self.name == "" else self.name)
-                + " balance " + str(self.balance) + ">")
+                + " balance " + str(self.balance) + " [p" + str(self.payee_id) + "]>")
 
     def __iter__(self):
         self.ordered = sorted(self.by_timestamp.keys())

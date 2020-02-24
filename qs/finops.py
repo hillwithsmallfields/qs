@@ -113,6 +113,7 @@ def main():
                     verbose=args.verbose):
                 account_name = row['account']
                 if account_name not in variables:
+                    print("making new account", account_name)
                     variables[account_name] = account.account(account_name,
                                                               config=config,
                                                               origin_files=filename_as_list)
@@ -123,6 +124,12 @@ def main():
                     # print("  existing", qsutils.dict_to_string_sorted_by_key(why_not[1]))
                     print("  incoming", qsutils.row_as_string_main_keys(why_not[0]))
                     print("  existing", qsutils.row_as_string_main_keys(why_not[1]))
+    # print("After reading inputs, accounts are:")
+    # for k, v in variables.items():
+    #     if isinstance(v, account.account):
+    #         print("  ", v)
+    #         for pn, pv in v.payees.items():
+    #             print("    ", pn, pv, len(pv.by_timestamp))
 
     for command in script.get('commands', []):
         if args.confirm_script:
