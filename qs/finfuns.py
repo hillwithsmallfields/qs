@@ -2,6 +2,7 @@
 
 import base_sheet
 import canonical_sheet
+import categoriser
 import csv
 import datetime
 import diff_sheet
@@ -19,6 +20,7 @@ functions = ['add_sheet',
              'by_day',
              'by_month',
              'by_year',
+             'categories',
              'compare',
              'format_sheet',
              'list_accounts',
@@ -58,6 +60,9 @@ def by_year(variables, original):
     return original.combine_same_period_entries(qsutils.granularity_year,
                                                 time_chars=4,
                                                 comment="Yearly summary")
+
+def categories(variables, original):
+    return categoriser.CategoryTree(original)
 
 def compare(variables,
             result_column,
