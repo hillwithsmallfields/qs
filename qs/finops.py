@@ -100,17 +100,21 @@ def main():
         for input_filename, account_name_template in input_section.get('files', {}).items():
             if account_name_template == "":
                 account_name_template = "%s"
+            input_filename = qsutils.resolve_filename(input_filename, input_dir)
             if args.verbose:
-                print("loading", input_filename, "as input sheet for accounts templated with", account_name_template)
+                print("loading", input_filename,
+                      "as input sheet for accounts templated with",
+                      account_name_template)
             filename_as_list = [input_filename]
-            for row in canonical_sheet.canonical_sheet(
-                    config,
-                    input_sheet=qsutils.resolve_filename(input_filename,
-                                                         input_dir),
-                    convert_all=True,
-                    account_name_template=account_name_template,
-                    origin_files=filename_as_list,
-                    verbose=args.verbose):
+            sheet_as_read = canonical_sheet.canonical_sheet(
+                config,
+                input_sheet=input_filename,
+                convert_all=True,
+                account_name_template=account_name_template,
+                origin_files=filename_as_list,
+                verbose=args.verbose)
+            variables[os.path.basename(input_filename)] = sheet_as_read
+            for row in sheet_as_read:
                 account_name = row['account']
                 if account_name not in variables:
                     print("making new account", account_name)
