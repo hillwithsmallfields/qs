@@ -1,5 +1,6 @@
 # Financial spreadsheet functions
 
+import base_sheet
 import canonical_sheet
 import csv
 import datetime
@@ -87,13 +88,12 @@ def list_accounts(variables, filename=None):
                 writer.writerow([name, type(variables[name]).__name__])
     return varnames
 
-def payees(variables, original, output, pattern):
-    with open(qsutils.resolve_filename(output), 'w') as outfile:
-        colseq = ['payee', 'transactions']
-        writer = csv.writer(outfile, colseq)
-        writer.writerow(colseq)
-        for name, details in original.payees_matching(pattern).items():
-            writer.writerow([name, details.transactions_string(separator='; ', time_chars=10)])
+def payees(variables, original, pattern):
+    return base_sheet.base_sheet(None,
+                                 {name: {'payee': name,
+                                         'total': details.transactions_total(),
+                                         'transactions': details.transactions_string(separator='; ', time_chars=10)}
+                                  for name, details in original.payees_matching(pattern).items()})
 
 def set(variables, name, value):
     if name in variables:

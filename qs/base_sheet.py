@@ -10,8 +10,8 @@ class base_sheet:
 
     """To hold methods in common between csv_sheet and canonical_sheet."""
 
-    def __init__(self, config):
-        self.rows = {}
+    def __init__(self, config, rows=None):
+        self.rows = rows or {}
         self.config = config
 
     def timestamp_from(self, base_date, base_time=None):
