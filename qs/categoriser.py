@@ -54,7 +54,7 @@ class CategoryTree:
         """Write a category sheet to a CSV file.
         Each row is a category and its total payments."""
         with open(os.path.expanduser(os.path.expandvars(filename)), 'w') as outfile:
-            colseq = ['category','child', 'parentage', 'total']
+            colseq = ['category','child', 'parentage', 'total', 'count']
             writer = csv.writer(outfile, colseq)
             writer.writerow(colseq)
             for cat_name in sorted(self.categories.keys()):
@@ -66,5 +66,6 @@ class CategoryTree:
                        qsutils.trim_if_float(
                            functools.reduce(
                                operator.add,
-                            [transaction['amount'] for transaction in cat]))]
+                               [transaction['amount'] for transaction in cat])),
+                       len(cat)]
                 writer.writerow(row)
