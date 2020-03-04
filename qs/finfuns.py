@@ -1,5 +1,6 @@
 # Financial spreadsheet functions
 
+import account
 import base_sheet
 import canonical_sheet
 import categoriser
@@ -15,6 +16,13 @@ class ConfigRequired(Exception):
 
     def __init__(self, function_name):
         self.function_name = function_name
+
+class CannotConvert(Exception):
+    pass
+
+    def __init__(self, function_name, value):
+        self.function_name = function_name
+        self.problematic_type = type(value)
 
 functions = ['add_sheet',
              'by_day',
@@ -106,15 +114,23 @@ def set(variables, name, value):
     variables[name] = value
     return value
 
-def sheet(variables, account):
-    """Convert an account to a canonical sheet."""
-    if account is None:
+def sheet(variables, subject):
+    """Convert an subject to a canonical sheet."""
+    print("converting", subject, "to spreadsheet")
+    if subject is None:
         return None
-    if account.config is None:
-        print("Config required in sheet")
-        raise ConfigRequired("sheet")
-    can = canonical_sheet.canonical_sheet(account.config, input_sheet=account)
-    return can
+    elif isinstance(subject, account.account) or isinstance(subject, base_sheet.base_sheet):
+        if subject.config is None:
+            print("Config required in sheet")
+            raise ConfigRequired("sheet")
+        return canonical_sheet.canonical_sheet(subject.config, input_sheet=subject)
+    elif isinstance(subject, categoriser.CategoryTree):
+        print("converting category tree", subject, "to category sheet")
+        res = categoriser.CategoryTree(subject)
+        print("got", res)
+        return res
+    else:
+        raise CannotConvert("sheet", subject)
 
 def show(variables, value, filename):
     """Output any of the types we handle, for debugging."""

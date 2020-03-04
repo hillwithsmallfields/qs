@@ -1,7 +1,10 @@
 import account
+import base_sheet
 import canonical_sheet
+import csv
 import functools
 import operator
+import os
 import qsutils
 
 class CategoryTree:
@@ -10,7 +13,9 @@ class CategoryTree:
 
     def __init__(self, original_account=None):
         self.categories = {}
+        self.config = None
         if original_account:
+            self.config = original_account.config
             self.add_from_account(original_account)
 
     def __repr__(self):
@@ -44,3 +49,22 @@ class CategoryTree:
             self.categories[category].append(transaction)
         else:
             self.categories[category] = [transaction]
+
+    def write_csv(self, filename):
+        """Write a category sheet to a CSV file.
+        Each row is a category and its total payments."""
+        with open(os.path.expanduser(os.path.expandvars(filename)), 'w') as outfile:
+            colseq = ['category','child', 'parentage', 'total']
+            writer = csv.writer(outfile, colseq)
+            writer.writerow(colseq)
+            for cat_name in sorted(self.categories.keys()):
+                cat = self.categories[cat_name]
+                as_list = cat_name.split(':')
+                row = [cat_name,
+                       as_list[-1],
+                       ':'.join(as_list[:-1]),
+                       qsutils.trim_if_float(
+                           functools.reduce(
+                               operator.add,
+                            [transaction['amount'] for transaction in cat]))]
+                writer.writerow(row)
