@@ -50,6 +50,27 @@ class CategoryTree:
         else:
             self.categories[category] = [transaction]
 
+    def summarize(original_tree):
+        """Produce a version of a category tree with the summary entries added.
+
+        Summaries are entries for each level of parent entry, with all
+        the transactions of their children combined.
+
+        """
+        # todo: write this
+        pass
+
+    def combine_same_period_entries(self,
+                                    period,
+                                    time_chars=19,
+                                    comment=None):
+        """Produce an category tree based on this one, with just one entry per period
+        (day, by default).
+
+        For each category, convert all the entries in the same period to one total."""
+        # todo: write this
+        pass
+
     def write_csv(self, filename):
         """Write a category sheet to a CSV file.
         Each row is a category and its total payments."""

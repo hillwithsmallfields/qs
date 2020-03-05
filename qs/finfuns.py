@@ -36,6 +36,7 @@ functions = ['add_sheet',
              'set',
              'sheet',
              'show',
+             'summarize',
              'write_all_columns',
              'write_csv',
              'write_debug']
@@ -136,6 +137,10 @@ def show(variables, value, filename):
     """Output any of the types we handle, for debugging."""
     with open(qsutils.resolve_filename(filename), 'w') as output:
         output.write(str(value))
+
+def summarize(variables, categories):
+    """Make transaction lists for every (parent) level of a transaction tree."""
+    return categories.summarize(categories)
 
 def write_all_columns(variables, value, filename):
     if value:
