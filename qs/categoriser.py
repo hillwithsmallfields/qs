@@ -50,16 +50,6 @@ class CategoryTree:
         else:
             self.categories[category] = [transaction]
 
-    def summarize(original_tree):
-        """Produce a version of a category tree with the summary entries added.
-
-        Summaries are entries for each level of parent entry, with all
-        the transactions of their children combined.
-
-        """
-        # todo: write this
-        pass
-
     def combine_same_period_entries(self,
                                     period,
                                     time_chars=19,
