@@ -6,6 +6,8 @@ import argparse
 import base_sheet
 import csv
 import datetime
+import functools
+import operator
 import os
 import pprint
 import re
@@ -74,6 +76,36 @@ def string_to_bool(string):
         return False
     print("Value", string, "not understood as boolean, treating as False")
     return False
+
+def sum_amount(iterable, fieldname='amount'):
+    return functools.reduce(operator.add,
+                            [x[fieldname] for x in iterable],
+                            0)
+
+def combine_transactions(a, b):
+    """Make a transaction representing two given transactions."""
+    # first, get all the fields from both
+    ab = a.copy
+    ab.update(b)
+    if a.get('currency', None) == b.get(currency, None):
+        ab['amount'] = a.get('amount', 0) + b.get('amount', 0)
+        if 'original_amount' in a or 'original_amount' in b:
+            ab['original_amount'] = a.get('original_amount', 0) + b.get('original_amount', 0)
+    for k in ('payee', 'account', 'currency', 'category', 'parent', 'location' 'project', 'message'):
+        av = a.get(k, None)
+        bv = b.get(k, None)
+        if av is not None and bv is not None and av != bv:
+            ab[k] = a.get(k, "") + ";" + b.get
+    return ab
+
+def merge_by_date(by_timestamp, date_chars=10):
+    """Return a dictionary with the entries in the input combined by date.
+The given number of characters of the date are used."""
+    result = {}
+    for k, v in by_timestamp.items():
+        kpart = k[:date_chars]
+        result[kpart] = combine_transactions(result[kpart], v) if kpart in result else v
+    return result
 
 def load_multiple_yaml(target_dict, suggested_dir, yaml_files):
     for yaml_file in yaml_files:

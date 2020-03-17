@@ -74,7 +74,10 @@ class account:
         return ("<account " + self.name
                 + " from " + '&'.join(self.origin_files)
                 + " " + str(self.balance)
-                + " payees " + ",".join([k if k != "" else "unknown" for k in self.payees.keys()]) + ">")
+                + ( (" (" + str(len(self.payees)) + " payees)") if len(self.payees) > 12
+                    else
+                    (" payees " + ",".join([k if k != "" else "unknown" for k in self.payees.keys()])))
+                + ">")
 
     def __iter__(self):
         self.payee_order = sorted(self.payees.keys())
@@ -226,6 +229,7 @@ class account:
         For all the transactions in all_transactions, do likewise.
 
         """
+        # todo: this isn't using time_chars!
         combined = account(self.name, copy_metadata_from=self)
         # first, all the payees; these are amounts
         for name, orig_payee in self.payees.items():
@@ -235,16 +239,14 @@ class account:
             acc_payee = payee.payee(orig_payee.name + " (combined)")
             timestamps = sorted(by_timestamp.keys())
             period_start = period(timestamps[0])
-            period_total = functools.reduce(operator.add,
-                                            [x['amount'] for x in by_timestamp[timestamps[0]]], 0)
+            period_total = qsutils.sum_amount(by_timestamp[timestamps[0]])
             flags = []
             for x in by_timestamp[timestamps[0]]:
                 if 'flags' in x:
                     flags.append(x['flags'])
             for ts in timestamps[1:]:
                 if period(ts) == period_start:
-                    period_total += functools.reduce(operator.add,
-                                                     [x['amount'] for x in by_timestamp[ts]], 0)
+                    period_total += qsutils.sum_amount(by_timestamp[ts])
                     for x in by_timestamp[ts]:
                         if 'flags' in x:
                             flags.append(x['flags'])
@@ -253,8 +255,7 @@ class account:
                                               self,
                                               comment=comment)
                     period_start = period(ts)
-                    period_total = functools.reduce(operator.add,
-                                                    [x['amount'] for x in by_timestamp[ts]], 0)
+                    period_total = qsutils.sum_amount(by_timestamp[ts])
             # Record the final period's transactions
             acc_payee.add_transaction(period_start, period_total,
                                       self,

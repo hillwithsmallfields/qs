@@ -56,9 +56,8 @@ class payee:
     def transactions_total(self):
         "Return the total transactions on this payee."
         return functools.reduce(operator.add,
-                                [functools.reduce(operator.add,
-                                                  [v['amount'] for v in vs])
-                                                  for vs in self.by_timestamp.values()])
+                                [qsutils.sum_amount(vs)
+                                 for vs in self.by_timestamp.values()])
 
     def timestamp_matches_one_in_list(self, timestamp, of_that_amount):
         """Return whether there are any transactions in a timestamped row list
