@@ -12,8 +12,8 @@ class CategoryTree:
     """The results of splitting an account into its categories."""
 
     def __init__(self, original_account=None):
-        self.categories = {}    # by leaf category
-        self.summaries = {}     # by parent categories
+        self.categories = {}    # by leaf category, to dicts of timestamp to transaction
+        self.summaries = {}     # by parent categories, to dicts of timestamp to transaction
         self.config = None
         if original_account:
             self.config = original_account.config
@@ -99,3 +99,33 @@ class CategoryTree:
                            qsutils.sum_amount(cat.values())),
                        len(cat)]
                 writer.writerow(row)
+
+class categorised_sheet(base_sheet):
+
+    """A sheet with dates for the rows and categories for the keys."""
+
+    def __init__(self, config, incoming_data):
+        self.rows = {}
+        self.config = config
+        if isinstance(incoming_data, account.account):
+            incoming_data = CategoryTree.CategoryTree(account)
+        if isinstance(incoming_data, CategoryTree.CategoryTree):
+            self.add_from_tree(incoming_datag)
+
+    def add_category(self, catname, cat):
+        for timestamp, transaction in cat.items():
+            if timestamp not in self.rows:
+                self.rows[timestamp] = {}
+            if catname not in self.rows[timestamp]:
+                self.rows[timestamp][catname] = {}
+            self.rows[timestamp][catname].append(cat)
+
+    def add_from_tree(self, incoming_tree):
+        for cat in incoming_tree.categories.items():
+            add_category(catname, cat)
+        for cat in incoming_tree.summaries.items():
+            add_category(catname, cat)
+
+    def write_csv(self, filename):
+        # todo: convert the lists of transactions to sums
+        self.write_all_columns(filename)
