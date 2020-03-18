@@ -70,7 +70,7 @@ def by_year(variables, original):
                                                 comment="Yearly summary")
 
 def categories(variables, original):
-    return categoriser.CategoryTree(original)
+    return categoriser.category_tree(original)
 
 def compare(variables,
             result_column,
@@ -124,9 +124,9 @@ def sheet(variables, subject):
             print("Config required in sheet")
             raise ConfigRequired("sheet")
         return canonical_sheet.canonical_sheet(subject.config, input_sheet=subject)
-    elif isinstance(subject, categoriser.CategoryTree):
+    elif isinstance(subject, categoriser.category_tree):
         print("converting category tree", subject, "to category sheet")
-        res = categoriser.CategoryTree(subject)
+        res = categoriser.category_tree(subject)
         print("got", res)
         return res
     else:

@@ -7,7 +7,7 @@ import operator
 import os
 import qsutils
 
-class CategoryTree:
+class category_tree:
 
     """The results of splitting an account into its categories."""
 
@@ -20,14 +20,14 @@ class CategoryTree:
             self.add_from_account(original_account)
 
     def __repr__(self):
-        # return ("<CategoryTree "
+        # return ("<category_tree "
         #         + ", ".join([key + ": "
         #                      + str(qsutils.trim_if_float(functools.reduce(operator.add,
         #                                                                   [transaction['amount']
         #                                              for transaction in self.categories[key]])))
         #                      for key in sorted(self.categories.keys())])
         #         + ">")
-        return ("<CategoryTree " + ", ".join(self.categories.keys()) + ">")
+        return ("<category_tree " + ", ".join(self.categories.keys()) + ">")
 
     def add_from_account(self, incoming_account):
         if isinstance(incoming_account, account.account):
@@ -37,7 +37,7 @@ class CategoryTree:
             for timestamp, row in incoming_account.rows.items():
                 self.categorise_transaction(row)
         else:
-            print("Don't know how to add inputs of type", type(incoming_account), "to a CategoryTree")
+            print("Don't know how to add inputs of type", type(incoming_account), "to a category_tree")
             return None
 
     def categorise_transaction(self, transaction):
@@ -70,7 +70,7 @@ class CategoryTree:
 
         For each category, convert all the entries in the same period to one total.
         Likewise for the summaries (parents)."""
-        combined = CategoryTree.CategoryTree()
+        combined = category_tree.category_tree()
         combined.config = self.config
         combined.categories = {k: qsutils.merge_by_date(v, time_chars)
                                for k, v in self.categories.items()}
@@ -108,8 +108,8 @@ class categorised_sheet(base_sheet):
         self.rows = {}
         self.config = config
         if isinstance(incoming_data, account.account):
-            incoming_data = CategoryTree.CategoryTree(account)
-        if isinstance(incoming_data, CategoryTree.CategoryTree):
+            incoming_data = category_tree.category_tree(account)
+        if isinstance(incoming_data, category_tree.category_tree):
             self.add_from_tree(incoming_datag)
 
     def add_category(self, catname, cat):
