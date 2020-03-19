@@ -100,13 +100,12 @@ class category_tree:
                        len(cat)]
                 writer.writerow(row)
 
-class categorised_sheet(base_sheet):
+class categorised_sheet(base_sheet.base_sheet):
 
     """A sheet with dates for the rows and categories for the keys."""
 
-    def __init__(self, config, incoming_data):
-        self.rows = {}
-        self.config = config
+    def __init__(self, config, incoming_data=None):
+        super().__init__(config)
         if isinstance(incoming_data, account.account):
             incoming_data = category_tree.category_tree(account)
         if isinstance(incoming_data, category_tree.category_tree):

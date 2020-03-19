@@ -115,7 +115,7 @@ def set(variables, name, value):
     return value
 
 def sheet(variables, subject):
-    """Convert an subject to a canonical sheet."""
+    """Convert any subject to a canonical sheet."""
     print("converting", subject, "to spreadsheet")
     if subject is None:
         return None
