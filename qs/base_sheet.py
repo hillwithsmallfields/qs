@@ -41,7 +41,7 @@ class base_sheet:
         return timestamp
 
     def write_all_columns(self, filename):
-        """Write a spreadsheet in a given format.
+        """Write a spreadsheet.
         The column list is generated from the row contents,
         with the columns in the order they are first seen."""
         with open(os.path.expanduser(os.path.expandvars(filename)), 'w') as outfile:
@@ -53,3 +53,8 @@ class base_sheet:
             for timestamp in sorted(self.rows.keys()):
                 row = self.rows[timestamp]
                 writer.writerow({sk: qsutils.trim_if_float(row.get(sk, None)) for sk in colseq})
+
+    def write_csv(self, filename):
+        """Write a spreadsheet.
+        This will normally be overridden in subclasses."""
+        self.write_all_columns(filename)
