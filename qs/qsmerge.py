@@ -1,12 +1,13 @@
 #!/usr/bin/python3
 
-# Time-stamp: <2020-02-09 15:17:18 jcgs>
+# Time-stamp: <2020-03-22 09:31:19 jcgs>
 
 # Program to merge my Quantified Self files.
 
 import argparse
 import csv
 import datetime
+import math
 import os
 import qsutils
 import re
@@ -23,7 +24,7 @@ def weight_tracker_complete_row(row):
         if 'Kg' in row and row['Kg'] != '':
             row['Lbs total'] = float(row['Kg']) * 2.20462
         elif 'Stone' in row and row['Stone'] != '' and 'Lbs' in row and row['Lbs'] != '':
-            row['Lbs total'] = float(row['Stone']) * 14 + float(row['Lbs'])
+            row['Lbs total'] = math.floor(float(row['Stone'])) * 14 + float(row['Lbs'])
         else:
             print("Warning: Could not derive 'Lbs total' for", row.get('Date', "<unknown date>"), "as neither 'Kg' nor 'Stone'+'Lbs' given in", row)
     if 'Kg' not in row or row['Kg'] == '':
@@ -34,9 +35,8 @@ def weight_tracker_complete_row(row):
     if 'Lbs' not in row or row['Lbs'] == '':
         if 'Lbs total' in row and row['Lbs total'] != '':
             row['Lbs'] = int(row['Lbs total']) % 14
-    if 'Stone' not in row or row['Stone'] == '':
-        if 'Lbs total' in row and row['Lbs total'] != '':
-            row['Stone'] = int(row['Lbs total']) / 14
+    if 'Lbs total' in row and row['Lbs total'] != '':
+        row['Stone'] = math.floor(float(row['Lbs total']) / 14)
     if 'Date number' in row and row['Date number'] != '':
         row['Date number'] = int(float(row['Date number']))
     else:
