@@ -14,6 +14,7 @@ import re
 import yaml
 
 def trim_if_float(val):
+    """Make a value more neatly printable."""
     return (("%.2F" % val)
             if type(val) is float
             else (None
@@ -22,15 +23,19 @@ def trim_if_float(val):
                   else val))
 
 def granularity_day(overprecise):
+    """Return the start of the day containing a given timestamp."""
     return datetime.datetime(overprecise.year, overprecise.month, overprecise.day)
 
 def granularity_month(overprecise):
+    """Return the start of the month containing a given timestamp."""
     return datetime.datetime(overprecise.year, overprecise.month, 1)
 
 def granularity_year(overprecise):
+    """Return the start of the year containing a given timestamp."""
     return datetime.datetime(overprecise.year, 1, 1)
 
 def deduce_file_type_from_headers(headers):
+    """Given a CSV header row, return what type of data the file holds."""
     if 'Kg' in headers:
         return 'weight'
     if 'Currency' in headers:
@@ -58,6 +63,7 @@ def row_as_string_main_keys(row):
 
 # based on https://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
 def rec_update(basedict, u):
+    """Update a dictionary recursively."""
     for k, v in u.items():
         if isinstance(v, dict):
             basedict[k] = rec_update(basedict.get(k, {}), v)
@@ -78,6 +84,8 @@ def string_to_bool(string):
     return False
 
 def sum_amount(iterable, fieldname='amount'):
+    """Sum a field in a collection of dictionaries.
+    This can be used for a column in a spreadsheet."""
     return functools.reduce(operator.add,
                             [x[fieldname] for x in iterable],
                             0)
@@ -108,6 +116,7 @@ The given number of characters of the date are used."""
     return result
 
 def load_multiple_yaml(target_dict, suggested_dir, yaml_files):
+    """Load several YAML files, merging the data from them."""
     for yaml_file in yaml_files:
         if yaml_file is None:
             continue
