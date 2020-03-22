@@ -250,7 +250,7 @@ def write_fin_csv(header, output_rows, filename):
     Returns the name of the file it was written to."""
     expanded_output_name = os.path.expanduser(os.path.expandvars(filename))
     with open(expanded_output_name, 'w') as outfile:
-        writer = csv.DictWriter(outfile, header)
+        writer = csv.DictWriter(outfile, header, quoting=csv.QUOTE_NONE)
         writer.writeheader()
         for timestamp in sorted(output_rows.keys()):
             writer.writerow({ k: (("%.2F" % v)

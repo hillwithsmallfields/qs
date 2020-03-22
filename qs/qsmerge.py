@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Time-stamp: <2020-03-22 09:31:19 jcgs>
+# Time-stamp: <2020-03-22 09:43:32 jcgs>
 
 # Program to merge my Quantified Self files.
 
@@ -204,10 +204,10 @@ def main():
             if colname not in fieldnames:
                 fieldnames.append(colname)
     with open(output, 'w') as outstream:
-        writer = csv.DictWriter(outstream, fieldnames)
+        writer = csv.DictWriter(outstream, fieldnames, quoting=csv.QUOTE_NONE)
         writer.writeheader()
         for date in sorted_dates:
-            writer.writerow(by_date[date])
+            writer.writerow({k: qsutils.trim_if_float(v) for k,v in by_date[date].items()})
 
 if __name__ == "__main__":
     main()
