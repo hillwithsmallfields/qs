@@ -18,10 +18,12 @@ def all_empty(data):
 
 def fetch_streak_upto(when, accumulator={}, countdown=None):
     while True:
-        data = client.get_date(when.year, when.month, when.day).get_as_dict()
-        if all_empty(data):
-            break
-        accumulator[when.date()] = data
+        date_key = when.date()
+        if date_key not in accumulator:
+            data = client.get_date(when.year, when.month, when.day).get_as_dict()
+            if all_empty(data):
+                break
+            accumulator[date_key] = data
         if countdown:
             countdown -= 1
             if countdown == 0:
