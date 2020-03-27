@@ -22,7 +22,7 @@ def all_empty(data):
     return True
 
 def fetch_streak_upto(when,
-                      accumulator={}, sheet={},
+                      accumulator, sheet,
                       countdown=None):
     global client
     if client is None:
@@ -34,11 +34,13 @@ def fetch_streak_upto(when,
             dict_data = day_data.get_as_dict()
             if all_empty(dict_data):
                 break
-            accumulator[date_key] = dict_data
-            row = {mealname+'_cals': day_data.meals[i]['calories'] for i, mealname in meal_keys}
-            row.update(day_data.totals)
-            row['date' = date_key]
-            sheet[date_key] = row
+            if accumulator:
+                accumulator[date_key] = dict_data
+            if sheet:
+                row = {mealname+'_cals': day_data.meals[i]['calories'] for i, mealname in meal_keys}
+                row.update(day_data.totals)
+                row['date' = date_key]
+                sheet[date_key] = row
             if countdown:
                 countdown -= 1
                 if countdown == 0:
@@ -78,8 +80,8 @@ def main():
                  else datetime.datetime.today())
 
     fetch_streak_upto(upto_date,
-                      accumulator=so_far,
-                      sheet=rows,
+                      accumulator=so_far if args.json else None,
+                      sheet=rows if args.sheet else None,
                       countdown=(args.number
                                       if args.number > 0
                                       else None))
