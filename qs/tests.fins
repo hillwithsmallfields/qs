@@ -33,12 +33,12 @@ commands:
   - write_csv(by_month(app Handelsbanken current account), "$OUTPUT/handelsbanken-app-monthly.csv")
   - write_csv(by_year(app Handelsbanken current account), "$OUTPUT/handelsbanken-app-yearly.csv")
   # combine the app records and the bank statements
-  - write_csv(add_sheet(app Handelsbanken current account, statement for Handelsbanken current account), "$OUTPUT/handelsbanken-combined.csv")
-  - write_csv(format_sheet(sheet(add_sheet(app Handelsbanken current account, statement for Handelsbanken current account)), "financisto"), "$OUTPUT/handelsbanken-combined-as-financisto.csv")
-  - write_csv(format_sheet(sheet(add_sheet(by_day(app Handelsbanken current account), by_day(statement for Handelsbanken current account))), "financisto"), "$OUTPUT/handelsbanken-combined-by-daily-summaries-as-financisto.csv")
-  - write_csv(format_sheet(sheet(add_sheet(app Handelsbanken current account, statement for Handelsbanken current account, "regular")), "financisto"), "$OUTPUT/handelsbanken-regular-only-combined-as-financisto.csv")
-  - write_csv(format_sheet(sheet(add_sheet(by_day(app Handelsbanken current account), by_day(statement for Handelsbanken current account), "regular")), "financisto"), "$OUTPUT/handelsbanken-regular-only-by-day-combined-as-financisto.csv")
-  - write_csv(format_sheet(sheet(add_sheet(by_month(app Handelsbanken current account), by_month(statement for Handelsbanken current account), "regular")), "financisto"), "$OUTPUT/handelsbanken-regular-only-by-month-combined-as-financisto.csv")
+  - write_csv(add_sheet(app Handelsbanken current account, statement for Handelsbanken current account), "$OUTPUT/handelsbanken-added.csv")
+  - write_csv(format_sheet(sheet(add_sheet(app Handelsbanken current account, statement for Handelsbanken current account)), "financisto"), "$OUTPUT/handelsbanken-added-as-financisto.csv")
+  - write_csv(format_sheet(sheet(add_sheet(by_day(app Handelsbanken current account), by_day(statement for Handelsbanken current account))), "financisto"), "$OUTPUT/handelsbanken-added-by-daily-summaries-as-financisto.csv")
+  - write_csv(format_sheet(sheet(add_sheet(app Handelsbanken current account, statement for Handelsbanken current account, "regular")), "financisto"), "$OUTPUT/handelsbanken-regular-only-added-as-financisto.csv")
+  - write_csv(format_sheet(sheet(add_sheet(by_day(app Handelsbanken current account), by_day(statement for Handelsbanken current account), "regular")), "financisto"), "$OUTPUT/handelsbanken-regular-only-by-day-added-as-financisto.csv")
+  - write_csv(format_sheet(sheet(add_sheet(by_month(app Handelsbanken current account), by_month(statement for Handelsbanken current account), "regular")), "financisto"), "$OUTPUT/handelsbanken-regular-only-by-month-added-as-financisto.csv")
   # listing payees
   - write_csv(payees(statement for Handelsbanken current account, "ORACLE"), "$OUTPUT/statements-oracle.csv")
   - write_csv(payees(app Handelsbanken current account, "ORACLE"), "$OUTPUT/app-oracle.csv")
