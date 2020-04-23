@@ -2,8 +2,11 @@
 
 import argparse
 import operator
-import qsutils
+
 import sexpdata
+
+import finfuns
+import qsutils
 
 finlisp_forms = {}
 
@@ -47,6 +50,11 @@ for fname, basefn in {'+': operator.add,
                       '/': operator.floordiv,
                       '%': operator.mod}.items():
     def_finlisp_wrapped_fn(fname, basefn)
+
+for fname in finfuns.functions:
+    def_finlisp_wrapped_fn(fname.replace('_', '-'), eval("finfuns." + fname))
+
+print("lisp functions are now", finlisp_functions)
 
 class UndefinedName(Exception):
     pass
