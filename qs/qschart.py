@@ -9,13 +9,42 @@ import qsutils
 import re
 import tempfile
 
-def handle_stones_row(row):
-    return row['Stone']*14 + row['Lbs'] if 'Stone' in row and 'Lbs' in row else None
+def handle_stone_row(row):
+    return (((row['Stone']*14 + row['Lbs']) / 14)
+            if 'Stone' in row and 'Lbs' in row
+            else (row['Lbs total']/14
+                  if 'Lbs total' in row
+                  else None))
+
+def handle_kilogram_row(row):
+    return (row['Kg']
+            if 'Kg' in row
+            else None)
+
+def handle_pound_row(row):
+    return (row['Lbs total']
+            if 'Lbs total' in row
+            else ((row['Stone']*14 + row['Lbs'])
+                  if 'Stone' in row and 'Lbs' in row
+                  else None))
 
 ROW_HANDLERS = {
-    'weight': handle_stones_row,
-    'stones': handle_stones_row
+    'stone': handle_stone_row
+    'kilogram': handle_kilogram_row,
+    'pound': handle_pound_row,
 }
+
+possible_unit_names = {'stones': 'stone',
+                       'pounds': 'pound',
+                       'lbs': 'pound',
+                       'kilograms': 'kilogram',
+                       'kgs': 'kilogram'}
+
+def normalize_unit_name(unit_name):
+    for k, v in possible_unit_names.items():
+        if k.startswith(unit_name):
+            return v
+    return None
 
 def row_filter(filter_control, row):
     if 'begin' in filter_control:
@@ -35,7 +64,7 @@ def parsetime(timestr):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--debug", action='store_true')
-    parser.add_argument("-o", "--output")
+    parser.add_argument("-o", "--output", default="/tmp/weight.dat")
     parser.add_argument("-t", "--type")
     parser.add_argument("-v", "--verbose", action='store_true')
 
@@ -43,6 +72,8 @@ def main():
     parser.add_argument("-e", "--end")
 
     parser.add_argument("-m", "--match", nargs=2)
+
+    parser.add_argument("-u", "--units", default="stones")
 
     parser.add_argument("mainfile")
     args = parser.parse_args()
@@ -61,7 +92,9 @@ def main():
         print("No handler for type", file_type)
         return
 
-    row_handler = ROW_HANDLERS[file_type]
+    units = normalize_unit_name(args.units)
+
+    row_handler = ROW_HANDLERS[units]
 
     filter_control = {}
     if args.begin:
@@ -75,7 +108,7 @@ def main():
     epoch = datetime.datetime.utcfromtimestamp(0)
     data_rows = {}
 
-    wanted_columns =
+    wanted_columns = ['Date', units]
 
     with open(args.mainfile) as csvfile:
         reader = csv.DictReader(csvfile)
@@ -83,10 +116,10 @@ def main():
             rowdate = parsetime(row['Date'])
             row['__DATE__'] = rowdate
             data_rows[rowdate] = row_handler(row)
-    results = [ [ row[col] for col in wanted_columns]
-                for row in [ data_rows[date]
-                             for date in sorted(data_rows.keys())
-                             if row_filter(filter_control, data_rows[date]) ] ]
+    results = [[row[col] for col in wanted_columns]
+               for row in [ data_rows[date]
+                            for date in sorted(data_rows.keys())
+                            if row_filter(filter_control, data_rows[date])]]
     with open(tempfile.NamedTemporaryFile(), 'w') as datafile:
         dataname = datafile.name
         datawriter = csv.writer(datafile)
