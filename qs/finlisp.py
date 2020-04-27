@@ -5,10 +5,17 @@ import operator
 
 import sexpdata
 
+import canonical_sheet
 import finfuns
 import qsutils
 
 finlisp_forms = {}
+
+def finlisp_var_lookup(context, varname):
+    for frame in context['bindings']:
+        if varname in frame:
+            return frame[varname], True
+    return None, False
 
 def def_finlisp_form(fname, fimpl):
     finlisp_forms[fname] = fimpl
@@ -25,13 +32,21 @@ def finlisp_setq(context, args):
 
 def_finlisp_form('setq', finlisp_setq)
 
+def finlisp_progn(context, *bodyforms):
+    result = None
+    for body_form in bodyforms:
+        result = finlisp_eval(context, body_form)
+    return result
+
+def_finlisp_form('let', finlisp_progn)
+
 def finlisp_let(context, bindings, *bodyforms):
     new_context = context.copy()
-    new_context['bindings'] = [{binding[0]._val: finlisp_eval(binding[1], context)
+    new_context['bindings'] = [{binding[0]._val: finlisp_eval(context, binding[1])
                                 for binding in bindings}] + context['bindings']
     result = None
     for body_form in bodyforms:
-        result = finlisp_eval(body_form, new_context)
+        result = finlisp_eval(new_context, body_form)
     return result
 
 def_finlisp_form('let', finlisp_let)
@@ -54,7 +69,21 @@ for fname, basefn in {'+': operator.add,
 for fname in finfuns.functions:
     def_finlisp_wrapped_fn(fname.replace('_', '-'), eval("finfuns." + fname))
 
-print("lisp functions are now", finlisp_functions)
+def finlisp_read_canonical(context, csvname):
+    print("reading canonical_sheet", csvname, "with config", context['config'])
+    return canonical_sheet.canonical_sheet(context['config'],
+                                           input_sheet=csvname,
+                                           # verbose=True,
+                                           convert_all=True)
+
+def_finlisp_fn('read-canonical', finlisp_read_canonical)
+
+def finlisp_print(_, value):
+    print(value)
+
+def_finlisp_fn('print', finlisp_print)
+
+print("lisp functions are now", sorted(finlisp_functions.keys()))
 
 class UndefinedName(Exception):
     pass
@@ -62,26 +91,25 @@ class UndefinedName(Exception):
     def __init__(self, function_name, value):
         self.function_name = function_name
 
-def finlisp_eval_list(expr, context):
+def finlisp_eval_list(context, expr):
     fun_name = sexpdata.car(expr)._val
     if fun_name in finlisp_forms:
         return finlisp_forms[fun_name](context,
                                        *sexpdata.cdr(expr))
     elif fun_name in finlisp_functions:
         return finlisp_functions[fun_name](context,
-                                           *[finlisp_eval(x, context)
+                                           *[finlisp_eval(context, x)
                                              for x in sexpdata.cdr(expr)])
     else:
         raise(UndefinedName, fun_name)
 
-def finlisp_eval_symbol(expr, context):
-    symname = expr._val
-    for frame in context['bindings']:
-        if symname in frame:
-            return frame[symname]
+def finlisp_eval_symbol(context, expr):
+    result, found = finlisp_var_lookup(context, expr._val)
+    if found:
+        return result
     raise(UndefinedName, expr)
 
-def finlisp_eval_literal(expr, context):
+def finlisp_eval_literal(context, expr):
     return expr
 
 finlisp_type_evaluators = {
@@ -89,19 +117,18 @@ finlisp_type_evaluators = {
     sexpdata.Symbol: finlisp_eval_symbol
 }
 
-def finlisp_eval(expr, context={'bindings': []}):
+def finlisp_eval(context, expr):
     return finlisp_type_evaluators.get(type(expr),
-                                       finlisp_eval_literal)(expr,
-                                                             context)
+                                       finlisp_eval_literal)(context,
+                                                             expr)
 
-def finlisp_load_file(filename):
+def finlisp_load_file(context, filename):
     with open(filename) as instream:
         parser = sexpdata.Parser(instream.read())
         _, sexps = parser.parse_sexp(0)
-        global_context = {'bindings': [{}]}
         for sexp in sexps:
             # try:
-                result = finlisp_eval(sexp, global_context)
+                result = finlisp_eval(context, sexp)
                 print("==>", result)
             # except Exception as e:
             #     print("error or eof", e)
@@ -111,10 +138,13 @@ def main():
     parser.add_argument("script_files", nargs='*')
     args = parser.parse_args()
 
-    config = qsutils.program_load_config(args)
+    context = {
+        'config': qsutils.program_load_config(args),
+        'bindings': [{}]
+    }
 
     for filename in args.script_files:
-        finlisp_load_file(filename)
+        finlisp_load_file(context, filename)
 
 if __name__ == "__main__":
     main()
