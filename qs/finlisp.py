@@ -5,6 +5,7 @@ import operator
 
 import sexpdata
 
+import account
 import canonical_sheet
 import finfuns
 import qsutils
@@ -38,7 +39,7 @@ def finlisp_progn(context, *bodyforms):
         result = finlisp_eval(context, body_form)
     return result
 
-def_finlisp_form('let', finlisp_progn)
+def_finlisp_form('progn', finlisp_progn)
 
 def finlisp_let(context, bindings, *bodyforms):
     new_context = context.copy()
@@ -50,6 +51,18 @@ def finlisp_let(context, bindings, *bodyforms):
     return result
 
 def_finlisp_form('let', finlisp_let)
+
+def finlisp_letstar(context, bindings, *bodyforms):
+    new_context = context.copy()
+    new_context['bindings'] = new_context['bindings'].copy()
+    for binding in bindings:
+        new_context['bindings'][binding[0]._val] = finlisp_eval(new_context, binding[1])
+    result = None
+    for body_form in bodyforms:
+        result = finlisp_eval(new_context, body_form)
+    return result
+
+def_finlisp_form('let*', finlisp_letstar)
 
 finlisp_functions = {}
 
@@ -67,10 +80,9 @@ for fname, basefn in {'+': operator.add,
     def_finlisp_wrapped_fn(fname, basefn)
 
 for fname in finfuns.functions:
-    def_finlisp_wrapped_fn(fname.replace('_', '-'), eval("finfuns." + fname))
+    def_finlisp_fn(fname.replace('_', '-'), eval("finfuns." + fname))
 
 def finlisp_read_canonical(context, csvname):
-    print("reading canonical_sheet", csvname, "with config", context['config'])
     return canonical_sheet.canonical_sheet(context['config'],
                                            input_sheet=csvname,
                                            # verbose=True,
@@ -78,12 +90,20 @@ def finlisp_read_canonical(context, csvname):
 
 def_finlisp_fn('read-canonical', finlisp_read_canonical)
 
+def finlisp_account(context, name, base_sheet):
+    return account.account(name, base_account=base_sheet, config=context['config'])
+
+def_finlisp_fn('account', finlisp_account)
+
 def finlisp_print(_, value):
     print(value)
 
 def_finlisp_fn('print', finlisp_print)
 
-print("lisp functions are now", sorted(finlisp_functions.keys()))
+def finlisp_builtins(_):
+    return sorted(finlisp_functions.keys())
+
+def_finlisp_fn('builtins', finlisp_builtins)
 
 class UndefinedName(Exception):
     pass
@@ -97,9 +117,10 @@ def finlisp_eval_list(context, expr):
         return finlisp_forms[fun_name](context,
                                        *sexpdata.cdr(expr))
     elif fun_name in finlisp_functions:
-        return finlisp_functions[fun_name](context,
-                                           *[finlisp_eval(context, x)
-                                             for x in sexpdata.cdr(expr)])
+        # return finlisp_functions[fun_name](context,
+        #                                    *[finlisp_eval(context, x)
+        #                                      for x in sexpdata.cdr(expr)])
+        return finlisp_functions[fun_name](context, *[finlisp_eval(context, x) for x in sexpdata.cdr(expr)])
     else:
         raise(UndefinedName, fun_name)
 
