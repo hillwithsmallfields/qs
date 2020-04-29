@@ -7,6 +7,7 @@ import sexpdata
 
 import account
 import canonical_sheet
+import csv_sheet
 import finfuns
 import qsutils
 
@@ -91,12 +92,42 @@ def finlisp_read_canonical(context, csvname):
 def_finlisp_fn('read-canonical', finlisp_read_canonical)
 
 def finlisp_account(context, name, base_sheet):
-    return account.account(name, base_account=base_sheet, config=context['config'])
+    return account.account(name, transactions=base_sheet, config=context['config'])
 
 def_finlisp_fn('account', finlisp_account)
 
-def finlisp_print(_, value):
-    print(value)
+class NotApplicable(Exception):
+    pass
+
+    def __init__(self, action, value):
+        self.action = action
+        self.value = value
+
+def finlisp_headers(_, x):
+    if isinstance(x, csv_sheet.csv_sheet):
+        return x.column_names
+    elif isinstance(x, canonical_sheet.canonical_sheet):
+        return canonical_sheet.canonical_sheet.canonical_column_sequence
+    else:
+        raise NotApplicable("headers", x)
+
+def_finlisp_fn('headers', finlisp_headers)
+
+def finlisp_payees(_, x):
+    if isinstance(x, account.account):
+        return sorted(x.payees.keys())
+    else:
+        raise NotApplicable("headers", x)
+
+def_finlisp_fn('payees', finlisp_payees)
+
+def finlisp_length(_, x):
+    return len(x)
+
+def_finlisp_fn('length', finlisp_length)
+
+def finlisp_print(_, *values):
+    print(*values)
 
 def_finlisp_fn('print', finlisp_print)
 
@@ -122,7 +153,7 @@ def finlisp_eval_list(context, expr):
         #                                      for x in sexpdata.cdr(expr)])
         return finlisp_functions[fun_name](context, *[finlisp_eval(context, x) for x in sexpdata.cdr(expr)])
     else:
-        raise(UndefinedName, fun_name)
+        raise UndefinedName(fun_name)
 
 def finlisp_eval_symbol(context, expr):
     result, found = finlisp_var_lookup(context, expr._val)

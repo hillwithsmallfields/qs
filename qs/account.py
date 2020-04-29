@@ -160,11 +160,15 @@ class account:
                         and flags.intersection(row['flags']))):
                     if row.get('account', None) == self.name:
                         was_new, why_not = self.add_row_if_new(row)
+                        print("was_new", was_new)
                         if was_new:
+                            print("adding")
                             added_rows[was_new['timestamp']] = was_new
-                            trace.add_row(was_new, "newness", "added as new")
-                        else:
-                            trace.add_row(was_new, "newness", "skipped as dup")
+                        if trace:
+                            if was_new:
+                                trace.add_row(was_new, "newness", "added as new")
+                            else:
+                                trace.add_row(was_new, "newness", "skipped as dup")
                 else:
                     trace.add_row(row, "skipped unflagged", "%s %s" % (flags, row['flags']))
         elif isinstance(sheet, account):
@@ -200,9 +204,11 @@ class account:
                             trace.add_row(row, "skipping", "already seen")
         if trace:
             trace.write_csv()
+        print("len(added_rows) is now", len(added_rows))
         if len(added_rows) == 0:
             return None
         else:
+            print("making sheet of added rows")
             return canonical_sheet.canonical_sheet(None, input_sheet=added_rows)
 
     def already_seen(self, payee, timestamp, amount):
