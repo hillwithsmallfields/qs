@@ -13,7 +13,8 @@ def collect_cats_row(timestamp, row, output_rows, scratch):
 
 def collect_cats_end(headers, output_rows, scratch):
     for cat, parent in scratch['parentage'].items():
-        output_rows[cat] = {'category': cat, 'parent': parent}
+        if parent != "":
+            output_rows[cat] = {'category': cat, 'parent': parent}
     return headers, output_rows
 
 def main():
