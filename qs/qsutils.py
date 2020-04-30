@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Common routines for my QS programs
 
 import account
@@ -220,7 +220,7 @@ def read_fin_csv(args, config, input_filename):
         in_time_column = in_columns.get('time', None)
         invert_columns = { v:k for k, v in in_columns.items()
                            # temporarily: skip columns which have a more complex description; todo: fix this
-                           if isinstance(v, basestring) }
+                           if isinstance(v, str) }
 
         if args.verbose:
             print("Reading", expanded_input_name, "as format", input_format_name)
@@ -282,10 +282,15 @@ def process_rows(app_data, input_format,
     its input and output, you should probably call process_fin_csv
     instead of this.
 
-    The setup_callback must take the args structure (from argparse), the
-    config dictionary tree, and the input_format, and return a list of
-    columns wanted in the output, and a scratch data value (normally a
-    dictionary) for use in the row handler and the tidy_up function.
+    The setup_callback must take a dictionary containing:
+
+    - the args structure (from argparse),
+    - the config dictionary tree
+    - the input_format
+
+    and return a list of columns wanted in the output, and a scratch
+    data value (normally a dictionary) for use in the row handler and
+    the tidy_up function.
 
     The row handler must take the row timestamp, the row data (as a
     dictionary), a dictionary to fill in with the output rows (it will be
