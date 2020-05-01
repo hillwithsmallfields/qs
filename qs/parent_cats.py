@@ -1,11 +1,11 @@
 #!/usr/bin/python3
 
+import canonical_sheet
 import qsutils
 
 def parent_cats_begin(control_dict, input_format):
-    # return ['category', 'parent'], {'parentage': {},
-    #                                 'controls': control_dict,
-    #                                 'input_format': input_format}
+    return canonical_sheet.canonical_column_sequence, {'controls': control_dict,
+                                                       'input_format': input_format}
 
 def parent_cats_row(timestamp, row, output_rows, scratch):
     if ('category' in row and row.get('parent', "") == ""):
