@@ -160,9 +160,8 @@ class account:
                         and flags.intersection(row['flags']))):
                     if row.get('account', None) == self.name:
                         was_new, why_not = self.add_row_if_new(row)
-                        print("was_new", was_new)
+                        # print("was_new", was_new)
                         if was_new:
-                            print("adding")
                             added_rows[was_new['timestamp']] = was_new
                         if trace:
                             if was_new:

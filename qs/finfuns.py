@@ -30,6 +30,7 @@ functions = ['add_sheet',
              'by_year',
              'categories',
              'compare',
+             'filter_sheet',
              'format_sheet',
              'list_accounts',
              'payees',
@@ -79,6 +80,9 @@ def compare(context,
     return diff_sheet.diff_sheet(result_column,
                                  sheet_a, column_a, track_a,
                                  sheet_b, column_b, track_b)
+
+def filter_sheet(context, input_sheet, column, pattern):
+    return input_sheet.filter_sheet(column, pattern)
 
 def format_sheet(context, input_sheet, format_name):
     if input_sheet is None:

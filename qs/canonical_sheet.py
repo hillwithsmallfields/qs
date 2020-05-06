@@ -254,6 +254,16 @@ class canonical_sheet(base_sheet.base_sheet):
                 added_row_lists[account_name].append(added_row)
         return accounts, added_row_lists
 
+    def filter_sheet(self, column, pattern):
+        """Return a sheet with rows filtered from the rows of this sheet.
+        A given column must match a given regexp."""
+        pattern = re.compile(pattern)
+        result = canonical_sheet(self.config)
+        for key, row in self.rows.items():
+            if pattern.match(row.get(column, None)):
+                result.rows[key] = row
+        return result
+
     def write_csv(self, filename):
         """Write a canonical spreadsheet to a file.
         Any columns not in the canonical format are ignored."""
