@@ -79,11 +79,14 @@ class canonical_sheet(base_sheet.base_sheet):
             self.origin_files = input_sheet.origin_files
             if self.verbose:
                 print("converting", input_sheet)
+            print("input_sheet.format is", input_sheet.format)
+            print("input_sheet.format.get('conversions', {}) is", input_sheet.format.get('conversions', {}))
             for in_row in input_sheet:
                 can_row, is_new = self.row_to_canonical(
                     input_sheet, in_row,
                     reference_sheet=self,
                     account_name_template=account_name_template,
+                    conversions=input_sheet.format.get('conversions', {}),
                     convert_all=convert_all)
                 if self.verbose:
                     print("made", can_row, "from", in_row)
@@ -139,6 +142,7 @@ class canonical_sheet(base_sheet.base_sheet):
     def row_to_canonical(self,
                          input_sheet, row,
                          convert_all=False,
+                         conversions=None,
                          out_column_defaults=None,
                          reference_sheet=None,
                          account_name_template=None,
@@ -160,9 +164,8 @@ class canonical_sheet(base_sheet.base_sheet):
             if self.verbose:
                 print("payee field missing from row", row)
             return None
-        conversion = find_conversion(input_format.get('conversions', {}),
+        conversion = find_conversion(conversions or input_format.get('conversions', {}),
                                      payee_name)
-        # print("input format is", input_format)
         if conversion is None and not convert_all:
             if self.verbose:
                 print("no conversion for row", row)
@@ -213,6 +216,7 @@ class canonical_sheet(base_sheet.base_sheet):
                 out_row[canonical_outcol] = (':'.join(extra_value)
                                              if isinstance(extra_value, list)
                                              else extra_value)
+        # print("looking for flags in conversion", conversion)
         if conversion and 'flags' in conversion:
             out_row['flags'] = set(conversion['flags'].split())
         if self.rows.get(out_row['timestamp'], None) == out_row:

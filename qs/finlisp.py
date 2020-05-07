@@ -161,12 +161,16 @@ def finlisp_eval_symbol(context, expr):
         return result
     raise(UndefinedName, expr)
 
+def finlisp_eval_quoted(context, expr):
+    return expr._val
+
 def finlisp_eval_literal(context, expr):
     return expr
 
 finlisp_type_evaluators = {
     list: finlisp_eval_list,
-    sexpdata.Symbol: finlisp_eval_symbol
+    sexpdata.Symbol: finlisp_eval_symbol,
+    sexpdata.Quoted: finlisp_eval_quoted
 }
 
 def finlisp_eval(context, expr):

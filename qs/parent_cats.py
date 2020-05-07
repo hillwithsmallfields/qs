@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import canonical_sheet
+import csv
 import qsutils
 
 def parent_cats_begin(control_dict, input_format):
@@ -9,8 +10,13 @@ def parent_cats_begin(control_dict, input_format):
 
 def parent_cats_row(timestamp, row, output_rows, scratch):
     if ('category' in row and row.get('parent', "") == ""):
-        row['parent'] = scratch['parentage'][row['category']]
-    output_rows[timestamp] = row
+        parentage = scratch['parentage']
+        category = row['category']
+        if category in parentage:
+            row['parent'] = parentage[category]
+            output_rows[timestamp] = row
+        else:
+            print("Could not find parentage of", category)
 
 def parent_cats_end(headers, output_rows, scratch):
     return headers, output_rows

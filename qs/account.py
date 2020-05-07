@@ -149,9 +149,10 @@ class account:
         Return a canonical_sheet containing only the rows that were added.
 
         """
+        print("add_sheet with flags", flags, "and trace", trace_sheet_name)
         self.origin_files += sheet.origin_files
         trace = trace_sheet.trace_sheet(sheet.config, trace_sheet_name) if trace_sheet_name else None
-        flags = flags and set(flags.split())
+        flags = flags and (set(flags.split()) if isinstance(flags, str) else set(flags))
         added_rows = {}
         if isinstance(sheet, canonical_sheet.canonical_sheet):
             for row in sheet:
@@ -169,7 +170,8 @@ class account:
                             else:
                                 trace.add_row(was_new, "newness", "skipped as dup")
                 else:
-                    trace.add_row(row, "skipped unflagged", "%s %s" % (flags, row['flags']))
+                    if trace:
+                        trace.add_row(row, "skipped unflagged", "%s not found in %s" % (flags, row.get('flags', None)))
         elif isinstance(sheet, account):
             for payee in sheet:
                 tracing = self.tracing and self.tracing.search(payee.name)
@@ -178,7 +180,7 @@ class account:
                 for timestamp, row in payee:
                     if flags and ('flags' not in row or not flags.intersection(row['flags'])):
                         if trace:
-                            trace.add_row(row, "skipped unflagged", "%s %s" % (flags, row.get('flags', None)))
+                            trace.add_row(row, "skipped unflagged", "%s not found in %s" % (flags, row.get('flags', None)))
                         continue
                     seen = payee.name in self.payees and self.payees[payee.name].already_seen(timestamp, row['amount'])
                     if not seen:

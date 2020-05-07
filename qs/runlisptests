@@ -1,3 +1,6 @@
 #!/bin/bash
 
-./finlisp.py lisptests.lisp
+CONFIGDIR=../conf
+CONVDIR=$COMMON/finances
+
+./finlisp.py --verbose --no-default-config --config $CONFIGDIR/accounts.yaml --config $CONVDIR/conversions.yaml lisptests.lisp

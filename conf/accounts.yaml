@@ -9,14 +9,15 @@ formats:
       debits:  Money out
       balance: Balance
     currency:  GBP
-    name:      Handelsbanken current account
+    name:      HB current statement
   financisto:
     column-sequence: ["date", "time", "account", "amount", "currency", "original amount", "original currency", "category", "parent", "payee", "location", "project", "note"]
     columns:
       date:     date
       time:     time
       payee:    payee
-      credits:   amount
+      amount:   amount
+      credits:  amount
       account:  account
       currency: currency
       category: category
@@ -27,6 +28,24 @@ formats:
       project: No project
       time:    04:00:00
     name:      Financisto export
+  Default:
+    column-sequence: ["date", "time", "account", "amount", "currency", "original amount", "original currency", "category", "parent", "payee", "location", "project", "note"]
+    columns:
+      date:     date
+      time:     time
+      payee:    payee
+      amount:   amount
+      credits:  amount
+      account:  account
+      currency: currency
+      category: category
+      parent:   parent
+      project:  project
+      message:  note
+    column-defaults:
+      project: No project
+      time:    04:00:00
+    name:      Default format
   combined:
     column-sequence: [date, time,
                       HB current, HB Balance, HB current statement, HB current statement balance, HB comparison,

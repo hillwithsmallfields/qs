@@ -19,6 +19,7 @@ class trace_sheet(base_sheet.base_sheet):
     def __init__(self, config, filename):
         super().__init__(config)
         self.filename = filename
+        self.default_time = "01:02:03"
         if os.path.exists(filename):
             self.read(filename)
 
@@ -35,6 +36,10 @@ class trace_sheet(base_sheet.base_sheet):
                                                        self.get_cell(row0, 'time', self.default_time))
                 canonized['timestamp'] = unique_ts
                 self.rows[unique_ts] = canonized
+
+    def get_cell(self, row, column_name, default_value=None):
+        """Get a cell value from a row, using its column name."""
+        return row.get(column_name, default_value)
 
     def add_row(self, row, comment_type, comment):
         row = row.copy()

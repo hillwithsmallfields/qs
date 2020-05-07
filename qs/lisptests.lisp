@@ -28,5 +28,5 @@
     (print "making monthly summary")
     (write-csv (by-month app-as-account) "/tmp/financisto-monthly.csv")
     (print "merging sheet into account")
-    (let ((added-to-account (add-sheet app-as-account handelsbanken)))
-      (print added-to-account))))
+    (let ((added-to-account (add-sheet app-as-account handelsbanken '("regular") "/tmp/trace.csv")))
+      (write-csv added-to-account "/tmp/added-to-account.csv"))))
