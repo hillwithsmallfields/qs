@@ -1,9 +1,7 @@
 #!/usr/bin/python3
 # Common routines for my QS programs
 
-import account
 import argparse
-import base_sheet
 import csv
 import datetime
 import functools
@@ -17,10 +15,11 @@ def trim_if_float(val):
     """Make a value more neatly printable."""
     return (("%.2F" % val)
             if type(val) is float
-            else (None
-                  if (isinstance(val, base_sheet.base_sheet)
-                      or isinstance(val, account.account))
-                  else val))
+            else (val
+                  if type(val) in (int, str, datetime.date, datetime.time, datetime.datetime)
+                  else (None
+                        if ('_hide_in_csv' in val.__dict__ and val._hide_in_csv)
+                        else val)))
 
 def granularity_day(overprecise):
     """Return the start of the day containing a given timestamp."""

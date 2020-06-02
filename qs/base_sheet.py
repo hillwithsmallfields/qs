@@ -13,6 +13,7 @@ class base_sheet:
     def __init__(self, config, rows=None):
         self.rows = rows or {}
         self.config = config
+        self._hide_in_csv = True # don't show these if they get incorporated into row data
 
     def timestamp_from(self, base_date, base_time=None):
         """Return a timestamp at the given date and time."""

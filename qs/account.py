@@ -46,6 +46,7 @@ class account:
         self.time_chars = 19
         self.config = config
         self.origin_files = origin_files
+        self._hide_in_csv = True # don't show these if they get incorporated into row data
         tracing = config and config.get('debug', {}).get('trace', None)
         if tracing:
             self.tracing = re.compile('|'.join(tracing))

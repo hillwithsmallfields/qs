@@ -8,6 +8,8 @@ sys.path.append(os.path.expanduser("~/open-projects/github.com/hillwithsmallfiel
 print("path is now", sys.path)
 
 import argparse
+import base_sheet
+import qsutils
 import csv
 from decouple import config
 import datetime
@@ -105,28 +107,27 @@ def find_last_unfetched_date(dict_by_date):
     return nil                  # todo: fill this in
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--number", "-n",
+    parser = qsutils.program_argparser()
+    parser.add_argument("-N", "--number",
                         type=int, default=0,
                         help="""Maximum number of days to fetch.""")
-    parser.add_argument("--update", "-u",
+    parser.add_argument("-u", "--update",
                         action='store_true',
                        help="""Read the existing file contents and add to them.""")
-    parser.add_argument("--latest", "-l",
+    parser.add_argument("-l", "--latest",
                         help="""The most recent date to fetch.""")
-    parser.add_argument("--autodate", "-a",
+    parser.add_argument("-a", "--autodate",
                         action='store_true',
                         help="""Work out how far back to start automatically (with --update only).""")
-    parser.add_argument("--sheet", "-p")
-    parser.add_argument("--json", "-o")
-    parser.add_argument("--verbose", "-v",
-                        action='store_true',
-                        help="""Produce some diagnostic output.""")
+    parser.add_argument("-p", "--sheet")
+    parser.add_argument("-o", "--json")
     args = parser.parse_args()
 
     if args.sheet is None and args.json is None:
         print("No output specified!  Use --sheet or --json or both.")
         return 1
+
+    configuration = qsutils.program_load_config(args)
 
     so_far = {}
     if args.update and args.json:
@@ -161,15 +162,7 @@ def main():
                       outstream)
 
     if args.sheet:
-        with open(args.sheet, 'w') as outstream:
-            fieldnames = ['date',
-                          'breakfast', 'lunch', 'dinner', 'snacks',
-                          'calories',
-                          'carbohydrates', 'fat', 'protein', 'sodium', 'sugar']
-            writer = csv.DictWriter(outstream, fieldnames=fieldnames)
-            writer.writeheader()
-            for row in rows:
-                writer.writerow(row)
+        base_sheet.base_sheet(configuration, rows=rows).write_csv(args.sheet)
 
 if __name__ == "__main__":
     main()
