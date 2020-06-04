@@ -37,12 +37,7 @@ def all_empty(data):
     return True
 
 def meal_calories(day_data, meal_index):
-    print("day_data", day_data, "meal_index", meal_index)
-    print("meals", day_data.meals)
-    print("this meal", day_data.meals[meal_index])
-    tot = day_data.meals[meal_index].totals
-    print("got totals", tot)
-    return tot.get('calories', 0)
+    return day_data.meals[meal_index].totals.get('calories', 0)
 
 def fetch_streak_upto(when,
                       accumulator, sheet,
@@ -59,10 +54,8 @@ def fetch_streak_upto(when,
     if verbose:
         print("now logged in")
     while True:
-        date_key = when.date()
-        print("on date_key", date_key, "for", when)
-        if ((accumulator is not None and date_key not in accumulator)
-            or (sheet is not None and date_key not in sheet)):
+        if ((accumulator is not None and when not in accumulator)
+            or (sheet is not None and when not in sheet)):
             if verbose:
                 print("getting data for", when)
             day_data = client.get_date(when.year, when.month, when.day)
@@ -71,22 +64,22 @@ def fetch_streak_upto(when,
                 print("day_data is", day_data, "and dict_data is", dict_data)
             if all_empty(dict_data):
                 if verbose:
-                    print("couldn't get any data for", date_key)
+                    print("couldn't get any data for", when)
                 break
             if accumulator is not None:
                 if verbose:
                     print("adding", dict_data, "to json")
-                accumulator[date_key] = dict_data
+                accumulator[when] = dict_data
             if sheet is not None:
                 if verbose:
                     print("accumulating spreadsheet data")
                 row = {mealname+'_cals': meal_calories(day_data, i)
                        for i, mealname in enumerate(meal_keys)}
                 row.update(day_data.totals)
-                row['date'] = date_key
+                row['date'] = when
                 if verbose:
-                    print("adding", row, "to sheet with date", date_key)
-                sheet[date_key] = row
+                    print("adding", row, "to sheet with date", when)
+                sheet[when] = row
             if verbose:
                 print("countdown was", countdown)
             if countdown:
@@ -103,8 +96,10 @@ def fetch_streak_upto(when,
     return accumulator
 
 def find_last_unfetched_date(dict_by_date):
-    """Return the latest day before the first that appears as a key of a dict."""
-    return nil                  # todo: fill this in
+    """Return the latest day before the first that appears as a key of a dict.
+    This is for working your way back through your historical record,
+    not for updating since the last run."""
+    return min(dict_by_date.keys()) - datetime.timedelta(days=1)
 
 def main():
     parser = qsutils.program_argparser()
@@ -116,9 +111,11 @@ def main():
                        help="""Read the existing file contents and add to them.""")
     parser.add_argument("-l", "--latest",
                         help="""The most recent date to fetch.""")
-    parser.add_argument("-a", "--autodate",
+    parser.add_argument("-a", "--autodate-old",
                         action='store_true',
-                        help="""Work out how far back to start automatically (with --update only).""")
+                        help="""Work out how far back to start automatically (with --update only).
+                        This is for working your way back through your historical record,
+                        not for updating since the last run.""")
     parser.add_argument("-p", "--sheet")
     parser.add_argument("-o", "--json")
     args = parser.parse_args()
@@ -132,21 +129,21 @@ def main():
     so_far = {}
     if args.update and args.json:
         with open(args.json) as instream:
-            so_far = {datetime.datetime.fromisoformat(k): v
+            so_far = {datetime.date.fromisoformat(k): v
                       for k, v in json.load(instream).items()}
 
     rows = {}
     if args.update and args.sheet:
         with open(args.sheet) as instream:
-            rows = {row['date']: row
+            rows = {datetime.date.fromisoformat(row['date']): row
                      for row in csv.DictReader(instream)}
-
-    upto_date = (datetime.datetime.fromisoformat(args.latest)
+            
+    upto_date = (datetime.date.fromisoformat(args.latest)
                  if args.latest
                  else (find_last_unfetched_date(rows or so_far)
-                       if (args.autodate and args.update)
+                       if (args.autodate_old and args.update)
                        else datetime.datetime.today()))
-
+    
     fetch_streak_upto(upto_date,
                       accumulator=so_far if args.json else None,
                       sheet=rows if args.sheet else None,
