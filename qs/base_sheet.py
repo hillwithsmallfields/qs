@@ -49,6 +49,9 @@ class base_sheet:
             colseq = ordered_set.OrderedSet()
             for row in self.rows.values():
                 colseq |= row
+            if 'date' in colseq:
+                colseq.remove('date')
+                colseq = ['date'] + [col for col in colseq]
             writer = csv.DictWriter(outfile, colseq)
             writer.writeheader()
             for timestamp in sorted(self.rows.keys()):
