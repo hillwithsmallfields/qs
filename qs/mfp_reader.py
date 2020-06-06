@@ -5,7 +5,7 @@ import sys
 import os
 sys.path.append(os.path.expanduser("~/open-projects/github.com/hillwithsmallfields/python-myfitnesspal/myfitnesspal"))
 
-print("path is now", sys.path)
+# print("path is now", sys.path)
 
 import argparse
 import base_sheet
@@ -42,14 +42,14 @@ def meal_calories(day_data, meal_index):
 def fetch_streak_upto(when,
                       accumulator, sheet,
                       countdown=None,
-                      verbose=False):
+                      verbose=False,
+                      minpause=5,
+                      maxpause=30):
     """Fetch a continuous series of days' data, from the specified date
     going back until there is a break, or until a given number of days
     have been fetched.
 
     """
-    if verbose:
-        print("fetching with accumulator", accumulator, "and sheet", sheet, "and countdown", countdown)
     ensure_mfp_login()
     if verbose:
         print("now logged in")
@@ -60,8 +60,9 @@ def fetch_streak_upto(when,
                 print("getting data for", when)
             day_data = client.get_date(when.year, when.month, when.day)
             dict_data = day_data.get_as_dict()
+            cardio = day_data.exercises[0].get_as_list()
             if verbose:
-                print("day_data is", day_data, "and dict_data is", dict_data)
+                print("day_data is", day_data, "and dict_data is", dict_data, "and cardio is", cardio)
             if all_empty(dict_data):
                 if verbose:
                     print("couldn't get any data for", when)
@@ -75,6 +76,8 @@ def fetch_streak_upto(when,
                     print("accumulating spreadsheet data")
                 row = {mealname+'_cals': meal_calories(day_data, i)
                        for i, mealname in enumerate(meal_keys)}
+                row['cardio_minutes'] = sum([exercise['nutrition_information']['minutes'] for exercise in cardio])
+                row['cardio_calories'] = sum([exercise['nutrition_information']['calories burned'] for exercise in cardio])
                 row.update(day_data.totals)
                 row['date'] = when
                 if verbose:
@@ -89,7 +92,7 @@ def fetch_streak_upto(when,
                 if countdown <= 0:
                     break
         when = when - datetime.timedelta(days=1)
-        pause = random.randint(1, 5)
+        pause = random.randint(minpause, maxpause)
         if verbose:
             print("pausing", pause, "before fetching previous day")
         time.sleep(pause)
@@ -118,6 +121,14 @@ def main():
                         not for updating since the last run.""")
     parser.add_argument("-p", "--sheet")
     parser.add_argument("-o", "--json")
+    parser.add_argument("--minpause",
+                        type=int,
+                        default=5,
+                        help="""The minimum time to pause between day fetches.""")
+    parser.add_argument("--maxpause",
+                        type=int,
+                        default=30,
+                        help="""The minimum time to pause between day fetches.""")
     args = parser.parse_args()
 
     if args.sheet is None and args.json is None:
@@ -150,7 +161,9 @@ def main():
                       countdown=(args.number
                                       if args.number > 0
                                       else None),
-                      verbose=args.verbose)
+                      verbose=args.verbose,
+                      minpause=args.minpause,
+                      maxpause=args.maxpause)
 
     if args.json:
         with open(args.json, 'w') as outstream:
