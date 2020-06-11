@@ -92,9 +92,21 @@ def finlisp_read_canonical(context, csvname):
 def_finlisp_fn('read-canonical', finlisp_read_canonical)
 
 def finlisp_account(context, name, base_sheet):
-    return account.account(name, transactions=base_sheet, config=context['config'])
+    print("Making account from base_sheet", base_sheet)
+    result = account.account(name, transactions=base_sheet, config=context['config'])
+    print("Account made from base_sheet is", result)
+    return result
 
 def_finlisp_fn('account', finlisp_account)
+
+# covered in the bulk import
+# def finlisp_add_sheet(context, base, addendum):
+#     print("Adding", addendum, "to base", base)
+#     result = base.add_sheet(addendum)
+#     print("Result of adding", addendum, "to base", base, "is", result)
+#     return result
+#
+# def_finlisp_fn('add-sheet', finlisp_add_sheet)
 
 class NotApplicable(Exception):
     pass

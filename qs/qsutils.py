@@ -16,7 +16,8 @@ def trim_if_float(val):
     return (("%.2F" % val)
             if type(val) is float
             else (val
-                  if type(val) in (int, str, datetime.date, datetime.time, datetime.datetime)
+                  if (val in (None, True, False)
+                      or type(val) in (int, str, datetime.date, datetime.time, datetime.datetime))
                   else (None
                         if ('_hide_in_csv' in val.__dict__ and val._hide_in_csv)
                         else val)))
@@ -132,6 +133,18 @@ def load_config(verbose, base_config, suggested_dir, *config_files):
     if base_config is None:
         base_config = {}
     load_multiple_yaml(base_config, suggested_dir, config_files)
+    if 'equivalents' in base_config:
+        equivalents = base_config['equivalents']
+        equiv_table = {}
+        print("equivalents are", equivalents)
+        for equiv_primary, equiv_secondaries in equivalents.items():
+            combined = [equiv_primary] + equiv_secondaries
+            for e in combined:
+                equiv_table[e] = combined
+        print("equiv_table", equiv_table)
+        base_config['equivalents'] = equiv_table
+    equivalent_names = base_config.get('equivalents', {})
+    print("equivalent_names are originally", equivalent_names)
     if verbose:
         print("Read config:")
         print(yaml.dump(base_config))

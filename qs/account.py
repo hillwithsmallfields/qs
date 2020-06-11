@@ -68,6 +68,7 @@ class account:
         self.payees = {}
         if (isinstance(transactions, canonical_sheet.canonical_sheet)
             or isinstance(transactions, account)):
+            print("adding transactions", transactions, "to newly-made sheet")
             self.config = transactions.config
             self.add_sheet(transactions)
 
@@ -151,16 +152,22 @@ class account:
 
         """
         print("add_sheet with flags", flags, "and trace", trace_sheet_name)
+        print("sheet to add is", sheet)
         self.origin_files += sheet.origin_files
         trace = trace_sheet.trace_sheet(sheet.config, trace_sheet_name) if trace_sheet_name else None
         flags = flags and (set(flags.split()) if isinstance(flags, str) else set(flags))
         added_rows = {}
+        skipped_for_account = {}
         if isinstance(sheet, canonical_sheet.canonical_sheet):
+            print("adding from canonical_sheet")
+            equivalent_names = self.config.get('equivalents', {}).get(self.name, [self.name])
+            print("equivalent_names are", equivalent_names)
             for row in sheet:
                 if (flags is None
                     or ('flags' in row
                         and flags.intersection(row['flags']))):
-                    if row.get('account', None) == self.name:
+                    row_account = row.get('account', None)
+                    if row_account in equivalent_names:
                         was_new, why_not = self.add_row_if_new(row)
                         # print("was_new", was_new)
                         if was_new:
@@ -170,10 +177,17 @@ class account:
                                 trace.add_row(was_new, "newness", "added as new")
                             else:
                                 trace.add_row(was_new, "newness", "skipped as dup")
+                    else:
+                        skipped_for_account[row_account] = skipped_for_account.get(row_account, 0) + 1
                 else:
                     if trace:
                         trace.add_row(row, "skipped unflagged", "%s not found in %s" % (flags, row.get('flags', None)))
+            if len(skipped_for_account) > 0:
+                print("Skipped input rows for accounts other than", self.name)
+                for acc, count in skipped_for_account.items():
+                    print("  ", acc, count)
         elif isinstance(sheet, account):
+            print("adding from account")
             for payee in sheet:
                 tracing = self.tracing and self.tracing.search(payee.name)
                 if tracing:

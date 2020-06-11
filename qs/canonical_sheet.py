@@ -79,8 +79,8 @@ class canonical_sheet(base_sheet.base_sheet):
             self.origin_files = input_sheet.origin_files
             if self.verbose:
                 print("converting", input_sheet)
-            print("input_sheet.format is", input_sheet.format)
-            print("input_sheet.format.get('conversions', {}) is", input_sheet.format.get('conversions', {}))
+            # print("input_sheet.format is", input_sheet.format)
+            # print("input_sheet.format.get('conversions', {}) is", input_sheet.format.get('conversions', {}))
             for in_row in input_sheet:
                 can_row, is_new = self.row_to_canonical(
                     input_sheet, in_row,

@@ -92,4 +92,6 @@ formats:
         Kristi's card:                 Kristi's gift card
       category:  category
       parent:    parent
-  
+equivalents:
+  Handelsbanken current account:
+    - HB current statement
