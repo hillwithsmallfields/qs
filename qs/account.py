@@ -176,7 +176,7 @@ class account:
                             if was_new:
                                 trace.add_row(was_new, "newness", "added as new")
                             else:
-                                trace.add_row(was_new, "newness", "skipped as dup")
+                                trace.add_row(row, "newness", "skipped as dup")
                     else:
                         skipped_for_account[row_account] = skipped_for_account.get(row_account, 0) + 1
                 else:

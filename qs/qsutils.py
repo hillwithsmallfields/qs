@@ -15,12 +15,9 @@ def trim_if_float(val):
     """Make a value more neatly printable."""
     return (("%.2F" % val)
             if type(val) is float
-            else (val
-                  if (val in (None, True, False)
-                      or type(val) in (int, str, datetime.date, datetime.time, datetime.datetime))
-                  else (None
-                        if ('_hide_in_csv' in val.__dict__ and val._hide_in_csv)
-                        else val)))
+            else (None
+                  if getattr(val, '_hide_in_csv', False)
+                  else val))
 
 def granularity_day(overprecise):
     """Return the start of the day containing a given timestamp."""
