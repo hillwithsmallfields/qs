@@ -5,6 +5,12 @@ import csv
 import os.path
 import qsutils
 
+class UnknownCSVFormat(Exception):
+    pass
+
+    def __init__(self, infile):
+        self.infile = infile
+
 class csv_sheet(base_sheet.base_sheet):
     """The contents of a CSV spreadsheet with headers.
 
@@ -100,6 +106,8 @@ class csv_sheet(base_sheet.base_sheet):
         A collection of header lines is scanned to find the type."""
         with open(os.path.expanduser(os.path.expandvars(filename))) as infile:
             self.format_name, self.header_row_number = qsutils.deduce_stream_format(infile, self.config, verbose=self.verbose)
+            if self.format_name is None:
+                raise UnknownCSVFormat(infile)
             print("Detected", self.format_name, "spreadsheet in", filename)
             sheet_marker = {'sheet': self}
             for i in range(1, self.header_row_number):
