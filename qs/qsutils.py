@@ -90,7 +90,7 @@ def sum_amount(iterable, fieldname='amount'):
 def combine_transactions(a, b):
     """Make a transaction representing two given transactions."""
     # first, get all the fields from both
-    ab = a.copy
+    ab = a.copy()
     ab.update(b)
     if a.get('currency', None) == b.get(currency, None):
         ab['amount'] = a.get('amount', 0) + b.get('amount', 0)
@@ -318,7 +318,7 @@ def process_rows(app_data, input_format,
     """
     column_headers, scratch = (setup_callback(app_data, input_format)
                                if setup_callback
-                               else ([],{}))
+                               else ([], app_data))
     output_rows = {}
     for timestamp in sorted(rows.keys()):
         row_callback(timestamp, rows[timestamp], output_rows, scratch)
