@@ -107,6 +107,8 @@ class csv_sheet(base_sheet.base_sheet):
         with open(os.path.expanduser(os.path.expandvars(filename))) as infile:
             self.format_name, self.header_row_number = qsutils.deduce_stream_format(infile, self.config, verbose=self.verbose)
             if self.format_name is None:
+                if not self.verbose:
+                    self.format_name, self.header_row_number = qsutils.deduce_stream_format(infile, self.config, verbose=True)
                 raise UnknownCSVFormat(infile)
             print("Detected", self.format_name, "spreadsheet in", filename)
             sheet_marker = {'sheet': self}
