@@ -32,11 +32,14 @@ functions = ['add_sheet',
              'compare',
              'filter_sheet',
              'format_sheet',
+             # 'join', # todo
              'list_accounts',
              'payees',
+             'select_columns',
              'set',
              'sheet',
              'show',
+             # 'track', # todo
              'write_all_columns',
              'write_csv',
              'write_debug']
@@ -57,17 +60,14 @@ def add_sheet(context, account, sheet, flags=None, trace_sheet_name=None):
 
 def by_day(context, original):
     return original.combine_same_period_entries(qsutils.granularity_day,
-                                                time_chars=10,
                                                 comment="Daily summary")
 
 def by_month(context, original):
     return original.combine_same_period_entries(qsutils.granularity_month,
-                                                time_chars=7,
                                                 comment="Monthly summary")
 
 def by_year(context, original):
     return original.combine_same_period_entries(qsutils.granularity_year,
-                                                time_chars=4,
                                                 comment="Yearly summary")
 
 def categories(context, original):
@@ -111,6 +111,16 @@ def payees(context, original, pattern):
                                          'total': details.transactions_total(),
                                          'transactions': details.transactions_string(separator='; ', time_chars=10)}
                                   for name, details in original.payees_matching(pattern).items()})
+
+def select_columns_row(timestamp, row, output_rows, colnames):
+    output_rows[timestamp] = {row[colname] for colname in colnames}
+
+def select_columns(context, sheet, column_names):
+    output_headers, output_rows = process_rows(column_names,
+                                               None,
+                                               None, # setup
+                                               select_columns_row,
+                                               None)
 
 def set(context, name, value):
     if name in context['variables']:

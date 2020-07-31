@@ -242,7 +242,6 @@ class account:
 
     def combine_same_period_entries(self,
                                     period,
-                                    time_chars=19,
                                     comment=None):
         """Produce an account based on this one, with just one entry per period
         (day, by default).
@@ -251,7 +250,6 @@ class account:
         For all the transactions in all_transactions, do likewise.
 
         """
-        # todo: this isn't using time_chars!
         combined = account(self.name, copy_metadata_from=self)
         # first, all the payees; these are amounts
         for name, orig_payee in self.payees.items():
