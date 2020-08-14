@@ -14,19 +14,25 @@ def handle_stone_row(row):
             if 'Stone' in row and 'Lbs' in row
             else (row['Lbs total']/14
                   if 'Lbs total' in row
-                  else None))
+                  else (row['Kg'] / 6.35029
+                        if 'Kg' in row
+                          else None)))
 
 def handle_kilogram_row(row):
     return (row['Kg']
             if 'Kg' in row
-            else None)
+            else (row['Stone'] * 6.35029
+                  if 'Stone' in row
+                  else None))
 
 def handle_pound_row(row):
     return (row['Lbs total']
             if 'Lbs total' in row
             else ((row['Stone']*14 + row['Lbs'])
                   if 'Stone' in row and 'Lbs' in row
-                  else None))
+                  else (row['Kg'] * 2.20462
+                        if 'Kg' in row
+                        else None)))
 
 ROW_HANDLERS = {
     'stone': handle_stone_row
