@@ -84,12 +84,7 @@ def main():
     parser.add_argument("mainfile")
     args = parser.parse_args()
     if args.type is None:
-        with open(args.mainfile) as csvheaderprobe:
-            probereader = csv.reader(csvheaderprobe)
-            for row in probereader:
-                fieldnames = row
-                break               # read only the first row
-        file_type = qsutils.deduce_file_type_from_headers(fieldnames)
+        file_type = file_types.deduce_file_type(args.mainfile)
         if args.verbose:
             print("Deduced file type", file_type)
     else:

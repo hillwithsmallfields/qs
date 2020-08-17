@@ -31,14 +31,6 @@ def granularity_year(overprecise):
     """Return the start of the year containing a given timestamp."""
     return datetime.datetime(overprecise.year, 1, 1)
 
-def deduce_file_type_from_headers(headers):
-    """Given a CSV header row, return what type of data the file holds."""
-    if 'Kg' in headers:
-        return 'weight'
-    if 'Currency' in headers:
-        return 'finances'
-    return 'unknown'
-
 def resolve_filename(filename, directory=None):
     """Try to get an absolute form of a filename, using a suggested directory."""
     filename = os.path.expandvars(filename)

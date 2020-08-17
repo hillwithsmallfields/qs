@@ -148,13 +148,9 @@ def main():
     if args.verbose:
         print("Main input is", args.mainfile, "and output is", output)
         print("Incoming files are", args.incoming)
-    with open(args.mainfile) as csvheaderprobe:
-        probereader = csv.reader(csvheaderprobe)
-        for row in probereader:
-            fieldnames = row
-            break               # read only the first row
+    fieldnames = file_types.first_row(args.mainfile)
     if args.type is None:
-        file_type = qsutils.deduce_file_type_from_headers(fieldnames)
+        file_type = file_types.deduce_file_type(args.mainfile)
         if args.verbose:
             print("Deduced file type", file_type)
     else:
