@@ -45,6 +45,7 @@ def weight_tracker_complete_row(row):
         if 'Lbs total' in row and row['Lbs total'] != '':
             row['St total'] = float(row['Lbs total']) / 14
 
+# TODO: switch to using a dictreader, and perhaps a variant of the canonicalization system
 def financisto_parser(raw):
     if len(raw) == 0:
         return None
@@ -120,7 +121,11 @@ file_type_handlers = {
         },
         'completer': finances_complete_row,
         'date': iso8601_date_time
-    }
+    },
+    'temperature': {'date': iso8601_date_only},
+    'peak_flow': {'date': iso8601_date_only},
+    'handelsbanken': {iso8601_date_time},
+    'financisto': {iso8601_date_time}
 }
 
 def find_row_parser_for(file_type, filename):
@@ -176,15 +181,13 @@ def main():
                     new_row = row_parser(raw)
                     if new_row is not None:
                         new_row_date = handler['date'](new_row['Date'])
-                        new_row['Date'] = new_row_date
                         if args.debug:
                             print("incoming raw date", new_row['Date'], "-->", new_row_date)
+                        new_row['Date'] = new_row_date
                         if new_row_date in by_date:
                             if args.debug:
                                 print("merging row")
-                            existing_row = by_date[new_row_date]
-                            for key, value in new_row.items():
-                                existing_row[key] = value
+                            by_date[new_row_date].update(new_row)
                         else:
                             if args.debug:
                                 print("adding row")
