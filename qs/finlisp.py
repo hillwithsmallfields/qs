@@ -160,10 +160,9 @@ def finlisp_eval_list(context, expr):
         return finlisp_forms[fun_name](context,
                                        *sexpdata.cdr(expr))
     elif fun_name in finlisp_functions:
-        # return finlisp_functions[fun_name](context,
-        #                                    *[finlisp_eval(context, x)
-        #                                      for x in sexpdata.cdr(expr)])
-        return finlisp_functions[fun_name](context, *[finlisp_eval(context, x) for x in sexpdata.cdr(expr)])
+        return finlisp_functions[fun_name](context,
+                                           *[finlisp_eval(context, x)
+                                             for x in sexpdata.cdr(expr)])
     else:
         raise UndefinedName(fun_name)
 
