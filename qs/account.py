@@ -304,7 +304,7 @@ class account:
         # Record the final period's transactions
         transactions_by_period[period_start] = period_total
         combined.all_transactions = transactions_by_period
-        combined.time_chars = time_chars
+        # combined.time_chars = time_chars
         return combined
 
     def compare_by_period(self, other):

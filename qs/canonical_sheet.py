@@ -158,18 +158,18 @@ class canonical_sheet(base_sheet.base_sheet):
         if row_date is None:
             if self.verbose:
                 print("empty date from row", row)
-            return None
+            return None, False
         payee_name = input_sheet.get_cell(row, 'payee', None)
         if payee_name is None:
             if self.verbose:
                 print("payee field missing from row", row)
-            return None
+            return None, False
         conversion = find_conversion(conversions or input_format.get('conversions', {}),
                                      payee_name)
         if conversion is None and not convert_all:
             if self.verbose:
                 print("no conversion for row", row)
-            return None
+            return None, False
         row_time = input_sheet.get_cell(
             row, 'time', ("01:02:03"
                           if out_column_defaults is None

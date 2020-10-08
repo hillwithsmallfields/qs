@@ -10,6 +10,7 @@ import diff_sheet
 import formatted_sheet
 import qsutils
 import re
+import tracked_sheet
 
 class ConfigRequired(Exception):
     pass
@@ -29,6 +30,7 @@ functions = ['add_sheet',
              'by_month',
              'by_year',
              'categories',
+             'chart',
              'compare',
              'filter_sheet',
              'format_sheet',
@@ -39,7 +41,7 @@ functions = ['add_sheet',
              'set',
              'sheet',
              'show',
-             # 'track', # todo
+             'track',
              'write_all_columns',
              'write_csv',
              'write_debug']
@@ -72,6 +74,11 @@ def by_year(context, original):
 
 def categories(context, original):
     return categoriser.category_tree(original)
+
+def chart(context, sheet, title, filename, fields):
+    """Output a sheet to gnuplot."""
+    sheet.chart(title, filename, fields)
+    return fields
 
 def compare(context,
             result_column,
@@ -150,6 +157,11 @@ def show(context, value, filename):
     """Output any of the types we handle, for debugging."""
     with open(qsutils.resolve_filename(filename), 'w') as output:
         output.write(str(value))
+
+def track(context, sheet, tracked_column, tracking_column):
+    return tracked_sheet.tracked_sheet(sheet.config, input_sheet=sheet,
+                                       input_column=tracked_column,
+                                       output_column=tracking_column)
 
 def write_all_columns(context, value, filename):
     if value:
