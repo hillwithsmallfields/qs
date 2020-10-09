@@ -44,7 +44,9 @@ class diff_sheet(csv_sheet.csv_sheet):
 
     def write_csv(self, filename):
         """Write a differences spreadsheet to a file."""
-        with open(os.path.expanduser(os.path.expandvars(filename)), 'w') as outfile:
+        full_filename = os.path.expanduser(os.path.expandvars(filename))
+        qsutils.ensure_directory_for_file(full_filename)
+        with open(full_filename, 'w') as outfile:
             colseq = ['timestamp', result_column,
                       'amount_a', 'balance_a',
                       'amount_b', 'balance_b']

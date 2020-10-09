@@ -42,6 +42,10 @@ def resolve_filename(filename, directory=None):
                     os.path.expandvars(
                         os.path.expanduser(filename))))
 
+def ensure_directory_for_file(filename):
+    """Ensure the directory for a file exists, if possible."""
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+
 def dict_to_string_sorted_by_key(d):
     return "{" + ", ".join([str(k) + ": " + str(d[k]) for k in sorted(d.keys())]) + "}"
 

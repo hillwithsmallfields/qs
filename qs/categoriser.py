@@ -80,8 +80,9 @@ class category_tree:
     def write_csv(self, filename):
         """Write a category sheet to a CSV file.
         Each row is a category and its total payments."""
-        with open(os.path.expanduser(os.path.expandvars(filename)),
-                  'w') as outfile:
+        full_filename = os.path.expanduser(os.path.expandvars(filename))
+        qsutils.ensure_directory_for_file(full_filename)
+        with open(full_filename, 'w') as outfile:
             colseq = ['category','child', 'parentage', 'total', 'count']
             writer = csv.writer(outfile, colseq)
             writer.writerow(colseq)

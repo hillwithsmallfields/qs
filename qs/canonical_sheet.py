@@ -271,7 +271,9 @@ class canonical_sheet(base_sheet.base_sheet):
     def write_csv(self, filename):
         """Write a canonical spreadsheet to a file.
         Any columns not in the canonical format are ignored."""
-        with open(os.path.expanduser(os.path.expandvars(filename)), 'w') as outfile:
+        full_filename = os.path.expanduser(os.path.expandvars(filename))
+        qsutils.ensure_directory_for_file(full_filename)
+        with open(full_filename, 'w') as outfile:
             writer = csv.DictWriter(outfile, canonical_sheet.canonical_column_sequence)
             writer.writeheader()
             for timestamp in sorted(self.rows.keys()):

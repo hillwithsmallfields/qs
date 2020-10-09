@@ -45,7 +45,9 @@ class base_sheet:
         """Write a spreadsheet.
         The column list is generated from the row contents,
         with the columns in the order they are first seen."""
-        with open(os.path.expanduser(os.path.expandvars(filename)), 'w') as outfile:
+        full_filename = os.path.expanduser(os.path.expandvars(filename))
+        qsutils.ensure_directory_for_file(full_filename)
+        with open(full_filename, 'w') as outfile:
             colseq = ordered_set.OrderedSet()
             for row in self.rows.values():
                 colseq |= row
