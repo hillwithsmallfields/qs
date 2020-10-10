@@ -1,6 +1,7 @@
 # Financial spreadsheet functions
 
 import account
+import account_sheet
 import base_sheet
 import canonical_sheet
 import categoriser
@@ -25,7 +26,8 @@ class CannotConvert(Exception):
         self.function_name = function_name
         self.problematic_type = type(value)
 
-functions = ['add_sheet',
+functions = ['account_to_sheet',
+             'add_sheet',
              'by_day',
              'by_month',
              'by_year',
@@ -56,6 +58,9 @@ def convert_to_Python(command):
                                     r"\1context['variables']['\2']",command))
 
 # The functions
+
+def account_to_sheet(context, base_account):
+    return account_sheet.account_sheet(base_account.config, base_account)
 
 def add_sheet(context, account, sheet, flags=None, trace_sheet_name=None):
     return account.add_sheet(sheet, flags=flags, trace_sheet_name=trace_sheet_name)
