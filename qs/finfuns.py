@@ -46,6 +46,7 @@ functions = ['account_to_sheet',
              'track',
              'write_all_columns',
              'write_csv',
+             'write_json',
              'write_debug']
 
 functions_regexp = re.compile(r"\b(" + "|".join(functions) + r")\(")
@@ -162,7 +163,7 @@ def show(context, value, filename):
     """Output any of the types we handle, for debugging."""
     with open(qsutils.resolve_filename(filename), 'w') as output:
         output.write(str(value))
-
+        
 def track(context, sheet, tracked_column, tracking_column):
     return tracked_sheet.tracked_sheet(sheet.config, input_sheet=sheet,
                                        input_column=tracked_column,
@@ -178,6 +179,13 @@ def write_all_columns(context, value, filename):
 def write_csv(context, value, filename):
     if value:
         value.write_csv(qsutils.resolve_filename(filename))
+    else:
+        print("Nothing to write to", filename)
+    return value
+
+def write_json(context, value, filename):
+    if value:
+        value.write_json(qsutils.resolve_filename(filename))
     else:
         print("Nothing to write to", filename)
     return value

@@ -17,7 +17,7 @@ def trim_if_float(val):
             if type(val) is float
             else (None
                   if getattr(val, '_hide_in_csv', False)
-                  else val))
+                  else str(val)))
 
 def granularity_day(overprecise):
     """Return the start of the day containing a given timestamp."""
