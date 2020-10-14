@@ -9,6 +9,7 @@ import csv
 import datetime
 import diff_sheet
 import formatted_sheet
+import named_column_sheet
 import qsutils
 import re
 import tracked_sheet
@@ -38,11 +39,14 @@ functions = ['account_to_sheet',
              'format_sheet',
              # 'join', # todo
              'list_accounts',
+             'occupied_columns',
              'payees',
              'select_columns',
              'set',
              'sheet',
              'show',
+             'subtract_cells',
+             'threshold',
              'track',
              'write_all_columns',
              'write_csv',
@@ -118,6 +122,10 @@ def list_accounts(context, filename=None):
                 writer.writerow([name, type(context['variables'][name]).__name__])
     return varnames
 
+def occupied_columns(context, sheet):
+    """Return a copy of a sheet but with all empty columns removed."""
+    return sheet.occupied_columns()
+
 def payees(context, original, pattern):
     return base_sheet.base_sheet(None,
                                  {name: {'payee': name,
@@ -163,7 +171,14 @@ def show(context, value, filename):
     """Output any of the types we handle, for debugging."""
     with open(qsutils.resolve_filename(filename), 'w') as output:
         output.write(str(value))
-        
+
+def subtract_cells(context, sheet, subtrahend):
+    """Return a sheet with the cells of the second subtracted from the cells of the first."""
+    return sheet.subtract_cells(subtrahend)
+
+def threshold(context, sheet, threshold_level):
+    return sheet.abs_threshold(threshold_level)
+
 def track(context, sheet, tracked_column, tracking_column):
     return tracked_sheet.tracked_sheet(sheet.config, input_sheet=sheet,
                                        input_column=tracked_column,

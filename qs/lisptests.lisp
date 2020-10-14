@@ -51,4 +51,13 @@
     (write-all-columns tracked-hb "/tmp/fintest/tracked-hb.csv"))
 
   (print "Categorising from app")
-  (write-csv (categories financisto) "/tmp/fintest/financisto-category-tree.csv"))
+  (write-csv (categories financisto) "/tmp/fintest/financisto-category-tree.csv")
+
+  (print "Subtracting statement from app")
+  (let ((difference (subtract-cells financisto handelsbanken)))
+    (write-csv difference "/tmp/fintest/raw-difference")
+    (print "Thresholding difference")
+    (let ((most (threshold difference 10)))
+      (write-csv most "/tmp/fintest/difference-over-10")
+      (let ((occupied (occupied-columns most)))
+        (write-csv occupied-columns "/tmp/fintest/occupied-difference-over-10")))))

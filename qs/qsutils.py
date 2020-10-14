@@ -19,6 +19,39 @@ def trim_if_float(val):
                   if getattr(val, '_hide_in_csv', False)
                   else str(val)))
 
+def subtract_cell(row_a, row_b, name):
+    if name not in row_a and name not in row_b:
+        return None
+    a = 0
+    b = 0
+    try:
+        a = float(row_a[name])
+    except (KeyError, TypeError, ValueError):
+        pass
+    try:
+        b = float(row_b[name])
+    except (KeyError, TypeError, ValueError):
+        pass
+    return a - b
+
+def subtracted_row(row, other_row, column_names):
+    # print("subtracting", other_row, "from", row, "with columns", column_names)
+    return {colname: subtract_cell(row, other_row, colname)
+            for colname in column_names} 
+
+def big_enough(row, colname, threshold):
+    if colname not in row:
+        return False
+    try:
+        return float(row[colname]) >= threshold
+    except (TypeError, ValueError):
+        return False    
+
+def thresholded_row(row, threshold):
+    return {colname: row[colname]
+            for colname in row.keys()
+            if colname in row and big_enough(row, colname, threshold)}
+
 def granularity_day(overprecise):
     """Return the start of the day containing a given timestamp."""
     return datetime.datetime(overprecise.year, overprecise.month, overprecise.day)

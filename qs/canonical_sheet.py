@@ -136,8 +136,27 @@ class canonical_sheet(base_sheet.base_sheet):
         return ("<canonical spreadsheet with "
                 + str(len(self.rows)) + " rows>")
 
+    def column_names_list(self):
+        return canonical_sheet.canonical_column_sequence
+    
     def get_row_timestamp(self, row):
         return row.get('timestamp', None)
+        
+    def subtract_cells(self, other):
+        """Return the cell-by-cell subtraction of another sheet from this one."""
+        result = canonical_sheet(self.config)
+        result.rows = {date: qsutils.subtracted_row(row,
+                                            other.rows.get(date, {}),
+                                            self.column_names_list())
+                       for date, row in self.rows.items()}
+        return result
+
+    def abs_threshold(self, threshold):
+        """Return a sheet like this but with any entries smaller than a given threshold omitted."""
+        result = canonical_sheet(self.config)
+        result.rows = {date: qsutils.thresholded_row(row, threshold)
+                       for date, row in self.rows.items()}
+        return result
 
     def row_to_canonical(self,
                          input_sheet, row,
