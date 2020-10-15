@@ -39,7 +39,7 @@ class named_column_sheet(base_sheet.base_sheet):
         result.rows = self.rows
         column_names_seen = set()
         for row in self.rows.values():
-            column_names_seen |= [k for k, v in row.items() if v not in (None, "", 0, 0.0)]
+            column_names_seen |= set([k for k, v in row.items() if v not in (None, "", 0, 0.0)])
         result.column_names = [n for n in self.column_names_list() if n in column_names_seen]
         return result
         

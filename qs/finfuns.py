@@ -14,13 +14,13 @@ import qsutils
 import re
 import tracked_sheet
 
-class ConfigRequired(Exception):
+class ConfigRequired(BaseException):
     pass
 
     def __init__(self, function_name):
         self.function_name = function_name
 
-class CannotConvert(Exception):
+class CannotConvert(BaseException):
     pass
 
     def __init__(self, function_name, value):

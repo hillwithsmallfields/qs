@@ -5,7 +5,7 @@ import csv
 import os.path
 import qsutils
 
-class UnknownCSVFormat(Exception):
+class UnknownCSVFormat(BaseException):
     pass
 
     def __init__(self, infile):

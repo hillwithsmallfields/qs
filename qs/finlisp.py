@@ -108,7 +108,7 @@ def_finlisp_fn('account', finlisp_account)
 #
 # def_finlisp_fn('add-sheet', finlisp_add_sheet)
 
-class NotApplicable(Exception):
+class NotApplicable(BaseException):
     pass
 
     def __init__(self, action, value):
@@ -148,7 +148,7 @@ def finlisp_builtins(_):
 
 def_finlisp_fn('builtins', finlisp_builtins)
 
-class UndefinedName(Exception):
+class UndefinedName(BaseException):
     pass
 
     def __init__(self, function_name, value):
@@ -170,6 +170,7 @@ def finlisp_eval_symbol(context, expr):
     result, found = finlisp_var_lookup(context, expr._val)
     if found:
         return result
+    print("Name", expr._val, "not defined")
     raise(UndefinedName, expr)
 
 def finlisp_eval_quoted(context, expr):
