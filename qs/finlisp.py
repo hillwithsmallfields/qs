@@ -116,12 +116,7 @@ class NotApplicable(BaseException):
         self.value = value
 
 def finlisp_headers(_, x):
-    if isinstance(x, csv_sheet.csv_sheet):
-        return x.column_names
-    elif isinstance(x, canonical_sheet.canonical_sheet):
-        return canonical_sheet.canonical_sheet.canonical_column_sequence
-    else:
-        raise NotApplicable("headers", x)
+    return x.column_names_list()
 
 def_finlisp_fn('headers', finlisp_headers)
 

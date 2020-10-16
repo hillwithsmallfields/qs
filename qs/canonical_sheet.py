@@ -103,6 +103,7 @@ class canonical_sheet(base_sheet.base_sheet):
             # take a copy
             self.rows = {k: {vk: vv for vk, vv in v.items()} for k, v in input_sheet.rows.items()}
         elif isinstance(input_sheet, account.account):
+            self.config = qsutils.combine_configs(input_sheet.config, config)
             for payee in input_sheet:
                 for timestamp, row in payee:
                     adjusted_timestamp = self.unused_timestamp_from(timestamp)
@@ -117,7 +118,8 @@ class canonical_sheet(base_sheet.base_sheet):
                     if 'sheet' in sample:
                         self.config = sample['sheet'].config
                         break
-
+        print("finished initting canonical_sheet, dict binds", sorted(self.__dict__.keys()))
+                    
     def __iter__(self):
         self.row_order = sorted(self.rows.keys())
         self.row_cursor = -1    # because we pre-increment it
@@ -276,16 +278,6 @@ class canonical_sheet(base_sheet.base_sheet):
                     added_row_lists[account_name] = []
                 added_row_lists[account_name].append(added_row)
         return accounts, added_row_lists
-
-    def filter_sheet(self, column, pattern):
-        """Return a sheet with rows filtered from the rows of this sheet.
-        A given column must match a given regexp."""
-        pattern = re.compile(pattern)
-        result = canonical_sheet(self.config)
-        for key, row in self.rows.items():
-            if pattern.match(row.get(column, None)):
-                result.rows[key] = row
-        return result
 
     def write_csv(self, filename):
         """Write a canonical spreadsheet to a file.

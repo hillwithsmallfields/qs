@@ -35,8 +35,10 @@ functions = ['account_to_sheet',
              'categories',
              'chart',
              'compare',
+             'fgrep',
              'filter_sheet',
              'format_sheet',
+             'grep',
              # 'join', # todo
              'list_accounts',
              'occupied_columns',
@@ -111,6 +113,23 @@ def format_sheet(context, input_sheet, format_name):
                                            format_name,
                                            input_sheet)
 
+def fgrep(context, input_sheet, match, column='payee'):
+    result = object.__new__(input_sheet.__class__)
+    result.__init__(input_sheet.config)
+    result.rows = {k: v
+                   for k, v in input_sheet.rows.items()
+                   if v[column] == match}
+    return result
+
+def grep(context, input_sheet, pattern, column='payee'):
+    result = object.__new__(input_sheet.__class__)
+    result.__init__(input_sheet.config)
+    pattern = re.compile(pattern)
+    result.rows = {k: v
+                   for k, v in input_sheet.rows.items()
+                   if pattern.search(v[column])}
+    return result
+
 def list_accounts(context, filename=None):
     varnames = sorted(context['variables'].keys())
     if filename:
@@ -134,14 +153,18 @@ def payees(context, original, pattern):
                                   for name, details in original.payees_matching(pattern).items()})
 
 def select_columns_row(timestamp, row, output_rows, colnames):
-    output_rows[timestamp] = {row[colname] for colname in colnames}
+    output_rows[timestamp] = {colname: row[colname] for colname in colnames}
 
 def select_columns(context, sheet, column_names):
-    output_headers, output_rows = process_rows(column_names,
-                                               None,
-                                               None, # setup
-                                               select_columns_row,
-                                               None)
+    _, output_rows = qsutils.process_rows(column_names, # app-data
+                                          None, # input-format
+                                          sheet.rows, # rows
+                                          None, # setup
+                                          select_columns_row, # row handler
+                                          None) # tidyup
+    return named_column_sheet.named_column_sheet(sheet.config,
+                                                 column_names,
+                                                 rows=output_rows)
 
 def set(context, name, value):
     if name in context['variables']:

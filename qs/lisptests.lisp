@@ -17,8 +17,17 @@
   (chart handelsbanken "Statement data" "/tmp/fintest/handelsbanken.gnuplot" '("balance"))
 
   (print "filtering app data")
-  (write-csv (filter-sheet financisto "account" "Sterling cash")
+  (write-csv (fgrep financisto "Sterling cash" "account")
              "/tmp/fintest/app-sterling.csv")
+  (print "filtering statement data")
+  (let ((paypal-all (grep handelsbanken "PAYPAL PAYMENT")))
+    (write-csv paypal-all
+               "/tmp/fintest/paypal.csv")
+    (print "selecting columns of filtered statement data")
+    (let ((paypal-selected (select-columns paypal-all
+                                           '("amount"))))
+      (write-csv paypal-selected
+                 "/tmp/fintest/paypal-selected.csv")))
 
   (print "writing handelsbanken-as-csv.csv with headers" (headers handelsbanken))
   (write-csv handelsbanken "/tmp/fintest/handelsbanken-as-csv.csv")

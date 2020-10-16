@@ -9,9 +9,10 @@ import qsutils
         
 class named_column_sheet(base_sheet.base_sheet):
 
-    def __init__(self, config, column_names):
+    def __init__(self, config, column_names, rows={}):
         super().__init__(config)
         self.column_names = column_names
+        self.rows = rows
 
     def column_names_list(self):
         return self.column_names
