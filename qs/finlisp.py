@@ -55,9 +55,9 @@ def_finlisp_form('let', finlisp_let)
 
 def finlisp_letstar(context, bindings, *bodyforms):
     new_context = context.copy()
-    new_context['bindings'] = new_context['bindings'].copy()
+    new_context['bindings'] = [{}] + context['bindings'].copy()
     for binding in bindings:
-        new_context['bindings'][binding[0]._val] = finlisp_eval(new_context, binding[1])
+        new_context['bindings'][0][binding[0]._val] = finlisp_eval(new_context, binding[1])
     result = None
     for body_form in bodyforms:
         result = finlisp_eval(new_context, body_form)
