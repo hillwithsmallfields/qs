@@ -27,6 +27,14 @@ class CannotConvert(BaseException):
         self.function_name = function_name
         self.problematic_type = type(value)
 
+class UnsupportedOperation(BaseException):
+    pass
+
+    def __init__(self, function_name, value):
+        self.function_name = function_name
+        self.problematic_type = type(value)
+        self.function_name = function_name
+
 functions = ['account_to_sheet',
              'add_sheet',
              'by_day',
@@ -114,21 +122,35 @@ def format_sheet(context, input_sheet, format_name):
                                            input_sheet)
 
 def fgrep(context, input_sheet, match, column='payee'):
-    result = object.__new__(input_sheet.__class__)
-    result.__init__(input_sheet.config)
-    result.rows = {k: v
-                   for k, v in input_sheet.rows.items()
-                   if v[column] == match}
-    return result
+    # TODO: filter accounts by payee
+    if isinstance(input_sheet, base_sheet.base_sheet):
+        result = object.__new__(input_sheet.__class__)
+        result.__init__(input_sheet.config)
+        result.rows = {k: v
+                       for k, v in input_sheet.rows.items()
+                       if v[column] == match}
+        return result
+    elif isinstance(input_sheet, account.account):
+        pass
+    else:
+        print("Cannot fgrep a", type(input_sheet))
+        raise UnsupportedOperation("fgrep", type(input_sheet))
 
 def grep(context, input_sheet, pattern, column='payee'):
-    result = object.__new__(input_sheet.__class__)
-    result.__init__(input_sheet.config)
-    pattern = re.compile(pattern)
-    result.rows = {k: v
-                   for k, v in input_sheet.rows.items()
-                   if pattern.search(v[column])}
-    return result
+    # TODO: filter accounts by payee
+    if isinstance(input_sheet, base_sheet.base_sheet):
+        result = object.__new__(input_sheet.__class__)
+        result.__init__(input_sheet.config)
+        pattern = re.compile(pattern)
+        result.rows = {k: v
+                       for k, v in input_sheet.rows.items()
+                       if pattern.search(v[column])}
+        return result
+    elif isinstance(input_sheet, account.account):
+        pass
+    else:
+        print("Cannot grep a", type(input_sheet))
+        raise UnsupportedOperation("grep", type(input_sheet))
 
 def list_accounts(context, filename=None):
     varnames = sorted(context['variables'].keys())
