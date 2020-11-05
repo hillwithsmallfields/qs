@@ -37,6 +37,7 @@ class UnsupportedOperation(BaseException):
 
 functions = ['account_to_sheet',
              'add_sheet',
+             'annotate_matches',
              'by_day',
              'by_month',
              'by_year',
@@ -79,6 +80,9 @@ def account_to_sheet(context, base_account):
 
 def add_sheet(context, account, sheet, flags=None, trace_sheet_name=None):
     return account.add_sheet(sheet, flags=flags, trace_sheet_name=trace_sheet_name)
+
+def annotate_matches(context, sheet, reference):
+    return sheet.annotate_matches(reference)
 
 def by_day(context, original):
     return original.combine_same_period_entries(qsutils.granularity_day,

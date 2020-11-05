@@ -279,6 +279,20 @@ class canonical_sheet(base_sheet.base_sheet):
                 added_row_lists[account_name].append(added_row)
         return accounts, added_row_lists
 
+    def find_amount(self, amount, timestamp, payee_hint=None):
+        """Find entries with a given amount, around a given time."""
+        possibilities = [row for row in self.rows.values()
+                        if (row['amount'] == amount
+                             and qsutils.same_month(row['timestamp'], timestamp))]
+        if payee_hint:
+            filtered = [row
+                        for row in possibilities
+                        if row['payee'] == payee_hint]
+            if filtered:
+                possibilities = filtered
+        return ["%s: %s" % (row['payee'], row['timestamp'].date())
+                for row in possibilities]
+
     def write_csv(self, filename):
         """Write a canonical spreadsheet to a file.
         Any columns not in the canonical format are ignored."""

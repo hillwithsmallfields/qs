@@ -2,6 +2,7 @@
 
 import csv
 import json
+import numbers
 import os
 
 import base_sheet
@@ -42,6 +43,18 @@ class named_column_sheet(base_sheet.base_sheet):
         for row in self.rows.values():
             column_names_seen |= set([k for k, v in row.items() if v not in (None, "", 0, 0.0)])
         result.column_names = [n for n in self.column_names_list() if n in column_names_seen]
+        return result
+
+    def annotate_matches(self, reference):
+        result = named_column_sheet(self.config, self.column_names_list())
+        for timestamp, row in self.rows.items():
+            annotated_row = {}
+            for k, v in row.items():
+                if isinstance(v, numbers.Number) and abs(v) > 0:
+                    originals = reference.find_amount(v, timestamp, k)
+                    annotated_row[k] = qsutils.trim_if_float(v) + ((":" + ";".join(originals))
+                                                                   if originals else "")
+            result.rows[timestamp] = annotated_row
         return result
         
     def write_csv(self, filename):

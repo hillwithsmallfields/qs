@@ -43,7 +43,7 @@ def big_enough(row, colname, threshold):
     if colname not in row:
         return False
     try:
-        return float(row[colname]) >= threshold
+        return abs(float(row[colname])) >= threshold
     except (TypeError, ValueError):
         return False    
 
@@ -63,6 +63,18 @@ def granularity_month(overprecise):
 def granularity_year(overprecise):
     """Return the start of the year containing a given timestamp."""
     return datetime.datetime(overprecise.year, 1, 1)
+
+def same_day(a, b):
+    """Return whether two dates are in the same day."""
+    return granularity_day(a) == granularity_day(b)
+
+def same_month(a, b):
+    """Return whether two dates are in the same month."""
+    return granularity_month(a) == granularity_month(b)
+
+def same_year(a, b):
+    """Return whether two dates are in the same year."""
+    return granularity_year(a) == granularity_year(b)
 
 def resolve_filename(filename, directory=None):
     """Try to get an absolute form of a filename, using a suggested directory."""
