@@ -290,8 +290,7 @@ class canonical_sheet(base_sheet.base_sheet):
                         if row['payee'] == payee_hint]
             if filtered:
                 possibilities = filtered
-        return ["%s: %s" % (row['payee'], row['timestamp'].date())
-                for row in possibilities]
+        return possibilities
 
     def write_csv(self, filename):
         """Write a canonical spreadsheet to a file.

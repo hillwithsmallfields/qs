@@ -50,6 +50,7 @@ functions = ['account_to_sheet',
              'grep',
              # 'join', # todo
              'list_accounts',
+             'make_update_sheet',
              'occupied_columns',
              'payees',
              'select_columns',
@@ -166,6 +167,9 @@ def list_accounts(context, filename=None):
             for name in varnames:
                 writer.writerow([name, type(context['variables'][name]).__name__])
     return varnames
+
+def make_update_sheet(context, sheet, reference):
+    return sheet.make_update_sheet(reference)
 
 def occupied_columns(context, sheet):
     """Return a copy of a sheet but with all empty columns removed."""

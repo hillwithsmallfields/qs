@@ -6,8 +6,9 @@ import numbers
 import os
 
 import base_sheet
+import canonical_sheet
 import qsutils
-        
+
 class named_column_sheet(base_sheet.base_sheet):
 
     def __init__(self, config, column_names, rows={}):
@@ -17,7 +18,7 @@ class named_column_sheet(base_sheet.base_sheet):
 
     def column_names_list(self):
         return self.column_names
-        
+
     def subtract_cells(self, other):
         """Return the cell-by-cell subtraction of another sheet from this one."""
         column_names = self.column_names_list()
@@ -46,17 +47,33 @@ class named_column_sheet(base_sheet.base_sheet):
         return result
 
     def annotate_matches(self, reference):
+        """Make a named column sheet with matches to a reference sheet noted."""
         result = named_column_sheet(self.config, self.column_names_list())
         for timestamp, row in self.rows.items():
             annotated_row = {}
             for k, v in row.items():
                 if isinstance(v, numbers.Number) and abs(v) > 0:
-                    originals = reference.find_amount(v, timestamp, k)
+                    possibilities = reference.find_amount(v, timestamp, k)
+                    originals = ["%s: %s" % (r['payee'], r['timestamp'].date())
+                                 for r in possibilities]
                     annotated_row[k] = qsutils.trim_if_float(v) + ((":" + ";".join(originals))
                                                                    if originals else "")
             result.rows[timestamp] = annotated_row
         return result
-        
+
+    def make_update_sheet(self, reference):
+        """Make a canonical sheet from matches to a reference sheet."""
+        result = canonical_sheet.canonical_sheet(self.config)
+        for timestamp, row in self.rows.items():
+            annotated_row = {}
+            for k, v in row.items():
+                if isinstance(v, numbers.Number) and abs(v) > 0:
+                    possibilities = reference.find_amount(v, timestamp, k)
+                    if len(possibilities) == 1:
+                        new_row = possibilities[0].copy()
+                        result.rows[new_row['timestamp']] = new_row
+        return result
+
     def write_csv(self, filename):
         """Write a named-column sheet to a CSV file."""
         full_filename = os.path.expanduser(os.path.expandvars(filename))
