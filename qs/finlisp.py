@@ -102,6 +102,13 @@ def finlisp_getenv(_, varname, default_value=None):
 
 def_finlisp_fn('getenv', finlisp_getenv)
 
+def make_empty_dir(dirname):
+    os.makedirs(dirname, exist_ok=True)
+    for filename in os.listdir(dirname):
+        os.removedirs(filename)
+
+def_finlisp_fn('make-empty-dir', make_empty_dir)
+    
 def finlisp_account(context, name, base_sheet):
     print("Making account from base_sheet", base_sheet)
     result = account.account(name, transactions=base_sheet, config=context['config'])
@@ -214,7 +221,7 @@ def main():
 
     context = {
         'config': qsutils.program_load_config(args),
-        'bindings': [{}]
+        'bindings': [{'output-dir': "."}]
     }
 
     for filename in args.script_files:
