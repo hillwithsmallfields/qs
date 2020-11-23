@@ -14,8 +14,8 @@ class account_sheet(named_column_sheet.named_column_sheet):
         super().__init__(config, [])
         self.rows = {}
         if base_account:
-            self.column_names = sorted(base_account.payees)
-            for payee_name in sorted(base_account.payees):
+            self.column_names = sorted(base_account.payees.keys())
+            for payee_name in self.column_names:
                 transactions_for_payee = base_account.payees[payee_name]
                 for transaction_date in sorted(transactions_for_payee.by_timestamp):
                     if transaction_date not in self.rows:
