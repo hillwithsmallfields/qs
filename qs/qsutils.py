@@ -390,8 +390,8 @@ def program_argparser():
                         action='store_true')
     return parser
 
-def program_load_config(args):
-    return load_config(args.verbose,
+def program_load_config(args, quiet=False):
+    return load_config(args.verbose and not quiet,
                        None,
                        None,
                        DEFAULT_CONF if not args.no_default_config else None,

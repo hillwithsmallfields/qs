@@ -34,7 +34,7 @@ finlisp_evaluation.def_finlisp_fn('getenv', finlisp_getenv)
 def make_empty_dir(_, dirname):
     os.makedirs(dirname, exist_ok=True)
     for filename in os.listdir(dirname):
-        os.removedirs(filename)
+        os.remove(os.path.join(dirname, filename))
 
 finlisp_evaluation.def_finlisp_fn('make-empty-dir', make_empty_dir)
     
@@ -99,7 +99,7 @@ def main():
     args = parser.parse_args()
 
     context = {
-        'config': qsutils.program_load_config(args),
+        'config': qsutils.program_load_config(args, quiet=True),
         'bindings': [{'output-dir': "."}],
         'eval-stack': []
     }
