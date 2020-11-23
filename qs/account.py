@@ -43,6 +43,7 @@ class account:
                  config=None,
                  origin_files=[]):
         self.name = name
+        self.unknowns = 0
         self.time_chars = 19
         self.config = config
         self.origin_files = origin_files
@@ -112,6 +113,9 @@ class account:
         be added.
         """
         payee_name = row['payee']
+        if payee_name is None:
+            payee_name = "Unknown_%d" % self.unknowns
+            self.unknowns += 1
         tracing = self.tracing and self.tracing.search(payee_name)
         row_payee = self.payees.get(payee_name, None)
         if row_payee is None:
@@ -256,7 +260,7 @@ class account:
             by_timestamp = orig_payee.by_timestamp
             if len(by_timestamp) < 1:
                 continue
-            acc_payee = payee.payee(orig_payee.name + " (combined)")
+            acc_payee = payee.payee((orig_payee.name or "Unknown") + " (combined)")
             timestamps = sorted(by_timestamp.keys())
             period_start = period(timestamps[0])
             period_total = qsutils.sum_amount(by_timestamp[timestamps[0]])
