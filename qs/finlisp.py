@@ -2,6 +2,7 @@
 
 import argparse
 import operator
+import os
 
 import sexpdata
 
@@ -90,6 +91,16 @@ def finlisp_read_canonical(context, csvname):
                                            convert_all=True)
 
 def_finlisp_fn('read-canonical', finlisp_read_canonical)
+
+def finlisp_format_string(_, fmt_string, *fmt_args):
+    return fmt_string % fmt_args
+
+def_finlisp_fn('format', finlisp_format_string)
+
+def finlisp_getenv(_, varname, default_value=None):
+    return os.getenv(varname, default_value)
+
+def_finlisp_fn('getenv', finlisp_getenv)
 
 def finlisp_account(context, name, base_sheet):
     print("Making account from base_sheet", base_sheet)

@@ -6,6 +6,11 @@
       (b (* 3 4)))
   (/ b a))
 
+(format "The number %d is called twelve and %d is called seven and my home directory is %s and here is a %s\n"
+        12 7
+        (getenv "HOME")
+        (getenv "HOMEHOMEHOME" "default value for an env var"))
+
 (builtins)
 
 (let ((financisto (read-canonical "~/common/qs/qs-scratch/financisto-full.csv"))
