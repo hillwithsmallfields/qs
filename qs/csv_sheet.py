@@ -33,6 +33,7 @@ class csv_sheet(base_sheet.base_sheet):
         self.default_time = default_time
         self.verbose = verbose
         self.header_row_number = 0
+        self.filename = input_filename
         self.origin_files = []
         if input_filename:
             if not self.read(input_filename):
@@ -119,6 +120,7 @@ class csv_sheet(base_sheet.base_sheet):
             self.format = (self.config['formats'][self.format_name]
                            if self.format_name in self.config['formats']
                            else self.config['formats']['Default'])
+            print("format name for", filename, "is", self.format_name, "which is", self.format)
             self.column_names = self.format['columns']
             self.default_time = (self.format['column_defaults'].get('time', "01:00:00")
                                  if 'column_defaults' in self.format

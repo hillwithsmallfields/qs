@@ -1,8 +1,13 @@
-(let* ((statement-basic (read-canonical "~/common/qs/qs-scratch/handelsbanken-full.csv"))
-       (handelsbanken-as-account (account "HB current statement"
-                                          statement-basic))
-       (financisto-as-account (account "Handelsbanken current account"
-                                       (read-canonical "~/common/qs/qs-scratch/financisto-full.csv")))
+(let* ((period (getenv "PERIOD" "full"))
+       (output-dir (format "/tmp/finrun-%s" period))
+       (statement-basic (read-canonical
+                         (format "~/common/qs/qs-scratch/handelsbanken-%s.csv"
+                                 period)))
+       (handelsbanken-as-account (account "HB current statement" statement-basic))
+       (financisto-basic (read-canonical
+                          (format "~/common/qs/qs-scratch/financisto-%s.csv"
+                                  period)))
+       (financisto-as-account (account "Handelsbanken current account" financisto-basic))
        (financisto-monthly (account-to-sheet (by-month financisto-as-account)))
        (handelsbanken-monthly (account-to-sheet (by-month handelsbanken-as-account)))
        (monthly-difference (subtract-cells financisto-monthly handelsbanken-monthly))
@@ -10,10 +15,14 @@
        (occupied-non-trivial-monthly-differences (occupied-columns non-trivial-monthly-differences))
        (annotated (annotate-matches occupied-non-trivial-monthly-differences statement-basic))
        (update-sheet (make-update-sheet occupied-non-trivial-monthly-differences statement-basic)))
-  (write-csv monthly-difference "/tmp/finrun/monthly-difference.csv")
-  (write-csv non-trivial-monthly-differences "/tmp/finrun/non-trivial-monthly-differences.csv")
-  (write-json non-trivial-monthly-differences "/tmp/finrun/non-trivial-monthly-differences.json")
-  (write-csv occupied-non-trivial-monthly-differences "/tmp/finrun/occupied-non-trivial-monthly-differences.csv")
-  (write-csv annotated "/tmp/finrun/annotated.csv")
-  (write-csv update-sheet "/tmp/finrun/update.csv")
+  (make-empty-dir output-dir)
+  (write-csv statement-basic "statement-converted.csv")
+  (write-csv financisto-basic "financisto-converted.csv")
+  (write-csv monthly-difference "monthly-difference.csv")
+  (write-csv non-trivial-monthly-differences "non-trivial-monthly-differences.csv")
+  (write-json non-trivial-monthly-differences "non-trivial-monthly-differences.json")
+  (write-csv occupied-non-trivial-monthly-differences "occupied-non-trivial-monthly-differences.csv")
+  (write-csv annotated "annotated.csv")
+  (write-csv update-sheet "update.csv")
+  (write-csv (format-sheet update-sheet "financisto") "update-financisto.csv")
   )

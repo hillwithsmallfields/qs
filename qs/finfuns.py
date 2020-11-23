@@ -8,6 +8,7 @@ import categoriser
 import csv
 import datetime
 import diff_sheet
+import finlisp_evaluation
 import formatted_sheet
 import named_column_sheet
 import qsutils
@@ -239,28 +240,40 @@ def track(context, sheet, tracked_column, tracking_column):
 
 def write_all_columns(context, value, filename):
     if value:
-        value.write_all_columns(qsutils.resolve_filename(filename))
+        value.write_all_columns(qsutils.resolve_filename(
+            filename,
+            finlisp_evaluation.finlisp_var_value(context,
+                                                 'output-dir')))
     else:
         print("Nothing to write to", filename)
     return value
 
 def write_csv(context, value, filename):
     if value:
-        value.write_csv(qsutils.resolve_filename(filename))
+        value.write_csv(qsutils.resolve_filename(
+            filename,
+            finlisp_evaluation.finlisp_var_value(context,
+                                                 'output-dir')))
     else:
         print("Nothing to write to", filename)
     return value
 
 def write_json(context, value, filename):
     if value:
-        value.write_json(qsutils.resolve_filename(filename))
+        value.write_json(qsutils.resolve_filename(
+            filename,
+            finlisp_evaluation.finlisp_var_value(context,
+                                                 'output-dir')))
     else:
         print("Nothing to write to", filename)
     return value
 
 def write_debug(context, value, filename):
     if value:
-        value.write_debug(qsutils.resolve_filename(filename))
+        value.write_debug(qsutils.resolve_filename(
+            filename,
+            finlisp_evaluation.finlisp_var_value(context,
+                                                 'output-dir')))
     else:
         print("Nothing to write to", filename)
     return value

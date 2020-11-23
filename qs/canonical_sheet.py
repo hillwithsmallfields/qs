@@ -21,9 +21,13 @@ def templated_name(template, name):
 
 def find_conversion(conversions, payee_name):
     """Find a mapping from the input format to the output, for a named payee."""
+    if not conversions:
+        return None
     for key, value in conversions.items():
         if re.search(key, payee_name):
+            print("Converted", payee_name, "to", value)
             return value
+    print("No conversion for", payee_name)
     return None
 
 class canonical_sheet(base_sheet.base_sheet):
@@ -70,18 +74,24 @@ class canonical_sheet(base_sheet.base_sheet):
         self.row_order = None
         self.row_cursor = 0
         self.origin_files = origin_files
+        self.original_account_names = set()
+        self.original_format_name = None
         if isinstance(input_sheet, str):
             if self.verbose:
                 print("Reading", input_sheet, "for conversion")
             input_sheet = csv_sheet.csv_sheet(config, input_filename=input_sheet, verbose=self.verbose)
+            self.original_format_name = input_sheet.format_name
         if isinstance(input_sheet, csv_sheet.csv_sheet):
             self.config = qsutils.combine_configs(input_sheet.config, config)
             self.origin_files = input_sheet.origin_files
             if self.verbose:
                 print("converting", input_sheet)
-            # print("input_sheet.format is", input_sheet.format)
-            # print("input_sheet.format.get('conversions', {}) is", input_sheet.format.get('conversions', {}))
+            if 'accounts' not in input_sheet.format:
+                input_sheet.format['accounts'] = set()
+            accounts = input_sheet.format['accounts']
             for in_row in input_sheet:
+                original_account = in_row.get('account', None)
+                accounts.add(original_account)
                 can_row, is_new = self.row_to_canonical(
                     input_sheet, in_row,
                     reference_sheet=self,
@@ -251,6 +261,9 @@ class canonical_sheet(base_sheet.base_sheet):
 
     def row_from_canonical(self, output_format, canonical_row):
         """Convert a row from our standard format to a specified one."""
+        # print("row_from_canonical: output_format is", output_format)
+        if 'accounts' in output_format:
+            print("output format has account names", output_format['accounts'])
         columns = output_format['columns']
         if 'credits' in columns:
             amount = canonical_row['amount']
