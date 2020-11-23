@@ -58,7 +58,7 @@ class base_sheet:
             writer.writeheader()
             for timestamp in sorted(self.rows.keys()):
                 row = self.rows[timestamp]
-                writer.writerow({sk: qsutils.trim_if_float(row.get(sk, None)) for sk in colseq})
+                writer.writerow({sk: qsutils.trim_if_float(row.get(sk, "")) for sk in colseq})
 
     def write_csv(self, filename):
         """Write a spreadsheet.

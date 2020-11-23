@@ -152,7 +152,7 @@ class csv_sheet(base_sheet.base_sheet):
                 row = self.rows[timestamp]
                 # select only the columns required for this sheet, and
                 # also round the unfortunately-represented floats
-                writer.writerow({sk: qsutils.trim_if_float(row.get(sk, None)) for sk in colseq})
+                writer.writerow({sk: qsutils.trim_if_float(row.get(sk, "")) for sk in colseq})
 
     def write_debug(self, filename):
         """Write a account to a file, for debugging."""
