@@ -44,6 +44,7 @@ class csv_sheet(base_sheet.base_sheet):
                            if format_name in config['formats']
                            else None)
             self.column_names = self.format['columns'] if self.format else {}
+        self.currency_conversion = self.format.get('currency_conversion', None)
         self.row_order = None
         self.row_cursor = 0
 
@@ -120,7 +121,6 @@ class csv_sheet(base_sheet.base_sheet):
             self.format = (self.config['formats'][self.format_name]
                            if self.format_name in self.config['formats']
                            else self.config['formats']['Default'])
-            print("format name for", filename, "is", self.format_name, "which is", self.format)
             self.column_names = self.format['columns']
             self.default_time = (self.format['column_defaults'].get('time', "01:00:00")
                                  if 'column_defaults' in self.format

@@ -24,8 +24,7 @@ def find_conversion(conversions, payee_name):
     if not conversions:
         return None
     for key, value in conversions.items():
-        if re.search(key, payee_name):
-            print("Converted", payee_name, "to", value)
+        if key in payee_name:
             return value
     print("No conversion for", payee_name)
     return None
@@ -76,6 +75,7 @@ class canonical_sheet(base_sheet.base_sheet):
         self.origin_files = origin_files
         self.original_account_names = set()
         self.original_format_name = None
+        self.currency_conversion = None
         if isinstance(input_sheet, str):
             if self.verbose:
                 print("Reading", input_sheet, "for conversion")
@@ -84,6 +84,8 @@ class canonical_sheet(base_sheet.base_sheet):
         if isinstance(input_sheet, csv_sheet.csv_sheet):
             self.config = qsutils.combine_configs(input_sheet.config, config)
             self.origin_files = input_sheet.origin_files
+            if input_sheet.currency_conversion:
+                self.currency_conversion = re.compile(input_sheet.currency_conversion)
             if self.verbose:
                 print("converting", input_sheet)
             if 'accounts' not in input_sheet.format:
@@ -190,11 +192,23 @@ class canonical_sheet(base_sheet.base_sheet):
             if self.verbose:
                 print("empty date from row", row)
             return None, False
+        money_in = input_sheet.get_numeric_cell(row, 'credits', 0)
+        money_out = input_sheet.get_numeric_cell(row, 'debits', 0)
+        amount = money_in - money_out
+        original_amount = money_in - money_out
+        original_currency = row.get('original_currency',
+                                    input_format.get('original_currency', "?"))
         payee_name = input_sheet.get_cell(row, 'payee', None)
         if payee_name is None:
             if self.verbose:
                 print("payee field missing from row", row)
             return None, False
+        if self.currency_conversion:
+            curr_conv = self.currency_conversion.match(payee_name)
+            if curr_conv:
+                payee_name = curr_conv.group(1).strip()
+                original_currency = curr_conv.group(2)
+                original_amount = float(curr_conv.group(3))
         conversion = find_conversion(conversions or input_format.get('conversions', {}),
                                      payee_name)
         if conversion is None and not convert_all:
@@ -205,8 +219,6 @@ class canonical_sheet(base_sheet.base_sheet):
             row, 'time', ("01:02:03"
                           if out_column_defaults is None
                           else out_column_defaults.get('time', "01:02:03")))
-        money_in = input_sheet.get_numeric_cell(row, 'credits', 0)
-        money_out = input_sheet.get_numeric_cell(row, 'debits', 0)
         out_row = {
             'date': row_date,
             'time': row_time,
@@ -214,15 +226,14 @@ class canonical_sheet(base_sheet.base_sheet):
             # the new row a chance to be identical to an earlier
             # attempt, if we are fed exactly the same thing twice.
             'timestamp': reference_sheet.timestamp_from(row_date, row_time),
-            'amount': money_in - money_out,
+            'amount': amount,
             'account': templated_name(account_name_template,
                                       (input_sheet.get_cell(row, 'account', None)
                                        or input_format.get('name', "Unknown"))),
             'currency': row.get('currency',
                                 input_format.get('currency', "?")),
-            'original_amount': money_in - money_out,
-            'original_currency': row.get('original_currency',
-                                         input_format.get('original_currency', "?")),
+            'original_amount': original_amount,
+            'original_currency': original_currency,
             'sheet': self}
         if message:
             out_row['message'] = message
