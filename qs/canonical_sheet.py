@@ -306,7 +306,8 @@ class canonical_sheet(base_sheet.base_sheet):
     def find_amount(self, amount, timestamp, payee_hint=None):
         """Find entries with a given amount, around a given time."""
         possibilities = [row for row in self.rows.values()
-                        if (row['amount'] == amount
+                        if (abs(row['amount']) == abs(amount)
+                            # TODO: make this a nearby date? but I think we have already gone to month granularity on one side
                              and qsutils.same_month(row['timestamp'], timestamp))]
         if payee_hint:
             filtered = [row

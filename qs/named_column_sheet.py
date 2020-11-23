@@ -65,12 +65,10 @@ class named_column_sheet(base_sheet.base_sheet):
         """Make a canonical sheet from matches to a reference sheet."""
         result = canonical_sheet.canonical_sheet(self.config)
         for timestamp, row in self.rows.items():
-            annotated_row = {}
             for k, v in row.items():
                 if isinstance(v, numbers.Number) and abs(v) > 0:
-                    possibilities = reference.find_amount(v, timestamp, k)
-                    if len(possibilities) == 1:
-                        new_row = possibilities[0].copy()
+                    for found_row in reference.find_amount(v, timestamp, k):
+                        new_row = found_row.copy()
                         result.rows[new_row['timestamp']] = new_row
         return result
 
