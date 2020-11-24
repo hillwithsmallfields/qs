@@ -270,7 +270,7 @@ class canonical_sheet(base_sheet.base_sheet):
         out_row['timestamp'] = reference_sheet.unused_timestamp_from(row_date, row_time)
         return out_row, True
 
-    def row_from_canonical(self, output_format, canonical_row):
+    def row_from_canonical(self, output_format, canonical_row, reverse_equivalents=None):
         """Convert a row from our standard format to a specified one."""
         # print("row_from_canonical: output_format is", output_format)
         if 'accounts' in output_format:
@@ -285,6 +285,9 @@ class canonical_sheet(base_sheet.base_sheet):
         result = {output_column_name: canonical_row.get(canonical_column_name, None)
                   for canonical_column_name, output_column_name
                   in columns.items()}
+        if reverse_equivalents:
+            if result['account'] in reverse_equivalents:
+               result['account'] = reverse_equivalents[result['account']] 
         return result
 
     def distribute_to_accounts(self, accounts={}, added_row_lists={}):

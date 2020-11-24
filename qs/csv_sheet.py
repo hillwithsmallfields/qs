@@ -35,6 +35,7 @@ class csv_sheet(base_sheet.base_sheet):
         self.header_row_number = 0
         self.filename = input_filename
         self.origin_files = []
+        print("csv_sheet.__init__ format_name", format_name, "input", input_filename)
         if input_filename:
             if not self.read(input_filename):
                 print("Could not construct csv_sheet from", input_filename)
@@ -43,6 +44,7 @@ class csv_sheet(base_sheet.base_sheet):
             self.format = (config['formats'][format_name]
                            if format_name in config['formats']
                            else None)
+            print("csv_sheet.__init__ got format", self.format)
             self.column_names = self.format['columns'] if self.format else {}
         self.currency_conversion = self.format.get('currency_conversion', None)
         self.row_order = None

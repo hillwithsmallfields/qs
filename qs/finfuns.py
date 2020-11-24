@@ -123,6 +123,7 @@ def format_sheet(context, input_sheet, format_name):
     if input_sheet.config is None:
         print("missing format in format_sheet")
         raise ConfigRequired("format_sheet")
+    print("making formatted_sheet for format", format_name)
     return formatted_sheet.formatted_sheet(input_sheet.config,
                                            format_name,
                                            input_sheet)

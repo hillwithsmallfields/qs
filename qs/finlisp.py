@@ -93,6 +93,14 @@ finlisp_evaluation.def_finlisp_fn('builtins', finlisp_builtins)
 for fname in finfuns.functions:
     finlisp_evaluation.def_finlisp_fn(fname.replace('_', '-'), eval("finfuns." + fname))
 
+def lisp_debug(context, *args):
+    config = context['config'] if len(args) < 2 else args[0].config 
+    label = args[-1]
+    if config and 'formats' in config:
+        print("at", label, "financisto column sequence is", len(config['formats']['financisto']['column-sequence']), "columns", config['formats']['financisto']['column-sequence'])
+
+finlisp_evaluation.def_finlisp_fn('debug', lisp_debug)
+        
 def main():
     parser = qsutils.program_argparser()
     parser.add_argument("script_files", nargs='*')

@@ -108,7 +108,10 @@ def rec_update(basedict, u):
         if isinstance(v, dict):
             basedict[k] = rec_update(basedict.get(k, {}), v)
         elif isinstance(v, list):
-            basedict[k] = basedict.get(k, []) + [(ve if ve != 'None' else None) for ve in v]
+            base = basedict.get(k, [])
+            basedict[k] = base + [(ve if ve != 'None' else None)
+                                  for ve in v
+                                  if ve not in base]
         elif v == 'None':
             basedict[k] = None
         else:
@@ -176,13 +179,18 @@ def load_config(verbose, base_config, suggested_dir, *config_files):
     if 'equivalents' in base_config:
         equivalents = base_config['equivalents']
         equiv_table = {}
+        equiv_reverse_table = {}
         print("equivalents are", equivalents)
         for equiv_primary, equiv_secondaries in equivalents.items():
             combined = [equiv_primary] + equiv_secondaries
             for e in combined:
                 equiv_table[e] = combined
+            for sec in equiv_secondaries:
+                equiv_reverse_table[sec] = equiv_primary
         print("equiv_table", equiv_table)
         base_config['equivalents'] = equiv_table
+        base_config['reverse-equivalents'] = equiv_reverse_table
+        print("reverse equivalents are", equiv_reverse_table)
     equivalent_names = base_config.get('equivalents', {})
     print("equivalent_names are originally", equivalent_names)
     if verbose:

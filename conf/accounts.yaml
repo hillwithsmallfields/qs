@@ -10,7 +10,7 @@ formats:
       balance: Balance
     currency:  GBP
     name:      HB current statement
-    currency_conversion: "^([A-Za-z ]+) +0844 ([A-Z][A-Z][A-Z]) ([0-9.]+).+"
+    currency_conversion: "^([A-Za-z ]+) +[0-9][0-9][0-9][0-9] ([A-Z][A-Z][A-Z]) ([0-9.]+).+"
   financisto:
     column-sequence: ["date", "time", "account", "amount", "currency", "original amount", "original currency", "category", "parent", "payee", "location", "project", "note"]
     columns:
