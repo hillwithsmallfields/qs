@@ -11,13 +11,15 @@ import pprint
 import re
 import yaml
 
-def trim_if_float(val):
+def tidy_for_output(val):
     """Make a value more neatly printable."""
     return (("%.2F" % val)
             if type(val) is float
             else (None
                   if getattr(val, '_hide_in_csv', False)
-                  else str(val)))
+                  else (""
+                        if (val is None or val == "None")
+                        else str(val))))
 
 def subtract_cell(row_a, row_b, name):
     if name not in row_a and name not in row_b:

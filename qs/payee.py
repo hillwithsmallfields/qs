@@ -49,7 +49,7 @@ class payee:
             ('@'
              + str(ts)[:time_chars]
              + ': '
-             + separator.join([qsutils.trim_if_float(a['amount'])
+             + separator.join([qsutils.tidy_for_output(a['amount'])
                                for a in self.by_timestamp[ts]]))
             for ts in sorted(self.by_timestamp.keys())])
 

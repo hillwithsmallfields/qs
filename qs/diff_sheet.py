@@ -56,7 +56,7 @@ class diff_sheet(csv_sheet.csv_sheet):
             for timestamp in sorted(self.rows.keys()):
                 row = self.rows[timestamp]
                 # round the unfortunately-represented floats
-                writer.writerow({sk: qsutils.trim_if_float(row.get(sk, ""))
+                writer.writerow({sk: qsutils.tidy_for_output(row.get(sk, ""))
                                  for sk in colseq})
 
 # tests

@@ -22,7 +22,7 @@ class category_tree:
     def __repr__(self):
         # return ("<category_tree "
         #         + ", ".join([key + ": "
-        #                      + str(qsutils.trim_if_float(functools.reduce(operator.add,
+        #                      + str(qsutils.tidy_for_output(functools.reduce(operator.add,
         #                                                                   [transaction['amount']
         #                                              for transaction in self.categories[key]])))
         #                      for key in sorted(self.categories.keys())])
@@ -96,7 +96,7 @@ class category_tree:
                 row = [cat_name,
                        as_list[-1],
                        ':'.join(as_list[:-1]),
-                       qsutils.trim_if_float(
+                       qsutils.tidy_for_output(
                            qsutils.sum_amount(cat.values())),
                        len(cat)]
                 writer.writerow(row)

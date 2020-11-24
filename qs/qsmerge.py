@@ -206,7 +206,7 @@ def main():
         writer = csv.DictWriter(outstream, fieldnames, quoting=csv.QUOTE_NONE)
         writer.writeheader()
         for date in sorted_dates:
-            writer.writerow({k: qsutils.trim_if_float(v) for k,v in by_date[date].items()})
+            writer.writerow({k: qsutils.tidy_for_output(v) for k,v in by_date[date].items()})
 
 if __name__ == "__main__":
     main()

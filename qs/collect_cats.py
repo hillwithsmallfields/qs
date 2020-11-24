@@ -12,7 +12,8 @@ def collect_cats_row(timestamp, row, output_rows, scratch):
         scratch['parentage'][row['category']] = row['parent']
 
 def collect_cats_end(headers, output_rows, scratch):
-    for cat, parent in scratch['parentage'].items():
+    for cat in sorted(scratch['parentage'].keys()):
+        parent = scratch['parentage'][cat]
         if parent != "":
             output_rows[cat] = {'category': cat, 'parent': parent}
     return headers, output_rows

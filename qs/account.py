@@ -333,7 +333,7 @@ class account:
             writer.writerow(colseq)
             for payee_name in sorted(self.payees.keys()):
                 payee = self.payees[payee_name]
-                row = [payee_name, qsutils.trim_if_float(payee.balance), payee.transactions_string(separator='; ', time_chars=self.time_chars)]
+                row = [payee_name, qsutils.tidy_for_output(payee.balance), payee.transactions_string(separator='; ', time_chars=self.time_chars)]
                 # round the unfortunately-represented floats
                 writer.writerow(row)
 

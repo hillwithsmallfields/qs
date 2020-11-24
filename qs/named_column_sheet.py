@@ -56,7 +56,7 @@ class named_column_sheet(base_sheet.base_sheet):
                     possibilities = reference.find_amount(v, timestamp, k)
                     originals = ["%s: %s" % (r['payee'], r['timestamp'].date())
                                  for r in possibilities]
-                    annotated_row[k] = qsutils.trim_if_float(v) + ((":" + ";".join(originals))
+                    annotated_row[k] = qsutils.tidy_for_output(v) + ((":" + ";".join(originals))
                                                                    if originals else "")
             result.rows[timestamp] = annotated_row
         return result
@@ -85,7 +85,7 @@ class named_column_sheet(base_sheet.base_sheet):
 
     def sparse_row(self, row):
         """Return a dictionary containing the occupied entries in a row."""
-        return {str(k): qsutils.trim_if_float(v)
+        return {str(k): qsutils.tidy_for_output(v)
                 for k, v in row.items()
                 if k in self.column_names_list() and v not in (None, "", 0, 0.0)}
 
