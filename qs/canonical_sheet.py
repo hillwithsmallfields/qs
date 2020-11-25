@@ -197,7 +197,9 @@ class canonical_sheet(base_sheet.base_sheet):
         amount = money_in - money_out
         original_amount = money_in - money_out
         original_currency = row.get('original_currency',
-                                    input_format.get('original_currency', "?"))
+                                    out_column_defaults.get('original_currency', "GBP")
+                                    if out_column_defaults
+                                    else "GBP")
         payee_name = input_sheet.get_cell(row, 'payee', None)
         if payee_name is None:
             if self.verbose:
@@ -275,19 +277,36 @@ class canonical_sheet(base_sheet.base_sheet):
         # print("row_from_canonical: output_format is", output_format)
         if 'accounts' in output_format:
             print("output format has account names", output_format['accounts'])
+        column_defaults = output_format.get('column-defaults', {})
         columns = output_format['columns']
+        amount = canonical_row.get('amount', 0)
         if 'credits' in columns:
-            amount = canonical_row['amount']
             if 'debits' in columns:
                 canonical_row['credits' if amount > 0 else 'debits'] = amount
             else:
                 canonical_row['credits'] = amount
-        result = {output_column_name: canonical_row.get(canonical_column_name, None)
+        result = {output_column_name: canonical_row.get(canonical_column_name,
+                                                        column_defaults.get(canonical_column_name, ""))
                   for canonical_column_name, output_column_name
                   in columns.items()}
+
         if reverse_equivalents:
             if result['account'] in reverse_equivalents:
-               result['account'] = reverse_equivalents[result['account']] 
+               result['account'] = reverse_equivalents[result['account']]
+
+        if ((result['category'] == 'Transfer'
+             or result['parent'] == 'Transfer')
+            and 'transfer-handling' in output_format):
+            for column, text in output_format['transfer-handling']['credit' if amount > 0 else 'debit'].items():
+                result[column] = text
+
+        if 'original currency' in result:
+            if result['original currency'] == result['currency']:
+                result['original currency'] = ""
+        if 'original amount' in result:
+            if result['original amount'] == result['amount']:
+                result['original amount'] = ""
+
         return result
 
     def distribute_to_accounts(self, accounts={}, added_row_lists={}):
@@ -330,10 +349,11 @@ class canonical_sheet(base_sheet.base_sheet):
             writer.writeheader()
             for timestamp in sorted(self.rows.keys()):
                 row = self.rows[timestamp]
+                output_row = {sk: qsutils.tidy_for_output(row.get(sk, ""))
+                              for sk in canonical_sheet.canonical_column_sequence}
                 # select only the columns required for this sheet, and
                 # also round the unfortunately-represented floats
-                writer.writerow({sk: qsutils.tidy_for_output(row.get(sk, ""))
-                                 for sk in canonical_sheet.canonical_column_sequence})
+                writer.writerow(output_row)
 
     def write_debug(self, filename):
         """Write a account to a file, for debugging."""
