@@ -13,6 +13,12 @@ import finfuns
 import finlisp_evaluation
 import qsutils
 
+def finlisp_read(context, csvname):
+    return csv_sheet.csv_sheet(context['config'],
+                               input_filename=csvname)
+
+finlisp_evaluation.def_finlisp_fn('read', finlisp_read)
+
 def finlisp_read_canonical(context, csvname):
     return canonical_sheet.canonical_sheet(context['config'],
                                            input_sheet=csvname,
@@ -55,7 +61,7 @@ finlisp_evaluation.def_finlisp_fn('account', finlisp_account)
 #
 # finlisp_evaluation.def_finlisp_fn('add-sheet', finlisp_add_sheet)
 
-class NotApplicable(BaseException):
+class NotApplicable(Exception):
     pass
 
     def __init__(self, action, value):
@@ -86,7 +92,7 @@ def finlisp_print(_, *values):
 finlisp_evaluation.def_finlisp_fn('print', finlisp_print)
 
 def finlisp_builtins(_):
-    return sorted(finlisp_functions.keys())
+    return sorted(finlisp_evaluation.finlisp_functions.keys())
 
 finlisp_evaluation.def_finlisp_fn('builtins', finlisp_builtins)
 
