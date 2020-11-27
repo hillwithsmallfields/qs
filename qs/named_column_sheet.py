@@ -81,7 +81,7 @@ class named_column_sheet(base_sheet.base_sheet):
             writer.writerow(['timestamp'] + self.column_names_list())
             for date in sorted(self.rows):
                 row_data = self.rows[date]
-                writer.writerow([date] + [row_data.get(n, '') for n in self.column_names_list()])
+                writer.writerow([date] + [qsutils.tidy_for_output(row_data.get(n, '')) for n in self.column_names_list()])
 
     def sparse_row(self, row):
         """Return a dictionary containing the occupied entries in a row."""
