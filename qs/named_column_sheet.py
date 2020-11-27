@@ -78,7 +78,7 @@ class named_column_sheet(base_sheet.base_sheet):
         qsutils.ensure_directory_for_file(full_filename)
         with open(full_filename, 'w') as outfile:
             writer = csv.writer(outfile)
-            writer.writerow(['Date'] + self.column_names_list())
+            writer.writerow(['timestamp'] + self.column_names_list())
             for date in sorted(self.rows):
                 row_data = self.rows[date]
                 writer.writerow([date] + [row_data.get(n, '') for n in self.column_names_list()])
