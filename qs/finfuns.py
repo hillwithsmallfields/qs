@@ -5,9 +5,11 @@ import account_sheet
 import base_sheet
 import canonical_sheet
 import categoriser
+import copy
 import csv
 import datetime
 import diff_sheet
+import filter_dates
 import finlisp_evaluation
 import formatted_sheet
 import named_column_sheet
@@ -46,15 +48,21 @@ functions = ['account_to_sheet',
              'categorised',
              'chart',
              'compare',
+             'copy_sheet',      # temporary for debugging
              'fgrep',
              'filter_sheet',
+             'first_of_month',
+             'first_of_year',
              'format_sheet',
              'grep',
              # 'join', # todo
+             'last_of_month',
+             'last_of_year',
              'list_accounts',
              'make_update_sheet',
              'occupied_columns',
              'payees',
+             'rename_column',
              'select_columns',
              'set',
              'sheet',
@@ -77,6 +85,9 @@ def convert_to_Python(command):
                                     r"\1context['variables']['\2']",command))
 
 # The functions
+
+def copy_sheet(context, sheet):
+    return copy.copy(sheet)     # todo: use this as a base for filtering sheets to first / last transactions of each time period
 
 def account_to_sheet(context, base_account):
     return account_sheet.account_sheet(base_account.config, base_account)
@@ -147,6 +158,9 @@ def fgrep(context, input_sheet, match, column='payee'):
         print("Cannot fgrep a", type(input_sheet))
         raise UnsupportedOperation("fgrep", type(input_sheet))
 
+def safe_search(pattern, value):
+    return pattern.search(value) if value else None
+    
 def grep(context, input_sheet, pattern, column='payee'):
     # TODO: filter accounts by payee
     if isinstance(input_sheet, base_sheet.base_sheet):
@@ -155,7 +169,7 @@ def grep(context, input_sheet, pattern, column='payee'):
         pattern = re.compile(pattern)
         result.rows = {k: v
                        for k, v in input_sheet.rows.items()
-                       if pattern.search(v[column])}
+                       if safe_search(pattern, v[column])}
         return result
     elif isinstance(input_sheet, account.account):
         pass
@@ -163,6 +177,18 @@ def grep(context, input_sheet, pattern, column='payee'):
         print("Cannot grep a", type(input_sheet))
         raise UnsupportedOperation("grep", type(input_sheet))
 
+def first_of_month(context, sheet):
+    return filter_dates.filtered_by_date(sheet, 7, True)
+
+def last_of_month(context, sheet):
+    return filter_dates.filtered_by_date(sheet, 7, False)
+
+def first_of_year(context, sheet):
+    return filter_dates.filtered_by_date(sheet, 4, True)
+
+def last_of_year(context, sheet):
+    return filter_dates.filtered_by_date(sheet, 4, False)
+    
 def list_accounts(context, filename=None):
     varnames = sorted(context['variables'].keys())
     if filename:
@@ -181,12 +207,27 @@ def occupied_columns(context, sheet):
     """Return a copy of a sheet but with all empty columns removed."""
     return sheet.occupied_columns()
 
-def payees(context, original, pattern):
+def payees(context, original, pattern=None):
     return base_sheet.base_sheet(None,
                                  {name: {'payee': name,
                                          'total': details.transactions_total(),
                                          'transactions': details.transactions_string(separator='; ', time_chars=10)}
                                   for name, details in original.payees_matching(pattern).items()})
+
+def rename_columns_row(timestamp, row, output_rows, names):
+    output_rows[timestamp] = {names[1] if colname == names[0] else colname: cellvalue for colname, cellvalue in row.items()}
+
+def rename_column(context, sheet, oldname, newname):
+    _, output_rows = qsutils.process_rows([oldname, newname], # app-data
+                                          None, # input-format
+                                          sheet.rows, # rows
+                                          None, # setup
+                                          rename_columns_row, # row handler
+                                          None) # tidyup
+    return named_column_sheet.named_column_sheet(sheet.config,
+                                                 [newname if name == oldname else name
+                                                  for name in sheet.column_names],
+                                                 rows=output_rows)
 
 def select_columns_row(timestamp, row, output_rows, colnames):
     output_rows[timestamp] = {colname: row[colname] for colname in colnames}
