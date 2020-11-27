@@ -6,10 +6,11 @@ import qsutils
 def tracking_setup(app_data, fmt):
     return [], {'accounts': {},
                 'input_column': app_data.get('input_column', 'amount') or 'amount',
+                'account_naming_column': app_data.get('account_naming_column', 'account') or 'account',
                 'output_column': app_data.get('output_column', 'tracker') or 'tracker'}
 
 def tracking_do_row(row_ts, row_data, output_rows_dict, scratch):
-    account = row_data.get('account', None)
+    account = row_data.get(scratch['account_naming_column'], None)
     tracked = scratch['accounts'].get(account, 0) + row_data.get(scratch['input_column'], 0)
     scratch['accounts'][account] = tracked
     row_data[scratch['output_column']] = tracked
@@ -52,7 +53,7 @@ def main():
     parser = qsutils.program_argparser()
     parser.add_argument("input_files", nargs='*')
     parser.add_argument("--tracking-column",
-                        default="tracker")
+                        default="balance")
     args = parser.parse_args()
     config = qsutils.program_load_config(args)
     for filename in args.input_files:
