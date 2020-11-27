@@ -98,11 +98,12 @@ class account:
 
     def payees_matching(self, pattern):
         """Return a list of payees with names matching a regexp."""
-        compiled_pattern = re.compile(pattern)
+        compiled_pattern = re.compile(pattern) if pattern else None
         return {name:self.payees[name]
                 for name in [payee_name
                              for payee_name in self.payees.keys()
-                             if compiled_pattern.search(payee_name)]}
+                             if ((not compiled_pattern)
+                                 or compiled_pattern.search(payee_name))]}
 
     def add_row_if_new(self, row):
         """Add a row to the account if it belongs to this account
