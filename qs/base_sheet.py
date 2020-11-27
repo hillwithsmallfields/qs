@@ -15,6 +15,9 @@ class base_sheet:
         self.config = config
         self._hide_in_csv = True # don't show these if they get incorporated into row data
 
+    def __len__(self):
+        return len(self.rows)
+        
     def timestamp_from(self, base_date, base_time=None):
         """Return a timestamp at the given date and time."""
         if isinstance(base_date, datetime.datetime):
