@@ -40,6 +40,7 @@ class UnsupportedOperation(BaseException):
 
 functions = ['account_to_sheet',
              'add_sheet',
+             'annotate_by_timestamp',
              'annotate_matches',
              'by_day',
              'by_month',
@@ -56,6 +57,9 @@ functions = ['account_to_sheet',
              'format_sheet',
              'grep',
              # 'join', # todo
+             'join_by_days',
+             'join_by_months',
+             'join_by_years',
              'last_of_month',
              'last_of_year',
              'list_accounts',
@@ -95,6 +99,9 @@ def account_to_sheet(context, base_account):
 def add_sheet(context, account, sheet, flags=None, trace_sheet_name=None):
     return account.add_sheet(sheet, flags=flags, trace_sheet_name=trace_sheet_name)
 
+def annotate_by_timestamp(context, sheet, reference, annotation_columns):
+    return filter_dates.annotate_by_timestamp(sheet, reference, annotation_columns)
+
 def annotate_matches(context, sheet, reference):
     return sheet.annotate_matches(reference)
 
@@ -126,8 +133,9 @@ def compare(context,
             sheet_a, column_a, track_a,
             sheet_b, column_b, track_b):
     return diff_sheet.diff_sheet(result_column,
-                                 sheet_a, column_a, track_a,
-                                 sheet_b, column_b, track_b)
+                                 sheet_a, column_a,
+                                 sheet_b, column_b,
+                                 track_a=track_a, track_b=track_b)
 
 def filter_sheet(context, input_sheet, column, pattern):
     return input_sheet.filter_sheet(column, pattern)
@@ -144,16 +152,14 @@ def format_sheet(context, input_sheet, format_name):
                                            input_sheet)
 
 def fgrep(context, input_sheet, match, column='payee'):
-    # TODO: filter accounts by payee
     if isinstance(input_sheet, base_sheet.base_sheet):
-        result = object.__new__(input_sheet.__class__)
-        result.__init__(input_sheet.config)
+        result = copy.copy(input_sheet)
         result.rows = {k: v
                        for k, v in input_sheet.rows.items()
                        if v[column] == match}
         return result
     elif isinstance(input_sheet, account.account):
-        pass
+        pass                    # todo: not sure what to do with this
     else:
         print("Cannot fgrep a", type(input_sheet))
         raise UnsupportedOperation("fgrep", type(input_sheet))
@@ -180,11 +186,20 @@ def grep(context, input_sheet, pattern, column='payee'):
 def first_of_month(context, sheet):
     return filter_dates.filtered_by_date(sheet, 7, True)
 
-def last_of_month(context, sheet):
-    return filter_dates.filtered_by_date(sheet, 7, False)
-
 def first_of_year(context, sheet):
     return filter_dates.filtered_by_date(sheet, 4, True)
+
+def join_by_days(context, sheet_a, sheet_b):
+    return filter_dates.join_by_dates(sheet_a, sheet_b, 10)
+
+def join_by_months(context, sheet_a, sheet_b):
+    return filter_dates.join_by_dates(sheet_a, sheet_b, 7)
+
+def join_by_years(context, sheet_a, sheet_b):
+    return filter_dates.join_by_dates(sheet_a, sheet_b, 4)
+
+def last_of_month(context, sheet):
+    return filter_dates.filtered_by_date(sheet, 7, False)
 
 def last_of_year(context, sheet):
     return filter_dates.filtered_by_date(sheet, 4, False)

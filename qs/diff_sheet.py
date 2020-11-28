@@ -1,32 +1,53 @@
 #!/usr/bin/python3
 
-import csv_sheet
+import csv
+import os
+
+# import csv_sheet
+import base_sheet
 import canonical_sheet
 import qsutils
 
-class diff_sheet(csv_sheet.csv_sheet):
+class diff_sheet(base_sheet.base_sheet):
 
     """A sheet representing the timeline of differences between columns in
     two input sheets (or they could be the same sheet)."""
 
     def __init__(self,
                  result_column,
-                 sheet_a, column_a, track_a,
-                 sheet_b, column_b, track_b):
-        super().__init__(sheet_a.config,
-                         verbose=sheet_a.verbose)
+                 sheet_a, column_a,
+                 sheet_b, column_b,
+                 initial_a=0, track_a=None,
+                 initial_b=0, track_b=None):
+        super().__init__(sheet_a.config)
         self.rows = {}
-        balance_a = 0
+        self.column_a = column_a
+        self.track_a = track_a
+        amount_a = 0
+        balance_a = initial_a
         rows_a = sheet_a.rows
-        balance_b = 0
+        self.column_b = column_b
+        self.track_b = track_b
+        amount_b = 0
+        balance_b = initial_b
         rows_b = sheet_b.rows
-        for ts in sorted(rows_a.keys() + rows_b.keys()):
-            amount_a = rows_a[ts].get(column_a, 0) if ts in rows_a else 0
-            if track_a:
-                balance_a += amount_a
-            amount_b = rows_b[ts].get(column_b, 0) if ts in rows_b else 0
-            if track_b:
-                balance_b += amount_b
+        self.result_column = result_column
+        self.colseq = ['timestamp', column_a]
+        if track_a:
+            self.colseq.append(track_a)
+        self.colseq.append(column_b)
+        if track_b:
+            self.colseq.append(track_b)
+        self.colseq.append(result_column)
+        for ts in sorted(set([k for k in rows_a.keys()] + [k for k in rows_b.keys()])):
+            if ts in rows_a:
+                amount_a = float(rows_a[ts].get(column_a, 0))
+                if track_a:
+                    balance_a += amount_a
+            if ts in rows_b:
+                amount_b = float(rows_b[ts].get(column_b, 0))
+                if track_b:
+                    balance_b += amount_b
             row = {'timestamp': ts,
                    result_column: ((balance_a
                                     if track_a
@@ -35,29 +56,29 @@ class diff_sheet(csv_sheet.csv_sheet):
                                    (balance_b
                                     if track_b
                                     else amount_b)),
-                   'amount_a': amount_a,
-                   'amount_b': amount_b}
+                   column_a: amount_a,
+                   column_b: amount_b}
             if track_a:
-                row['balance_a'] = balance_a
+                row[track_a] = balance_a
             if track_b:
-                row['balance_b'] = balance_b
+                row[track_b] = balance_b
             self.rows[ts] = row
+
+    def column_names_list(self):
+        return self.colseq
 
     def write_csv(self, filename):
         """Write a differences spreadsheet to a file."""
         full_filename = os.path.expanduser(os.path.expandvars(filename))
         qsutils.ensure_directory_for_file(full_filename)
         with open(full_filename, 'w') as outfile:
-            colseq = ['timestamp', result_column,
-                      'amount_a', 'balance_a',
-                      'amount_b', 'balance_b']
-            writer = csv.DictWriter(outfile, colseq)
+            writer = csv.DictWriter(outfile, self.colseq)
             writer.writeheader()
             for timestamp in sorted(self.rows.keys()):
                 row = self.rows[timestamp]
                 # round the unfortunately-represented floats
                 writer.writerow({sk: qsutils.tidy_for_output(row.get(sk, ""))
-                                 for sk in colseq})
+                                 for sk in self.colseq})
 
 # tests
 

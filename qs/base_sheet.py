@@ -44,6 +44,15 @@ class base_sheet:
             timestamp += datetime.timedelta(0,1)
         return timestamp
 
+    def column_names_list():
+        colseq = ordered_set.OrderedSet()
+        for row in self.rows.values():
+            colseq |= row.keys()
+        if 'date' in colseq:
+            colseq.remove('date')
+            colseq = ['date'] + [col for col in colseq]
+        return colseq
+    
     def write_all_columns(self, filename):
         """Write a spreadsheet.
         The column list is generated from the row contents,
@@ -51,12 +60,7 @@ class base_sheet:
         full_filename = os.path.expanduser(os.path.expandvars(filename))
         qsutils.ensure_directory_for_file(full_filename)
         with open(full_filename, 'w') as outfile:
-            colseq = ordered_set.OrderedSet()
-            for row in self.rows.values():
-                colseq |= row
-            if 'date' in colseq:
-                colseq.remove('date')
-                colseq = ['date'] + [col for col in colseq]
+            colseq = self.column_names_list()
             writer = csv.DictWriter(outfile, colseq)
             writer.writeheader()
             for timestamp in sorted(self.rows.keys()):

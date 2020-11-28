@@ -4,7 +4,9 @@ import base_sheet
 
 class combined_sheet(base_sheet.base_sheet):
 
-    """A spreadsheet made by merging several sheets by timestamp."""
+    """A spreadsheet made by merging several sheets by timestamp.
+    This is not a join: each row remains a distinct row, with the timestamp
+    being nudged along as necessary."""
 
     def __init__(self,
                  *input_sheets):

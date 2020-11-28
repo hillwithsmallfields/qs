@@ -98,6 +98,8 @@ class EvalError(Exception):
         self.form = form
 
 def finlisp_eval_list(context, expr):
+    if len(expr) == 0:
+        return expr             # nil / empty list
     fun_name = sexpdata.car(expr)._val
     if fun_name in finlisp_forms:
         return finlisp_forms[fun_name](context,

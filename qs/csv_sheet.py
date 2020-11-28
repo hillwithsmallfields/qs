@@ -49,6 +49,7 @@ class csv_sheet(base_sheet.base_sheet):
         self.currency_conversion = self.format.get('currency_conversion', None)
         self.row_order = None
         self.row_cursor = 0
+        self.colseq = self.format['column-sequence']
 
     def __iter__(self):
         self.row_order = sorted(self.rows.keys())
@@ -105,6 +106,9 @@ class csv_sheet(base_sheet.base_sheet):
         self.rows[self.unused_timestamp_from(self.get_cell(row, 'date'),
                                              self.get_cell(row, 'time', self.default_time))] = row
 
+    def column_names_list(self):
+        return self.colseq
+
     def read(self, filename):
         """Read a spreadsheet, deducing the type.
         A collection of header lines is scanned to find the type."""
@@ -147,14 +151,13 @@ class csv_sheet(base_sheet.base_sheet):
         """Write a spreadsheet in a given format.
         Any columns not used by that format are ignored."""
         with open(os.path.expanduser(os.path.expandvars(filename)), 'w') as outfile:
-            colseq = self.format['column-sequence']
-            writer = csv.DictWriter(outfile, colseq)
+            writer = csv.DictWriter(outfile, self.colseq)
             writer.writeheader()
             for timestamp in sorted(self.rows.keys()):
                 row = self.rows[timestamp]
                 # select only the columns required for this sheet, and
                 # also round the unfortunately-represented floats
-                writer.writerow({sk: qsutils.tidy_for_output(row.get(sk, "")) for sk in colseq})
+                writer.writerow({sk: qsutils.tidy_for_output(row.get(sk, "")) for sk in self.colseq})
 
     def write_debug(self, filename):
         """Write a account to a file, for debugging."""
