@@ -78,6 +78,9 @@ def same_year(a, b):
     """Return whether two dates are in the same year."""
     return granularity_year(a) == granularity_year(b)
 
+def within_days(a, b, days):
+    return abs(a - b).days <= days
+
 def resolve_filename(filename, directory=None):
     """Try to get an absolute form of a filename, using a suggested directory."""
     filename = os.path.expandvars(filename)
@@ -149,12 +152,15 @@ def combine_transactions(a, b):
             ab[k] = a.get(k, "") + ";" + b.get
     return ab
 
-def merge_by_date(by_timestamp, date_chars=10):
+def merge_by_date(by_timestamp, period):
     """Return a dictionary with the entries in the input combined by date.
-The given number of characters of the date are used."""
+    
+    `period' is a function which should return the starting
+    datetime.datetime of the period containing the date it is
+    given."""
     result = {}
     for k, v in by_timestamp.items():
-        kpart = k[:date_chars]
+        kpart = period(k)
         result[kpart] = combine_transactions(result[kpart], v) if kpart in result else v
     return result
 

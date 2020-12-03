@@ -52,6 +52,7 @@ functions = ['account_to_sheet',
              'copy_sheet',      # temporary for debugging
              'fgrep',
              'filter_sheet',
+             'find_amount',
              'first_of_month',
              'first_of_year',
              'format_sheet',
@@ -165,6 +166,9 @@ def fgrep(context, input_sheet, match, column='payee'):
         print("Cannot fgrep a", type(input_sheet))
         raise UnsupportedOperation("fgrep", type(input_sheet))
 
+def find_amount(context, sheet, amount, approx_date, within):
+    return sheet.find_amount(amount, approx_date, within)
+    
 def safe_search(pattern, value):
     return pattern.search(value) if value else None
     

@@ -40,6 +40,17 @@ def finlisp_progn(context, *bodyforms):
 
 def_finlisp_form('progn', finlisp_progn)
 
+def finlisp_if(context, condition, then_form, *else_forms):
+    if finlisp_eval(context, condition):
+        return finlisp_eval(context, then_form)
+    else:
+        result = None
+        for else_form in else_forms:
+            result = finlisp_eval(context, else_form)
+        return result
+
+def_finlisp_form('if', finlisp_if)
+
 def finlisp_let(context, bindings, *bodyforms):
     new_context = context.copy()
     new_context['bindings'] = [{binding[0]._val: finlisp_eval(context, binding[1])
@@ -91,7 +102,13 @@ for fname, basefn in {'+': operator.add,
                       '-': operator.sub,
                       '*': operator.mul,
                       '/': operator.floordiv,
-                      '%': operator.mod}.items():
+                      '%': operator.mod,
+                      '<': operator.lt,
+                      '<=': operator.le,
+                      '==': operator.eq,
+                      '!=': operator.ne,
+                      '>': operator.gt,
+                      '>=': operator.ge}.items():
     def_finlisp_wrapped_fn(fname, basefn)
 
 def finlisp_extend_stack(context, form):

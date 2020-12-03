@@ -66,18 +66,21 @@ class category_tree:
 
     def combine_same_period_entries(self,
                                     period,
-                                    date_chars=10,
                                     comment=None):
         """Produce an category tree based on this one, with just one entry per period
         (day, by default).
 
         For each category, convert all the entries in the same period to one total.
-        Likewise for the summaries (parents)."""
+        Likewise for the summaries (parents).
+
+        `period' is a function which should return the starting
+        datetime.datetime of the period containing the date it is
+        given."""
         combined = category_tree()
         combined.config = self.config
-        combined.categories = {k: qsutils.merge_by_date(v, date_chars)
+        combined.categories = {k: qsutils.merge_by_date(v, period)
                                for k, v in self.categories.items()}
-        combined.summaries = {k: qsutils.merge_by_date(v, date_chars)
+        combined.summaries = {k: qsutils.merge_by_date(v, period)
                               for k, v in self.summaries.items()}
 
     def write_csv(self, filename):

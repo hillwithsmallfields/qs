@@ -53,7 +53,7 @@ class named_column_sheet(base_sheet.base_sheet):
             annotated_row = {}
             for k, v in row.items():
                 if isinstance(v, numbers.Number) and abs(v) > 0:
-                    possibilities = reference.find_amount(v, timestamp, k)
+                    possibilities = reference.find_amount(v, timestamp, 7, k)
                     originals = ["%s: %s" % (r['payee'], r['timestamp'].date())
                                  for r in possibilities]
                     annotated_row[k] = qsutils.tidy_for_output(v) + ((":" + ";".join(originals))
@@ -67,7 +67,7 @@ class named_column_sheet(base_sheet.base_sheet):
         for timestamp, row in self.rows.items():
             for k, v in row.items():
                 if isinstance(v, numbers.Number) and abs(v) > 0:
-                    for found_row in reference.find_amount(v, timestamp, k):
+                    for found_row in reference.find_amount(v, timestamp, 7, k):
                         new_row = found_row.copy()
                         result.rows[new_row['timestamp']] = new_row
         return result

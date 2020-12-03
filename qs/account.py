@@ -254,7 +254,9 @@ class account:
         For each payee, convert all the entries in the same period to one total.
         For all the transactions in all_transactions, do likewise.
 
-        """
+        `period' is a function which should return the starting
+        datetime.datetime of the period containing the date it is
+        given."""
         combined = account(self.name, copy_metadata_from=self)
         # first, all the payees; these are amounts
         for name, orig_payee in self.payees.items():

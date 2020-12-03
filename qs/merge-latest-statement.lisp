@@ -1,0 +1,11 @@
+(let* ((main (read-canonical "~/common/finances/finances.csv"))
+       (summarised (by-day main))
+       (latest (read-canonical "~/Downloads/Transactions.csv")))
+  (print "Number of original entries:" (length main) " Number of summarised entries:" (length summarised))
+  (for-each-row latest this-row nil
+                (let* ((amount (get this-row "amount"))
+                       (matches (find-amount summarised amount (get this-row "timestamp") 7)))
+                  (if (> (length matches) 0)
+                      (print "got matches on amount" amount "for payee" (get this-row "payee") matches)
+                    (print "no matches for" this-row))
+                  )))

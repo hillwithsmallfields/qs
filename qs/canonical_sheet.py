@@ -2,6 +2,7 @@
 
 import account
 import base_sheet
+import copy
 import csv
 import csv_sheet
 import os
@@ -325,12 +326,11 @@ class canonical_sheet(base_sheet.base_sheet):
                 added_row_lists[account_name].append(added_row)
         return accounts, added_row_lists
 
-    def find_amount(self, amount, timestamp, payee_hint=None):
+    def find_amount(self, amount, timestamp, within_days, payee_hint=None):
         """Find entries with a given amount, around a given time."""
         possibilities = [row for row in self.rows.values()
                         if (abs(row['amount']) == abs(amount)
-                            # TODO: make this a nearby date? but I think we have already gone to month granularity on one side
-                             and qsutils.same_month(row['timestamp'], timestamp))]
+                             and qsutils.within_days(row['timestamp'], timestamp, within_days))]
         if payee_hint:
             filtered = [row
                         for row in possibilities
@@ -338,6 +338,36 @@ class canonical_sheet(base_sheet.base_sheet):
             if filtered:
                 possibilities = filtered
         return possibilities
+
+    def combine_same_period_entries(self,
+                                    period,
+                                    comment=None):
+        """Produce a sheet based on this one, with just one entry per payee
+        per period (day, by default).
+
+        `period' is a function which should return the starting
+        datetime.datetime of the period containing the date it is
+        given."""
+        result = copy.copy(self)
+        result.rows = {}
+        accumulators = {}
+        for timestamp in self.rows.keys():
+            row = self.rows[timestamp]
+            row_date = period(timestamp)
+            if row_date not in accumulators:
+                accumulators[row_date] = {}
+            this_day_by_payee = accumulators[row_date]
+            payee = row['payee']
+            if payee in this_day_by_payee:
+                this_day_by_payee[payee]['amount'] += row['amount']
+                this_day_by_payee[payee]['category'] = 'combined'
+                this_day_by_payee[payee]['parent'] = 'combined'
+            else:
+                this_day_by_payee[payee] = copy.copy(row)
+        for timestamp, summaries in accumulators.items():
+            for summary in summaries.values():
+                result.rows[summary['timestamp']] = summary
+        return result
 
     def write_csv(self, filename):
         """Write a canonical spreadsheet to a file.
