@@ -121,7 +121,8 @@ def categories(context, original):
     return categoriser.category_tree(original)
 
 def categorised(context, original):
-    return categoriser.categorised_sheet(original)
+    return categoriser.categorised_sheet(original.config,
+                                         incoming_data=original)
 
 def chart(context, sheet, title, filename, fields):
     """Output a sheet to gnuplot."""

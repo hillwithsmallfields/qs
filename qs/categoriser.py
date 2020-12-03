@@ -30,10 +30,13 @@ class category_tree:
         return ("<category_tree " + ", ".join(self.categories.keys()) + ">")
 
     def add_from_account(self, incoming_account):
+        print("category_tree.add_from_account", incoming_account)
         if isinstance(incoming_account, account.account):
+            print("category_tree.add_from_account from account")
             for timestamp, transaction in incoming_account.all_transactions.items():
                 self.categorise_transaction(transaction)
         elif isinstance(incoming_account, canonical_sheet.canonical_sheet):
+            print("category_tree.add_from_account from canonical_sheet")
             for timestamp, row in incoming_account.rows.items():
                 self.categorise_transaction(row)
         else:
@@ -70,11 +73,11 @@ class category_tree:
 
         For each category, convert all the entries in the same period to one total.
         Likewise for the summaries (parents)."""
-        combined = category_tree.category_tree()
+        combined = category_tree()
         combined.config = self.config
-        combined.categories = {k: qsutils.merge_by_date(v, time_chars)
+        combined.categories = {k: qsutils.merge_by_date(v, date_chars)
                                for k, v in self.categories.items()}
-        combined.summaries = {k: qsutils.merge_by_date(v, time_chars)
+        combined.summaries = {k: qsutils.merge_by_date(v, date_chars)
                               for k, v in self.summaries.items()}
 
     def write_csv(self, filename):
@@ -107,10 +110,16 @@ class categorised_sheet(base_sheet.base_sheet):
 
     def __init__(self, config, incoming_data=None):
         super().__init__(config)
+        print("making categorised_sheet from incoming_data", incoming_data)
+        if isinstance(incoming_data, canonical_sheet.canonical_sheet):
+            print("making categorised_sheet: from canonical_sheet to account")
+            incoming_data = account.account("categorised", base_account=incoming_data)
         if isinstance(incoming_data, account.account):
-            incoming_data = category_tree.category_tree(account)
-        if isinstance(incoming_data, category_tree.category_tree):
-            self.add_from_tree(incoming_datag)
+            print("making categorised_sheet: from account to category tree")
+            incoming_data = category_tree(incoming_data)
+        if isinstance(incoming_data, category_tree):
+            print("making categorised_sheet: adding from tree", incoming_data)
+            self.add_from_tree(incoming_data)
 
     def add_category(self, catname, cat):
         for timestamp, transaction in cat.items():
@@ -122,8 +131,10 @@ class categorised_sheet(base_sheet.base_sheet):
 
     def add_from_tree(self, incoming_tree):
         for cat in incoming_tree.categories.items():
+            print("adding category item", cat)
             add_category(catname, cat)
         for cat in incoming_tree.summaries.items():
+            print("adding summary item", cat)
             add_category(catname, cat)
 
     def write_csv(self, filename):

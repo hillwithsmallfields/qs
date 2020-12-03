@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo running lisp test
+echo running reconciliation
 
 source setupfintest
 
