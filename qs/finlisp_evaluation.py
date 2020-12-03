@@ -63,6 +63,22 @@ def finlisp_letstar(context, bindings, *bodyforms):
 
 def_finlisp_form('let*', finlisp_letstar)
 
+def finlisp_for_each_row(context, sheet, row_var, forward, *bodyforms):
+    """Iterate over rows, going forward or backward in time."""
+    sheet = finlisp_eval(context, sheet)
+    new_context = context.copy()
+    row_var_name = row_var._val
+    new_context['bindings'] = [{row_var_name: None}] + context['bindings']
+    result = None
+    for timestamp in sorted(sheet.rows.keys(), reverse=not forward):
+        row = sheet.rows[timestamp]
+        new_context['bindings'][0][row_var_name] = row
+        for body_form in bodyforms:
+            result = finlisp_eval(new_context, body_form)
+    return result
+
+def_finlisp_form('for-each-row', finlisp_for_each_row)
+
 finlisp_functions = {}
 
 def def_finlisp_fn(fname, fimpl):

@@ -81,6 +81,16 @@ def finlisp_payees(_, x):
 
 finlisp_evaluation.def_finlisp_fn('payees', finlisp_payees)
 
+def finlisp_get(_, dictionary, key):
+    return dictionary.get(key, None)
+
+finlisp_evaluation.def_finlisp_fn('get', finlisp_get)
+
+def finlisp_in(_, dictionary, key):
+    return key in dictionary
+
+finlisp_evaluation.def_finlisp_fn('in', finlisp_in)
+
 def finlisp_length(_, x):
     return len(x)
 
@@ -114,7 +124,9 @@ def main():
 
     context = {
         'config': qsutils.program_load_config(args, quiet=True),
-        'bindings': [{'output-dir': "."}],
+        'bindings': [{'output-dir': ".",
+                      't': True,
+                      'nil': False}],
         'eval-stack': []
     }
 
