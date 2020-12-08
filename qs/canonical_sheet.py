@@ -404,10 +404,14 @@ class canonical_sheet(base_sheet.base_sheet):
             writer.writeheader()
             for timestamp in sorted(self.rows.keys()):
                 row = self.rows[timestamp]
-                output_row = {sk: qsutils.tidy_for_output(row.get(sk, ""))
-                              for sk in column_sequence}
+                if (row.get('original_currency') == row.get('currency')
+                    and row.get('original_amount') == row.get('amount')):
+                    row['original_currency'] = None
+                    row['original_amount'] = None
                 # select only the columns required for this sheet, and
                 # also round the unfortunately-represented floats
+                output_row = {sk: qsutils.tidy_for_output(row.get(sk, ""))
+                              for sk in column_sequence}
                 writer.writerow(output_row)
 
     def write_debug(self, filename):
