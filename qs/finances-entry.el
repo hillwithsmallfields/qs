@@ -80,8 +80,8 @@ as in the Financisto app."
                        (list date time account
                              amount currency
                              original-amount original-currency
-                             category parent
-                             payee
-                             location project note)
+                             balance
+                             payee category parent location project
+                             message)
                        ",")
             "\n")))
