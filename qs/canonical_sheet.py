@@ -41,17 +41,16 @@ class canonical_sheet(base_sheet.base_sheet):
     # not subclassed from csv_sheet, because that has a 'format' and
     # the point of this class is to avoid that.
 
-    canonical_column_sequence = [
+    canonical_column_sequence_no_timestamp = [
         'date',
         'time',
-        'timestamp',
-        'payee',
-        'amount',
         'account',
-        'balance',
+        'amount',
         'currency',
         'original_amount',
         'original_currency',
+        'balance',
+        'payee',
         'category',
         'parent',
         'location',
@@ -59,6 +58,8 @@ class canonical_sheet(base_sheet.base_sheet):
         'message'
     ]
 
+    canonical_column_sequence = ['timestamp'] + canonical_column_sequence_no_timestamp
+    
     def __init__(self,
                  config,
                  input_sheet=None,
@@ -151,6 +152,14 @@ class canonical_sheet(base_sheet.base_sheet):
         return ("<canonical spreadsheet with "
                 + str(len(self.rows)) + " rows>")
 
+    # def __enter__(self):
+    #     # TODO: read file, keep filename
+    #     pass
+
+    # def __exit__(self):
+    #     # TODO: write back to original file, leaving backup copy
+    #     pass
+    
     def column_names_list(self):
         return canonical_sheet.canonical_column_sequence
     
@@ -369,18 +378,34 @@ class canonical_sheet(base_sheet.base_sheet):
                 result.rows[summary['timestamp']] = summary
         return result
 
-    def write_csv(self, filename):
+    def add_row(self,
+                timestamp,
+                amount=0,
+                currency='GBP',
+                payee=None,
+                category=None):
+        timestamp = self.unused_timestamp_from(timestamp)
+        self.rows[timestamp] = {'timestamp': timestamp,
+                                'amount': amount,
+                                'currency': currency,
+                                'payee': payee,
+                                'category': category}
+    
+    def write_csv(self, filename, suppress_timestamp=False):
         """Write a canonical spreadsheet to a file.
         Any columns not in the canonical format are ignored."""
         full_filename = os.path.expanduser(os.path.expandvars(filename))
         qsutils.ensure_directory_for_file(full_filename)
+        column_sequence = (canonical_sheet.canonical_column_sequence_no_timestamp
+                           if suppress_timestamp
+                           else canonical_sheet.canonical_column_sequence)
         with open(full_filename, 'w') as outfile:
-            writer = csv.DictWriter(outfile, canonical_sheet.canonical_column_sequence)
+            writer = csv.DictWriter(outfile, column_sequence)
             writer.writeheader()
             for timestamp in sorted(self.rows.keys()):
                 row = self.rows[timestamp]
                 output_row = {sk: qsutils.tidy_for_output(row.get(sk, ""))
-                              for sk in canonical_sheet.canonical_column_sequence}
+                              for sk in column_sequence}
                 # select only the columns required for this sheet, and
                 # also round the unfortunately-represented floats
                 writer.writerow(output_row)

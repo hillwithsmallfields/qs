@@ -37,7 +37,7 @@ def main():
                 print("Reparenting transaction with", row['payee'], "on", row['date'], "from", old_parentage, "to", new_parentage)
         if new_parentage:
             row['parent'] = new_parentage
-    sheet.write_csv(args.output or args.filename)
+    sheet.write_csv(args.output or args.filename, suppress_timestamp=True)
 
 if __name__ == "__main__":
     main()
