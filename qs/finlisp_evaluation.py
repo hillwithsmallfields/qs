@@ -74,6 +74,21 @@ def finlisp_letstar(context, bindings, *bodyforms):
 
 def_finlisp_form('let*', finlisp_letstar)
 
+def finlisp_dolist(context, control_binding, *bodyforms):
+    new_context = context.copy()
+    control_var_name = control_binding[0]._val
+    control_list = finlisp_eval(context, control_binding[1])
+    our_binding = {control_var_name: None}
+    new_context['bindings'] = [our_binding] + context['bindings']
+    result = None
+    for list_item in control_list:
+        our_binding[control_var_name] = list_item
+        for body_form in bodyforms:
+            result = finlisp_eval(new_context, body_form)
+    return result
+    
+def_finlisp_form('dolist', finlisp_dolist)
+
 def finlisp_for_each_row(context, sheet, row_var, forward, *bodyforms):
     """Iterate over rows, going forward or backward in time."""
     sheet = finlisp_eval(context, sheet)

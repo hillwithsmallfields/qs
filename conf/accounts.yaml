@@ -51,7 +51,7 @@ formats:
       time:              04:00:00
     name:                Financisto export
   Default:
-    column-sequence: ["date", "time", "account", "amount", "currency", "original amount", "original currency", "category", "parent", "payee", "location", "project", "note"]
+    column-sequence: ["date", "time", "account", "amount", "currency", "original_amount", "original_currency", "balance", "payee", "category", "parent", "location", "project", "message"]
     columns:
       date:     date
       time:     time
