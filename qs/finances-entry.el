@@ -76,12 +76,15 @@ as in the Financisto app."
     (goto-char (point-max))
     (unless (looking-at "^$")
       (insert "\n"))
-    (insert (mapconcat 'finances-entry-cell-as-string
-                       (list date time account
-                             amount currency
-                             original-amount original-currency
-                             balance
-                             payee category parent location project
-                             message)
-                       ",")
-            "\n")))
+    (let ((balance nil))
+      (insert (mapconcat 'finances-entry-cell-as-string
+                         (list date time
+                               account amount currency
+                               original-amount original-currency
+                               balance
+                               payee
+                               category parent
+                               location project
+                               note)
+                         ",")
+              "\n"))))

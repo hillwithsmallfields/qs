@@ -25,9 +25,9 @@ def find_conversion(conversions, payee_name):
     if not conversions:
         return None
     for key, value in conversions.items():
-        if key in payee_name:
+        if key == payee_name or key in payee_name or payee_name in key:
             return value
-    print("No conversion for", payee_name)
+    # print("No conversion for", payee_name)
     return None
 
 class canonical_sheet(base_sheet.base_sheet):

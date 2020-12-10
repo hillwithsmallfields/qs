@@ -55,6 +55,7 @@ functions = ['account_to_sheet',
              'find_amount',
              'first_of_month',
              'first_of_year',
+             'flagged_as',
              'format_sheet',
              'grep',
              # 'join', # todo
@@ -168,7 +169,14 @@ def fgrep(context, input_sheet, match, column='payee'):
 
 def find_amount(context, sheet, amount, approx_date, within):
     return sheet.find_amount(amount, approx_date, within)
-    
+
+def flagged_as(context, formatname, payee, flag):
+    conversions = context['config']['formats'][formatname]['conversions']
+    payee_details = canonical_sheet.find_conversion(conversions, payee)
+    if payee_details and 'flags' in payee_details:
+        return flag in payee_details['flags']
+    return False
+        
 def safe_search(pattern, value):
     return pattern.search(value) if value else None
     
