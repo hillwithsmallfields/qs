@@ -6,10 +6,11 @@
                 (let* ((amount (get this-row "amount"))
                        (matches (find-amount summarised amount (get this-row "timestamp") 7)))
                   (if (> (length matches) 0)
-                      (progn
+                      (let ((found (find-by-field (get this-row "payee") matches "payee")))
                         (print "got matches on amount" amount
                                "for payee" (get this-row "payee")
-                               "on" (get this-row "date"))
+                               "on" (get this-row "date")
+                               "by field" found)
                         (dolist (match matches)
                           (print "    payee" (get match "payee")
                                  "on" (get match "date"))))

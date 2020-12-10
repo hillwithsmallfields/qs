@@ -53,6 +53,7 @@ functions = ['account_to_sheet',
              'fgrep',
              'filter_sheet',
              'find_amount',
+             'find_by_field',
              'first_of_month',
              'first_of_year',
              'flagged_as',
@@ -195,6 +196,15 @@ def grep(context, input_sheet, pattern, column='payee'):
     else:
         print("Cannot grep a", type(input_sheet))
         raise UnsupportedOperation("grep", type(input_sheet))
+
+def find_by_field(context, value, items, match_field):
+    for item in items:
+        item_value = item.get(match_field, None)
+        if item_value and (item_value == value
+                           or item_value in value
+                           or value in item_value):
+            return item
+    return False
 
 def first_of_month(context, sheet):
     return filter_dates.filtered_by_date(sheet, 7, True)
