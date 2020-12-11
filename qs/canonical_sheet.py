@@ -375,7 +375,11 @@ class canonical_sheet(base_sheet.base_sheet):
                 this_day_by_payee[payee] = copy.copy(row)
         for timestamp, summaries in accumulators.items():
             for summary in summaries.values():
-                result.rows[summary['timestamp']] = summary
+                adjusted_datetime = result.unused_timestamp_from(timestamp)
+                summary['timestamp'] = adjusted_datetime
+                summary['date'] = adjusted_datetime.date().isoformat()
+                summary['time'] = adjusted_datetime.time().isoformat()
+                result.rows[adjusted_datetime] = summary
         return result
 
     def add_row(self,
