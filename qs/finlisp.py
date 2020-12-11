@@ -118,16 +118,25 @@ finlisp_evaluation.def_finlisp_fn('debug', lisp_debug)
         
 def main():
     parser = qsutils.program_argparser()
+    parser.add_argument("--bind", "-D",
+                        nargs=2,
+                        action='append',
+                        help="""Preset a Lisp variable.""")
     parser.add_argument("script_files", nargs='*')
     args = parser.parse_args()
 
+    initial_bindings = {'output-dir': ".",
+                't': True,
+                'nil': False}
+    
     context = {
         'config': qsutils.program_load_config(args, quiet=True),
-        'bindings': [{'output-dir': ".",
-                      't': True,
-                      'nil': False}],
+        'bindings': [initial_bindings],
         'eval-stack': []
     }
+
+    for binding in args.bind:
+        initial_bindings[binding[0]] = binding[1]
 
     for filename in args.script_files:
         finlisp_evaluation.finlisp_load_file(context, filename)

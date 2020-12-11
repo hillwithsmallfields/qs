@@ -29,6 +29,16 @@ class named_column_sheet(base_sheet.base_sheet):
                        for date, row in self.rows.items()}
         return result
 
+    def proportions(self):
+        """Return a sheet like this but with the values in each row given as
+        the original value divided by the total for the row."""
+        result = named_column_sheet(self.config, self.column_names_list())
+        result.rows = {}
+        for ts, row in self.rows.items():
+            total = sum(row.values())
+            result.rows[ts] = {colname: cell/total for colname, cell in row.items()}
+        return result
+        
     def abs_threshold(self, threshold):
         """Return a sheet like this but with any entries smaller than a given threshold omitted."""
         result = named_column_sheet(self.config, self.column_names_list())

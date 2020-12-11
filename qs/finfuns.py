@@ -69,6 +69,7 @@ functions = ['account_to_sheet',
              'make_update_sheet',
              'occupied_columns',
              'payees',
+             'proportions',
              'rename_column',
              'select_columns',
              'setq',
@@ -264,6 +265,9 @@ def payees(context, original, pattern=None):
                                          'total': details.transactions_total(),
                                          'transactions': details.transactions_string(separator='; ', time_chars=10)}
                                   for name, details in original.payees_matching(pattern).items()})
+
+def proportions(context, original):
+    return original.proportions()
 
 def rename_columns_row(timestamp, row, output_rows, names):
     output_rows[timestamp] = {names[1] if colname == names[0] else colname: cellvalue for colname, cellvalue in row.items()}
