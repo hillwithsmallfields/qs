@@ -6,7 +6,7 @@ import functools
 import operator
 import os
 import qsutils
-
+        
 class category_tree:
 
     """The results of splitting an account into its categories."""
@@ -107,39 +107,39 @@ class category_tree:
                        len(cat)]
                 writer.writerow(row)
 
-class categorised_sheet(base_sheet.base_sheet):
+# class categorised_sheet(base_sheet.base_sheet):
 
-    """A sheet with dates for the rows and categories for the keys."""
+#     """A sheet with dates for the rows and categories for the keys."""
 
-    def __init__(self, config, incoming_data=None):
-        super().__init__(config)
-        print("making categorised_sheet from incoming_data", incoming_data)
-        if isinstance(incoming_data, canonical_sheet.canonical_sheet):
-            print("making categorised_sheet: from canonical_sheet to account")
-            incoming_data = account.account("categorised", base_account=incoming_data)
-        if isinstance(incoming_data, account.account):
-            print("making categorised_sheet: from account to category tree")
-            incoming_data = category_tree(incoming_data)
-        if isinstance(incoming_data, category_tree):
-            print("making categorised_sheet: adding from tree", incoming_data)
-            self.add_from_tree(incoming_data)
+#     def __init__(self, config, incoming_data=None):
+#         super().__init__(config)
+#         print("making categorised_sheet from incoming_data", incoming_data)
+#         if isinstance(incoming_data, canonical_sheet.canonical_sheet):
+#             print("making categorised_sheet: from canonical_sheet to account")
+#             return canonical_sheet_to_category_sheet(incoming_data)
+#         if isinstance(incoming_data, account.account):
+#             print("making categorised_sheet: from account to category tree")
+#             incoming_data = category_tree(incoming_data)
+#         if isinstance(incoming_data, category_tree):
+#             print("making categorised_sheet: adding from tree", incoming_data)
+#             self.add_from_tree(incoming_data)
+            
+#     def add_category(self, catname, cat):
+#         for timestamp, transaction in cat.items():
+#             if timestamp not in self.rows:
+#                 self.rows[timestamp] = {}
+#             if catname not in self.rows[timestamp]:
+#                 self.rows[timestamp][catname] = {}
+#             self.rows[timestamp][catname].append(cat)
 
-    def add_category(self, catname, cat):
-        for timestamp, transaction in cat.items():
-            if timestamp not in self.rows:
-                self.rows[timestamp] = {}
-            if catname not in self.rows[timestamp]:
-                self.rows[timestamp][catname] = {}
-            self.rows[timestamp][catname].append(cat)
+#     def add_from_tree(self, incoming_tree):
+#         for cat in incoming_tree.categories.items():
+#             print("adding category item", cat)
+#             add_category(catname, cat)
+#         for cat in incoming_tree.summaries.items():
+#             print("adding summary item", cat)
+#             add_category(catname, cat)
 
-    def add_from_tree(self, incoming_tree):
-        for cat in incoming_tree.categories.items():
-            print("adding category item", cat)
-            add_category(catname, cat)
-        for cat in incoming_tree.summaries.items():
-            print("adding summary item", cat)
-            add_category(catname, cat)
-
-    def write_csv(self, filename):
-        # todo: convert the lists of transactions to sums
-        self.write_all_columns(filename)
+#     def write_csv(self, filename):
+#         # todo: convert the lists of transactions to sums
+#         self.write_all_columns(filename)

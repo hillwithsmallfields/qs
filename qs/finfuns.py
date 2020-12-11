@@ -71,7 +71,7 @@ functions = ['account_to_sheet',
              'payees',
              'rename_column',
              'select_columns',
-             'set',
+             'setq',
              'sheet',
              'show',
              'subtract_cells',
@@ -123,9 +123,19 @@ def by_year(context, original):
 def categories(context, original):
     return categoriser.category_tree(original)
 
-def categorised(context, original):
-    return categoriser.categorised_sheet(original.config,
-                                         incoming_data=original)
+def categorised(context, incoming_data):
+    """Really meant for use on periodic summaries."""
+    categories = set()
+    by_date = {}
+    for timestamp, row in incoming_data.rows.items():
+        on_day = timestamp.date()
+        if on_day not in by_date:
+            by_date[on_day] = {}
+        day_accumulator = by_date[on_day]
+        category = row['category']
+        categories.add(category)
+        day_accumulator[category] = day_accumulator.get(category, 0) + row['amount']
+    return named_column_sheet.named_column_sheet(incoming_data.config, sorted(categories), rows=by_date)
 
 def chart(context, sheet, title, filename, fields):
     """Output a sheet to gnuplot."""
@@ -281,7 +291,7 @@ def select_columns(context, sheet, column_names):
                                                  column_names,
                                                  rows=output_rows)
 
-def set(context, name, value):
+def setq(context, name, value):
     if name in context['variables']:
         print("Overwriting", name)
     context['variables'][name] = value

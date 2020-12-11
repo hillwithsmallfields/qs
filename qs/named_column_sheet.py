@@ -78,10 +78,10 @@ class named_column_sheet(base_sheet.base_sheet):
         qsutils.ensure_directory_for_file(full_filename)
         with open(full_filename, 'w') as outfile:
             writer = csv.writer(outfile)
-            writer.writerow(['timestamp'] + self.column_names_list())
+            writer.writerow(['timestamp'] + self.column_names)
             for date in sorted(self.rows):
                 row_data = self.rows[date]
-                writer.writerow([date] + [qsutils.tidy_for_output(row_data.get(n, '')) for n in self.column_names_list()])
+                writer.writerow([date] + [qsutils.tidy_for_output(row_data.get(n, '')) for n in self.column_names])
 
     def sparse_row(self, row):
         """Return a dictionary containing the occupied entries in a row."""
@@ -93,7 +93,7 @@ class named_column_sheet(base_sheet.base_sheet):
         return {str(date): self.sparse_row(self.rows[date]) for date in sorted(self.rows.keys())}
 
     def write_json(self, filename):
-        """Write a named-column sheet to a CSV file."""
+        """Write a named-column sheet to a JSON file."""
         full_filename = os.path.expanduser(os.path.expandvars(filename))
         qsutils.ensure_directory_for_file(full_filename)
         with open(full_filename, 'w') as outfile:
