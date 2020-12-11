@@ -108,16 +108,19 @@ def annotate_by_timestamp(context, sheet, reference, annotation_columns):
 def annotate_matches(context, sheet, reference):
     return sheet.annotate_matches(reference)
 
-def by_day(context, original):
+def by_day(context, original, combine_categories):
     return original.combine_same_period_entries(qsutils.granularity_day,
+                                                combine_categories,
                                                 comment="Daily summary")
 
-def by_month(context, original):
+def by_month(context, original, combine_categories):
     return original.combine_same_period_entries(qsutils.granularity_month,
+                                                combine_categories,
                                                 comment="Monthly summary")
 
-def by_year(context, original):
+def by_year(context, original, combine_categories):
     return original.combine_same_period_entries(qsutils.granularity_year,
+                                                combine_categories,
                                                 comment="Yearly summary")
 
 def categories(context, original):

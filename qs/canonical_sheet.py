@@ -350,6 +350,7 @@ class canonical_sheet(base_sheet.base_sheet):
 
     def combine_same_period_entries(self,
                                     period,
+                                    combine_categories,
                                     comment=None):
         """Produce a sheet based on this one, with just one entry per payee
         per period (day, by default).
@@ -366,13 +367,16 @@ class canonical_sheet(base_sheet.base_sheet):
             if row_date not in accumulators:
                 accumulators[row_date] = {}
             this_day_by_payee = accumulators[row_date]
-            payee = row['payee']
-            if payee in this_day_by_payee:
-                this_day_by_payee[payee]['amount'] += row['amount']
-                this_day_by_payee[payee]['category'] = 'combined'
-                this_day_by_payee[payee]['parent'] = 'combined'
+            payee_key = row['payee'] if combine_categories else (row['payee'], row['category'])
+            if payee_key in this_day_by_payee:
+                this_day_by_payee[payee_key]['amount'] += row['amount']
+                if combine_categories:
+                    so_far = this_day_by_payee[payee_key]['category']
+                    if row['category'] not in so_far:
+                        this_day_by_payee[payee_key]['category'] = so_far + ";" + row['category']
+                    this_day_by_payee[payee_key]['parent'] = 'combined'
             else:
-                this_day_by_payee[payee] = copy.copy(row)
+                this_day_by_payee[payee_key] = copy.copy(row)
         for timestamp, summaries in accumulators.items():
             for summary in summaries.values():
                 adjusted_datetime = result.unused_timestamp_from(timestamp)
