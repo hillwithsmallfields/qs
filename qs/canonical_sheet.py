@@ -52,8 +52,6 @@ class canonical_sheet(base_sheet.base_sheet):
         'balance',
         'payee',
         'category',
-        'parent',
-        'location',
         'project',
         'message'
     ]
@@ -254,8 +252,8 @@ class canonical_sheet(base_sheet.base_sheet):
         # description.  This is how payee names are translated
         # from the naming scheme of the input sheet to that of the
         # output sheet.
-        for canonical_outcol in ['balance', 'category', 'parent',
-                                 'payee', 'location', 'project', 'message']:
+        for canonical_outcol in ['balance', 'category',
+                                 'payee', 'project', 'message']:
             # does the canonically named column have a default output value?
             if conversion and canonical_outcol in conversion:
                 out_row[canonical_outcol] = conversion[canonical_outcol]
@@ -304,8 +302,7 @@ class canonical_sheet(base_sheet.base_sheet):
             if result['account'] in reverse_equivalents:
                result['account'] = reverse_equivalents[result['account']]
 
-        if ((result['category'] == 'Transfer'
-             or result['parent'] == 'Transfer')
+        if ((result['category'] == 'Transfer')
             and 'transfer-handling' in output_format):
             for column, text in output_format['transfer-handling']['credit' if amount > 0 else 'debit'].items():
                 result[column] = text
@@ -374,7 +371,6 @@ class canonical_sheet(base_sheet.base_sheet):
                     so_far = this_day_by_payee[payee_key]['category']
                     if row['category'] not in so_far:
                         this_day_by_payee[payee_key]['category'] = so_far + ";" + row['category']
-                    this_day_by_payee[payee_key]['parent'] = 'combined'
             else:
                 this_day_by_payee[payee_key] = copy.copy(row)
         for timestamp, summaries in accumulators.items():
