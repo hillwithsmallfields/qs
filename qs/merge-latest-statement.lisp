@@ -1,6 +1,10 @@
 (let* ((main (read-canonical "~/common/finances/finances.csv"))
-       (summarised (by-day main))
-       (latest (read-canonical "~/Downloads/Transactions.csv")))
+       (summarised (by-day main t))
+       (latest (read-canonical "~/Downloads/Transactions.csv"))
+       (unmatched (blank-sheet))
+       (regular-entries (blank-sheet))
+       (unambiguously-matched (blank-sheet))
+       (ambiguously-matched (blank-sheet)))
   (print "Number of original entries:" (length main) " Number of summarised entries:" (length summarised))
   (for-each-row latest this-row nil
                 (let* ((amount (get this-row "amount"))
@@ -13,11 +17,22 @@
                                "by field" found)
                         (dolist (match matches)
                           (print "    payee" (get match "payee")
-                                 "on" (get match "date"))))
+                                 "on" (get match "date")))
+                        (if (> (length matches) 1)
+                            (add-row ambiguously-matched this-row)
+                          (add-row unambiguously-matched this-row)))
                     (let* ((payee (get this-row "payee"))
                            (regular (flagged-as "handelsbanken" payee "regular")))
                       (print "no matches on amount" amount
                              "for payee" payee
                              "regular" regular
-                             "on" (get this-row "date"))))
-                  )))
+                             "on" (get this-row "date"))
+                      (if regular
+                          (add-row regular-entries this-row)
+                        ;; (print "unmatched" unmatched "this-row" this-row)
+                        (add-row unmatched this-row))))
+                  ))
+  (write-csv unmatched "/tmp/unmatched-irregular.csv")
+  (write-csv regular-entries "/tmp/unmatched-regular.csv")
+  (write-csv ambiguously-matched "/tmp/ambiguously-matched.csv")
+  (write-csv unambiguously-matched "/tmp/unambiguously-matched.csv"))

@@ -5,6 +5,7 @@ import account_sheet
 import base_sheet
 import canonical_sheet
 import categoriser
+import classify
 import copy
 import csv
 import datetime
@@ -42,8 +43,12 @@ functions = ['account_to_sheet',
              'add_sheet',
              'annotate_by_timestamp',
              'annotate_matches',
+             'add_row',
+             'blank_sheet',
              'by_day',
+             'by_hierarchy',
              'by_month',
+             'by_parent',
              'by_year',
              'categories',
              'categorised',
@@ -70,6 +75,7 @@ functions = ['account_to_sheet',
              'occupied_columns',
              'payees',
              'proportions',
+             'read_classifier',
              'rename_column',
              'select_columns',
              'setq',
@@ -100,6 +106,11 @@ def copy_sheet(context, sheet):
 def account_to_sheet(context, base_account):
     return account_sheet.account_sheet(base_account.config, base_account)
 
+def add_row(context, sheet, row):
+    print("Adding row", row, "to sheet", sheet)
+    sheet.add_row(row)
+    return sheet
+
 def add_sheet(context, account, sheet, flags=None, trace_sheet_name=None):
     return account.add_sheet(sheet, flags=flags, trace_sheet_name=trace_sheet_name)
 
@@ -109,15 +120,29 @@ def annotate_by_timestamp(context, sheet, reference, annotation_columns):
 def annotate_matches(context, sheet, reference):
     return sheet.annotate_matches(reference)
 
+def blank_sheet(context):
+    return canonical_sheet.canonical_sheet(context['config'])
+
 def by_day(context, original, combine_categories):
     return original.combine_same_period_entries(qsutils.granularity_day,
                                                 combine_categories,
                                                 comment="Daily summary")
 
+def hierarchy_helper(row, depth):
+    levels = (row.get('parent', "") + ":" + row.get('category', "")).split(":")
+    return levels[min(len(levels)-1, depth)]
+
+def by_hierarchy(context, original, depth):
+    return categorised_by_key_fn(context, original, lambda row: hierarchy_helper(row, depth))
+
 def by_month(context, original, combine_categories):
     return original.combine_same_period_entries(qsutils.granularity_month,
                                                 combine_categories,
                                                 comment="Monthly summary")
+
+def by_parent(context, original):
+    """Really meant for use on periodic summaries."""
+    return categorised_by_key_fn(context, original, lambda row: row['parent'])
 
 def by_year(context, original, combine_categories):
     return original.combine_same_period_entries(qsutils.granularity_year,
@@ -127,7 +152,11 @@ def by_year(context, original, combine_categories):
 def categories(context, original):
     return categoriser.category_tree(original)
 
-def categorised(context, incoming_data):
+def categorised(context, original):
+    """Really meant for use on periodic summaries."""
+    return categorised_by_key_fn(context, original, lambda row: row['category'])
+
+def categorised_by_key_fn(context, incoming_data, key_fn):
     """Really meant for use on periodic summaries."""
     categories = set()
     by_date = {}
@@ -136,7 +165,7 @@ def categorised(context, incoming_data):
         if on_day not in by_date:
             by_date[on_day] = {}
         day_accumulator = by_date[on_day]
-        category = row['category']
+        category = key_fn(row)
         categories.add(category)
         day_accumulator[category] = day_accumulator.get(category, 0) + row['amount']
     return named_column_sheet.named_column_sheet(incoming_data.config, sorted(categories), rows=by_date)
@@ -268,6 +297,9 @@ def payees(context, original, pattern=None):
 
 def proportions(context, original):
     return original.proportions()
+
+def read_classifier(context, filename):
+    return classify.read_classifier(filename)
 
 def rename_columns_row(timestamp, row, output_rows, names):
     output_rows[timestamp] = {names[1] if colname == names[0] else colname: cellvalue for colname, cellvalue in row.items()}

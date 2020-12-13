@@ -181,7 +181,7 @@ class canonical_sheet(base_sheet.base_sheet):
         result.rows = {date: qsutils.thresholded_row(row, threshold)
                        for date, row in self.rows.items()}
         return result
-
+    
     def row_to_canonical(self,
                          input_sheet, row,
                          convert_all=False,
@@ -386,12 +386,12 @@ class canonical_sheet(base_sheet.base_sheet):
                 result.rows[adjusted_datetime] = summary
         return result
 
-    def add_row(self,
-                timestamp,
-                amount=0,
-                currency='GBP',
-                payee=None,
-                category=None):
+    def construct_row(self,
+                      timestamp,
+                      amount=0,
+                      currency='GBP',
+                      payee=None,
+                      category=None):
         timestamp = self.unused_timestamp_from(timestamp)
         self.rows[timestamp] = {'timestamp': timestamp,
                                 'amount': amount,

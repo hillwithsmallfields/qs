@@ -14,6 +14,7 @@ class base_sheet:
         self.rows = rows or {}
         self.config = config
         self._hide_in_csv = True # don't show these if they get incorporated into row data
+        self.default_time = "00:00:00"
 
     def __len__(self):
         return len(self.rows)
@@ -52,6 +53,12 @@ class base_sheet:
             colseq.remove('date')
             colseq = ['date'] + [col for col in colseq]
         return colseq
+
+    def add_row(self, row):
+        print("adding row at", row['timestamp'])
+        timestamp = self.unused_timestamp_from(row['timestamp'])
+        row['timestamp'] = timestamp
+        self.rows[timestamp] = row
     
     def write_all_columns(self, filename):
         """Write a spreadsheet.
