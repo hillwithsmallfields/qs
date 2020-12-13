@@ -135,8 +135,9 @@ def main():
         'eval-stack': []
     }
 
-    for binding in args.bind:
-        initial_bindings[binding[0]] = binding[1]
+    if args.bind:
+        for binding in args.bind:
+            initial_bindings[binding[0]] = binding[1]
 
     for filename in args.script_files:
         finlisp_evaluation.finlisp_load_file(context, filename)
