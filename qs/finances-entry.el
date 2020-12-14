@@ -38,10 +38,8 @@ With optional FORCE, do it even if it seems unnecessary."
          (category (completing-read "Category: "
                                     category-completions
                                     nil t))
-         (parent "")
          (payee (completing-read "Payee:"
                                  payee-completions))
-         (location "")
          (project (completing-read "Project: "
                                    project-completions))
          (note (read-from-minibuffer "Note: ")))
@@ -51,8 +49,7 @@ With optional FORCE, do it even if it seems unnecessary."
           account
           (* amount (if debit -1 1)) currency
           original-amount original-currency
-          category parent
-          payee location
+          category payee
           project note)))
 
 (defun finances-entry-cell-as-string (cell-value)
@@ -65,7 +62,7 @@ With optional FORCE, do it even if it seems unnecessary."
     (format "%g" cell-value))
    (t cell-value)))
 
-(defun finances-enter (date time account amount currency original-amount original-currency category parent payee location project note)
+(defun finances-enter (date time account amount currency original-amount original-currency category payee project note)
   "Read an entry for my finances file.
 The fields DATE TIME ACCOUNT AMOUNT CURRENCY ORIGINAL-AMOUNT
 ORIGINAL-CURRENCY CATEGORY PARENT PAYEE LOCATION PROJECT NOTE are
@@ -83,8 +80,7 @@ as in the Financisto app."
                                original-amount original-currency
                                balance
                                payee
-                               category parent
-                               location project
+                               category project
                                note)
                          ",")
               "\n"))))
