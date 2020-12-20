@@ -107,7 +107,6 @@ def account_to_sheet(context, base_account):
     return account_sheet.account_sheet(base_account.config, base_account)
 
 def add_row(context, sheet, row):
-    print("Adding row", row, "to sheet", sheet)
     sheet.add_row(row)
     return sheet
 
@@ -241,11 +240,15 @@ def grep(context, input_sheet, pattern, column='payee'):
         raise UnsupportedOperation("grep", type(input_sheet))
 
 def find_by_field(context, value, items, match_field):
+    """Return one of a list of items that matches on a given field.
+It matches if equal, a substring, or a superstring."""
+    value_is_sequence = hasattr(value, '__len__')
     for item in items:
         item_value = item.get(match_field, None)
-        if item_value and (item_value == value
-                           or item_value in value
-                           or value in item_value):
+        if (item_value == value
+            or (value_is_sequence and hasattr(item_value, '__len__')
+                and (item_value in value
+                     or value in item_value))):
             return item
     return False
 
