@@ -51,6 +51,28 @@ def finlisp_if(context, condition, then_form, *else_forms):
 
 def_finlisp_form('if', finlisp_if)
 
+def finlisp_when(context, condition, then_form, *else_forms):
+    if finlisp_eval(context, condition):
+        result = None
+        for else_form in else_forms:
+            result = finlisp_eval(context, else_form)
+        return result
+    else:
+        return None
+
+def_finlisp_form('when', finlisp_when)
+
+def finlisp_unless(context, condition, then_form, *else_forms):
+    if not finlisp_eval(context, condition):
+        result = None
+        for else_form in else_forms:
+            result = finlisp_eval(context, else_form)
+        return result
+    else:
+        return None
+
+def_finlisp_form('unless', finlisp_unless)
+
 def finlisp_let(context, bindings, *bodyforms):
     new_context = context.copy()
     new_context['bindings'] = [{binding[0]._val: finlisp_eval(context, binding[1])
@@ -134,13 +156,11 @@ def finlisp_extend_stack(context, form):
     return new_context
 
 class UndefinedName(Exception):
-    pass
 
     def __init__(self, function_name, value):
         self.function_name = function_name
 
 class EvalError(Exception):
-    pass
 
     def __init__(self, form):
         self.form = form
@@ -188,13 +208,23 @@ def finlisp_eval(context, expr):
         print("Error in evaluating", expr)
         traceback.print_exc()
         for frame in context['eval-stack']:
-            print("eval:", frame)
+            print("eval:", sexpdata.dumps(frame))
+        for binding_frame in context['bindings']:
+            print("bindings:")
+            for varname, varval in binding_frame.items():
+                print("    " + varname + ":", varval)
         raise(EvalError, expr)
 
+def lisp_to_string(value):
+    try:
+        return sexpdata.dumps(value)
+    except:
+        return str(value)
+    
 def finlisp_load_file(context, filename):
     with open(filename) as instream:
         parser = sexpdata.Parser(instream.read())
         _, sexps = parser.parse_sexp(0)
         for sexp in sexps:
             result = finlisp_eval(context, sexp)
-            print("==>", result)
+            print("==>", lisp_to_string(result))

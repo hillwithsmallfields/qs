@@ -122,12 +122,16 @@ def main():
                         nargs=2,
                         action='append',
                         help="""Preset a Lisp variable.""")
+    parser.add_argument("--output-dir", "-O",
+                        help="""Set the default output directory.""")
     parser.add_argument("script_files", nargs='*')
     args = parser.parse_args()
 
-    initial_bindings = {'output-dir': ".",
-                't': True,
-                'nil': False}
+    initial_bindings = {
+        'output-dir': args.output_dir or ".",
+        'verbose': args.verbose,
+        't': True,
+        'nil': False}
     
     context = {
         'config': qsutils.program_load_config(args, quiet=True),
