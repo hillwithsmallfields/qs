@@ -14,6 +14,7 @@ import filter_dates
 import finlisp_evaluation
 import formatted_sheet
 import named_column_sheet
+import parentage
 import qsutils
 import re
 import tracked_sheet
@@ -45,6 +46,7 @@ functions = ['account_to_sheet',
              'annotate_matches',
              'add_row',
              'blank_sheet',
+             'by_classification',
              'by_day',
              'by_hierarchy',
              'by_month',
@@ -76,6 +78,7 @@ functions = ['account_to_sheet',
              'payees',
              'proportions',
              'read_classifier',
+             'read_parentage_table',
              'rename_column',
              'select_columns',
              'setq',
@@ -122,26 +125,42 @@ def annotate_matches(context, sheet, reference):
 def blank_sheet(context):
     return canonical_sheet.canonical_sheet(context['config'])
 
+def classify_helper(row, parentage_table, classifiers):
+    category = row['category']
+    return classify.classify(category,
+                             parentage_table.get(category),
+                             classifiers)
+
+def by_classification(context, original, parentage_table, classifiers):
+    return categorised_by_key_fn(context, original,
+                                 lambda row: classify_helper(row, parentage_table, classifiers))
+
 def by_day(context, original, combine_categories):
     return original.combine_same_period_entries(qsutils.granularity_day,
                                                 combine_categories,
                                                 comment="Daily summary")
 
-def hierarchy_helper(row, depth):
-    levels = (row.get('parent', "") + ":" + row.get('category', "")).split(":")
+def row_parent(row, parentage_table):
+    return parentage_table.get(row['category'])
+
+def hierarchy_helper(row, depth, parentage_table):
+    parent = row_parent(row, parentage_table)
+    levels = (parent + ":" + row.get('category', "")).split(":") if parent else [row.get('category', "")]
     return levels[min(len(levels)-1, depth)]
 
-def by_hierarchy(context, original, depth):
-    return categorised_by_key_fn(context, original, lambda row: hierarchy_helper(row, depth))
+def by_hierarchy(context, original, depth, parentage_table):
+    return categorised_by_key_fn(context, original,
+                                 lambda row: hierarchy_helper(row, depth, parentage_table))
 
 def by_month(context, original, combine_categories):
     return original.combine_same_period_entries(qsutils.granularity_month,
                                                 combine_categories,
                                                 comment="Monthly summary")
 
-def by_parent(context, original):
+def by_parent(context, original, parentage_table):
     """Really meant for use on periodic summaries."""
-    return categorised_by_key_fn(context, original, lambda row: row['parent'])
+    return categorised_by_key_fn(context, original,
+                                 lambda row: row_parent(row, parentage_table))
 
 def by_year(context, original, combine_categories):
     return original.combine_same_period_entries(qsutils.granularity_year,
@@ -165,9 +184,12 @@ def categorised_by_key_fn(context, incoming_data, key_fn):
             by_date[on_day] = {}
         day_accumulator = by_date[on_day]
         category = key_fn(row)
-        categories.add(category)
+        categories.add(category or "unknown")
         day_accumulator[category] = day_accumulator.get(category, 0) + row['amount']
-    return named_column_sheet.named_column_sheet(incoming_data.config, sorted(categories), rows=by_date)
+    print("categories are", categories)
+    return named_column_sheet.named_column_sheet(incoming_data.config,
+                                                 sorted(categories),
+                                                 rows=by_date)
 
 def chart(context, sheet, title, filename, fields):
     """Output a sheet to gnuplot."""
@@ -290,6 +312,9 @@ def make_update_sheet(context, sheet, reference):
 def occupied_columns(context, sheet):
     """Return a copy of a sheet but with all empty columns removed."""
     return sheet.occupied_columns()
+
+def read_parentage_table(context, parentage_filename):
+    return parentage.read_parentage_table(parentage_filename)
 
 def payees(context, original, pattern=None):
     return base_sheet.base_sheet(None,

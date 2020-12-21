@@ -186,20 +186,23 @@ def load_config(verbose, base_config, suggested_dir, *config_files):
         equivalents = base_config['equivalents']
         equiv_table = {}
         equiv_reverse_table = {}
-        print("equivalents are", equivalents)
+        if verbose:
+            print("equivalents are", equivalents)
         for equiv_primary, equiv_secondaries in equivalents.items():
             combined = [equiv_primary] + equiv_secondaries
             for e in combined:
                 equiv_table[e] = combined
             for sec in equiv_secondaries:
                 equiv_reverse_table[sec] = equiv_primary
-        print("equiv_table", equiv_table)
+        if verbose:
+            print("equiv_table", equiv_table)
         base_config['equivalents'] = equiv_table
         base_config['reverse-equivalents'] = equiv_reverse_table
-        print("reverse equivalents are", equiv_reverse_table)
+        if verbose:
+            print("reverse equivalents are", equiv_reverse_table)
     equivalent_names = base_config.get('equivalents', {})
-    print("equivalent_names are originally", equivalent_names)
     if verbose:
+        print("equivalent_names are originally", equivalent_names)
         print("Read config:")
         print(yaml.dump(base_config))
     return base_config

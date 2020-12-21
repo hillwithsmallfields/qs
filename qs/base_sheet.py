@@ -55,7 +55,7 @@ class base_sheet:
         return colseq
 
     def add_row(self, row):
-        print("adding row at", row['timestamp'])
+        # print("adding row at", row['timestamp'])
         timestamp = self.unused_timestamp_from(row['timestamp'])
         row['timestamp'] = timestamp
         self.rows[timestamp] = row

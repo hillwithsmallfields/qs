@@ -35,7 +35,7 @@ def main():
             cats = json.load(instream)
     elif args.infile.endswith('.yaml'):
         with open(args.infile) as instream:
-            cats = yaml.load(instream)
+            cats = yaml.safe-load(instream)
     else:
         print("Could not read", args.infile)
         exit(1)

@@ -132,7 +132,7 @@ class canonical_sheet(base_sheet.base_sheet):
                     if 'sheet' in sample:
                         self.config = sample['sheet'].config
                         break
-        print("finished initting canonical_sheet, dict binds", sorted(self.__dict__.keys()))
+        # print("finished initting canonical_sheet, dict binds", sorted(self.__dict__.keys()))
                     
     def __iter__(self):
         self.row_order = sorted(self.rows.keys())

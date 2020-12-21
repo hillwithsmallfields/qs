@@ -35,7 +35,6 @@ class csv_sheet(base_sheet.base_sheet):
         self.header_row_number = 0
         self.filename = input_filename
         self.origin_files = []
-        print("csv_sheet.__init__ format_name", format_name, "input", input_filename)
         if input_filename:
             if not self.read(input_filename):
                 print("Could not construct csv_sheet from", input_filename)
@@ -119,7 +118,7 @@ class csv_sheet(base_sheet.base_sheet):
                     self.format_name, self.header_row_number = qsutils.deduce_stream_format(infile, self.config, verbose=True)
                 print("Could not deduce format for", filename)
                 raise UnknownCSVFormat(infile)
-            print("Detected", self.format_name, "spreadsheet in", filename)
+            # print("Detected", self.format_name, "spreadsheet in", filename)
             sheet_marker = {'sheet': self}
             for i in range(1, self.header_row_number):
                 _ = infile.readline()

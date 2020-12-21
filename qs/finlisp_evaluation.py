@@ -51,22 +51,22 @@ def finlisp_if(context, condition, then_form, *else_forms):
 
 def_finlisp_form('if', finlisp_if)
 
-def finlisp_when(context, condition, then_form, *else_forms):
+def finlisp_when(context, condition, *when_forms):
     if finlisp_eval(context, condition):
         result = None
-        for else_form in else_forms:
-            result = finlisp_eval(context, else_form)
+        for when_form in when_forms:
+            result = finlisp_eval(context, when_form)
         return result
     else:
         return None
 
 def_finlisp_form('when', finlisp_when)
 
-def finlisp_unless(context, condition, then_form, *else_forms):
+def finlisp_unless(context, condition, *unless_forms):
     if not finlisp_eval(context, condition):
         result = None
-        for else_form in else_forms:
-            result = finlisp_eval(context, else_form)
+        for unless_form in unless_forms:
+            result = finlisp_eval(context, unless_form)
         return result
     else:
         return None
