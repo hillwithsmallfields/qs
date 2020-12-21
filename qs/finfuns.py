@@ -132,6 +132,7 @@ def classify_helper(row, parentage_table, classifiers):
                              classifiers)
 
 def by_classification(context, original, parentage_table, classifiers):
+    print("by_classification; parentage_table is", parentage_table, "and classifiers are", classifiers)
     return categorised_by_key_fn(context, original,
                                  lambda row: classify_helper(row, parentage_table, classifiers))
 
@@ -141,12 +142,16 @@ def by_day(context, original, combine_categories):
                                                 comment="Daily summary")
 
 def row_parent(row, parentage_table):
-    return parentage_table.get(row['category'])
+    ancestry = parentage_table.get(row['category'])
+    return ancestry[-1] if ancestry else None
 
 def hierarchy_helper(row, depth, parentage_table):
     parent = row_parent(row, parentage_table)
-    levels = (parent + ":" + row.get('category', "")).split(":") if parent else [row.get('category', "")]
-    return levels[min(len(levels)-1, depth)]
+    if parent:
+        levels = (parent + ":" + row.get('category', "")).split(":")
+        return levels[min(len(levels)-1, depth)]
+    else:
+        return row.get('category', "")
 
 def by_hierarchy(context, original, depth, parentage_table):
     return categorised_by_key_fn(context, original,
@@ -184,6 +189,7 @@ def categorised_by_key_fn(context, incoming_data, key_fn):
             by_date[on_day] = {}
         day_accumulator = by_date[on_day]
         category = key_fn(row)
+        # print("categorised_by_key_fn adding category", category)
         categories.add(category or "unknown")
         day_accumulator[category] = day_accumulator.get(category, 0) + row['amount']
     print("categories are", categories)
