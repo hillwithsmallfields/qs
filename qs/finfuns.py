@@ -87,6 +87,7 @@ functions = ['account_to_sheet',
              'subtract_cells',
              'threshold',
              'track',
+             'unclassified_categories',
              'write_all_columns',
              'write_csv',
              'write_json',
@@ -132,7 +133,6 @@ def classify_helper(row, parentage_table, classifiers):
                              classifiers)
 
 def by_classification(context, original, parentage_table, classifiers):
-    print("by_classification; parentage_table is", parentage_table, "and classifiers are", classifiers)
     return categorised_by_key_fn(context, original,
                                  lambda row: classify_helper(row, parentage_table, classifiers))
 
@@ -404,6 +404,12 @@ def track(context, sheet, tracked_column, tracking_column):
     return tracked_sheet.tracked_sheet(sheet.config, input_sheet=sheet,
                                        input_column=tracked_column,
                                        output_column=tracking_column)
+
+def unclassified_categories(context, classifiers, parentage_table):
+    return [category
+            for category, parentage in parentage_table.items()
+            if (category not in classifiers
+                and not any([ancestor in classifiers for ancestor in parentage]))]
 
 def write_all_columns(context, value, filename):
     if value:
