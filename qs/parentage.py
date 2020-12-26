@@ -22,7 +22,6 @@ def read_parentage_table(parentage_filename):
         return None
     table = {}
     add_parentage(tree, table, [])
-    print("read parentage table", table)
     return table
 
 def main():
