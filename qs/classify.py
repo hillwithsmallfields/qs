@@ -11,11 +11,19 @@ def read_classifier(classification_file):
             result[member] = name
     return result
 
-def classify(category, parentage, classes):
+def classify(category, parentage, classes, pass_unknowns=True):
+    """Classify a category.
+    If it is directly in any of the classes, put it in that class;
+    otherwise if any of its parent categories are in a class, use that.
+    The classes are normally a dictionary, but a list may be given,
+    in which case membership is tested.
+    If pass_unknowns is given as False, None is returned for unclassed categories,
+    otherwise they serve as their own classes.
+    Passing a list for classes and False for pass_unknowns makes this act as a filter."""
     if category in classes:
-        return classes[category]
+        return classes[category] if isinstance(classes, dict) else category
     if parentage:
         for ancestor in reversed(parentage):
             if ancestor in classes:
-                return classes[ancestor]
-    return category
+                return classes[ancestor] if isinstance(classes, dict) else category
+    return category if pass_unknowns else None

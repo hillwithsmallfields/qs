@@ -64,6 +64,7 @@ functions = ['account_to_sheet',
              'first_of_month',
              'first_of_year',
              'flagged_as',
+             'flagged_categories',
              'format_sheet',
              'grep',
              # 'join', # todo
@@ -126,15 +127,16 @@ def annotate_matches(context, sheet, reference):
 def blank_sheet(context):
     return canonical_sheet.canonical_sheet(context['config'])
 
-def classify_helper(row, parentage_table, classifiers):
+def classify_helper(row, parentage_table, classifiers, keep_unknowns):
     category = row['category']
     return classify.classify(category,
                              parentage_table.get(category),
-                             classifiers)
+                             classifiers,
+                             pass_unknowns=keep_unknowns)
 
-def by_classification(context, original, parentage_table, classifiers):
+def by_classification(context, original, parentage_table, classifiers, keep_unknowns):
     return categorised_by_key_fn(context, original,
-                                 lambda row: classify_helper(row, parentage_table, classifiers))
+                                 lambda row: classify_helper(row, parentage_table, classifiers, keep_unknowns))
 
 def by_day(context, original, combine_categories):
     return original.combine_same_period_entries(qsutils.granularity_day,
@@ -189,10 +191,8 @@ def categorised_by_key_fn(context, incoming_data, key_fn):
             by_date[on_day] = {}
         day_accumulator = by_date[on_day]
         category = key_fn(row)
-        # print("categorised_by_key_fn adding category", category)
         categories.add(category or "unknown")
         day_accumulator[category] = day_accumulator.get(category, 0) + row['amount']
-    print("categories are", categories)
     return named_column_sheet.named_column_sheet(incoming_data.config,
                                                  sorted(categories),
                                                  rows=by_date)
@@ -247,6 +247,14 @@ def flagged_as(context, formatname, payee, flag):
     if payee_details and 'flags' in payee_details:
         return flag in payee_details['flags']
     return False
+
+def flagged_categories(context, formatname, flag):
+    """Return a list of names of categories appearing in conversions for a given format with a given flag."""
+    return list(set([details.get('category')
+                     for details in context['config']['formats'][formatname]['conversions'].values()
+                     if ('category' in details
+                         and 'flags' in details
+                         and flag in details['flags'])]))
         
 def safe_search(pattern, value):
     return pattern.search(value) if value else None
