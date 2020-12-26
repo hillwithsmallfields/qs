@@ -36,6 +36,29 @@ def finlisp_getenv(_, varname, default_value=None):
 
 finlisp_evaluation.def_finlisp_fn('getenv', finlisp_getenv)
 
+def finlisp_append(_, *lists):
+    result = lists[0]
+    for onelist in lists[1:]:
+        result = result + onelist
+    return result
+
+finlisp_evaluation.def_finlisp_fn('append', finlisp_append)
+
+def finlisp_cons(_, a, b):
+    return [a] + b
+
+finlisp_evaluation.def_finlisp_fn('cons', finlisp_cons)
+
+def finlisp_car(_, a):
+    return a[0]
+
+finlisp_evaluation.def_finlisp_fn('car', finlisp_car)
+
+def finlisp_cdr(_, a):
+    return a[1:]
+
+finlisp_evaluation.def_finlisp_fn('cdr', finlisp_cdr)
+
 def make_empty_dir(_, dirname):
     os.makedirs(dirname, exist_ok=True)
     for filename in os.listdir(dirname):
