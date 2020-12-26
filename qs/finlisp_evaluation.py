@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import functools
 import sexpdata
 import traceback
 import operator
@@ -21,13 +22,15 @@ def finlisp_var_value(context, varname):
     return value if found else None
 
 def finlisp_setq(context, args):
-    key = args[0]
-    value = args[1]
-    for frame in context['bindings']:
-        if key in frame:
-            frame[key] = value
-            return value
-    bindings[-1][key] = value
+    while args:
+        key = args[0]
+        value = args[1]
+        for frame in context['bindings']:
+            if key in frame:
+                frame[key] = value
+                return value
+        bindings[-1][key] = value
+        args = args[2:]
     return value
 
 def_finlisp_form('setq', finlisp_setq)
@@ -108,7 +111,7 @@ def finlisp_dolist(context, control_binding, *bodyforms):
         for body_form in bodyforms:
             result = finlisp_eval(new_context, body_form)
     return result
-    
+
 def_finlisp_form('dolist', finlisp_dolist)
 
 def finlisp_for_each_row(context, sheet, row_var, forward, *bodyforms):
@@ -127,6 +130,11 @@ def finlisp_for_each_row(context, sheet, row_var, forward, *bodyforms):
 
 def_finlisp_form('for-each-row', finlisp_for_each_row)
 
+def finlisp_defun(context, fname, fargs, *fbody):
+    context['bindings'][0][fname._val] = ['lambda', fargs] + list(fbody)
+
+def_finlisp_form('defun', finlisp_defun)
+
 finlisp_functions = {}
 
 def def_finlisp_fn(fname, fimpl):
@@ -135,18 +143,23 @@ def def_finlisp_fn(fname, fimpl):
 def def_finlisp_wrapped_fn(fname, basefn):
     finlisp_functions[fname] = lambda context, *args: basefn(*args)
 
-for fname, basefn in {'+': operator.add,
-                      '-': operator.sub,
-                      '*': operator.mul,
-                      '/': operator.floordiv,
-                      '%': operator.mod,
-                      '<': operator.lt,
+def def_finlisp_wrapped_nargs_fn(fname, basefn):
+    finlisp_functions[fname] = lambda context, *args: functools.reduce(basefn, args)
+
+for fname, basefn in {'<': operator.lt,
                       '<=': operator.le,
                       '==': operator.eq,
                       '!=': operator.ne,
                       '>': operator.gt,
                       '>=': operator.ge}.items():
     def_finlisp_wrapped_fn(fname, basefn)
+
+for fname, basefn in {'+': operator.add,
+                      '-': operator.sub,
+                      '*': operator.mul,
+                      '/': operator.floordiv,
+                      '%': operator.mod}.items():
+    def_finlisp_wrapped_nargs_fn(fname, basefn)
 
 def finlisp_extend_stack(context, form):
     new_context = context.copy()
@@ -160,6 +173,11 @@ class UndefinedName(Exception):
     def __init__(self, function_name, value):
         self.function_name = function_name
 
+class InvalidFunction(Exception):
+
+    def __init__(self, form):
+        self.form = form
+        
 class EvalError(Exception):
 
     def __init__(self, form):
@@ -177,7 +195,20 @@ def finlisp_eval_list(context, expr):
                                            *[finlisp_eval(context, x)
                                              for x in sexpdata.cdr(expr)])
     else:
-        raise UndefinedName(fun_name)
+        user_fn, found = finlisp_var_lookup(context, fun_name)
+        if found:
+            if isinstance(user_fn, list) and user_fn[0] == 'lambda' and len(user_fn) >= 3:
+                new_context = context.copy()
+                new_context['bindings'] = [{binding[0]._val: finlisp_eval(context, binding[1])
+                                            for binding in zip(user_fn[1], expr[1:])}] + context['bindings']
+                result = None
+                for body_form in user_fn[2:]:
+                    result = finlisp_eval(new_context, body_form)
+                return result
+            else:
+                raise InvalidFunction(fun_name)
+        else:
+            raise UndefinedName(fun_name)
 
 def finlisp_eval_symbol(context, expr):
     result, found = finlisp_var_lookup(context, expr._val)
@@ -220,7 +251,7 @@ def lisp_to_string(value):
         return sexpdata.dumps(value)
     except:
         return str(value)
-    
+
 def finlisp_load_file(context, filename):
     with open(filename) as instream:
         parser = sexpdata.Parser(instream.read())

@@ -13,6 +13,12 @@
 
 (builtins)
 
+(defun foo (a)
+  (print "fooing" a))
+
+(foo 1)
+(foo (+ 3 4))
+
 (let ((financisto (read-canonical "~/common/qs/qs-scratch/financisto-full.csv"))
       (handelsbanken (read-canonical "~/common/qs/qs-scratch/handelsbanken-full.csv")))
   (print "writing financisto-as-csv.csv with headers" (headers financisto))
