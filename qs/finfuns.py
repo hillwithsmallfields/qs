@@ -138,9 +138,10 @@ def by_classification(context, original, parentage_table, classifiers, keep_unkn
     return categorised_by_key_fn(context, original,
                                  lambda row: classify_helper(row, parentage_table, classifiers, keep_unknowns))
 
-def by_day(context, original, combine_categories):
+def by_day(context, original, combine_categories, combined_only):
     return original.combine_same_period_entries(qsutils.granularity_day,
                                                 combine_categories,
+                                                combined_only,
                                                 comment="Daily summary")
 
 def row_parent(row, parentage_table):
@@ -159,9 +160,10 @@ def by_hierarchy(context, original, depth, parentage_table):
     return categorised_by_key_fn(context, original,
                                  lambda row: hierarchy_helper(row, depth, parentage_table))
 
-def by_month(context, original, combine_categories):
+def by_month(context, original, combine_categories, combined_only):
     return original.combine_same_period_entries(qsutils.granularity_month,
                                                 combine_categories,
+                                                combined_only,
                                                 comment="Monthly summary")
 
 def by_parent(context, original, parentage_table):
@@ -169,9 +171,10 @@ def by_parent(context, original, parentage_table):
     return categorised_by_key_fn(context, original,
                                  lambda row: row_parent(row, parentage_table))
 
-def by_year(context, original, combine_categories):
+def by_year(context, original, combine_categories, combined_only):
     return original.combine_same_period_entries(qsutils.granularity_year,
                                                 combine_categories,
+                                                combined_only,
                                                 comment="Yearly summary")
 
 def categories(context, original):

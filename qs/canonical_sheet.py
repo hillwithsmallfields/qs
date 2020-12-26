@@ -55,7 +55,8 @@ class canonical_sheet(base_sheet.base_sheet):
         'payee',
         'category',
         'project',
-        'message'
+        'message',
+        'combicount'            # for combining rows
     ]
 
     canonical_column_sequence = ['timestamp'] + canonical_column_sequence_no_timestamp
@@ -349,41 +350,55 @@ class canonical_sheet(base_sheet.base_sheet):
 
     def combine_same_period_entries(self,
                                     period,
-                                    combine_categories,
+                                    combine_categories=True,
+                                    combined_only=False,
                                     comment=None):
         """Produce a sheet based on this one, with just one entry per payee
         per period (day, by default).
 
         `period' is a function which should return the starting
         datetime.datetime of the period containing the date it is
-        given."""
+        given.
+
+
+        combine_categories means to collect up all the categories of
+        the same payee.
+
+        combined_only means to return only the rows that resulted from
+        combining rows, dropping any that went straight through from
+        individual incoming rows.
+        """
         result = copy.copy(self)
         result.rows = {}
-        accumulators = {}
+        accumulators = {}       # maps dates to maps of payee to combined transactions
         for timestamp in self.rows.keys():
             row = self.rows[timestamp]
             row_date = period(timestamp)
             if row_date not in accumulators:
                 accumulators[row_date] = {}
-            this_day_by_payee = accumulators[row_date]
+            this_period_by_payee = accumulators[row_date]
             payee_key = row['payee'] if combine_categories else (row['payee'], row['category'])
-            if payee_key in this_day_by_payee:
-                this_day_by_payee[payee_key]['amount'] += row['amount']
+            if payee_key in this_period_by_payee:
+                this_period_by_payee[payee_key]['amount'] += row['amount']
+                this_period_by_payee[payee_key]['combicount'] += 1
                 if combine_categories:
-                    so_far = this_day_by_payee[payee_key]['category']
+                    so_far = this_period_by_payee[payee_key]['category']
                     if row['category'] not in so_far:
-                        this_day_by_payee[payee_key]['category'] = so_far + ";" + row['category']
+                        this_period_by_payee[payee_key]['category'] = so_far + ";" + row['category']
             else:
-                this_day_by_payee[payee_key] = copy.copy(row)
+                this_period_by_payee[payee_key] = copy.copy(row)
+                this_period_by_payee[payee_key]['combicount'] = 1
         for timestamp, summaries in accumulators.items():
             for summary in summaries.values():
+                if summary['combicount'] == 1 and combined_only:
+                    continue
                 adjusted_datetime = result.unused_timestamp_from(timestamp)
                 summary['timestamp'] = adjusted_datetime
                 summary['date'] = adjusted_datetime.date().isoformat()
                 summary['time'] = adjusted_datetime.time().isoformat()
                 result.rows[adjusted_datetime] = summary
         return result
-
+    
     def construct_row(self,
                       timestamp,
                       amount=0,
