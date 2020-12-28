@@ -7,7 +7,7 @@ import os
 import base_sheet
 import canonical_sheet
 import qsutils
-
+    
 class diff_sheet(base_sheet.base_sheet):
 
     """A sheet representing the timeline of differences between columns in
@@ -18,36 +18,65 @@ class diff_sheet(base_sheet.base_sheet):
                  sheet_a, column_a,
                  sheet_b, column_b,
                  initial_a=0, track_a=None,
-                 initial_b=0, track_b=None):
+                 filter_a_col=None, filter_a_val=None, 
+                 initial_b=0, track_b=None,
+                 filter_b_col=None, filter_b_val=None):
         super().__init__(sheet_a.config)
         self.rows = {}
-        self.column_a = column_a
-        self.track_a = track_a
+        print("diff: result_column:", result_column,
+              "sheet_a:", sheet_a,
+              "column_a:", column_a,
+              "sheet_b:", sheet_b,
+              "column_b:", column_b,
+              "initial_a:", initial_a,
+              "track_a:", track_a,
+              "filter_a_col:", filter_a_col,
+              "filter_a_val:", filter_a_val,
+              "initial_b:", initial_b,
+              "track_b:", track_b,
+              "filter_b_col:", filter_b_col,
+              "filter_b_val:", filter_b_val,)
+        column_a_out = column_a if column_a != column_b and column_a != track_a and column_a != track_b else column_a + "(a)"
+        column_b_out = column_b if column_b != column_a and column_b != track_a and column_b != track_b else column_b + "(b)"
+        track_a_out = track_a if track_a != column_a and track_a != column_b and track_a != track_b else track_a + "(A)"
+        track_b_out = track_b if track_b != column_a and track_b != column_b and track_b != track_a else track_b + "(B)"
+        self.column_a = column_a_out
+        self.track_a = track_a_out
         amount_a = 0
         balance_a = initial_a
         rows_a = sheet_a.rows
-        self.column_b = column_b
-        self.track_b = track_b
+        self.column_b = column_b_out
+        self.track_b = track_b_out
         amount_b = 0
         balance_b = initial_b
         rows_b = sheet_b.rows
         self.result_column = result_column
-        self.colseq = ['timestamp', column_a]
+        self.colseq = ['timestamp', column_a_out]
         if track_a:
-            self.colseq.append(track_a)
-        self.colseq.append(column_b)
+            self.colseq.append(track_a_out)
+        self.colseq.append(column_b_out)
         if track_b:
-            self.colseq.append(track_b)
+            self.colseq.append(track_b_out)
         self.colseq.append(result_column)
+        self.datacols = self.colseq[1:]
+        prev_row = {}
         for ts in sorted(set([k for k in rows_a.keys()] + [k for k in rows_b.keys()])):
+            if track_a:
+                amount_a = 0
             if ts in rows_a:
-                amount_a = float(rows_a[ts].get(column_a, 0))
-                if track_a:
-                    balance_a += amount_a
+                row_a = rows_a[ts]
+                if not filter_a_col or filter_a_col not in row_a or row_a[filter_a_col] == filter_a_val:
+                    amount_a = float(row_a.get(column_a, 0))
+                    if track_a:
+                        balance_a += amount_a
+            if track_b:
+                amount_b = 0
             if ts in rows_b:
-                amount_b = float(rows_b[ts].get(column_b, 0))
-                if track_b:
-                    balance_b += amount_b
+                row_b = rows_b[ts]
+                if not filter_b_col or filter_b_col not in row_b or row_b[filter_b_col] == filter_b_val:
+                    amount_b = float(row_b.get(column_b, 0))
+                    if track_b:
+                        balance_b += amount_b
             row = {'timestamp': ts,
                    result_column: ((balance_a
                                     if track_a
@@ -56,14 +85,22 @@ class diff_sheet(base_sheet.base_sheet):
                                    (balance_b
                                     if track_b
                                     else amount_b)),
-                   column_a: amount_a,
-                   column_b: amount_b}
+                   column_a_out: amount_a,
+                   column_b_out: amount_b}
             if track_a:
-                row[track_a] = balance_a
+                row[track_a_out] = balance_a
             if track_b:
-                row[track_b] = balance_b
-            self.rows[ts] = row
+                row[track_b_out] = balance_b
+            if not self.same_row_data(row, prev_row):
+                self.rows[ts] = row
+                prev_row = row
 
+    def same_row_data(self, a, b):
+        for k in self.datacols:
+            if a.get(k) != b.get(k):
+                return False
+        return True
+        
     def column_names_list(self):
         return self.colseq
 

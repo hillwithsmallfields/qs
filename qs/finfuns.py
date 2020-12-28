@@ -81,6 +81,7 @@ functions = ['account_to_sheet',
              'proportions',
              'read_classifier',
              'read_parentage_table',
+             'remove_columns',
              'rename_column',
              'select_columns',
              'setq',
@@ -215,12 +216,13 @@ def chart(context, sheet, title, filename, fields):
 
 def compare(context,
             result_column,
-            sheet_a, column_a, track_a,
-            sheet_b, column_b, track_b):
+            sheet_a, column_a, track_a, filter_a_col, filter_a_val,
+            sheet_b, column_b, track_b, filter_b_col, filter_b_val):
     return diff_sheet.diff_sheet(result_column,
                                  sheet_a, column_a,
                                  sheet_b, column_b,
-                                 track_a=track_a, track_b=track_b)
+                                 track_a=track_a, filter_a_col=filter_a_col, filter_a_val=filter_a_val,
+                                 track_b=track_b, filter_b_col=filter_b_col, filter_b_val=filter_b_val)
 
 def filter_sheet(context, input_sheet, column, pattern):
     return input_sheet.filter_sheet(column, pattern)
@@ -353,6 +355,20 @@ def proportions(context, original):
 
 def read_classifier(context, filename):
     return classify.read_classifier(filename)
+
+def remove_columns_row(timestamp, row, output_rows, colnames):
+    output_rows[timestamp] = {colname: row[colname] for colname in row.keys() if colname not in colnames}
+
+def remove_columns(context, sheet, column_names):
+    _, output_rows = qsutils.process_rows(column_names, # app-data
+                                          None, # input-format
+                                          sheet.rows, # rows
+                                          None, # setup
+                                          remove_columns_row, # row handler
+                                          None) # tidyup
+    return named_column_sheet.named_column_sheet(sheet.config,
+                                                 column_names,
+                                                 rows=output_rows)
 
 def rename_columns_row(timestamp, row, output_rows, names):
     output_rows[timestamp] = {names[1] if colname == names[0] else colname: cellvalue for colname, cellvalue in row.items()}

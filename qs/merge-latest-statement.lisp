@@ -73,8 +73,15 @@
     (write-csv unambiguously-matched-non-auto "unambiguously-matched-non-auto.csv")
 
     (write-csv by-classification "automatics-by-classification.csv"))
-  (let ((merged (add-sheets main unmatched-automatic)))
+  (let* ((merged (add-sheets main unmatched-automatic))
+         (tracked (track merged "amount" "balance"))
+         (differences (compare "discrepancy"
+                               main   "amount"  "balance" "account" "Handelsbanken current account"
+                               latest "balance" nil       nil       nil)))
     (print "main:" (length main))
     (print "added:" (length unmatched-automatic))
     (print "merged:" (length merged))
-    (write-csv merged "merged.csv")))
+    (print "differences:" (length differences))
+    (write-csv merged "merged.csv")
+    (write-csv tracked "tracked.csv")
+    (write-csv differences "differences.csv")))
