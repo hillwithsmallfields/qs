@@ -42,6 +42,7 @@ class UnsupportedOperation(BaseException):
 
 functions = ['account_to_sheet',
              'add_sheet',
+             'add_sheets',
              'annotate_by_timestamp',
              'annotate_matches',
              'add_row',
@@ -115,8 +116,15 @@ def add_row(context, sheet, row):
     sheet.add_row(row)
     return sheet
 
-def add_sheet(context, account, sheet, flags=None, trace_sheet_name=None):
-    return account.add_sheet(sheet, flags=flags, trace_sheet_name=trace_sheet_name)
+def add_sheet(context, base_account, sheet, flags=None, trace_sheet_name=None):
+    """Add a sheet to an account or to another sheet."""
+    if isinstance(base_account, account.account):
+        return account.add_sheet(sheet, flags=flags, trace_sheet_name=trace_sheet_name)
+    else:
+        return base_account.add_sheet(sheet)
+
+def add_sheets(context, *sheets):
+    return sheets[0].add_sheets(*sheets[1:])
 
 def annotate_by_timestamp(context, sheet, reference, annotation_columns):
     return filter_dates.annotate_by_timestamp(sheet, reference, annotation_columns)

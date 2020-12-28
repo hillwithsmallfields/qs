@@ -61,7 +61,7 @@ class canonical_sheet(base_sheet.base_sheet):
     ]
 
     canonical_column_sequence = ['timestamp'] + canonical_column_sequence_no_timestamp
-    
+
     def __init__(self,
                  config,
                  input_sheet=None,
@@ -135,7 +135,7 @@ class canonical_sheet(base_sheet.base_sheet):
                         self.config = sample['sheet'].config
                         break
         # print("finished initting canonical_sheet, dict binds", sorted(self.__dict__.keys()))
-                    
+
     def __iter__(self):
         self.row_order = sorted(self.rows.keys())
         self.row_cursor = -1    # because we pre-increment it
@@ -161,13 +161,28 @@ class canonical_sheet(base_sheet.base_sheet):
     # def __exit__(self):
     #     # TODO: write back to original file, leaving backup copy
     #     pass
-    
+
     def column_names_list(self):
         return canonical_sheet.canonical_column_sequence
-    
+
     def get_row_timestamp(self, row):
         return row.get('timestamp', None)
-        
+
+    def add_sheet(self, other):
+        """Combine another sheet with this one."""
+        for row in other.rows.values():
+            self.add_row(row)
+        return self
+
+    def add_sheets(self, *others):
+        """Combine several sheets, starting with this one.
+        The original sheets are not affected."""
+        result = canonical_sheet(self.config)
+        result.add_sheet(self)
+        for other in others:
+            result.add_sheet(other)
+        return result
+
     def subtract_cells(self, other):
         """Return the cell-by-cell subtraction of another sheet from this one."""
         result = canonical_sheet(self.config)
@@ -183,7 +198,7 @@ class canonical_sheet(base_sheet.base_sheet):
         result.rows = {date: qsutils.thresholded_row(row, threshold)
                        for date, row in self.rows.items()}
         return result
-    
+
     def row_to_canonical(self,
                          input_sheet, row,
                          convert_all=False,
@@ -399,7 +414,7 @@ class canonical_sheet(base_sheet.base_sheet):
                 summary['time'] = adjusted_datetime.time().isoformat()
                 result.rows[adjusted_datetime] = summary
         return result
-    
+
     def construct_row(self,
                       timestamp,
                       amount=0,
@@ -412,7 +427,7 @@ class canonical_sheet(base_sheet.base_sheet):
                                 'currency': currency,
                                 'payee': payee,
                                 'category': category}
-    
+
     def write_csv(self, filename, suppress_timestamp=False):
         """Write a canonical spreadsheet to a file.
         Any columns not in the canonical format are ignored."""

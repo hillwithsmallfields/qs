@@ -72,4 +72,9 @@
     (write-csv unambiguously-matched-auto "unambiguously-matched-auto.csv")
     (write-csv unambiguously-matched-non-auto "unambiguously-matched-non-auto.csv")
 
-    (write-csv by-classification "automatics-by-classification.csv")))
+    (write-csv by-classification "automatics-by-classification.csv"))
+  (let ((merged (add-sheets main unmatched-automatic)))
+    (print "main:" (length main))
+    (print "added:" (length unmatched-automatic))
+    (print "merged:" (length merged))
+    (write-csv merged "merged.csv")))

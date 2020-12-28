@@ -18,7 +18,7 @@ class base_sheet:
 
     def __len__(self):
         return len(self.rows)
-        
+
     def timestamp_from(self, base_date, base_time=None):
         """Return a timestamp at the given date and time."""
         if isinstance(base_date, datetime.datetime):
@@ -46,6 +46,7 @@ class base_sheet:
         return timestamp
 
     def column_names_list():
+        """Return the column names for this sheet."""
         colseq = ordered_set.OrderedSet()
         for row in self.rows.values():
             colseq |= row.keys()
@@ -55,11 +56,17 @@ class base_sheet:
         return colseq
 
     def add_row(self, row):
-        # print("adding row at", row['timestamp'])
+        """Add a copy of a row to this sheet, adjusting its timestamp
+        to avoid clashing with existing rows."""
+        row = row.copy()
         timestamp = self.unused_timestamp_from(row['timestamp'])
         row['timestamp'] = timestamp
+        if 'time' in row:
+            row['time'] = timestamp.time()
+        if 'date' in row:
+            row['date'] = timestamp.date()
         self.rows[timestamp] = row
-    
+
     def write_all_columns(self, filename):
         """Write a spreadsheet.
         The column list is generated from the row contents,
