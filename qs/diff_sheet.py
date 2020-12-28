@@ -58,10 +58,12 @@ class diff_sheet(base_sheet.base_sheet):
         if track_b:
             self.colseq.append(track_b_out)
         self.colseq.append(result_column)
+        self.colseq.append('change')
         self.colseq.append('category')
         self.colseq.append('payee')
         self.datacols = self.colseq[1:]
         prev_row = {}
+        prev_difference = 0
         for ts in sorted(set([k for k in rows_a.keys()] + [k for k in rows_b.keys()])):
             category = None
             payee = None
@@ -87,14 +89,11 @@ class diff_sheet(base_sheet.base_sheet):
                     amount_b = float(row_b.get(column_b, 0))
                     if track_b:
                         balance_b += amount_b
+            difference = ((balance_a if track_a else amount_a)
+                          - (balance_b if track_b else amount_b))
             row = {'timestamp': ts,
-                   result_column: ((balance_a
-                                    if track_a
-                                    else amount_a)
-                                   -
-                                   (balance_b
-                                    if track_b
-                                    else amount_b)),
+                   result_column: difference,
+                   'change': difference - prev_difference,
                    column_a_out: amount_a,
                    column_b_out: amount_b}
             if track_a:
@@ -105,6 +104,7 @@ class diff_sheet(base_sheet.base_sheet):
                 row['category'] = category
             if payee:
                 row['payee'] = payee
+            prev_difference = difference
             if not self.same_row_data(row, prev_row):
                 self.rows[ts] = row
                 prev_row = row
