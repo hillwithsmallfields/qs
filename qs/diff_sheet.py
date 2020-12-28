@@ -58,14 +58,20 @@ class diff_sheet(base_sheet.base_sheet):
         if track_b:
             self.colseq.append(track_b_out)
         self.colseq.append(result_column)
+        self.colseq.append('category')
+        self.colseq.append('payee')
         self.datacols = self.colseq[1:]
         prev_row = {}
         for ts in sorted(set([k for k in rows_a.keys()] + [k for k in rows_b.keys()])):
+            category = None
+            payee = None
             if track_a:
                 amount_a = 0
             if ts in rows_a:
                 row_a = rows_a[ts]
                 if not filter_a_col or filter_a_col not in row_a or row_a[filter_a_col] == filter_a_val:
+                    category = row_a.get('category')
+                    payee = row_a.get('payee')
                     amount_a = float(row_a.get(column_a, 0))
                     if track_a:
                         balance_a += amount_a
@@ -74,6 +80,10 @@ class diff_sheet(base_sheet.base_sheet):
             if ts in rows_b:
                 row_b = rows_b[ts]
                 if not filter_b_col or filter_b_col not in row_b or row_b[filter_b_col] == filter_b_val:
+                    if not category:
+                        category = row_b.get('category')
+                    if not payee:
+                        payee = row_b.get('payee')
                     amount_b = float(row_b.get(column_b, 0))
                     if track_b:
                         balance_b += amount_b
@@ -91,6 +101,10 @@ class diff_sheet(base_sheet.base_sheet):
                 row[track_a_out] = balance_a
             if track_b:
                 row[track_b_out] = balance_b
+            if category:
+                row['category'] = category
+            if payee:
+                row['payee'] = payee
             if not self.same_row_data(row, prev_row):
                 self.rows[ts] = row
                 prev_row = row
