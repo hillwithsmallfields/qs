@@ -76,6 +76,7 @@ class canonical_sheet(base_sheet.base_sheet):
             print("Making canonical_sheet with input_sheet", input_sheet)
         self.row_order = None
         self.row_cursor = 0
+        self.by_days = {}
         self.origin_files = origin_files
         self.original_account_names = set()
         self.original_format_name = None
@@ -111,6 +112,7 @@ class canonical_sheet(base_sheet.base_sheet):
                         if self.verbose:
                             print("storing", can_row)
                         self.rows[can_row['timestamp']] = can_row
+                        self.by_days[can_row['date']] = can_row
                     else:
                         if self.verbose:
                             print("skipping row as duplicate", can_row)
@@ -293,10 +295,23 @@ class canonical_sheet(base_sheet.base_sheet):
         if self.rows.get(out_row['timestamp'], None) == out_row:
             # we have just created an exact duplicate of an existing row
             return out_row, False
+        if row_date in self.by_days:
+            # might be a duplicate with the same date but a different time
+            for other in self.by_days[row_date]:
+                same = True
+                for colname in ('amount', 'payee', 'category'):
+                    if other[colname] != out_row[colname]:
+                        same = False
+                        break
+                if same:
+                    return out_row, False
         # not a duplicate, so give it a unique timestamp so it can't
         # overwrite an existing (but not identical) row with the same
         # timestamp
-        out_row['timestamp'] = reference_sheet.unused_timestamp_from(row_date, row_time)
+        distinct = reference_sheet.unused_timestamp_from(row_date, row_time)
+        out_row['timestamp'] = distinct
+        out_row['time'] = distinct.time()
+        out_row['date'] = distinct.date()
         return out_row, True
 
     def row_from_canonical(self, output_format, canonical_row, reverse_equivalents=None):
