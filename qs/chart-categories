@@ -1,5 +1,7 @@
 #!/bin/bash
 
+TRANSACTIONSFILE=${1-$COMMON/finances/finances.csv}
+
 echo Categorising transactions
 
 source setupfintest
@@ -12,5 +14,5 @@ echo done setup
     --config $CONVDIR/conversions.yaml \
     --verbose \
     --output-dir "results" \
-    --bind input-file "~/common/finances/finances.csv" \
+    --bind input-file $TRANSACTIONSFILE \
     chart-categories.lisp
