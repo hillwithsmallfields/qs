@@ -56,6 +56,8 @@ functions = ['account_to_sheet',
              'categories',
              'categorised',
              'chart',
+             'column_average',
+             'column_average_absolute',
              'compare',
              'copy_sheet',      # temporary for debugging
              'fgrep',
@@ -214,6 +216,14 @@ def chart(context, sheet, title, filename, fields):
     sheet.chart(title, filename, fields)
     return fields
 
+def column_average(context, sheet, colname):
+    """Return the average value of the named column."""
+    return sheet.column_average(colname, False)
+
+def column_average_absolute(context, sheet, colname):
+    """Return the average absolute value of the named column."""
+    return sheet.column_average(colname, True)
+
 def compare(context,
             result_column,
             sheet_a, column_a, track_a, filter_a_col, filter_a_val,
@@ -268,10 +278,10 @@ def flagged_categories(context, formatname, flag):
                      if ('category' in details
                          and 'flags' in details
                          and flag in details['flags'])]))
-        
+
 def safe_search(pattern, value):
     return pattern.search(value) if value else None
-    
+
 def grep(context, input_sheet, pattern, column='payee'):
     # TODO: filter accounts by payee
     if isinstance(input_sheet, base_sheet.base_sheet):
@@ -321,7 +331,7 @@ def last_of_month(context, sheet):
 
 def last_of_year(context, sheet):
     return filter_dates.filtered_by_date(sheet, 4, False)
-    
+
 def list_accounts(context, filename=None):
     varnames = sorted(context['variables'].keys())
     if filename:
