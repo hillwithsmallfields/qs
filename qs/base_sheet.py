@@ -55,10 +55,25 @@ class base_sheet:
             colseq = ['date'] + [col for col in colseq]
         return colseq
 
+    def column_average(self, colname, absolute):
+        """Return the average value of the named column."""
+        count = 0
+        total = 0
+        for row in self.rows.values():
+            if colname in row:
+                total += abs(row[colname]) if absolute else row[colname]
+                count += 1
+        return total / count if count > 0 else 0
+
     def add_row(self, row):
         """Add a copy of a row to this sheet, adjusting its timestamp
         to avoid clashing with existing rows."""
         row = row.copy()
+        orig_account = row.get('account')
+        account = orig_account
+        name_table = self.config.get('reverse-equivalents')
+        if orig_account and name_table and orig_account in name_table:
+            row['account'] = name_table[orig_account]
         timestamp = self.unused_timestamp_from(row['timestamp'])
         row['timestamp'] = timestamp
         if 'time' in row:
