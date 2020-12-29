@@ -73,15 +73,28 @@
     (write-csv unambiguously-matched-non-auto "unambiguously-matched-non-auto.csv")
 
     (write-csv by-classification "automatics-by-classification.csv"))
-  (let* ((merged (add-sheets main unmatched-automatic))
-         (tracked (track merged "amount" "balance"))
-         (differences (compare "discrepancy"
-                               main   "amount"  "balance" "account" "Handelsbanken current account"
-                               latest "balance" nil       nil       nil)))
+  (let* ((merged-with-ua (add-sheets main unmatched-automatic))
+         (merged-with-unmatched-all (add-sheets merged-with-ua unmatched-non-automatic))
+         (tracked (track merged-with-ua "amount" "balance"))
+         (differences-main (compare "discrepancy"
+                                    main   "amount"  "balance" "account" "Handelsbanken current account"
+                                    latest "balance" nil       nil       nil))
+         (differences-merged-ua (compare "discrepancy"
+                                         merged-with-ua   "amount"  "balance" "account" "Handelsbanken current account"
+                                         latest           "balance" nil       nil       nil))
+         (differences-merged-all (compare "discrepancy"
+                                          merged-with-unmatched-all   "amount"  "balance" "account" "Handelsbanken current account"
+                                          latest                      "balance" nil       nil       nil)))
     (print "main:" (length main))
-    (print "added:" (length unmatched-automatic))
-    (print "merged:" (length merged))
-    (print "differences:" (length differences))
-    (write-csv merged "merged.csv")
+    (print "unmatched automatic:" (length unmatched-automatic))
+    (print "merged with unmatched automatic:" (length merged-with-ua))
+    (print "differences against main:" (length differences-main) "average" (column-average-absolute differences-main "discrepancy"))
+    (print "differences against merged ua:" (length differences-merged-ua) "average" (column-average-absolute differences-merged-ua "discrepancy"))
+    (print "differences against merged all:" (length differences-merged-all) (column-average-absolute differences-merged-all "discrepancy"))
+    (write-csv main "main.csv")
+    (write-csv merged-with-ua "merged-with-ua.csv")
+    (write-csv merged-with-unmatched-all "merged-with-unmatched-all.csv")
     (write-csv tracked "tracked.csv")
-    (write-csv differences "differences.csv")))
+    (write-csv differences-main "differences-main.csv")
+    (write-csv differences-merged-ua "differences-merged-ua.csv")
+    (write-csv differences-merged-all "differences-merged-all.csv")))
