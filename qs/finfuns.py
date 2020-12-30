@@ -60,6 +60,9 @@ functions = ['account_to_sheet',
              'column_average_absolute',
              'compare',
              'copy_sheet',      # temporary for debugging
+             'count_day_categories',
+             'count_month_categories',
+             'count_year_categories',
              'fgrep',
              'filter_sheet',
              'find_amount',
@@ -233,6 +236,15 @@ def compare(context,
                                  sheet_b, column_b,
                                  track_a=track_a, filter_a_col=filter_a_col, filter_a_val=filter_a_val,
                                  track_b=track_b, filter_b_col=filter_b_col, filter_b_val=filter_b_val)
+
+def count_day_categories(context, sheet):
+    return sheet.count_same_period_categories(qsutils.granularity_day)
+
+def count_month_categories(context, sheet):
+    return sheet.count_same_period_categories(qsutils.granularity_month)
+
+def count_year_categories(context, sheet):
+    return sheet.count_same_period_categories(qsutils.granularity_year)
 
 def filter_sheet(context, input_sheet, column, pattern):
     return input_sheet.filter_sheet(column, pattern)

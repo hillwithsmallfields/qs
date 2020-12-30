@@ -5,6 +5,7 @@ import base_sheet
 import copy
 import csv
 import csv_sheet
+import named_column_sheet
 import os
 import qsutils
 import re
@@ -430,6 +431,32 @@ class canonical_sheet(base_sheet.base_sheet):
                 result.rows[adjusted_datetime] = summary
         return result
 
+    def count_same_period_categories(self, period):
+        """Produce a sheet based on this one, with a time column and columns counting each category in that time period.
+
+        `period' is a function which should return the starting
+        datetime.datetime of the period containing the date it is
+        given.
+
+        """
+        rows = {}
+        column_names = []
+        for timestamp in self.rows.keys():
+
+            row = self.rows[timestamp]
+            row_date = period(timestamp)
+            if row_date not in rows:
+                rows[row_date] = {'timestamp': row_date}
+            this_period_by_category = rows[row_date]
+
+            category = row.get('category', 'unknown')
+            if category not in column_names:
+                column_names.append(category)
+
+            this_period_by_category[category] = this_period_by_category.get(category, 0) + 1
+
+        return named_column_sheet.named_column_sheet(self.config, ['timestamp'] + sorted(column_names), rows)
+            
     def construct_row(self,
                       timestamp,
                       amount=0,

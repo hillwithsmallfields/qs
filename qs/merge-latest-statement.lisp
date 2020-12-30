@@ -97,4 +97,7 @@
     (write-csv tracked "tracked.csv")
     (write-csv differences-main "differences-main.csv")
     (write-csv differences-merged-ua "differences-merged-ua.csv")
-    (write-csv differences-merged-all "differences-merged-all.csv")))
+    (write-csv differences-merged-all "differences-merged-all.csv")
+    (write-csv (count-month-categories main) "month-categories-main.csv")
+    (write-csv (count-month-categories merged-with-ua) "month-categories-merged-with-ua.csv")
+    (write-csv (count-month-categories merged-with-unmatched-all) "month-categories-merged-with-all.csv")))
