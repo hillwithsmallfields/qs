@@ -83,7 +83,7 @@ class category_tree:
         combined.summaries = {k: qsutils.merge_by_date(v, period)
                               for k, v in self.summaries.items()}
 
-    def write_csv(self, filename):
+    def write_csv(self, filename, suppress_timestamp=False):
         """Write a category sheet to a CSV file.
         Each row is a category and its total payments."""
         full_filename = os.path.expanduser(os.path.expandvars(filename))

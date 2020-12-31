@@ -11,7 +11,7 @@ def read_classifier(classification_file):
             result[member] = name
     return result
 
-def classify(category, parentage, classes, pass_unknowns=True):
+def classify(category, parentage, classes, collect_unknowns=True, pass_unknowns=False):
     """Classify a category.
     If it is directly in any of the classes, put it in that class;
     otherwise if any of its parent categories are in a class, use that.
@@ -25,5 +25,15 @@ def classify(category, parentage, classes, pass_unknowns=True):
     if parentage:
         for ancestor in reversed(parentage):
             if ancestor in classes:
-                return classes[ancestor] if isinstance(classes, dict) else category
-    return category if pass_unknowns else None
+                return (classes[ancestor]
+                        if isinstance(classes, dict)
+                        else (category
+                              if pass_unknowns
+                              else ('Other'
+                                    if collect_unknowns
+                                    else None)))
+    return (category
+            if pass_unknowns
+            else ('Other'
+                  if collect_unknowns
+                  else None))

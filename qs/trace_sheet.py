@@ -48,5 +48,5 @@ class trace_sheet(base_sheet.base_sheet):
         row['timestamp'] = ts
         self.rows[ts] = row
 
-    def write_csv(self, filename=None):
+    def write_csv(self, filename=None, suppress_timestamp=False):
         self.write_all_columns(filename or self.filename)

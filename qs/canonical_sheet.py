@@ -132,7 +132,7 @@ class canonical_sheet(base_sheet.base_sheet):
                     self.rows[adjusted_timestamp] = row
         elif type(input_sheet) == dict:
             self.rows = input_sheet
-            if len(input_sheet) > 0:
+            if not self.config and len(input_sheet) > 0:
                 for sample in input_sheet.values():
                     if 'sheet' in sample:
                         self.config = sample['sheet'].config
@@ -470,6 +470,39 @@ class canonical_sheet(base_sheet.base_sheet):
                                 'payee': payee,
                                 'category': category}
 
+    def find_nearest_after(self, timestamp):
+        """Return the row nearest after a timestamp."""
+        for ts in sorted(self.rows.keys()):
+            if ts >= timestamp:
+                return self.rows[ts]
+        return None
+        
+    def adjustments(self, other, account_name, period):
+        """Return a sheet containing adjustments need to align a sheet with another.
+        Existing adjustments are ignored.  The balance is tracked here, and any existing
+        balance in this sheet is ignored (but the balances from the other sheet are used)."""
+        result = canonical_sheet(self.config)
+        balance = 0
+        period_start = None
+        for timestamp in sorted(self.rows):
+            row = self.rows[timestamp]
+            if row.get('account') != account_name:
+                continue
+            if row.get('category') != 'adjustment':
+                balance += row.get('amount', 0)
+            this_period = period(timestamp)
+            if this_period != period_start:
+                statement_row = other.find_nearest_after(this_period)
+                if not statement_row:
+                    break           # no more statements
+                statement_balance = float(statement_row.get('balance', 0))
+                imbalance = statement_balance - balance
+                print("imbalance at", period_start, "is", imbalance)
+                result.construct_row(this_period, imbalance, category='adjustment')
+                period_start = this_period
+                balance = statement_balance
+        return result
+        
     def write_csv(self, filename, suppress_timestamp=False):
         """Write a canonical spreadsheet to a file.
         Any columns not in the canonical format are ignored."""
@@ -487,6 +520,10 @@ class canonical_sheet(base_sheet.base_sheet):
                     and row.get('original_amount') == row.get('amount')):
                     row['original_currency'] = None
                     row['original_amount'] = None
+                if row.get('date', "") == "":
+                    row['date'] = timestamp.date()
+                if row.get('time', "") == "":
+                    row['time'] = timestamp.time()
                 # select only the columns required for this sheet, and
                 # also round the unfortunately-represented floats
                 output_row = {sk: qsutils.tidy_for_output(row.get(sk, ""))

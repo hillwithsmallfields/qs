@@ -82,13 +82,24 @@ class named_column_sheet(base_sheet.base_sheet):
                         result.rows[new_row['timestamp']] = new_row
         return result
 
-    def write_csv(self, filename):
+    def averages(self):
+        totals = {}
+        for row in self.rows.values():
+            for name, value in row.items():
+                totals[name] = value + totals.get(name, 0)
+        count = len(self.rows)
+        return {name: value/count for name, value in totals.items()}
+    
+    def write_csv(self, filename, suppress_timestamp=False, show_averages=False):
         """Write a named-column sheet to a CSV file."""
         full_filename = os.path.expanduser(os.path.expandvars(filename))
         qsutils.ensure_directory_for_file(full_filename)
         with open(full_filename, 'w') as outfile:
             writer = csv.writer(outfile)
             writer.writerow(['timestamp'] + self.column_names)
+            if show_averages:
+                avs = self.averages()
+                writer.writerow(['Averages'] + [qsutils.tidy_for_output(avs[col]) for col in self.column_names])
             for date in sorted(self.rows):
                 row_data = self.rows[date]
                 writer.writerow([date] + [qsutils.tidy_for_output(row_data.get(n, '')) for n in self.column_names])

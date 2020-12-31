@@ -43,6 +43,9 @@ class UnsupportedOperation(BaseException):
 functions = ['account_to_sheet',
              'add_sheet',
              'add_sheets',
+             'adjustments_by_day',
+             'adjustments_by_month',
+             'adjustments_by_year',
              'annotate_by_timestamp',
              'annotate_matches',
              'add_row',
@@ -98,6 +101,7 @@ functions = ['account_to_sheet',
              'unclassified_categories',
              'write_all_columns',
              'write_csv',
+             'write_csv_with_averages',
              'write_json',
              'write_debug']
 
@@ -132,6 +136,15 @@ def add_sheet(context, base_account, sheet, flags=None, trace_sheet_name=None):
 def add_sheets(context, *sheets):
     return sheets[0].add_sheets(*sheets[1:])
 
+def adjustments_by_day(context, mainsheet, statements, account_name):
+    return mainsheet.adjustments(statements, account_name, qsutils.granularity_day)
+
+def adjustments_by_month(context, mainsheet, statements, account_name):
+    return mainsheet.adjustments(statements, account_name, qsutils.granularity_month)
+
+def adjustments_by_year(context, mainsheet, statements, account_name):
+    return mainsheet.adjustments(statements, account_name, qsutils.granularity_year)
+
 def annotate_by_timestamp(context, sheet, reference, annotation_columns):
     return filter_dates.annotate_by_timestamp(sheet, reference, annotation_columns)
 
@@ -141,16 +154,17 @@ def annotate_matches(context, sheet, reference):
 def blank_sheet(context):
     return canonical_sheet.canonical_sheet(context['config'])
 
-def classify_helper(row, parentage_table, classifiers, keep_unknowns):
+def classify_helper(row, parentage_table, classifiers, collect_unknowns, keep_unknowns):
     category = row['category']
     return classify.classify(category,
                              parentage_table.get(category),
                              classifiers,
+                             collect_unknowns=collect_unknowns,
                              pass_unknowns=keep_unknowns)
 
-def by_classification(context, original, parentage_table, classifiers, keep_unknowns):
+def by_classification(context, original, parentage_table, classifiers, collect_unknowns, keep_unknowns):
     return categorised_by_key_fn(context, original,
-                                 lambda row: classify_helper(row, parentage_table, classifiers, keep_unknowns))
+                                 lambda row: classify_helper(row, parentage_table, classifiers, collect_unknowns, keep_unknowns))
 
 def by_day(context, original, combine_categories, combined_only):
     return original.combine_same_period_entries(qsutils.granularity_day,
@@ -483,7 +497,20 @@ def write_csv(context, value, filename):
         value.write_csv(qsutils.resolve_filename(
             filename,
             finlisp_evaluation.finlisp_var_value(context,
-                                                 'output-dir')))
+                                                 'output-dir')),
+                        suppress_timestamp=True)
+    else:
+        print("Nothing to write to", filename)
+    return value
+
+def write_csv_with_averages(context, value, filename):
+    if value:
+        value.write_csv(qsutils.resolve_filename(
+            filename,
+            finlisp_evaluation.finlisp_var_value(context,
+                                                 'output-dir')),
+                        suppress_timestamp=True,
+                        show_averages=True)
     else:
         print("Nothing to write to", filename)
     return value

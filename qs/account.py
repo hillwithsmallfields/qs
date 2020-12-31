@@ -325,7 +325,7 @@ class account:
                 discrepancies[period] = in_self - in_other
         return discrepancies
 
-    def write_csv(self, filename):
+    def write_csv(self, filename, suppress_timestamp=False):
         """Write a account to a CSV file.
         Each row is a payee and their payments."""
         full_filename = os.path.expanduser(os.path.expandvars(filename))

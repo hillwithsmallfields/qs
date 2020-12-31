@@ -147,7 +147,7 @@ class csv_sheet(base_sheet.base_sheet):
         self.origin_files.append(filename)
         return True
 
-    def write_csv(self, filename):
+    def write_csv(self, filename, suppress_timestamp=False):
         """Write a spreadsheet in a given format.
         Any columns not used by that format are ignored."""
         with open(os.path.expanduser(os.path.expandvars(filename)), 'w') as outfile:

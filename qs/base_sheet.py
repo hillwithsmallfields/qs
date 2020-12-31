@@ -96,7 +96,7 @@ class base_sheet:
                 row = self.rows[timestamp]
                 writer.writerow({sk: qsutils.tidy_for_output(row.get(sk, "")) for sk in colseq})
 
-    def write_csv(self, filename):
+    def write_csv(self, filename, suppress_timestamp=False):
         """Write a spreadsheet.
         This will normally be overridden in subclasses."""
         self.write_all_columns(filename)

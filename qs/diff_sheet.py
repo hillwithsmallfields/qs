@@ -118,7 +118,7 @@ class diff_sheet(base_sheet.base_sheet):
     def column_names_list(self):
         return self.colseq
 
-    def write_csv(self, filename):
+    def write_csv(self, filename, suppress_timestamp=False):
         """Write a differences spreadsheet to a file."""
         full_filename = os.path.expanduser(os.path.expandvars(filename))
         qsutils.ensure_directory_for_file(full_filename)

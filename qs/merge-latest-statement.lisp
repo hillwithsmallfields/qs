@@ -84,7 +84,10 @@
                                          latest           "balance" nil       nil       nil))
          (differences-merged-all (compare "discrepancy"
                                           merged-with-unmatched-all   "amount"  "balance" "account" "Handelsbanken current account"
-                                          latest                      "balance" nil       nil       nil)))
+                                          latest                      "balance" nil       nil       nil))
+         (adjustments-main (adjustments-by-month main latest "Handelsbanken current account"))
+         (adjustments-merged-ua (adjustments-by-month merged-with-ua latest "Handelsbanken current account"))
+         (adjustments-merged-all (adjustments-by-month merged-with-unmatched-all latest "Handelsbanken current account")))
     (print "main:" (length main))
     (print "unmatched automatic:" (length unmatched-automatic))
     (print "merged with unmatched automatic:" (length merged-with-ua))
@@ -100,4 +103,7 @@
     (write-csv differences-merged-all "differences-merged-all.csv")
     (write-csv (count-month-categories main) "month-categories-main.csv")
     (write-csv (count-month-categories merged-with-ua) "month-categories-merged-with-ua.csv")
-    (write-csv (count-month-categories merged-with-unmatched-all) "month-categories-merged-with-all.csv")))
+    (write-csv (count-month-categories merged-with-unmatched-all) "month-categories-merged-with-all.csv")
+    (write-csv adjustments-main "adjustments-main.csv")
+    (write-csv adjustments-merged-ua "adjustments-merged-ua.csv")
+    (write-csv adjustments-merged-all "adjustments-merged-all.csv")))
