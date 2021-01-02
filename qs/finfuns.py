@@ -102,6 +102,7 @@ functions = ['account_to_sheet',
              'write_all_columns',
              'write_csv',
              'write_csv_with_averages',
+             'write_html',
              'write_json',
              'write_debug']
 
@@ -514,6 +515,33 @@ def write_csv_with_averages(context, value, filename):
     else:
         print("Nothing to write to", filename)
     return value
+
+hovercss = '''
+<style>
+.overview {
+  position: relative;
+  display: inline-block;
+}
+.details {
+  visibility: hidden;
+  background-color: yellow;
+  z-index: 1;
+  position: absolute;
+}
+.overview:hover .details {
+  visibility: visible;
+}
+</style>
+'''
+
+def write_html(context, sheet, filename, details):
+    with open(filename, 'w') as outstream:
+        outstream.write('<html><head><title>%s</title></head>')
+        if details:
+            outstream.write(hovercss)
+        outstream.write('\n<body>\n')
+        sheet.write_html_table(outstream, hover_details=details)
+        outstream.write('</body></html>\n')
 
 def write_json(context, value, filename):
     if value:

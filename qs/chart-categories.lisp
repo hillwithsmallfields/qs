@@ -23,6 +23,7 @@
   (write-csv by-category "by-category.csv")
   (write-csv by-parentage "by-parentage.csv")
   (write-csv-with-averages by-class "by-class.csv")
+  (write-html by-class "by-class.html" t)
   (write-csv automatics "automatics.csv")
   (write-csv by-level-0 "by-level-0.csv")
   (write-csv by-level-1 "by-level-1.csv")

@@ -392,7 +392,6 @@ class canonical_sheet(base_sheet.base_sheet):
         datetime.datetime of the period containing the date it is
         given.
 
-
         combine_categories means to collect up all the categories of
         the same payee.
 
@@ -413,6 +412,7 @@ class canonical_sheet(base_sheet.base_sheet):
             if payee_key in this_period_by_payee:
                 this_period_by_payee[payee_key]['amount'] += row['amount']
                 this_period_by_payee[payee_key]['combicount'] += 1
+                this_period_by_payee[payee_key]['contributions'].append(row)
                 if combine_categories:
                     so_far = this_period_by_payee[payee_key]['category']
                     if row['category'] not in so_far:
@@ -420,6 +420,7 @@ class canonical_sheet(base_sheet.base_sheet):
             else:
                 this_period_by_payee[payee_key] = copy.copy(row)
                 this_period_by_payee[payee_key]['combicount'] = 1
+                this_period_by_payee[payee_key]['contributions'] = [row]
         for timestamp, summaries in accumulators.items():
             for summary in summaries.values():
                 if summary['combicount'] == 1 and combined_only:
@@ -456,7 +457,7 @@ class canonical_sheet(base_sheet.base_sheet):
             this_period_by_category[category] = this_period_by_category.get(category, 0) + 1
 
         return named_column_sheet.named_column_sheet(self.config, ['timestamp'] + sorted(column_names), rows)
-            
+
     def construct_row(self,
                       timestamp,
                       amount=0,
@@ -476,7 +477,7 @@ class canonical_sheet(base_sheet.base_sheet):
             if ts >= timestamp:
                 return self.rows[ts]
         return None
-        
+
     def adjustments(self, other, account_name, period):
         """Return a sheet containing adjustments need to align a sheet with another.
         Existing adjustments are ignored.  The balance is tracked here, and any existing
@@ -502,7 +503,7 @@ class canonical_sheet(base_sheet.base_sheet):
                 period_start = this_period
                 balance = statement_balance
         return result
-        
+
     def write_csv(self, filename, suppress_timestamp=False):
         """Write a canonical spreadsheet to a file.
         Any columns not in the canonical format are ignored."""

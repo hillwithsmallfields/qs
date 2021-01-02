@@ -136,3 +136,42 @@ class base_sheet:
             # plot "/tmp/plot-weight.dat" using 1:7 with line axes x1y1 lc 7 title "Weight", "/tmp/plot-weight.dat" using 1:12 with line axes x1y1 lc 1 title "Average (week)", "/tmp/plot-weight.dat" using 1:14 with line axes x1y2 lc 3 title "Change (average) in week"
             plot.write("plot " + ", ".join([" %s using %d title \"%s\"" % (data_filename, index+1, fieldname)
                                             for index, fieldname in enumerate(fields[1:])]) + "\n")
+
+    def write_html_table(self, stream,
+                         _class=None,
+                         hover_details=False,
+                         start_date=None, end_date=None):
+        """Write a canonical spreadsheet as HTML."""
+        dates = sorted(self.rows.keys())
+        colnames = self.column_names_list()
+        start = 0
+        if start_date:
+            for i in range(len(self.rows)):
+                if self.rows[dates[i]]['timestamp'] >= start_date:
+                    start = i
+                    break
+        end = len(dates)
+        if end_date:
+            for i in range(start, end):
+                if self.rows[dates[i]]['timestamp'] > end_date:
+                    end = i
+                    break
+        stream.write('<table border=1')
+        if _class:
+            stream.write(' class="%s"', _class)
+        stream.write('>\n  <tr>\n')
+        for colname in colnames:
+            stream.write('    <th>%s</th>\n' % colname)
+        stream.write('  </tr>\n')
+        for i in range(start, end):
+            date = dates[i]
+            row = self.rows[date]
+            stream.write('  <tr>\n')
+            stream.write('    <th class="date">%s</th>\n' % date)
+            for colname in colnames:
+                stream.write('    <td class="%s"><span class="overview">%s' % (colname.replace(' ', '_'), qsutils.tidy_for_output(row.get(colname, ""))))
+                if hover_details:
+                    stream.write('<span class="details">Details to go here</span>')
+                stream.write('</span></td>\n')
+            stream.write('  </tr>\n')
+        stream.write('</table>\n')
