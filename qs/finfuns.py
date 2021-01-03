@@ -224,7 +224,10 @@ def categorised_by_key_fn(context, incoming_data, key_fn):
         day_accumulator = by_date[on_day]
         category = key_fn(row)
         categories.add(category or "unknown")
-        day_accumulator[category] = day_accumulator.get(category, 0) + row['amount']
+        if category in day_accumulator:
+            day_accumulator[category] += row['amount']
+        else:
+            day_accumulator[category] = row['amount']
     return named_column_sheet.named_column_sheet(incoming_data.config,
                                                  sorted(categories),
                                                  rows=by_date)
@@ -522,6 +525,9 @@ hovercss = '''
   position: relative;
   display: inline-block;
 }
+.ic {
+  font-size: xx-small;
+}
 .details {
   visibility: hidden;
   background-color: yellow;
@@ -530,6 +536,10 @@ hovercss = '''
 }
 .overview:hover .details {
   visibility: visible;
+}
+table.summarytable {
+  border: 1px solid black;
+  width: 100%;
 }
 </style>
 '''
@@ -540,7 +550,7 @@ def write_html(context, sheet, filename, details):
         if details:
             outstream.write(hovercss)
         outstream.write('\n<body>\n')
-        sheet.write_html_table(outstream, hover_details=details)
+        sheet.write_html_table(outstream, css_class="summarytable", hover_details=details)
         outstream.write('</body></html>\n')
 
 def write_json(context, value, filename):

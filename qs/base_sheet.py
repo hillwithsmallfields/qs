@@ -4,6 +4,8 @@ import csv
 import datetime
 import ordered_set
 import os.path
+
+import itemized_amount
 import qsutils
 
 class base_sheet:
@@ -138,7 +140,7 @@ class base_sheet:
                                             for index, fieldname in enumerate(fields[1:])]) + "\n")
 
     def write_html_table(self, stream,
-                         _class=None,
+                         css_class=None,
                          hover_details=False,
                          start_date=None, end_date=None):
         """Write a canonical spreadsheet as HTML."""
@@ -156,10 +158,10 @@ class base_sheet:
                 if self.rows[dates[i]]['timestamp'] > end_date:
                     end = i
                     break
-        stream.write('<table border=1')
-        if _class:
-            stream.write(' class="%s"', _class)
-        stream.write('>\n  <tr>\n')
+        stream.write('<table')
+        if css_class:
+            stream.write(' class="%s"' % css_class)
+        stream.write('>\n  <tr>\n    <th>Date</th>\n')
         for colname in colnames:
             stream.write('    <th>%s</th>\n' % colname)
         stream.write('  </tr>\n')
@@ -169,9 +171,13 @@ class base_sheet:
             stream.write('  <tr>\n')
             stream.write('    <th class="date">%s</th>\n' % date)
             for colname in colnames:
-                stream.write('    <td class="%s"><span class="overview">%s' % (colname.replace(' ', '_'), qsutils.tidy_for_output(row.get(colname, ""))))
-                if hover_details:
-                    stream.write('<span class="details">Details to go here</span>')
-                stream.write('</span></td>\n')
+                cell_data = row.get(colname, "")
+                if isinstance(cell_data, itemized_amount.itemized_amount):
+                    stream.write('    %s\n' % cell_data.html_cell(colname.replace(' ', '_'), "%s: %s" % (date, colname)))
+                else:
+                    stream.write('    <td class="%s"><span class="overview">%s' % (colname.replace(' ', '_'), qsutils.tidy_for_output(cell_data)))
+                    if hover_details:
+                        stream.write('<span class="details">Details to go here</span>')
+                    stream.write('</span></td>\n')
             stream.write('  </tr>\n')
         stream.write('</table>\n')

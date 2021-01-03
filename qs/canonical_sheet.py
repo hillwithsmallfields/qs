@@ -1,14 +1,16 @@
 #!/usr/bin/python3
 
-import account
-import base_sheet
 import copy
 import csv
-import csv_sheet
-import named_column_sheet
 import os
-import qsutils
 import re
+
+import account
+import base_sheet
+import csv_sheet
+import itemized_amount
+import named_column_sheet
+import qsutils
 
 # Convert sheets between a canonical format and specified other
 # formats.  This may involve renaming columns, and filling in default
@@ -410,26 +412,23 @@ class canonical_sheet(base_sheet.base_sheet):
             this_period_by_payee = accumulators[row_date]
             payee_key = row['payee'] if combine_categories else (row['payee'], row['category'])
             if payee_key in this_period_by_payee:
-                this_period_by_payee[payee_key]['amount'] += row['amount']
-                this_period_by_payee[payee_key]['combicount'] += 1
-                this_period_by_payee[payee_key]['contributions'].append(row)
-                if combine_categories:
-                    so_far = this_period_by_payee[payee_key]['category']
-                    if row['category'] not in so_far:
-                        this_period_by_payee[payee_key]['category'] = so_far + ";" + row['category']
+                this_period_by_payee[payee_key] += row
             else:
-                this_period_by_payee[payee_key] = copy.copy(row)
-                this_period_by_payee[payee_key]['combicount'] = 1
-                this_period_by_payee[payee_key]['contributions'] = [row]
+                this_period_by_payee[payee_key] = itemized_amount.itemized_amount(row)
         for timestamp, summaries in accumulators.items():
             for summary in summaries.values():
-                if summary['combicount'] == 1 and combined_only:
+                if len(summary.transactions) == 1 and combined_only:
                     continue
                 adjusted_datetime = result.unused_timestamp_from(timestamp)
-                summary['timestamp'] = adjusted_datetime
-                summary['date'] = adjusted_datetime.date().isoformat()
-                summary['time'] = adjusted_datetime.time().isoformat()
-                result.rows[adjusted_datetime] = summary
+                result.rows[adjusted_datetime] = {
+                    'amount': summary,
+                    'category': (";".join([item['category'] for item in summary.transactions])
+                                 if combine_categories
+                                 else summary.transactions[0]['category']),
+                    'combicount': len(summary.transactions),
+                    'timestamp': adjusted_datetime,
+                    'date': adjusted_datetime.date().isoformat(),
+                    'time': adjusted_datetime.time().isoformat()}
         return result
 
     def count_same_period_categories(self, period):
