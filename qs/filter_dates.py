@@ -61,7 +61,7 @@ def count_by_dates(sheet, period):
         counts[start] = counts.get(start, 0) + 1
     return named_column_sheet.named_column_sheet(
         sheet.config,
-        ('timestamp', 'count'),
+        ['timestamp', 'count'],
         rows = {ts: {'timestamp': ts,
                      'count': counts[ts]}
                 for ts in counts})

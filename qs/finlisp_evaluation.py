@@ -168,17 +168,17 @@ def finlisp_extend_stack(context, form):
     new_stack.append(form)
     return new_context
 
-class UndefinedName(Exception):
+class UndefinedName(BaseException):
 
     def __init__(self, function_name, value):
         self.function_name = function_name
 
-class InvalidFunction(Exception):
+class InvalidFunction(BaseException):
 
     def __init__(self, form):
         self.form = form
         
-class EvalError(Exception):
+class EvalError(BaseException):
 
     def __init__(self, form):
         self.form = form

@@ -226,7 +226,10 @@ def categorised(context, original):
                                  label="categorised")
 
 def categorised_by_key_fn(context, incoming_data, key_fn, label=""):
-    """Really meant for use on periodic summaries."""
+    """For each date occurring in the incoming data, 
+    use a key function to categorise the rows on that date,
+    and collect an itemized amount for each such category.
+    Really meant for use on periodic summaries."""
     categories = set()
     by_date = {}
     for timestamp, row in incoming_data.rows.items():
@@ -236,9 +239,8 @@ def categorised_by_key_fn(context, incoming_data, key_fn, label=""):
         day_accumulator = by_date[on_day]
         category = key_fn(row)
         categories.add(category or "unknown")
-        # amount = row['amount']
         amount = itemized_amount.itemized_amount(row)
-        # print("bykey amount", amount, "row", repr(row))
+        # print("amount", repr(amount), amount.transactions)
         if category in day_accumulator:
             day_accumulator[category] += amount
             # print("bykey added to", category, "with", row['amount'], "yielding", repr(day_accumulator[category]))
@@ -249,7 +251,7 @@ def categorised_by_key_fn(context, incoming_data, key_fn, label=""):
     # for k, v in by_date.items():
     #     print("bykey date    ", k)
     #     for catk, catv in v.items():
-    #         print("bykey cat      ", catk, repr(catv))
+    #         print("bykey cat      ", catk, repr(catv), ["(%f:%s)" % (item.get('amount', "unknown amount").amount, item.get('payee', "unknown payee")) for item in catv.transactions])
     return named_column_sheet.named_column_sheet(incoming_data.config,
                                                  sorted(categories),
                                                  rows=by_date)
