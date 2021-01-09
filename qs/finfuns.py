@@ -1,22 +1,25 @@
 # Financial spreadsheet functions
 
+import copy
+import csv
+import datetime
+import os
+import re
+
 import account
 import account_sheet
 import base_sheet
 import canonical_sheet
 import categoriser
 import classify
-import copy
-import csv
-import datetime
 import diff_sheet
 import filter_dates
 import finlisp_evaluation
 import formatted_sheet
+import itemized_amount
 import named_column_sheet
 import parentage
 import qsutils
-import re
 import tracked_sheet
 
 class ConfigRequired(BaseException):
@@ -59,13 +62,17 @@ functions = ['account_to_sheet',
              'categories',
              'categorised',
              'chart',
+             'check',
              'column_average',
              'column_average_absolute',
              'compare',
              'copy_sheet',      # temporary for debugging
              'count_day_categories',
+             'count_day_transactions',
              'count_month_categories',
+             'count_month_transactions',
              'count_year_categories',
+             'count_year_transactions',
              'fgrep',
              'filter_sheet',
              'find_amount',
@@ -157,15 +164,17 @@ def blank_sheet(context):
 
 def classify_helper(row, parentage_table, classifiers, collect_unknowns, keep_unknowns):
     category = row['category']
-    return classify.classify(category,
-                             parentage_table.get(category),
-                             classifiers,
-                             collect_unknowns=collect_unknowns,
-                             pass_unknowns=keep_unknowns)
+    result = classify.classify(category,
+                               parentage_table.get(category),
+                               classifiers,
+                               collect_unknowns=collect_unknowns,
+                               pass_unknowns=keep_unknowns)
+    return result
 
 def by_classification(context, original, parentage_table, classifiers, collect_unknowns, keep_unknowns):
     return categorised_by_key_fn(context, original,
-                                 lambda row: classify_helper(row, parentage_table, classifiers, collect_unknowns, keep_unknowns))
+                                 lambda row: classify_helper(row, parentage_table, classifiers, collect_unknowns, keep_unknowns),
+                                 label="by_classification")
 
 def by_day(context, original, combine_categories, combined_only):
     return original.combine_same_period_entries(qsutils.granularity_day,
@@ -187,7 +196,8 @@ def hierarchy_helper(row, depth, parentage_table):
 
 def by_hierarchy(context, original, depth, parentage_table):
     return categorised_by_key_fn(context, original,
-                                 lambda row: hierarchy_helper(row, depth, parentage_table))
+                                 lambda row: hierarchy_helper(row, depth, parentage_table),
+                                 label="by_hierarchy")
 
 def by_month(context, original, combine_categories, combined_only):
     return original.combine_same_period_entries(qsutils.granularity_month,
@@ -198,7 +208,8 @@ def by_month(context, original, combine_categories, combined_only):
 def by_parent(context, original, parentage_table):
     """Really meant for use on periodic summaries."""
     return categorised_by_key_fn(context, original,
-                                 lambda row: row_parent(row, parentage_table))
+                                 lambda row: row_parent(row, parentage_table),
+                                 label="by_parent")
 
 def by_year(context, original, combine_categories, combined_only):
     return original.combine_same_period_entries(qsutils.granularity_year,
@@ -211,9 +222,10 @@ def categories(context, original):
 
 def categorised(context, original):
     """Really meant for use on periodic summaries."""
-    return categorised_by_key_fn(context, original, lambda row: row['category'])
+    return categorised_by_key_fn(context, original, lambda row: row['category'],
+                                 label="categorised")
 
-def categorised_by_key_fn(context, incoming_data, key_fn):
+def categorised_by_key_fn(context, incoming_data, key_fn, label=""):
     """Really meant for use on periodic summaries."""
     categories = set()
     by_date = {}
@@ -224,10 +236,20 @@ def categorised_by_key_fn(context, incoming_data, key_fn):
         day_accumulator = by_date[on_day]
         category = key_fn(row)
         categories.add(category or "unknown")
+        # amount = row['amount']
+        amount = itemized_amount.itemized_amount(row)
+        # print("bykey amount", amount, "row", repr(row))
         if category in day_accumulator:
-            day_accumulator[category] += row['amount']
+            day_accumulator[category] += amount
+            # print("bykey added to", category, "with", row['amount'], "yielding", repr(day_accumulator[category]))
         else:
-            day_accumulator[category] = row['amount']
+            day_accumulator[category] = amount
+            # print("bykey starting", category, "with", row['amount'])
+    # print("bykey prepared rows:", label)
+    # for k, v in by_date.items():
+    #     print("bykey date    ", k)
+    #     for catk, catv in v.items():
+    #         print("bykey cat      ", catk, repr(catv))
     return named_column_sheet.named_column_sheet(incoming_data.config,
                                                  sorted(categories),
                                                  rows=by_date)
@@ -236,6 +258,21 @@ def chart(context, sheet, title, filename, fields):
     """Output a sheet to gnuplot."""
     sheet.chart(title, filename, fields)
     return fields
+
+def check(context, label, sheet):
+    print("checking", label)
+    duplications = 0
+    duplicates = 0
+    for row in sheet.rows.values():
+        for amount in row.values():
+            if isinstance(amount, itemized_amount.itemized_amount):
+                dups = amount.count_duplicates()
+                if dups:
+                    duplications += 1
+                    duplicates += dups
+                    print("in check", label, "found", dups, "duplicates in", row)
+    print("checked", label, duplications, "duplications", duplicates, "duplicates")
+    return sheet
 
 def column_average(context, sheet, colname):
     """Return the average value of the named column."""
@@ -258,11 +295,20 @@ def compare(context,
 def count_day_categories(context, sheet):
     return sheet.count_same_period_categories(qsutils.granularity_day)
 
+def count_day_transactions(context, sheet):
+    return filter_dates.count_by_dates(sheet, qsutils.granularity_day)
+
 def count_month_categories(context, sheet):
     return sheet.count_same_period_categories(qsutils.granularity_month)
 
+def count_month_transactions(context, sheet):
+    return filter_dates.count_by_dates(sheet, qsutils.granularity_month)
+
 def count_year_categories(context, sheet):
     return sheet.count_same_period_categories(qsutils.granularity_year)
+
+def count_year_transactions(context, sheet):
+    return filter_dates.count_by_dates(sheet, qsutils.granularity_year)
 
 def filter_sheet(context, input_sheet, column, pattern):
     return input_sheet.filter_sheet(column, pattern)
@@ -342,25 +388,25 @@ It matches if equal, a substring, or a superstring."""
     return False
 
 def first_of_month(context, sheet):
-    return filter_dates.filtered_by_date(sheet, 7, True)
+    return filter_dates.filtered_by_date(sheet, qsutils.granularity_month, True)
 
 def first_of_year(context, sheet):
-    return filter_dates.filtered_by_date(sheet, 4, True)
+    return filter_dates.filtered_by_date(sheet, qsutils.granularity_year, True)
 
 def join_by_days(context, sheet_a, sheet_b):
-    return filter_dates.join_by_dates(sheet_a, sheet_b, 10)
+    return filter_dates.join_by_dates(sheet_a, sheet_b, qsutils.granularity_day)
 
 def join_by_months(context, sheet_a, sheet_b):
-    return filter_dates.join_by_dates(sheet_a, sheet_b, 7)
+    return filter_dates.join_by_dates(sheet_a, sheet_b, qsutils.granularity_month)
 
 def join_by_years(context, sheet_a, sheet_b):
-    return filter_dates.join_by_dates(sheet_a, sheet_b, 4)
+    return filter_dates.join_by_dates(sheet_a, sheet_b, qsutils.granularity_year)
 
 def last_of_month(context, sheet):
-    return filter_dates.filtered_by_date(sheet, 7, False)
+    return filter_dates.filtered_by_date(sheet, qsutils.granularity_month, False)
 
 def last_of_year(context, sheet):
-    return filter_dates.filtered_by_date(sheet, 4, False)
+    return filter_dates.filtered_by_date(sheet, qsutils.granularity_year, False)
 
 def list_accounts(context, filename=None):
     varnames = sorted(context['variables'].keys())
@@ -541,10 +587,16 @@ table.summarytable {
   border: 1px solid black;
   width: 100%;
 }
+.duplicated {
+  color: red;
+}
 </style>
 '''
 
 def write_html(context, sheet, filename, details):
+    full_filename = os.path.expanduser(os.path.expandvars(filename))
+    print("write_html filename=%s full_filename=%s" % (filename, full_filename))
+    # qsutils.ensure_directory_for_file(full_filename)
     with open(filename, 'w') as outstream:
         outstream.write('<html><head><title>%s</title></head>')
         if details:
