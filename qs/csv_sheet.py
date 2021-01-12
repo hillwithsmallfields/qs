@@ -111,7 +111,8 @@ class csv_sheet(base_sheet.base_sheet):
     def read(self, filename):
         """Read a spreadsheet, deducing the type.
         A collection of header lines is scanned to find the type."""
-        with open(os.path.expanduser(os.path.expandvars(filename))) as infile:
+        filename = os.path.expanduser(os.path.expandvars(filename))
+        with open(filename) as infile:
             self.format_name, self.header_row_number = qsutils.deduce_stream_format(infile, self.config, verbose=self.verbose)
             if self.format_name is None:
                 if not self.verbose:
@@ -119,7 +120,6 @@ class csv_sheet(base_sheet.base_sheet):
                 print("Could not deduce format for", filename)
                 raise UnknownCSVFormat(infile)
             # print("Detected", self.format_name, "spreadsheet in", filename)
-            sheet_marker = {'sheet': self}
             for i in range(1, self.header_row_number):
                 _ = infile.readline()
             if self.format_name not in self.config['formats']:
@@ -135,15 +135,19 @@ class csv_sheet(base_sheet.base_sheet):
             # because unused_timestamp_from needs to see the entries
             # so far as the dictionary is filled in, and the
             # comprehension mechanism constructs all the values then
-            # puts them all in place:
+            # puts them all in place.  Also, we want to number the
+            # lines, which would be awkward in a comprehension.
+            row_number = 1
             for row0 in csv.DictReader(infile):
                 canonized = {k:v for k,v in row0.items() if k != ''}
                 unique_ts = self.unused_timestamp_from(self.get_cell(row0, 'date'),
                                                        self.get_cell(row0, 'time', self.default_time))
                 canonized['timestamp'] = unique_ts
+                canonized['unique_number'] = row_number
+                row_number += 1
+                canonized['sheet'] = self
+                canonized['original_filename'] = filename
                 self.rows[unique_ts] = canonized
-        for row in self.rows.values():
-            row.update(sheet_marker)
         self.origin_files.append(filename)
         return True
 

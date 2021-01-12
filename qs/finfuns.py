@@ -232,6 +232,7 @@ def categorised_by_key_fn(context, incoming_data, key_fn, label=""):
     Really meant for use on periodic summaries."""
     categories = set()
     by_date = {}
+    print("beginning categorised_by_key_fn")
     for timestamp, row in incoming_data.rows.items():
         on_day = timestamp.date()
         if on_day not in by_date:
@@ -242,11 +243,13 @@ def categorised_by_key_fn(context, incoming_data, key_fn, label=""):
         amount = itemized_amount.itemized_amount(row)
         # print("amount", repr(amount), amount.transactions)
         if category in day_accumulator:
+            # print("bykey adding to", day_accumulator[category])
             day_accumulator[category] += amount
             # print("bykey added to", category, "with", row['amount'], "yielding", repr(day_accumulator[category]))
         else:
             day_accumulator[category] = amount
             # print("bykey starting", category, "with", row['amount'])
+    # print("ended categorised_by_key_fn")
     # print("bykey prepared rows:", label)
     # for k, v in by_date.items():
     #     print("bykey date    ", k)
@@ -265,7 +268,10 @@ def check(context, label, sheet):
     print("checking", label)
     duplications = 0
     duplicates = 0
+    missing_unique_numbers = 0
     for row in sheet.rows.values():
+        if 'unique_number' not in row:
+            missing_unique_numbers += 1
         for amount in row.values():
             if isinstance(amount, itemized_amount.itemized_amount):
                 dups = amount.count_duplicates()
@@ -273,7 +279,7 @@ def check(context, label, sheet):
                     duplications += 1
                     duplicates += dups
                     print("in check", label, "found", dups, "duplicates in", row)
-    print("checked", label, duplications, "duplications", duplicates, "duplicates")
+    print("checked", label, duplications, "duplications", duplicates, "duplicates", missing_unique_numbers, "missing unique numbers")
     return sheet
 
 def column_average(context, sheet, colname):
@@ -595,12 +601,12 @@ table.summarytable {
 </style>
 '''
 
-def write_html(context, sheet, filename, details):
+def write_html(context, sheet, filename, title, details):
     full_filename = os.path.expanduser(os.path.expandvars(filename))
     print("write_html filename=%s full_filename=%s" % (filename, full_filename))
     # qsutils.ensure_directory_for_file(full_filename)
     with open(filename, 'w') as outstream:
-        outstream.write('<html><head><title>%s</title></head>')
+        outstream.write('<html><head><title>%s</title></head>' % title)
         if details:
             outstream.write(hovercss)
         outstream.write('\n<body>\n')

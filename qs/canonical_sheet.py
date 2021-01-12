@@ -60,10 +60,13 @@ class canonical_sheet(base_sheet.base_sheet):
         'category',
         'project',
         'message',
+        # todo: possibly replace combicount with itemized_amounts?
         'combicount'            # for combining rows
     ]
 
-    canonical_column_sequence = ['timestamp'] + canonical_column_sequence_no_timestamp
+    canonical_column_sequence = ['timestamp',
+                                 'original_filename',
+                                 'unique_number'] + canonical_column_sequence_no_timestamp
 
     def __init__(self,
                  config,
@@ -269,6 +272,9 @@ class canonical_sheet(base_sheet.base_sheet):
             'original_amount': original_amount,
             'original_currency': original_currency,
             'sheet': self}
+        for column in ('original_row_number', 'original_filename'):
+            if column in row:
+                out_row[column] = row[column]
         if message:
             out_row['message'] = message
         # For this group of columns, there may be some literals in
@@ -423,6 +429,7 @@ class canonical_sheet(base_sheet.base_sheet):
         #     print("cspe date ", timestamp)
         #     for summarykey in sorted(summaries.keys()):
         #         print("cspe sum   ", summarykey, repr(summaries[summarykey]))
+        unique_number = 0
         for timestamp, summaries in accumulators.items():
             for sumkey in summaries:
                 summary = summaries[sumkey]
@@ -438,8 +445,10 @@ class canonical_sheet(base_sheet.base_sheet):
                     'timestamp': adjusted_datetime,
                     'account': sumkey[0],
                     'payee': sumkey[1],
+                    'unique_number': unique_number,
                     'date': adjusted_datetime.date().isoformat(),
                     'time': adjusted_datetime.time().isoformat()}
+                unique_number += 1
         # print("results:")
         # for timestamp in sorted(result.rows):
         #     print("cspe res  ", timestamp, result.rows[timestamp])
