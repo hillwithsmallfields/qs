@@ -601,7 +601,7 @@ table.summarytable {
 </style>
 '''
 
-def write_html(context, sheet, filename, title, details):
+def write_html(context, sheet, filename, title, details, with_time):
     full_filename = os.path.expanduser(os.path.expandvars(filename))
     print("write_html filename=%s full_filename=%s" % (filename, full_filename))
     # qsutils.ensure_directory_for_file(full_filename)
@@ -610,7 +610,10 @@ def write_html(context, sheet, filename, title, details):
         if details:
             outstream.write(hovercss)
         outstream.write('\n<body>\n')
-        sheet.write_html_table(outstream, css_class="summarytable", hover_details=details)
+        sheet.write_html_table(outstream,
+                               css_class="summarytable",
+                               hover_details=details,
+                               with_time=with_time)
         outstream.write('</body></html>\n')
 
 def write_json(context, value, filename):

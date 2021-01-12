@@ -142,7 +142,8 @@ class base_sheet:
     def write_html_table(self, stream,
                          css_class=None,
                          hover_details=False,
-                         start_date=None, end_date=None):
+                         start_date=None, end_date=None,
+                         with_time=False):
         """Write a canonical spreadsheet as HTML."""
         dates = sorted(self.rows.keys())
         colnames = self.column_names_list()
@@ -173,7 +174,7 @@ class base_sheet:
             for colname in colnames:
                 cell_data = row.get(colname, "")
                 if isinstance(cell_data, itemized_amount.itemized_amount):
-                    stream.write('    %s\n' % cell_data.html_cell(colname.replace(' ', '_'), "%s: %s" % (date, colname)))
+                    stream.write('    %s\n' % cell_data.html_cell(colname.replace(' ', '_'), "%s: %s" % (date, colname), with_time))
                 else:
                     stream.write('    <td class="%s"><span class="overview">%s' % (colname.replace(' ', '_'), qsutils.tidy_for_output(cell_data)))
                     if hover_details:
