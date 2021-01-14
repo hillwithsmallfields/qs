@@ -142,30 +142,45 @@ class base_sheet:
     def write_html_table(self, stream,
                          css_class=None,
                          hover_details=False,
+                         col_extra_data=None,
                          start_date=None, end_date=None,
                          with_time=False):
         """Write a canonical spreadsheet as HTML."""
+        print("col_extra_data is", col_extra_data)
         dates = sorted(self.rows.keys())
         colnames = self.column_names_list()
         start = 0
+
         if start_date:
             for i in range(len(self.rows)):
                 if self.rows[dates[i]]['timestamp'] >= start_date:
                     start = i
                     break
         end = len(dates)
+
         if end_date:
             for i in range(start, end):
                 if self.rows[dates[i]]['timestamp'] > end_date:
                     end = i
                     break
+
         stream.write('<table')
         if css_class:
             stream.write(' class="%s"' % css_class)
-        stream.write('>\n  <tr>\n    <th>Date</th>\n')
+        stream.write('>\n')
+
+        stream.write('  <tr>\n')
+        stream.write('    <th>Date</th>\n')
         for colname in colnames:
             stream.write('    <th>%s</th>\n' % colname)
         stream.write('  </tr>\n')
+
+        if col_extra_data:
+            stream.write('    <th>Threshold</th>\n')
+            for colname in colnames:
+                stream.write('    <th>%s</th>\n' % col_extra_data.get(colname))
+            stream.write('  </tr>\n')
+
         for i in range(start, end):
             date = dates[i]
             row = self.rows[date]
@@ -174,7 +189,11 @@ class base_sheet:
             for colname in colnames:
                 cell_data = row.get(colname, "")
                 if isinstance(cell_data, itemized_amount.itemized_amount):
-                    stream.write('    %s\n' % cell_data.html_cell(colname.replace(' ', '_'), "%s: %s" % (date, colname), with_time))
+                    stream.write('    %s\n' % cell_data.html_cell(
+                        colname.replace(' ', '_'),
+                        "%s: %s" % (date, colname),
+                        extra_data=col_extra_data and col_extra_data.get(colname),
+                        with_time=with_time))
                 else:
                     stream.write('    <td class="%s"><span class="overview">%s' % (colname.replace(' ', '_'), qsutils.tidy_for_output(cell_data)))
                     if hover_details:

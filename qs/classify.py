@@ -11,6 +11,10 @@ def read_classifier(classification_file):
             result[member] = name
     return result
 
+def read_thresholds(thresholds_file):
+    with open(thresholds_file) as instream:
+        return yaml.safe_load(instream.read())['Thresholds']
+
 def classify(category, parentage, classes, collect_unknowns=True, pass_unknowns=False):
     """Classify a category.
     If it is directly in any of the classes, put it in that class;

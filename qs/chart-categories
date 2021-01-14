@@ -3,6 +3,7 @@
 TRANSACTIONSFILE=${1-$COMMON/finances/finances.csv}
 # CLASSIFIERSFILE=default-classes.yaml
 CLASSIFIERSFILE=budgetting-classes.yaml
+THRESHOLDSFILE=budgetting-thresholds.yaml
 
 echo Categorising transactions
 
@@ -18,6 +19,7 @@ echo done setup
     --output-dir "results" \
     --bind input-file $TRANSACTIONSFILE \
     --bind classifiers-file $CLASSIFIERSFILE \
+    --bind thresholds-file $THRESHOLDSFILE \
     chart-categories.lisp
 
 echo done classifications

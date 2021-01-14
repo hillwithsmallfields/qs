@@ -95,6 +95,7 @@ functions = ['account_to_sheet',
              'payees',
              'proportions',
              'read_classifier',
+             'read_thresholds',
              'read_parentage_table',
              'remove_columns',
              'rename_column',
@@ -232,7 +233,7 @@ def categorised_by_key_fn(context, incoming_data, key_fn, label=""):
     Really meant for use on periodic summaries."""
     categories = set()
     by_date = {}
-    print("beginning categorised_by_key_fn")
+    # print("beginning categorised_by_key_fn")
     for timestamp, row in incoming_data.rows.items():
         on_day = timestamp.date()
         if on_day not in by_date:
@@ -450,6 +451,9 @@ def proportions(context, original):
 def read_classifier(context, filename):
     return classify.read_classifier(filename)
 
+def read_thresholds(context, filename):
+    return classify.read_thresholds(filename)
+
 def remove_columns_row(timestamp, row, output_rows, colnames):
     output_rows[timestamp] = {colname: row[colname] for colname in row.keys() if colname not in colnames}
 
@@ -579,6 +583,12 @@ hovercss = '''
   position: relative;
   display: inline-block;
 }
+.large {
+  font-weight: bold;
+}
+.credit {
+  color: green;
+}
 .ic {
   font-size: xx-small;
 }
@@ -601,10 +611,11 @@ table.summarytable {
 </style>
 '''
 
-def write_html(context, sheet, filename, title, details, with_time):
+def write_html(context, sheet, filename, title, thresholds, details, with_time):
     full_filename = os.path.expanduser(os.path.expandvars(filename))
     print("write_html filename=%s full_filename=%s" % (filename, full_filename))
     # qsutils.ensure_directory_for_file(full_filename)
+    print("thresholds are", thresholds)
     with open(filename, 'w') as outstream:
         outstream.write('<html><head><title>%s</title></head>' % title)
         if details:
@@ -613,6 +624,7 @@ def write_html(context, sheet, filename, title, details, with_time):
         sheet.write_html_table(outstream,
                                css_class="summarytable",
                                hover_details=details,
+                               col_extra_data=thresholds,
                                with_time=with_time)
         outstream.write('</body></html>\n')
 

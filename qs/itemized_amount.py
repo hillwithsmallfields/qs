@@ -7,6 +7,7 @@ import numbers
 import qsutils
 
 STOP_AT_DUPLICATES = False
+LARGE_DEBIT = -250
 
 def row_summary(row):
     amount = row['amount']
@@ -17,19 +18,23 @@ def row_summary(row):
 def row_descr(row):
     return "<item " + row['timestamp'].isoformat() + " " + str(row['amount']) + " to " + row.get('payee', "unknown payee"), " in ", row.get('category', "unknown category") + ">"
 
+def row_annotation(row):
+    message = row.get('message', "")
+    return row.get('category', "unknown category") + ((" " + message) if message and message != "" else "")
+
 def tooltip_string(item, with_time=False):
     return (('''        <tr><td>%s %s</td><td>%s</td><td>%s</td><td>%s</td></tr>'''
              % (item.get('date', "unknown date"),
                 item.get('time', "unknown date"),
                 qsutils.tidy_for_output(item.get('amount', "unknown amount")),
                 item.get('payee', "unknown payee"),
-                item.get('category', "unknown category")))
+                row_annotation(item)))
             if with_time
             else ('''        <tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>'''
                   % (item.get('date', "unknown date"),
                      qsutils.tidy_for_output(item.get('amount', "unknown amount")),
                      item.get('payee', "unknown payee"),
-                     item.get('category', "unknown category"))))
+                     row_annotation(item))))
 
 class DuplicateItem(Exception):
 
@@ -68,7 +73,7 @@ class itemized_amount:
     def __str__(self):
         return (("%.2F" % self.amount)
                 if isinstance(self.amount, float)
-                else str(type(self.amount)) + str(self.amount))
+                else str(self.amount))
 
     def __repr__(self):
         dups = self.count_duplicates()
@@ -84,7 +89,9 @@ class itemized_amount:
                 else abs(self.amount - other.amount) < 0.001)
 
     def __lt__(self, other):
-        return self.amount < other.amount
+        return self.amount < (other.amount
+                              if isinstance(other, itemized_amount)
+                              else other)
 
     def normalize(self):
         amount = self.amount
@@ -125,7 +132,7 @@ class itemized_amount:
                 if isinstance(incoming, itemized_amount):
                     self.add(incoming, depth+1)
                 else:
-                    self.amount += incoming # <================== I think this is where the bare number adds are coming from; it implies that self.amount is itself an itemized_amount, which I hadn't had in mind; I was thinking of that as a possibility in the incoming ones; I think I should probably normalize these away, but where?
+                    self.amount += incoming
                     self.transactions.append(other)
         elif isinstance(other, list):
             for item in other:
@@ -176,11 +183,23 @@ class itemized_amount:
         result.transactions = self.transactions # maybe we should scale all their amounts by divisor?
         return result
 
-    def html_cell(self, css_class, title, with_time=False):
+    def magnitude_class(self, colname, thresholds):
+        """Return a supplement to the overview class name, based on the size of the amount."""
+        return (" large"
+                if self.amount < (-abs(thresholds)
+                                  if isinstance(thresholds, numbers.Number)
+                                  else LARGE_DEBIT)
+                else (" credit"
+                      if self.amount > 0
+                      else ""))
+    
+    def html_cell(self, css_class, title, extra_data=None, with_time=False):
+        """Return the text of an HTML cell describing this itemized amount.
+        It includes an item list that may be styled as a tooltip by CSS."""
         dups = self.count_duplicates()
         dupstring = (' <span class="duplicated">{%d}</span>' % dups) if dups else ''
         return ('<td class="%s">' % css_class
-                + '<span class="overview">%s' % str(self)
+                + '<span class="overview%s">%s' % (self.magnitude_class(title, extra_data), str(self))
                 + ' <span class="ic">[%d%s]</span>\n' % (len(self.transactions), dupstring)
                 + '      <span class="details"><table border>\n'
                 + ('''<tr><th colspan="4">%s (%s in %d items)</th></tr>'''
