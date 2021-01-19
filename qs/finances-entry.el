@@ -23,23 +23,23 @@ With optional FORCE, do it even if it seems unnecessary."
   (let* ((completion-ignore-case t)
          (date (format-time-string "%F"))
          (time (format-time-string "%T"))
-         (account (completing-read "Account: "
-                                   account-completions
-                                   nil t
-                                   finances-default-account))
-         (debit (y-or-n-p "Debit? "))
          (amount (read (read-from-minibuffer "Amount:" )))
+         (debit (y-or-n-p "Debit? "))
          (currency (completing-read "Currency: "
                                     currency-completions
                                     nil t
                                     finances-default-currency))
+         (account (completing-read "Account: "
+                                   account-completions
+                                   nil t
+                                   finances-default-account))
          (original-amount "")
          (original-currency "")
+         (payee (completing-read "Payee:"
+                                 payee-completions))
          (category (completing-read "Category: "
                                     category-completions
                                     nil t))
-         (payee (completing-read "Payee:"
-                                 payee-completions))
          (project (completing-read "Project: "
                                    project-completions))
          (note (read-from-minibuffer "Note: ")))

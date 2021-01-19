@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import datetime
 import traceback
 import functools
 import numbers
@@ -9,18 +10,31 @@ import qsutils
 STOP_AT_DUPLICATES = False
 LARGE_DEBIT = -250
 
+def date_in_year(date):
+    return date.strftime("%m:%d") if isinstance(date, datetime.date) else date[-5:]
+
 def row_summary(row):
     amount = row['amount']
     if isinstance(amount, itemized_amount):
         amount = amount.amount
-    return (row.get('date'), row.get('time'), row.get('payee', "unknown payee"), amount, row.get('category', "unknown category"), row.get('unique_number'))
+    return (row.get('date'), row.get('time'),
+            row.get('payee', "unknown payee"),
+            amount,
+            row.get('category', "unknown category"),
+            row.get('unique_number'))
 
 def row_descr(row):
-    return "<item " + row['timestamp'].isoformat() + " " + str(row['amount']) + " to " + row.get('payee', "unknown payee"), " in ", row.get('category', "unknown category") + ">"
+    return ("<item "
+            + row['timestamp'].isoformat()
+            + " " + str(row['amount'])
+            + " to " + row.get('payee', "unknown payee"),
+            " in ", row.get('category', "unknown category") + ">")
 
 def row_annotation(row):
     message = row.get('message', "")
-    return row.get('category', "unknown category") + ((" " + message) if message and message != "" else "")
+    return row.get('category', "unknown category") + ((" " + message)
+                                                      if message and message != ""
+                                                      else "")
 
 def tooltip_string(item, with_time=False):
     return (('''        <tr><td>%s %s</td><td>%s</td><td>%s</td><td>%s</td></tr>'''
@@ -35,6 +49,9 @@ def tooltip_string(item, with_time=False):
                      qsutils.tidy_for_output(item.get('amount', "unknown amount")),
                      item.get('payee', "unknown payee"),
                      row_annotation(item))))
+
+def as_number(x):
+    return x.as_number() if isinstance(x, itemized_amount) else x
 
 class DuplicateItem(Exception):
 
@@ -60,6 +77,9 @@ class itemized_amount:
                                    if isinstance(transaction, list)
                                    else []))
 
+    def as_number(self):
+        return self.amount if isinstance(self.amount, numbers.Number) else self.amount.as_number()
+        
     def count_duplicates(self):
         return len(self.transactions) - len(set([row_summary(row) for row in self.transactions]))
 
@@ -77,9 +97,10 @@ class itemized_amount:
 
     def __repr__(self):
         dups = self.count_duplicates()
-        return "<%s (%d transactions%s)>" % (self.__str__(),
+        return "<%s (%d%s: {%s})>" % (self.__str__(),
                                              len(self.transactions),
-                                             (", %d dups" % dups) if dups else "")
+                                             (" (%d dups)" % dups) if dups else "",
+                                      ", ".join(["%s: %.2f" % (date_in_year(item['date']), as_number(item['amount'])) for item in self.transactions]))
 
     def __eq__(self, other):
         if other is None or other == 'None':
@@ -106,20 +127,24 @@ class itemized_amount:
                 numeric = self.amount
                 matched = False
                 if first_ts.day == 1 and first_ts.hour == 0:
-                    for row in amount.transactions:
-                        if (row['amount'] == numeric
-                            and row['payee'] == payee):
-                            matched = True
-                            break
+                    if len(self.transactions) == 1:
+                        matched = True
+                    else:
+                        for row in amount.transactions:
+                            if (row['amount'] == numeric
+                                and row['payee'] == payee):
+                                matched = True
+                                break
                 if matched:
                     self.transactions = amount.transactions
                 else:
                     self.transactions += amount.transactions
                     
     def add(self, other, depth=0):
-        # print("  " * depth, "adding", other, "onto", self)
         self.normalize()
+        # print("  " * depth, "adding", repr(other), "onto", repr(self))
         # traceback.print_stack()
+        original_amount = self.as_number()
         if isinstance(other, itemized_amount):
             for item in other.transactions:
                 # print("  " * depth, "adding sub-transaction", item)
@@ -127,7 +152,7 @@ class itemized_amount:
         elif isinstance(other, dict):
             # print("  " * depth, "considering adding row")
             if other not in self.transactions:
-                # print("  " * depth, "adding row")
+                # print("  " * depth, "adding row", row_descr(other), "to", repr(self))
                 incoming = other['amount']
                 if isinstance(incoming, itemized_amount):
                     self.add(incoming, depth+1)
@@ -144,7 +169,7 @@ class itemized_amount:
             self.transactions.append({'amount': other})
         # else:
         #     print("  " * depth, "cannot add", other, "to an itemized amount")
-        # print("  " * depth, "result of adding", other, "is", self)
+        # print("  " * depth, "result of adding", row_descr(other) if isinstance(other, dict) else repr(other), "to", original_amount, "is", repr(self))
             
     def __add__(self, other):
         result = itemized_amount()
@@ -163,8 +188,6 @@ class itemized_amount:
         if dup_before:
             print("Already got duplicates before adding")
             raise DuplicateItem(None, self, other)
-
-
         self.add(other)
 
 
@@ -196,6 +219,11 @@ class itemized_amount:
     def html_cell(self, css_class, title, extra_data=None, with_time=False):
         """Return the text of an HTML cell describing this itemized amount.
         It includes an item list that may be styled as a tooltip by CSS."""
+        # print("    rendering cell", repr(self))
+        # print("    with transactions", self.transactions)
+        self.normalize()
+        # print("    rendering normalized cell", repr(self))
+        # print("    with normalized transactions", self.transactions)
         dups = self.count_duplicates()
         dupstring = (' <span class="duplicated">{%d}</span>' % dups) if dups else ''
         return ('<td class="%s">' % css_class

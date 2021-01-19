@@ -21,6 +21,14 @@ class base_sheet:
     def __len__(self):
         return len(self.rows)
 
+    def earliest(self):
+        """Return the date of the earliest row in the sheet."""
+        return min(self.rows.keys())
+
+    def latest(self):
+        """Return the date of the latest row in the sheet."""
+        return max(self.rows.keys())
+    
     def timestamp_from(self, base_date, base_time=None):
         """Return a timestamp at the given date and time."""
         if isinstance(base_date, datetime.datetime):
@@ -144,9 +152,9 @@ class base_sheet:
                          hover_details=False,
                          col_extra_data=None,
                          start_date=None, end_date=None,
-                         with_time=False):
+                         with_time=False,
+                         summarize=True):
         """Write a canonical spreadsheet as HTML."""
-        print("col_extra_data is", col_extra_data)
         dates = sorted(self.rows.keys())
         colnames = self.column_names_list()
         start = 0
@@ -181,23 +189,42 @@ class base_sheet:
                 stream.write('    <th>%s</th>\n' % col_extra_data.get(colname))
             stream.write('  </tr>\n')
 
+        column_totals = {colname: 0 for colname in colnames}
+            
         for i in range(start, end):
             date = dates[i]
+            # print("row", date)
             row = self.rows[date]
             stream.write('  <tr>\n')
             stream.write('    <th class="date">%s</th>\n' % date)
             for colname in colnames:
                 cell_data = row.get(colname, "")
+                # print("    column", colname)
                 if isinstance(cell_data, itemized_amount.itemized_amount):
                     stream.write('    %s\n' % cell_data.html_cell(
                         colname.replace(' ', '_'),
                         "%s: %s" % (date, colname),
                         extra_data=col_extra_data and col_extra_data.get(colname),
                         with_time=with_time))
+                    column_totals[colname] += cell_data.as_number()
                 else:
                     stream.write('    <td class="%s"><span class="overview">%s' % (colname.replace(' ', '_'), qsutils.tidy_for_output(cell_data)))
                     if hover_details:
                         stream.write('<span class="details">Details to go here</span>')
                     stream.write('</span></td>\n')
             stream.write('  </tr>\n')
+
+        if summarize:
+            stream.write('    <th>Totals</th>\n')
+            for colname in colnames:
+                stream.write('    <th>%s</th>\n' % qsutils.tidy_for_output(column_totals[colname]))
+            stream.write('  </tr>\n')
+            start = self.earliest()
+            end = self.latest()
+            months = max(1, end.month - start.month + (end.year - start.year) * 12)
+            stream.write('    <th>Monthly averages</th>\n')
+            for colname in colnames:
+                stream.write('    <th>%s</th>\n' % qsutils.tidy_for_output(column_totals[colname] / months))
+            stream.write('  </tr>\n')
+
         stream.write('</table>\n')

@@ -613,9 +613,7 @@ table.summarytable {
 
 def write_html(context, sheet, filename, title, thresholds, details, with_time):
     full_filename = os.path.expanduser(os.path.expandvars(filename))
-    print("write_html filename=%s full_filename=%s" % (filename, full_filename))
     # qsutils.ensure_directory_for_file(full_filename)
-    print("thresholds are", thresholds)
     with open(filename, 'w') as outstream:
         outstream.write('<html><head><title>%s</title></head>' % title)
         if details:
