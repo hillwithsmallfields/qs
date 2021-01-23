@@ -410,7 +410,7 @@ class canonical_sheet(base_sheet.base_sheet):
         result = copy.copy(self)
         result.rows = {}
         accumulators = {}       # maps dates to maps of payee to combined transactions
-        print("combine_same_period_entries", period)
+        print("combine_same_period_entries", period, "combine_categories", combine_categories, "combined_only", combined_only)
         for timestamp in self.rows.keys():
             row = self.rows[timestamp]
             row_date = period(timestamp)
@@ -424,11 +424,14 @@ class canonical_sheet(base_sheet.base_sheet):
                 this_period_by_payee[payee_key] += row
             else:
                 this_period_by_payee[payee_key] = itemized_amount.itemized_amount(row)
-        # for timestamp in sorted(accumulators.keys()):
-        #     summaries = accumulators[timestamp]
-        #     print("cspe date ", timestamp)
-        #     for summarykey in sorted(summaries.keys()):
-        #         print("cspe sum   ", summarykey, repr(summaries[summarykey]))
+        if False:
+            for timestamp in sorted(accumulators.keys()):
+                summaries = accumulators[timestamp]
+                print("cspe date ", timestamp)
+                for summarykey in sorted(summaries.keys()):
+                    print("cspe sum   ", summarykey, repr(summaries[summarykey]))
+                    for sub in summaries[summarykey].transactions:
+                        print("cspe sub       ", itemized_amount.row_descr(sub))
         unique_number = 0
         for timestamp, summaries in accumulators.items():
             for sumkey in summaries:
@@ -436,6 +439,8 @@ class canonical_sheet(base_sheet.base_sheet):
                 if len(summary.transactions) == 1 and combined_only:
                     continue
                 adjusted_datetime = result.unused_timestamp_from(timestamp)
+                desc = ", ".join([itemized_amount.row_descr(x) for x in summary.transactions])
+                # print("making row at", adjusted_datetime, "from", summary, "which is", desc)
                 result.rows[adjusted_datetime] = {
                     'amount': summary,
                     'category': (";".join([item['category'] for item in summary.transactions])
@@ -449,9 +454,10 @@ class canonical_sheet(base_sheet.base_sheet):
                     'date': adjusted_datetime.date().isoformat(),
                     'time': adjusted_datetime.time().isoformat()}
                 unique_number += 1
-        # print("results:")
-        # for timestamp in sorted(result.rows):
-        #     print("cspe res  ", timestamp, result.rows[timestamp])
+        if False:
+            print("results:")
+            for timestamp in sorted(result.rows):
+                print("cspe res  ", timestamp, result.rows[timestamp])
         return result
 
     def count_same_period_categories(self, period):

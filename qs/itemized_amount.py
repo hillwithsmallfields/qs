@@ -24,11 +24,17 @@ def row_summary(row):
             row.get('unique_number'))
 
 def row_descr(row):
-    return ("<item "
-            + row['timestamp'].isoformat()
-            + " " + str(row['amount'])
-            + " to " + row.get('payee', "unknown payee"),
-            " in ", row.get('category', "unknown category") + ">")
+    return "<item " \
+            + row['timestamp'].isoformat() \
+            + " " + str(row['amount']) \
+            + " to " + row.get('payee', "unknown payee") \
+            + " in " + row.get('category', "unknown category") + ">"
+
+def diagnostic_amount_string(am):
+    return repr(am) if isinstance(am, itemized_amount) else "fl %.2f" % am
+
+def compact_row_string(item):
+    return "%s %s %s: %s" % (date_in_year(item['date']), item['category'], item['payee'], diagnostic_amount_string(item['amount']))
 
 def row_annotation(row):
     message = row.get('message', "")
@@ -79,7 +85,7 @@ class itemized_amount:
 
     def as_number(self):
         return self.amount if isinstance(self.amount, numbers.Number) else self.amount.as_number()
-        
+
     def count_duplicates(self):
         return len(self.transactions) - len(set([row_summary(row) for row in self.transactions]))
 
@@ -89,7 +95,7 @@ class itemized_amount:
             summary = row_summary(row)
             acc[summary] = acc.get(summary, 0) + 1
         return [summary for summary, count in acc.items() if count > 1]
-    
+
     def __str__(self):
         return (("%.2F" % self.amount)
                 if isinstance(self.amount, float)
@@ -100,7 +106,7 @@ class itemized_amount:
         return "<%s (%d%s: {%s})>" % (self.__str__(),
                                              len(self.transactions),
                                              (" (%d dups)" % dups) if dups else "",
-                                      ", ".join(["%s: %.2f" % (date_in_year(item['date']), as_number(item['amount'])) for item in self.transactions]))
+                                      ", ".join([compact_row_string(item) for item in self.transactions]))
 
     def __eq__(self, other):
         if other is None or other == 'None':
@@ -139,7 +145,7 @@ class itemized_amount:
                     self.transactions = amount.transactions
                 else:
                     self.transactions += amount.transactions
-                    
+
     def add(self, other, depth=0):
         self.normalize()
         # print("  " * depth, "adding", repr(other), "onto", repr(self))
@@ -170,13 +176,13 @@ class itemized_amount:
         # else:
         #     print("  " * depth, "cannot add", other, "to an itemized amount")
         # print("  " * depth, "result of adding", row_descr(other) if isinstance(other, dict) else repr(other), "to", original_amount, "is", repr(self))
-            
+
     def __add__(self, other):
         result = itemized_amount()
         result.add(self)
         result.add(other)
         return result
-    
+
     def __radd__(self, other):
         result = itemized_amount()
         result.add(other)
@@ -215,7 +221,7 @@ class itemized_amount:
                 else (" credit"
                       if self.amount > 0
                       else ""))
-    
+
     def html_cell(self, css_class, title, extra_data=None, with_time=False):
         """Return the text of an HTML cell describing this itemized amount.
         It includes an item list that may be styled as a tooltip by CSS."""

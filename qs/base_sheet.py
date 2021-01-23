@@ -8,6 +8,8 @@ import os.path
 import itemized_amount
 import qsutils
 
+TRACE_RENDERING = False
+
 class base_sheet:
 
     """To hold methods in common between csv_sheet and canonical_sheet."""
@@ -193,13 +195,16 @@ class base_sheet:
             
         for i in range(start, end):
             date = dates[i]
-            # print("row", date)
+            if TRACE_RENDERING:
+                print("row", date)
             row = self.rows[date]
             stream.write('  <tr>\n')
             stream.write('    <th class="date">%s</th>\n' % date)
             for colname in colnames:
                 cell_data = row.get(colname, "")
-                # print("    column", colname)
+                if TRACE_RENDERING:
+                    print("    column", colname)
+                    print("    cell", repr(cell_data))
                 if isinstance(cell_data, itemized_amount.itemized_amount):
                     stream.write('    %s\n' % cell_data.html_cell(
                         colname.replace(' ', '_'),

@@ -249,7 +249,7 @@ def categorised_by_key_fn(context, incoming_data, key_fn, label=""):
             # print("bykey added to", category, "with", row['amount'], "yielding", repr(day_accumulator[category]))
         else:
             day_accumulator[category] = amount
-            # print("bykey starting", category, "with", row['amount'])
+            # print("bykey starting", category, "with", repr(amount), "from row", row['amount'])
     # print("ended categorised_by_key_fn")
     # print("bykey prepared rows:", label)
     # for k, v in by_date.items():
@@ -265,6 +265,8 @@ def chart(context, sheet, title, filename, fields):
     sheet.chart(title, filename, fields)
     return fields
 
+VERBOSE_CHECK = False
+
 def check(context, label, sheet):
     print("checking", label)
     duplications = 0
@@ -279,7 +281,14 @@ def check(context, label, sheet):
                 if dups:
                     duplications += 1
                     duplicates += dups
-                    print("in check", label, "found", dups, "duplicates in", row)
+                    if VERBOSE_CHECK:
+                        print("in check", label, "found", dups, "duplicates in", row)
+                if isinstance(amount.amount, itemized_amount.itemized_amount):
+                    if VERBOSE_CHECK:
+                        print("in check", label, "nested amount: outer", repr(amount), "inner", repr(amount.amount), type(amount.amount.amount))
+                    if isinstance(amount.amount.amount, itemized_amount.itemized_amount):
+                        if VERBOSE_CHECK:
+                            print("in check", label, "double nested amount: outer", repr(amount), "inner", repr(amount.amount))
     print("checked", label, duplications, "duplications", duplicates, "duplicates", missing_unique_numbers, "missing unique numbers")
     return sheet
 
