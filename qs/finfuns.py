@@ -240,6 +240,10 @@ def categorised_by_key_fn(context, incoming_data, key_fn, label=""):
             by_date[on_day] = {}
         day_accumulator = by_date[on_day]
         category = key_fn(row)
+        original_amount = itemized_amount.as_number(row['amount'])
+        row = row.copy()
+        row['amount'] = original_amount
+        # print("category", category, "chosen for row", row)
         categories.add(category or "unknown")
         amount = itemized_amount.itemized_amount(row)
         # print("amount", repr(amount), amount.transactions)

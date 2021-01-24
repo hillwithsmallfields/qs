@@ -57,7 +57,13 @@ def tooltip_string(item, with_time=False):
                      row_annotation(item))))
 
 def as_number(x):
-    return x.as_number() if isinstance(x, itemized_amount) else x
+    return (0
+            if not x
+            else (x.as_number()
+                  if isinstance(x, itemized_amount)
+                  else (x['amount']
+                        if isinstance(x, dict)
+                        else x)))
 
 class DuplicateItem(Exception):
 
@@ -76,10 +82,10 @@ class itemized_amount:
     The overall result can be treated as a number."""
 
     def __init__(self, transaction=None):
-        self.amount = transaction['amount'] if transaction else 0
+        self.amount = as_number(transaction)
         self.transactions = ([transaction]
                              if isinstance(transaction, dict)
-                             else (transaction
+                             else (transaction.copy()
                                    if isinstance(transaction, list)
                                    else []))
 
@@ -195,8 +201,6 @@ class itemized_amount:
             print("Already got duplicates before adding")
             raise DuplicateItem(None, self, other)
         self.add(other)
-
-
         dup_after = self.count_duplicates()
         if dup_after != dup_before:
             print("__iadd__ caused", dup_after - dup_before, "new duplicates")

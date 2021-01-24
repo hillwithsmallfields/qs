@@ -9,12 +9,13 @@
        (automatic-categories (flagged-categories "handelsbanken" "automatic"))
        (by-category (categorised monthly))
        ;; (by-parentage (by-parent monthly parentage-table))
-       (by-class (check "classified" (by-classification monthly parentage-table classifiers t nil)))
 
-       ;; (automatics (by-classification monthly parentage-table automatic-categories t nil)) ; damages by-class
-       ;; (by-level-0 (by-hierarchy monthly 0 parentage-table)) ; causes problems
-       ;; (by-level-1 (by-hierarchy monthly 1 parentage-table))
-       ;; (by-level-2 (by-hierarchy monthly 2 parentage-table))
+       (by-class (check "classified" (by-classification monthly parentage-table classifiers t nil)))
+       
+       (automatics (by-classification monthly parentage-table automatic-categories t nil)) ; damages by-class
+       (by-level-0 (by-hierarchy monthly 0 parentage-table)) ; causes problems
+       (by-level-1 (by-hierarchy monthly 1 parentage-table))
+       (by-level-2 (by-hierarchy monthly 2 parentage-table))
        (by-proportions (proportions by-category))
        )
   (print "parentage table is" parentage-table)

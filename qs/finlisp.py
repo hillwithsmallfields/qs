@@ -120,6 +120,7 @@ finlisp_evaluation.def_finlisp_fn('length', finlisp_length)
 
 def finlisp_print(_, *values):
     print(*values)
+    return values
 
 finlisp_evaluation.def_finlisp_fn('print', finlisp_print)
 

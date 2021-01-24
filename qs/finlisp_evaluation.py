@@ -208,6 +208,7 @@ def finlisp_eval_list(context, expr):
             else:
                 raise InvalidFunction(fun_name)
         else:
+            print("function name", fun_name, "is not defined")
             raise UndefinedName(fun_name)
 
 def finlisp_eval_symbol(context, expr):
