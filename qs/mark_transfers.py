@@ -5,10 +5,13 @@ import csv
 import qsutils
 
 def mark_transfers_begin(control_dict, input_format):
-    return canonical_sheet.canonical_sheet.canonical_column_sequence, {'previous': None}
+    return canonical_sheet.canonical_sheet.canonical_column_sequence_no_timestamp, {
+        'previous': None,
+        'accounts': set()}
 
 def mark_transfers_row(timestamp, row, output_rows, scratch):
     previous = scratch['previous']
+    scratch['accounts'].add(row['account'])
     if previous:
         amount = float(row['amount'])
         if amount == - float(previous['amount']) and row['account'] != previous['account']:
@@ -17,9 +20,23 @@ def mark_transfers_row(timestamp, row, output_rows, scratch):
             from_row = previous if prev_to_this else row
             row_date = row['date']
             row_time = row['time']
-            print(abs(amount), "from", from_row['account'], "to", to_row['account'], "on", row_date, "between", row_time, "and", previous['time'])
-            if previous['date'] != row_date:
+            print(abs(amount), "from", from_row['account'], "to", to_row['account'],
+                  "between", row_date, row_time,
+                  "and", previous['date'], previous['time'])
+            if (previous['date'] == row_date
+                and row.get('category', "") in ["", "Transfer", "transfer"]
+                and previous.get('category', "") in ["", "Transfer", "transfer"]):
+                if row['payee'] not in scratch['accounts']:
+                    row['category'] = 'transfer'
+                    row['payee'] = previous['account']
+                if previous['payee'] not in scratch['accounts']:
+                    previous['category'] = 'transfer'
+                    previous['payee'] = row['account']
+                output_rows[timestamp] = row
+            else:
                 print("date mismatch")
+        else:
+            output_rows[timestamp] = row
     scratch['previous'] = row
 
 def mark_transfers_end(headers, output_rows, scratch):

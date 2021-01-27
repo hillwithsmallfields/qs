@@ -282,6 +282,10 @@ def read_fin_csv(args, config, input_filename):
         else:
             input_format_name, header_row_number = deduce_stream_format(infile, config, args.verbose)
 
+        if input_format_name is None:
+            print("Could not deduce input format name for", input_filename, "amongst", ", ".join(config['formats']))
+            input_format_name = 'Default'
+            
         input_format = config['formats'][input_format_name]
 
         in_columns = input_format['columns']
@@ -322,10 +326,8 @@ def write_fin_csv(header, output_rows, filename):
         writer = csv.DictWriter(outfile, header, quoting=csv.QUOTE_MINIMAL)
         writer.writeheader()
         for timestamp in sorted(output_rows.keys()):
-            writer.writerow({ k: (("%.2F" % v)
-                                  if type(v) is float
-                                  else v)
-                              for k, v in output_rows[timestamp].items()})
+            writer.writerow({k: tidy_for_output(output_rows[timestamp][k])
+                             for k in header})
     return expanded_output_name
 
 def read_process_write_fin_csv(app_data, callback, *callbackextraargs):
