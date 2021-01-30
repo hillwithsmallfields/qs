@@ -17,6 +17,10 @@ With optional FORCE, do it even if it seems unnecessary."
 (defvar finances-default-account "Handelsbanken current account")
 (defvar finances-default-currency "GBP")
 
+(defun finances-categories-for-payee (payee)
+  "Return the categories that have been used for a given PAYEE."
+  (cons "" (cdr (assoc payee payee-completions))))
+
 (defun finances-read-entry ()
   "Read the details of a transaction."
   (finances-read-completions)
@@ -37,13 +41,21 @@ With optional FORCE, do it even if it seems unnecessary."
          (original-currency "")
          (payee (completing-read "Payee:"
                                  payee-completions))
-         (category (completing-read "Category: "
-                                    category-completions
+         (category-0 (completing-read "Category: "
+                                    (finances-categories-for-payee payee)
                                     nil t))
+         (category (if (string= category-0 "")
+                       (completing-read "Category: "
+                                        category-completions
+                                        nil t)
+                     category-0))
          (project (completing-read "Project: "
                                    project-completions))
          (note (read-from-minibuffer "Note: ")))
-    (pushnew payee payee-completions :test 'string=)
+    ;; (pushnew payee payee-completions :test 'string=)
+    (unless (assoc payee payee-completions)
+      (push (list payee category)
+            payee-completions))
     (pushnew project project-completions :test 'string=)
     (list date time
           account
@@ -63,7 +75,7 @@ With optional FORCE, do it even if it seems unnecessary."
    (t cell-value)))
 
 (defun finances-enter (date time account amount currency original-amount original-currency category payee project note)
-  "Read an entry for my finances file.
+  "Make an entry for my finances file.
 The fields DATE TIME ACCOUNT AMOUNT CURRENCY ORIGINAL-AMOUNT
 ORIGINAL-CURRENCY CATEGORY PARENT PAYEE LOCATION PROJECT NOTE are
 as in the Financisto app."
