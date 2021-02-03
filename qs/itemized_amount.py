@@ -43,7 +43,7 @@ def row_annotation(row):
                                                       else "")
 
 def tooltip_string(item, with_time=False):
-    return (('''        <tr><td>%s %s</td><td>%s</td><td>%s</td><td>%s</td></tr>'''
+    return (('''        <tr><td class="detdate">%s %s</td><td class="detamt">%s</td><td class="detpay">%s</td><td class="detcat">%s</td></tr>'''
              % (item.get('date', "unknown date"),
                 item.get('time', "unknown date"),
                 qsutils.tidy_for_output(item.get('amount', "unknown amount")),
@@ -126,6 +126,11 @@ class itemized_amount:
                               if isinstance(other, itemized_amount)
                               else other)
 
+    def __abs__(self):
+        a = itemized_amount(self.transactions)
+        a.amount = abs(self.as_number())
+        return a
+    
     def normalize(self):
         amount = self.amount
         if isinstance(amount, itemized_amount):
@@ -240,7 +245,7 @@ class itemized_amount:
                 + '<span class="overview%s">%s' % (self.magnitude_class(title, extra_data), str(self))
                 + ' <span class="ic">[%d%s]</span>\n' % (len(self.transactions), dupstring)
                 + '      <span class="details"><table border>\n'
-                + ('''<tr><th colspan="4">%s (%s in %d items)</th></tr>'''
+                + ('''<tr><th colspan="4" class="dethead">%s (%s in %d items)</th></tr>'''
                           % (title, str(self), len(self.transactions)))
                 + ('\n'.join([tooltip_string(item, with_time)
                               for item in self.transactions]))

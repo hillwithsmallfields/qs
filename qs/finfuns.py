@@ -611,6 +611,21 @@ hovercss = '''
   z-index: 1;
   position: absolute;
 }
+.dethead {
+    font-size: x-small;
+}
+.detdate {
+    font-size: x-small;
+}
+.detamt {
+    font-size: x-small;
+}
+.detpay {
+    font-size: x-small;
+}
+.detcat {
+    font-size: x-small;
+}
 .overview:hover .details {
   visibility: visible;
 }
