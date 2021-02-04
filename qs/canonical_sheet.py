@@ -417,9 +417,13 @@ class canonical_sheet(base_sheet.base_sheet):
             if row_date not in accumulators:
                 accumulators[row_date] = {}
             this_period_by_payee = accumulators[row_date]
-            payee_key = ((row['account'], row['payee'])
-                         if combine_categories
-                         else (row['account'], row['payee'], row['category']))
+            try:
+                payee_key = ((row['account'], row['payee'])
+                             if combine_categories
+                             else (row['account'], row['payee'], row['category']))
+            except KeyError:
+                print("required key missing in", row)
+                raise(KeyError)
             if payee_key in this_period_by_payee:
                 this_period_by_payee[payee_key] += row
             else:

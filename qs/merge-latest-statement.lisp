@@ -46,7 +46,7 @@
                       (add-row unmatched-non-automatic this-row)))))
   (let* ((parentage-table (read-parentage-table "cats.yaml"))
          (classifiers (read-classifier "default-classes.yaml"))
-         (by-classification (by-month unmatched-automatic nil nil) parentage-table classifiers t)         
+         ;; (by-classification (by-month unmatched-automatic nil nil) parentage-table classifiers t)         
          (handled-count (+ (length unmatched-automatic)
                            (length unmatched-non-automatic)
                            (length ambiguously-matched-auto)
@@ -72,7 +72,8 @@
     (write-csv unambiguously-matched-auto "unambiguously-matched-auto.csv")
     (write-csv unambiguously-matched-non-auto "unambiguously-matched-non-auto.csv")
 
-    (write-csv by-classification "automatics-by-classification.csv"))
+    ;; (write-csv by-classification "automatics-by-classification.csv")
+    )
   (let* ((merged-with-ua (add-sheets main unmatched-automatic))
          (merged-with-unmatched-all (add-sheets merged-with-ua unmatched-non-automatic))
          (tracked (track merged-with-ua "amount" "balance"))

@@ -216,7 +216,7 @@ def finlisp_eval_symbol(context, expr):
     if found:
         return result
     print("Name", expr._val, "not defined")
-    raise(UndefinedName, expr)
+    raise UndefinedName(expr)
 
 def finlisp_eval_quoted(context, expr):
     return expr._val
@@ -245,7 +245,7 @@ def finlisp_eval(context, expr):
             print("bindings:")
             for varname, varval in binding_frame.items():
                 print("    " + varname + ":", varval)
-        raise(EvalError, expr)
+        raise EvalError(expr)
 
 def lisp_to_string(value):
     try:
