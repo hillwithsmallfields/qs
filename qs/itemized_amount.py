@@ -43,7 +43,7 @@ def row_annotation(row):
                                                       else "")
 
 def tooltip_string(item, with_time=False):
-    return (('''        <tr><td class="detdate">%s %s</td><td class="detamt">%s</td><td class="detpay">%s</td><td class="detcat">%s</td></tr>'''
+    return (('''          <tr><td class="detdate">%s %s</td><td class="detamt">%s</td><td class="detpay">%s</td><td class="detcat">%s</td></tr>'''
              % (item.get('date', "unknown date"),
                 item.get('time', "unknown date"),
                 qsutils.tidy_for_output(item.get('amount', "unknown amount")),
@@ -244,9 +244,9 @@ class itemized_amount:
         return ('<td class="%s">' % css_class
                 + '<span class="overview%s">%s' % (self.magnitude_class(title, extra_data), str(self))
                 + ' <span class="ic">[%d%s]</span>\n' % (len(self.transactions), dupstring)
-                + '      <span class="details"><table border>\n'
-                + ('''<tr><th colspan="4" class="dethead">%s (%s in %d items)</th></tr>'''
+                + '      <span class="details">\n        <table border>\n'
+                + ('''          <tr><th colspan="4" class="dethead">%s (%s in %d items)</th></tr>\n'''
                           % (title, str(self), len(self.transactions)))
                 + ('\n'.join([tooltip_string(item, with_time)
                               for item in self.transactions]))
-                + '</table></span>\n</span></td>')
+                + '\n        </table>\n      </span>\n    </td>')
