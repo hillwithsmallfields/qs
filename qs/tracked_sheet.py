@@ -38,7 +38,9 @@ class tracked_sheet(canonical_sheet.canonical_sheet):
                          reference_sheet=reference_sheet,
                          verbose=verbose)
         self.colseq = input_sheet.column_names_list() if input_sheet else []
-        self.colseq = self.colseq + [output_column]
+        self.colseq = (self.colseq
+                       if output_column in self.colseq
+                       else self.colseq + [output_column])
         app_data = {'input_column': input_column,
                     'output_column': output_column}
         qsutils.process_rows(app_data,
