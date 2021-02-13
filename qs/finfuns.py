@@ -233,7 +233,6 @@ def categorised_by_key_fn(context, incoming_data, key_fn, label=""):
     Really meant for use on periodic summaries."""
     categories = set()
     by_date = {}
-    # print("beginning categorised_by_key_fn")
     for timestamp, row in incoming_data.rows.items():
         on_day = timestamp.date()
         if on_day not in by_date:
@@ -243,17 +242,12 @@ def categorised_by_key_fn(context, incoming_data, key_fn, label=""):
         original_amount = itemized_amount.as_number(row['amount'])
         row = row.copy()
         row['amount'] = original_amount
-        # print("category", category, "chosen for row", row)
         categories.add(category or "unknown")
         amount = itemized_amount.itemized_amount(row)
-        # print("amount", repr(amount), amount.transactions)
         if category in day_accumulator:
-            # print("bykey adding to", day_accumulator[category])
             day_accumulator[category] += amount
-            # print("bykey added to", category, "with", row['amount'], "yielding", repr(day_accumulator[category]))
         else:
             day_accumulator[category] = amount
-            # print("bykey starting", category, "with", repr(amount), "from row", row['amount'])
     # print("ended categorised_by_key_fn")
     # print("bykey prepared rows:", label)
     # for k, v in by_date.items():
@@ -276,9 +270,31 @@ def check(context, label, sheet):
     duplications = 0
     duplicates = 0
     missing_unique_numbers = 0
+    items_absent = 0
+    items_present = 0
+    itemized = 0
+    non_itemized = 0
+    amounted = 0
+    non_amounted = 0
+    transaction_count_histogram = {}
     for row in sheet.rows.values():
+        if 'item' in row and row['item'] != "":
+            items_present += 1
+        else:
+            items_absent += 1
         if 'unique_number' not in row:
             missing_unique_numbers += 1
+        if 'amount' in row:
+            amounted += 1
+            if isinstance(row['amount'], itemized_amount.itemized_amount):
+                itemized += 1
+                transactions = row['amount'].transactions
+                tr_count = len(transactions)
+                transaction_count_histogram[tr_count] = 1 + transaction_count_histogram.get(tr_count, 0)
+            else:
+                non_itemized += 1
+        else:
+            non_amounted += 1
         for amount in row.values():
             if isinstance(amount, itemized_amount.itemized_amount):
                 dups = amount.count_duplicates()
@@ -293,7 +309,14 @@ def check(context, label, sheet):
                     if isinstance(amount.amount.amount, itemized_amount.itemized_amount):
                         if VERBOSE_CHECK:
                             print("in check", label, "double nested amount: outer", repr(amount), "inner", repr(amount.amount))
-    print("checked", label, duplications, "duplications", duplicates, "duplicates", missing_unique_numbers, "missing unique numbers")
+                            print("in check", label, "itemized amounts:", itemized, "non_itemized:", non_itemized)
+    print("checked", label, "duplications:", duplications, "duplicates:", duplicates, "missing unique numbers:", missing_unique_numbers, "amounts present:", amounted, "amounts absent:", non_amounted, "items present:", items_present, "items_absent:", items_absent)
+    if transaction_count_histogram:
+        print("in check", label, "itemized amount transaction list lengths:")
+        for count in sorted(transaction_count_histogram.keys()):
+            print("in check", label, "  ", count, transaction_count_histogram[count])
+    else:
+        print("in check", label, "No itemized amounts")    
     return sheet
 
 def column_average(context, sheet, colname):
@@ -624,6 +647,9 @@ hovercss = '''
     font-size: x-small;
 }
 .detcat {
+    font-size: x-small;
+}
+.detitem {
     font-size: x-small;
 }
 .overview:hover .details {

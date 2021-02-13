@@ -59,6 +59,7 @@ class canonical_sheet(base_sheet.base_sheet):
         'payee',
         'category',
         'project',
+        'item',
         'message',
         # todo: possibly replace combicount with itemized_amounts?
         'combicount'            # for combining rows
@@ -283,7 +284,7 @@ class canonical_sheet(base_sheet.base_sheet):
         # from the naming scheme of the input sheet to that of the
         # output sheet.
         for canonical_outcol in ['balance', 'category',
-                                 'payee', 'project', 'message']:
+                                 'payee', 'project', 'item', 'message']:
             # does the canonically named column have a default output value?
             if conversion and canonical_outcol in conversion:
                 out_row[canonical_outcol] = conversion[canonical_outcol]
@@ -325,7 +326,6 @@ class canonical_sheet(base_sheet.base_sheet):
 
     def row_from_canonical(self, output_format, canonical_row, reverse_equivalents=None):
         """Convert a row from our standard format to a specified one."""
-        # print("row_from_canonical: output_format is", output_format)
         if 'accounts' in output_format:
             print("output format has account names", output_format['accounts'])
         column_defaults = output_format.get('column-defaults', {})
@@ -410,7 +410,7 @@ class canonical_sheet(base_sheet.base_sheet):
         result = copy.copy(self)
         result.rows = {}
         accumulators = {}       # maps dates to maps of payee to combined transactions
-        print("combine_same_period_entries", period, "combine_categories", combine_categories, "combined_only", combined_only)
+        # print("combine_same_period_entries", period, "combine_categories", combine_categories, "combined_only", combined_only)
         for timestamp in self.rows.keys():
             row = self.rows[timestamp]
             row_date = period(timestamp)
@@ -451,6 +451,9 @@ class canonical_sheet(base_sheet.base_sheet):
                                  if combine_categories
                                  else summary.transactions[0]['category']),
                     'combicount': len(summary.transactions),
+                    'item': (";".join([item['item'] for item in summary.transactions])
+                                 if combine_categories
+                                 else summary.transactions[0]['item']),
                     'timestamp': adjusted_datetime,
                     'account': sumkey[0],
                     'payee': sumkey[1],
@@ -461,7 +464,8 @@ class canonical_sheet(base_sheet.base_sheet):
         if False:
             print("results:")
             for timestamp in sorted(result.rows):
-                print("cspe res  ", timestamp, result.rows[timestamp])
+                # print("cspe res  ", timestamp, result.rows[timestamp], itemized_amount.row_descr(result.rows[timestamp]))
+                print("cspe res  ", timestamp, repr(result.rows[timestamp]['amount']))
         return result
 
     def count_same_period_categories(self, period):

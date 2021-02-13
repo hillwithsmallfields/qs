@@ -28,33 +28,41 @@ def row_descr(row):
             + row['timestamp'].isoformat() \
             + " " + str(row['amount']) \
             + " to " + row.get('payee', "unknown payee") \
-            + " in " + row.get('category', "unknown category") + ">"
+            + " in " + row.get('category', "unknown category") \
+            + ((" for " + row['item']) if 'item' in row and row['item'] != "" else "") \
+            + ">"
 
 def diagnostic_amount_string(am):
     return repr(am) if isinstance(am, itemized_amount) else "fl %.2f" % am
 
 def compact_row_string(item):
-    return "%s %s %s: %s" % (date_in_year(item['date']), item['category'], item['payee'], diagnostic_amount_string(item['amount']))
+    return "%s %s%s %s: %s" % (date_in_year(item['date']),
+                               item['category'],
+                               (" (%s)" % item['item']) if 'item' in item and item['item'] != "" else "",
+                               item['payee'],
+                               diagnostic_amount_string(item['amount']))
 
 def row_annotation(row):
-    message = row.get('message', "")
-    return row.get('category', "unknown category") + ((" " + message)
-                                                      if message and message != ""
+    item = row.get('item', "")
+    return row.get('category', "unknown category") + ((" " + item)
+                                                      if item and item != ""
                                                       else "")
 
 def tooltip_string(item, with_time=False):
-    return (('''          <tr><td class="detdate">%s %s</td><td class="detamt">%s</td><td class="detpay">%s</td><td class="detcat">%s</td></tr>'''
-             % (item.get('date', "unknown date"),
-                item.get('time', "unknown date"),
-                qsutils.tidy_for_output(item.get('amount', "unknown amount")),
-                item.get('payee', "unknown payee"),
-                row_annotation(item)))
+    return (('''          <tr><td class="detdate">%s %s</td><td class="detamt">%s</td><td class="detpay">%s</td><td class="detcat">%s</td><td class="detitem">%s</td></tr>'''
+             % (item.get('date', "date?"),
+                item.get('time', "time?"),
+                qsutils.tidy_for_output(item.get('amount', "amount?")),
+                item.get('payee', "payee?"),
+                item.get('category', "?"),
+                item.get('item', "")))
             if with_time
-            else ('''        <tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>'''
-                  % (item.get('date', "unknown date"),
-                     qsutils.tidy_for_output(item.get('amount', "unknown amount")),
-                     item.get('payee', "unknown payee"),
-                     row_annotation(item))))
+            else ('''          <tr><td class="detdate">%s</td><td class="detamt">%s</td><td class="detpay">%s</td><td class="detcat">%s</td><td class="detitem">%s</td></tr>'''
+                  % (item.get('date', "date?"),
+                     qsutils.tidy_for_output(item.get('amount', "amount?")),
+                     item.get('payee', "payee?"),
+                     item.get('category', "?"),
+                     item.get('item', ""))))
 
 def as_number(x):
     return (0
@@ -234,18 +242,14 @@ class itemized_amount:
     def html_cell(self, css_class, title, extra_data=None, with_time=False):
         """Return the text of an HTML cell describing this itemized amount.
         It includes an item list that may be styled as a tooltip by CSS."""
-        # print("    rendering cell", repr(self))
-        # print("    with transactions", self.transactions)
         self.normalize()
-        # print("    rendering normalized cell", repr(self))
-        # print("    with normalized transactions", self.transactions)
         dups = self.count_duplicates()
         dupstring = (' <span class="duplicated">{%d}</span>' % dups) if dups else ''
         return ('<td class="%s">' % css_class
                 + '<span class="overview%s">%s' % (self.magnitude_class(title, extra_data), str(self))
                 + ' <span class="ic">[%d%s]</span>\n' % (len(self.transactions), dupstring)
                 + '      <span class="details">\n        <table border>\n'
-                + ('''          <tr><th colspan="4" class="dethead">%s (%s in %d items)</th></tr>\n'''
+                + ('''          <tr><th colspan="5" class="dethead">%s (%s in %d items)</th></tr>\n'''
                           % (title, str(self), len(self.transactions)))
                 + ('\n'.join([tooltip_string(item, with_time)
                               for item in self.transactions]))
