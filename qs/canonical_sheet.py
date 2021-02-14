@@ -540,6 +540,10 @@ class canonical_sheet(base_sheet.base_sheet):
                 balance = statement_balance
         return result
 
+    def occupied_columns(self):
+        """Return a sheet like this but with only the columns that are in use."""
+        return named_column_sheet.named_column_sheet.occupied_columns(self)
+
     def write_csv(self, filename, suppress_timestamp=False):
         """Write a canonical spreadsheet to a file.
         Any columns not in the canonical format are ignored."""

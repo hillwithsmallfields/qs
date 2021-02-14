@@ -1,3 +1,10 @@
+(defun write (sheet basename title explanation)
+  (write-csv sheet (concat basename ".csv"))
+  (write-html sheet (concat basename ".html")
+              title
+              nil nil nil
+              explanation))
+
 (let* ((main (read-canonical "~/common/finances/finances.csv"))
        (summarised (by-day main t t))
        (latest (read-canonical incoming-statement))
@@ -76,7 +83,7 @@
     )
   (let* ((merged-with-ua (add-sheets main unmatched-automatic))
          (merged-with-unmatched-all (add-sheets merged-with-ua unmatched-non-automatic))
-         (tracked (track merged-with-ua "amount" "balance"))
+         ;; (tracked (track merged-with-ua "amount" "balance"))
          (differences-main (compare "discrepancy"
                                     main   "amount"  "balance" "account" "Handelsbanken current account"
                                     latest "balance" nil       nil       nil))
@@ -96,15 +103,37 @@
     (print "differences against merged ua:" (length differences-merged-ua) "average" (column-average-absolute differences-merged-ua "discrepancy"))
     (print "differences against merged all:" (length differences-merged-all) (column-average-absolute differences-merged-all "discrepancy"))
     (write-csv main "main.csv")
-    (write-csv merged-with-ua "merged-with-ua.csv")
-    (write-csv merged-with-unmatched-all "merged-with-unmatched-all.csv")
-    (write-csv tracked "tracked.csv")
-    (write-csv differences-main "differences-main.csv")
-    (write-csv differences-merged-ua "differences-merged-ua.csv")
-    (write-csv differences-merged-all "differences-merged-all.csv")
-    (write-csv (count-month-categories main) "month-categories-main.csv")
-    (write-csv (count-month-categories merged-with-ua) "month-categories-merged-with-ua.csv")
-    (write-csv (count-month-categories merged-with-unmatched-all) "month-categories-merged-with-all.csv")
-    (write-csv adjustments-main "adjustments-main.csv")
-    (write-csv adjustments-merged-ua "adjustments-merged-ua.csv")
-    (write-csv adjustments-merged-all "adjustments-merged-all.csv")))
+    (write merged-with-ua "merged-with-unmatched-automatic"
+           "Merged with all unmatched automatic entries"
+           "The original file, merged with the unmatched automatic entries from the incoming file.")
+    (write merged-with-unmatched-all "merged-with-unmatched-all"
+           "Merged with all unmatched entries"
+           "The original file, merged with all unmatched entries from the incoming file.")
+    ;; (write-csv tracked "tracked.csv")
+    (write differences-main "differences-main"
+           "Discrepancies on original data"
+           "Discrepancies on original data")
+    (write (occupied-columns differences-merged-ua) "differences-merged-ua"
+           "Discrepancies on data merged with unmatched automatic"
+           "Discrepancies on data merged with unmatched automatic")
+    (write (occupied-columns differences-merged-all) "differences-merged-all"
+           "Discrepancies on data merged with unmatched all"
+           "Discrepancies on data merged with unmatched all")
+    (write (occupied-columns (count-month-categories main)) "month-categories-main"
+           "Categories by month, original"
+           "Categories by month, original")
+    (write (count-month-categories merged-with-ua) "month-categories-merged-with-ua"
+           "Categories by month, merged with unmatched automatic"
+           "Categories by month, merged with unmatched automatic")
+    (write (count-month-categories merged-with-unmatched-all) "month-categories-merged-with-all"
+           "Categories by month, merged with all unmatched"
+           "Categories by month, merged with all unmatched")
+    (write (occupied-columns adjustments-main) "adjustments-main"
+           "The raw adjustments data"
+           "The raw adjustments data, to match the main file to the bank statements.")
+    (write (occupied-columns adjustments-merged-ua) "adjustments-merged-ua"
+           "Adjustments and automatics"
+           "The adjustments data, merged with unmatched automatic entries.")
+    (write (occupied-columns adjustments-merged-all) "adjustments-merged-all"
+           "Adjustments and unmatched all"
+           "The adjustments data, merged with unmatched entries.")))

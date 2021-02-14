@@ -31,6 +31,11 @@ def finlisp_format_string(_, fmt_string, *fmt_args):
 
 finlisp_evaluation.def_finlisp_fn('format', finlisp_format_string)
 
+def finlisp_concat(_, *strings):
+    return "".join(strings)
+
+finlisp_evaluation.def_finlisp_fn('concat', finlisp_concat)
+
 def finlisp_getenv(_, varname, default_value=None):
     return os.getenv(varname, default_value)
 

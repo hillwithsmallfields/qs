@@ -6,6 +6,7 @@ import os
 # import csv_sheet
 import base_sheet
 import canonical_sheet
+import named_column_sheet
 import qsutils
     
 class diff_sheet(base_sheet.base_sheet):
@@ -117,6 +118,10 @@ class diff_sheet(base_sheet.base_sheet):
         
     def column_names_list(self):
         return self.colseq
+
+    def occupied_columns(self):
+        """Return a sheet like this but with only the columns that are in use."""
+        return named_column_sheet.named_column_sheet.occupied_columns(self)
 
     def write_csv(self, filename, suppress_timestamp=False):
         """Write a differences spreadsheet to a file."""

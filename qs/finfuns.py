@@ -665,14 +665,22 @@ table.summarytable {
 </style>
 '''
 
-def write_html(context, sheet, filename, title, thresholds, details, with_time):
-    full_filename = os.path.expanduser(os.path.expandvars(filename))
-    # qsutils.ensure_directory_for_file(full_filename)
-    with open(filename, 'w') as outstream:
+def write_html(context, sheet, filename, title,
+               thresholds=None, details=False,
+               with_time=False,
+               explanation=None):
+    full_filename = qsutils.resolve_filename(
+        filename,
+        finlisp_evaluation.finlisp_var_value(context,
+                                             'output-dir'))
+    qsutils.ensure_directory_for_file(full_filename)
+    with open(full_filename, 'w') as outstream:
         outstream.write('<html><head><title>%s</title></head>' % title)
         if details:
             outstream.write(hovercss)
         outstream.write('\n<body>\n')
+        if explanation:
+            outstream.write("\n<p>" + explanation + "</p>\n")
         sheet.write_html_table(outstream,
                                css_class="summarytable",
                                hover_details=details,
