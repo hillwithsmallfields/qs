@@ -83,7 +83,7 @@ class base_sheet:
         row = row.copy()
         orig_account = row.get('account')
         account = orig_account
-        name_table = self.config.get('reverse-equivalents')
+        name_table = self.config and self.config.get('reverse-equivalents')
         if orig_account and name_table and orig_account in name_table:
             row['account'] = name_table[orig_account]
         timestamp = self.unused_timestamp_from(row['timestamp'])
