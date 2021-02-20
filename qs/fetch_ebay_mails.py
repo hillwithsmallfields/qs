@@ -10,6 +10,7 @@ import email.parser
 import email.policy
 import getpass
 import imaplib
+from lxml import etree
 import os
 import os.path
 import traceback
@@ -19,17 +20,53 @@ import named_column_sheet
 
 def start_of(s):
     return "|".join(str(s).strip().split('\r\n')).replace('-', '')[:244]
-    # return str(s)
-    # return "|".join(str(s).split())
 
 def process_we_got_your_order(payload, result, message_date, number):
     print("     WGYO", start_of(payload))
 
     # look for <a href="https://rover.ebay.com/rover/...> for the item names
 
+    tree = etree.HTML(payload)
+
+    with open("/tmp/parsed-%s.html" % number, 'wb') as dumpstream:
+        dumpstream.write(etree.tostring(tree, pretty_print=True, method='html'))
+
+    h1_a_texts = tree.xpath("//h1/a/text()")
+
+    item_name = "............."
+    seller = ""
+    next_is_seller = False
+    
+    for text0 in h1_a_texts:
+        text = text0.strip('. ')
+        print("  text:", text)
+
+        if next_is_seller:
+            seller = text
+            print("seller", seller, "sold", item_name)
+            next_is_seller = False
+        else:
+            if item_name in text:
+                next_is_seller = True
+            item_name = text
+
+            # this isn't right... it's extracting the same set of fields for all the items
+            # ancestor = text0
+            # for i in range(5):
+            #     ancestor = ancestor.getparent()
+            #     # print("    ancestor", ancestor)
+            # # print("    href:", text.getparent().xpath("@href"))
+            # bolds = ancestor.xpath("//b")
+            # fields = {}
+            # for bold in bolds:
+            #     # print("        bold:", bold)
+            #     # print("        bold text:", bold.xpath("text()"))
+            #     fields[bold.xpath("text()")[0]] = bold.getparent().xpath("text()")[1]
+            # print("        got fields:", fields)
+            
     count = 0
-    seller = None
-    item_name = None
+    # seller = None
+    # item_name = None
     price = None
     p_and_p_price = None
     quantity = None
