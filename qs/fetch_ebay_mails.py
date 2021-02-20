@@ -2,6 +2,7 @@
 
 # following http://www.voidynullness.net/blog/2013/07/25/gmail-email-with-python-via-imap/
 
+import argparse
 import datetime
 import decouple
 import email
@@ -10,6 +11,7 @@ import email.policy
 import getpass
 import imaplib
 import os
+import os.path
 import traceback
 import re
 
@@ -22,11 +24,9 @@ def start_of(s):
 
 def process_we_got_your_order(payload, result, message_date, number):
     print("     WGYO", start_of(payload))
-    with open("/tmp/ebay/msg-wgyo-%s.html" % number, 'w') as outstream:
-        outstream.write(payload)
 
     # look for <a href="https://rover.ebay.com/rover/...> for the item names
-        
+
     count = 0
     seller = None
     item_name = None
@@ -38,8 +38,6 @@ def process_we_got_your_order(payload, result, message_date, number):
 
 def process_order_confirmed(payload, result, message_date, number):
     print("     OC", start_of(payload))
-    with open("/tmp/ebay/msg-oc-%s.html" % number, 'w') as outstream:
-        outstream.write(payload)
     count = 0
     seller = None
     item_name = None
@@ -51,8 +49,6 @@ def process_order_confirmed(payload, result, message_date, number):
 
 def process_confirmation_of_your_order(payload, result, message_date, number):
     print("     COYO", start_of(payload))
-    with open("/tmp/ebay/msg-coyo-%s.txt" % number, 'w') as outstream:
-        outstream.write(payload)
     count = 0
     seller = None
     item_name = None
@@ -118,12 +114,92 @@ handlers = {
     "Order Confirmed": ('text/html', process_order_confirmed),
     "We got your order": ('text/html', process_we_got_your_order)}
 
-def process_order_confirmations(M):
+def parse_message(message_text, message_number, result, dump=None):
+    message_contents = email.message_from_bytes(message_text,
+                                                policy=email.policy.default)
+    message_date = datetime.datetime.strptime(message_contents['Date'], "%a, %d %b %Y %H:%M:%S %z")
+    message_subject = message_contents['Subject']
+    message_from = message_contents['From']
+    acted = '    '
+    if message_from == "eBay <ebay@ebay.co.uk>" or message_from == "eBay <ebay@ebay.com>":
+        counted = 0
+        for s in handlers.keys():
+            if s in message_subject:
+                handler = handlers[s]
+                acted = 'm   '
+                for part in message_contents.walk():
+                    if part.get_content_type() == handler[0]:
+                        if dump:
+                            with open(os.path.join(dump, "msg-%s.msg" % message_number), 'wb') as outstream:
+                                outstream.write(message_text)
+                        counted = handler[1](part.get_content(),
+                                             result,
+                                             message_date,
+                                             message_number)
+                        acted = 'p %02d' % counted
+                        break
+                if counted != 0:
+                    break
+    print(acted, "message %s: from %s on %s: %s" % (message_number, message_from, message_date, message_subject))
+
+def process_order_confirmations(M, result, dump=None):
     rv, data = M.search(None, "ALL")
     if rv != 'OK':
         print("No messages in here")
         return
     # print("mailbox data is", data)
+
+    message_list = data[0].decode('utf-8').split(' ')
+    print("fetching", len(message_list), "messages")
+    for message_number in message_list:
+        try:
+            rv, message_data = M.fetch(message_number, '(RFC822)')
+            if rv != 'OK':
+                print("Could not fetch message", message_number)
+                continue
+            parse_message(message_data[0][1],
+                          message_number,
+                          result,
+                          dump)
+        except Exception as ex:
+            print("error", ex)
+            traceback.print_exc()
+
+def parse_messages_from_email(server, email_address, password, result, dump=None):
+    M = imaplib.IMAP4_SSL(server)
+    try:
+        M.login(email_address, password)
+    except imaplib.IMAP4.error as login_error:
+        print("failed to log in to email", login_error)
+        return
+
+    rv, data = M.select("Shopping/Ordered")
+    if rv == 'OK':
+        process_order_confirmations(M, result, dump=dump)
+    else:
+        print("Could not access mailbox")
+    M.close()
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dump",
+                        help="""Directory to dump messages to.""")
+    parser.add_argument("--list-mailboxes", action='store_true')
+    parser.add_argument("--files", nargs='+')
+    parser.add_argument("--server", default='imap.gmail.com')
+    parser.add_argument("--email-address")
+    parser.add_argument("--output", default="ebay-ordered-items.csv")
+    args = parser.parse_args()
+
+    if args.list_mailboxes:
+        rv, mailboxes = M.list()
+        if rv == 'OK':
+            print("Mailboxes", ", ".join([str(mb) for mb in mailboxes]))
+        return
+
+    if args.dump:
+        os.makedirs(args.dump, exist_ok=True)
+
     result = named_column_sheet.named_column_sheet(None, [
         'date',
         'seller',
@@ -133,58 +209,26 @@ def process_order_confirmations(M):
         'quantity',
         'item_total',
         'message_number'])
-    message_list = data[0].decode('utf-8').split(' ')
-    print("fetching", len(message_list), "messages")
-    for message_number in message_list:
-        # print("Getting message", message_number)
-        try:
-            rv, message_data = M.fetch(message_number, '(RFC822)')
-            if rv != 'OK':
-                print("Could not fetch message", message_number)
-                continue
-            acted = '    '
-            message_contents = email.message_from_bytes(message_data[0][1], policy=email.policy.default)
-            message_date = datetime.datetime.strptime(message_contents['Date'], "%a, %d %b %Y %H:%M:%S %z")
-            message_subject = message_contents['Subject']
-            message_from = message_contents['From']
-            if message_from == "eBay <ebay@ebay.co.uk>" or message_from == "eBay <ebay@ebay.com>":
-                counted = 0
-                for s in handlers.keys():
-                    if s in message_subject:
-                        handler = handlers[s]
-                        acted = 'm   '
-                        for part in message_contents.walk():
-                            if part.get_content_type() == handler[0]:
-                                counted = handler[1](part.get_content(), result, message_date, message_number)
-                                acted = 'p %02d' % counted 
-                                break
-                        if counted != 0:
-                            break
-            print(acted, "message %s: from %s on %s: %s" % (message_number, message_from, message_date, message_subject))
-        except Exception as ex:
-            print("error", ex)
-            traceback.print_exc()
-    result.write_csv("/tmp/orders.csv", suppress_timestamp=True)
 
-def main():
-    os.makedirs("/tmp/ebay", exist_ok=True)
-    M = imaplib.IMAP4_SSL('imap.gmail.com')
-    try:
-        M.login(decouple.config('EBAY_EMAIL_ADDRESS'), getpass.getpass())
-    except imaplib.IMAP4.error as login_error:
-        print("failed to log in to email", login_error)
-        return
+    if args.files:
+        i = 0
+        for filename in args.files:
+            with open(filename, 'rb') as instream:
+                parse_message(instream.read(),
+                              str(i),
+                              result,
+                              args.dump)
+                i += 1
 
-    # rv, mailboxes = M.list()
-    # if rv == 'OK':
-    #     print("Mailboxes", ", ".join([str(mb) for mb in mailboxes]))
-
-    rv, data = M.select("Shopping/Ordered")
-    if rv == 'OK':
-        process_order_confirmations(M)
     else:
-        print("Could not access mailbox")
-    M.close()
-        
+        parse_messages_from_email(args.server,
+                                  (args.email_address
+                                   or decouple.config('EBAY_EMAIL_ADDRESS')),
+                                  (decouple.config('EBAY_EMAIL_PASSWORD', None)
+                                   or getpass.getpass()),
+                                  result, args.dump)
+
+    result.write_csv(args.output, suppress_timestamp=True)
+
 if __name__ == '__main__':
     main()
