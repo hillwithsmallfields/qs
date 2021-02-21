@@ -39,30 +39,27 @@ def process_we_got_your_order(payload, result, message_date, number):
     
     for text0 in h1_a_texts:
         text = text0.strip('. ')
-        print("  text:", text)
 
         if next_is_seller:
             seller = text
-            print("seller", seller, "sold", item_name)
+            print("  seller", seller, "sold", item_name, "at price", item_price, "item number", item_number, "order number", order_number)
             next_is_seller = False
         else:
             if item_name in text:
                 next_is_seller = True
             item_name = text
 
-            # this isn't right... it's extracting the same set of fields for all the items
-            # ancestor = text0
-            # for i in range(5):
-            #     ancestor = ancestor.getparent()
-            #     # print("    ancestor", ancestor)
-            # # print("    href:", text.getparent().xpath("@href"))
-            # bolds = ancestor.xpath("//b")
-            # fields = {}
-            # for bold in bolds:
-            #     # print("        bold:", bold)
-            #     # print("        bold text:", bold.xpath("text()"))
-            #     fields[bold.xpath("text()")[0]] = bold.getparent().xpath("text()")[1]
-            # print("        got fields:", fields)
+            if next_is_seller:
+                ancestor = text0
+                for i in range(5):
+                    ancestor = ancestor.getparent()
+                bolds = ancestor.xpath("tr/td/p/b")
+                fields = {}
+                for bold in bolds:
+                    fields[bold.xpath("text()")[0]] = bold.getparent().xpath("text()")[1].strip(': £')
+                item_price = fields['Item price'].split()[0] if 'Item price' in fields else None
+                item_number = fields['Item number'] if 'Item number' in fields else None
+                order_number = fields['Order number'] if 'Order number' in fields else None
             
     count = 0
     # seller = None
