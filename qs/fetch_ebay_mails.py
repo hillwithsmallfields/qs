@@ -43,6 +43,16 @@ def process_we_got_your_order(payload, result, message_date, number):
         if next_is_seller:
             seller = text
             print("  seller", seller, "sold", item_name, "at price", item_price, "item number", item_number, "order number", order_number)
+            result.add_row({
+                'timestamp': message_date,
+                'date': message_date.date(),
+                'seller': seller,
+                'item_name': item_name,
+                # 'price': item_price,
+                # 'p_and_p_price': p_and_p_price,
+                # 'quantity': quantity,
+                'item_total': item_price,
+                'message_number': number})
             next_is_seller = False
         else:
             if item_name in text:
@@ -60,6 +70,7 @@ def process_we_got_your_order(payload, result, message_date, number):
                 item_price = fields['Item price'].split()[0] if 'Item price' in fields else None
                 item_number = fields['Item number'] if 'Item number' in fields else None
                 order_number = fields['Order number'] if 'Order number' in fields else None
+
             
     count = 0
     # seller = None
