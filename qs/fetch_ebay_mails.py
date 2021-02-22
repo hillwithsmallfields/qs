@@ -22,14 +22,11 @@ def start_of(s):
     return "|".join(str(s).strip().split('\r\n')).replace('-', '')[:244]
 
 def process_we_got_your_order(payload, result, message_date, number):
-    print("     WGYO", start_of(payload))
-
-    # look for <a href="https://rover.ebay.com/rover/...> for the item names
 
     tree = etree.HTML(payload)
 
-    with open("/tmp/parsed-%s.html" % number, 'wb') as dumpstream:
-        dumpstream.write(etree.tostring(tree, pretty_print=True, method='html'))
+    # with open("/tmp/parsed-%s.html" % number, 'wb') as dumpstream:
+    #     dumpstream.write(etree.tostring(tree, pretty_print=True, method='html'))
 
     h1_a_texts = tree.xpath("//h1/a/text()")
 
@@ -83,6 +80,50 @@ def process_we_got_your_order(payload, result, message_date, number):
 
 def process_order_confirmed(payload, result, message_date, number):
     print("     OC", start_of(payload))
+
+    tree = etree.HTML(payload)
+
+    with open("/tmp/parsed-%s.html" % number, 'wb') as dumpstream:
+        dumpstream.write(etree.tostring(tree, pretty_print=True, method='html'))
+
+    h1_a_texts = tree.xpath("//h1/a/text()")
+
+    item_name = None
+    seller = ""
+    next_is_seller = False
+    
+    for text0 in h1_a_texts:
+        text = text0.strip('. ')
+
+        print("got h1_a text", text)
+
+        if item_name and item_name in text:
+            item_name = text
+            print("got longer repeat:", text)
+
+            ancestor = text0
+            for i in range(5):
+                ancestor = ancestor.getparent()
+            bolds = ancestor.xpath("tr/td/p/b")
+            fields = {}
+            for bold in bolds:
+                fields[bold.xpath("text()")[0]] = bold.getparent().xpath("text()")[1].strip(': £')
+            print("fields are", fields)
+            item_price = fields['Total'].split()[0] if 'Total' in fields else None
+            item_number = fields['Item number'] if 'Item number' in fields else None
+            result.add_row({
+                'timestamp': message_date,
+                'date': message_date.date(),
+                # 'seller': seller,
+                'item_name': item_name,
+                # 'price': item_price,
+                # 'p_and_p_price': p_and_p_price,
+                # 'quantity': quantity,
+                'item_total': item_price,
+                'message_number': number})
+        else:
+            item_name = text
+            
     count = 0
     seller = None
     item_name = None
