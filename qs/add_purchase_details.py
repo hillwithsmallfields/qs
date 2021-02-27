@@ -58,17 +58,34 @@ def main():
         by_date[row_date][dv['seller'].split(' ')[0].lower()] = dv
 
     modified = 0
-        
+
     for tk, tv in mainsheet.rows.items():
         t_date = tk.date()
         if t_date in by_date:
             t_payee = tv['payee'].split(' ')[0].lower()
             if t_payee in by_date[t_date]:
+                if tv.get('category') == 'Postage':
+                    continue
+                if by_date[t_date][t_payee].get('used'):
+                    print("on date", t_date, "with payee", t_payee, "in category", tv['category'], "already used", by_date[t_date][t_payee]['item_name'])
+                    continue
                 tv['item'] = by_date[t_date][t_payee]['item_name']
+                by_date[t_date][t_payee]['used'] = tv
                 modified += 1
 
     print(len(mainsheet.rows), "main rows", len(details.rows), "detail rows", modified, "entries modified")
 
+    for when in sorted(by_date.keys()):
+        what = by_date[when]
+        date_printed = False
+        for who in sorted(what.keys()):
+            item_row = what[who]
+            if not item_row.get('used', None):
+                if not date_printed:
+                    print("On", when)
+                    date_printed = True
+                print("  ", who if who != "" else "unknown", "sold", item_row['item_name'])
+    
     mainsheet.write_csv(args.update or args.output, suppress_timestamp=True)
     
 if __name__ == '__main__':
