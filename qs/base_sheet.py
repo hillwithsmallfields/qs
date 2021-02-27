@@ -86,7 +86,7 @@ class base_sheet:
         name_table = self.config and self.config.get('reverse-equivalents')
         if orig_account and name_table and orig_account in name_table:
             row['account'] = name_table[orig_account]
-        timestamp = self.unused_timestamp_from(row['timestamp'])
+        timestamp = self.unused_timestamp_from(row['timestamp' if 'timestamp' in row else 'date'])
         row['timestamp'] = timestamp
         if 'time' in row:
             row['time'] = timestamp.time()
