@@ -41,11 +41,14 @@ With optional FORCE, do it even if it seems unnecessary."
          (original-currency "")
          (payee (completing-read "Payee:"
                                  payee-completions))
-         (category-0 (completing-read "Category: "
-                                    (finances-categories-for-payee payee)
-                                    nil t))
+         (payee-categories (finances-categories-for-payee payee))
+         (category-0 (if (cdr payee-categories)
+                         (completing-read (format "Category (already used for %s): " payee)
+                                          payee-categories
+                                          nil t)
+                       ""))
          (category (if (string= category-0 "")
-                       (completing-read "Category: "
+                       (completing-read "Category (free choice): "
                                         category-completions
                                         nil t)
                      category-0))
