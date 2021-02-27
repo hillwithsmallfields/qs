@@ -40,7 +40,7 @@ def main():
 
     config = qsutils.program_load_config(args)
 
-    mainsheet = canonical_sheet.canonical_sheet(config, input_sheet=args.input or args.update)
+    mainsheet = canonical_sheet.canonical_sheet(config, input_sheet=args.input or args.update, convert_all=True)
 
     details = named_column_sheet.named_column_sheet(config, item_detail_columns)
     
@@ -49,7 +49,27 @@ def main():
             for row in csv.DictReader(detail_stream):
                 details.add_row(row)
 
-    print(len(mainsheet.rows), "main rows", len(details.rows), "detail rows")
+    by_date = {}
 
+    for dk, dv in details.rows.items():
+        row_date = dk.date()
+        if row_date not in by_date:
+            by_date[row_date] = {}
+        by_date[row_date][dv['seller'].split(' ')[0].lower()] = dv
+
+    modified = 0
+        
+    for tk, tv in mainsheet.rows.items():
+        t_date = tk.date()
+        if t_date in by_date:
+            t_payee = tv['payee'].split(' ')[0].lower()
+            if t_payee in by_date[t_date]:
+                tv['item'] = by_date[t_date][t_payee]['item_name']
+                modified += 1
+
+    print(len(mainsheet.rows), "main rows", len(details.rows), "detail rows", modified, "entries modified")
+
+    mainsheet.write_csv(args.update or args.output, suppress_timestamp=True)
+    
 if __name__ == '__main__':
     main()

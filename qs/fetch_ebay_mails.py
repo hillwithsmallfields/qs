@@ -16,6 +16,7 @@ import os.path
 import traceback
 import re
 
+import add_purchase_details
 import named_column_sheet
 
 def start_of(s):
@@ -286,15 +287,8 @@ def main():
     if args.dump:
         os.makedirs(args.dump, exist_ok=True)
 
-    result = named_column_sheet.named_column_sheet(None, [
-        'date',
-        'seller',
-        'item_name',
-        'price',
-        'p_and_p_price',
-        'quantity',
-        'item_total',
-        'message_number'])
+    result = named_column_sheet.named_column_sheet(None,
+                                                   add_purchase_details.item_detail_columns)
 
     if args.files:
         i = 0
