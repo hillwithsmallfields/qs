@@ -8,7 +8,7 @@
        (unclassified (unclassified-categories classifiers parentage-table))
        (automatic-categories (flagged-categories "handelsbanken" "automatic"))
        (by-category (categorised monthly))
-       ;; (by-parentage (by-parent monthly parentage-table))
+       (by-parentage (by-parent monthly parentage-table))
 
        (by-class (check "classified" (by-classification monthly parentage-table classifiers t nil)))
        
@@ -28,8 +28,8 @@
   (write-csv monthly "monthly.csv")
   ;; (write-html monthly "monthly.html" "Raw monthly summary" nil t t)
   (write-csv by-category "by-category.csv")
-  ;; (write-csv by-parentage "by-parentage.csv")
-  ;; (write-csv-with-averages by-class "by-class.csv")
+  (write-csv by-parentage "by-parentage.csv")
+  (write-csv-with-averages by-class "by-class.csv")
   (write-html (check "pre-rendering" by-class) "by-class.html" "Categorised monthly summary" thresholds t t)
   ;; (write-csv automatics "automatics.csv")
   ;; (write-csv by-level-0 "by-level-0.csv")
