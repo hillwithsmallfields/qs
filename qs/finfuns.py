@@ -386,11 +386,13 @@ def fgrep(context, input_sheet, match, column='payee'):
 def find_amount(context, sheet, amount, approx_date, within):
     return sheet.find_amount(amount, approx_date, within)
 
-def flagged_as(context, formatname, payee, flag):
-    conversions = context['config']['formats'][formatname].get(
+def get_conversions(context, formatname):
+    return context['config']['formats'][formatname].get(
         'conversions',
         context['config']['formats']['Default'].get('conversions',
                                                     {}))
+def flagged_as(context, formatname, payee, flag):
+    conversions = get_conversions(context, formatname)
     payee_details = canonical_sheet.find_conversion(conversions, payee)
     if payee_details and 'flags' in payee_details:
         return flag in payee_details['flags']
@@ -399,7 +401,7 @@ def flagged_as(context, formatname, payee, flag):
 def flagged_categories(context, formatname, flag):
     """Return a list of names of categories appearing in conversions for a given format with a given flag."""
     return list(set([details.get('category')
-                     for details in context['config']['formats'][formatname]['conversions'].values()
+                     for details in get_conversions(context, formatname).values()
                      if ('category' in details
                          and 'flags' in details
                          and flag in details['flags'])]))
