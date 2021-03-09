@@ -27,7 +27,7 @@ def row_descr(row):
     return "<item " \
             + row['timestamp'].isoformat() \
             + " " + str(row['amount']) \
-            + " to " + row.get('payee', "unknown payee") \
+            + " to " + (row.get('payee') or "unknown payee") \
             + " in " + row.get('category', "unknown category") \
             + ((" for " + row['item']) if 'item' in row and row['item'] != "" else "") \
             + ">"

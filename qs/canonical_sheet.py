@@ -91,7 +91,10 @@ class canonical_sheet(base_sheet.base_sheet):
         if isinstance(input_sheet, str):
             if self.verbose:
                 print("Reading", input_sheet, "for conversion")
-            input_sheet = csv_sheet.csv_sheet(config, input_filename=input_sheet, verbose=self.verbose)
+            input_sheet = csv_sheet.csv_sheet(config,
+                                              input_filename=input_sheet,
+                                              verbose=self.verbose)
+            print("input sheet format name is", input_sheet.format_name)
             self.original_format_name = input_sheet.format_name
         if isinstance(input_sheet, csv_sheet.csv_sheet):
             self.config = qsutils.combine_configs(input_sheet.config, config)
@@ -99,10 +102,15 @@ class canonical_sheet(base_sheet.base_sheet):
             if input_sheet.currency_conversion:
                 self.currency_conversion = re.compile(input_sheet.currency_conversion)
             if self.verbose:
-                print("converting", input_sheet)
+                print("converting", input_sheet,
+                      "with format name", input_sheet.format_name)
             if 'accounts' not in input_sheet.format:
                 input_sheet.format['accounts'] = set()
             accounts = input_sheet.format['accounts']
+            conversions = input_sheet.format.get(
+                'conversions',
+                self.config['formats']['Default'].get('conversions',
+                                                      {}))
             for in_row in input_sheet:
                 original_account = in_row.get('account', None)
                 accounts.add(original_account)
@@ -110,7 +118,7 @@ class canonical_sheet(base_sheet.base_sheet):
                     input_sheet, in_row,
                     reference_sheet=self,
                     account_name_template=account_name_template,
-                    conversions=input_sheet.format.get('conversions', {}),
+                    conversions=conversions,
                     convert_all=convert_all)
                 if self.verbose:
                     print("made", can_row, "from", in_row)
@@ -143,6 +151,8 @@ class canonical_sheet(base_sheet.base_sheet):
                     if 'sheet' in sample:
                         self.config = sample['sheet'].config
                         break
+        if self.verbose:
+            print("finished making canonical sheet from", input_sheet)
         # print("finished initting canonical_sheet, dict binds", sorted(self.__dict__.keys()))
 
     def __iter__(self):
@@ -192,6 +202,23 @@ class canonical_sheet(base_sheet.base_sheet):
             result.add_sheet(other)
         return result
 
+    def replace_matching_rows(self, other, match_columns):
+        """Produce a sheet based on the present one but with rows substituted from another sheet.
+        The rows to be replaced must match in the two sheets in all the specified columns.
+        The original sheets are not altered."""
+        # for row in other.rows.values():
+        #     print("replacer row:", row)
+        #     print("replacer key:", [str(row[col]) for col in match_columns])
+        replacers = {
+            tuple((row[col] for col in match_columns)): row
+            for row in other.rows.values()
+        }
+        print("replacers are:", replacers)
+        result = canonical_sheet(self.config)
+        result.rows = {timestamp: replacers.get(tuple((row[col] for col in match_columns)), row)
+                       for timestamp, row in self.rows.items()}
+        return result
+    
     def subtract_cells(self, other):
         """Return the cell-by-cell subtraction of another sheet from this one."""
         result = canonical_sheet(self.config)
@@ -247,7 +274,7 @@ class canonical_sheet(base_sheet.base_sheet):
                 payee_name = curr_conv.group(1).strip()
                 original_currency = curr_conv.group(2)
                 original_amount = float(curr_conv.group(3))
-        conversion = find_conversion(conversions or input_format.get('conversions', {}),
+        conversion = find_conversion(conversions if len(conversions) > 0 else input_format.get('conversions', {}),
                                      payee_name)
         if conversion is None and not convert_all:
             if self.verbose:
@@ -502,6 +529,7 @@ class canonical_sheet(base_sheet.base_sheet):
                       category=None):
         timestamp = self.unused_timestamp_from(timestamp)
         self.rows[timestamp] = {'timestamp': timestamp,
+                                'date': timestamp.date().isoformat(),
                                 'amount': amount,
                                 'currency': currency,
                                 'payee': payee,

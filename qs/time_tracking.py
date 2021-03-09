@@ -6,8 +6,13 @@ import datetime
 
 NOTIME = datetime.timedelta(hours=0, minutes=0)
 
+def minutes_string(timedelta):
+    # print(timedelta, str(timedelta), str(timedelta).split(':'), str(timedelta).split(':')[0:1])
+    return ':'.join(str(timedelta).split(':')[0:2])
+
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--activities")
     parser.add_argument("input")
     args = parser.parse_args()
 
@@ -69,8 +74,20 @@ def main():
             if activity in totals:
                 print("    ", activity, totals[activity], counts[activity], totals[activity] / counts[activity])
 
-    for activity in sorted(activities):
-        print(activity, "total", activity_totals[activity], "slot count", activity_counts[activity], "day count", len(activity_days[activity]), "min per day", day_mins[activity], "average per day", activity_totals[activity] / len(activity_days[activity]), "max per day", day_maxes[activity])
+    if args.activities:
+        with open(args.activities, 'w') as outstream:
+            writer = csv.writer(outstream)
+            writer.writerow(['Activity', 'Total', 'Slot count', 'Day count', 'Minimum per day', 'Average per day', 'Maximum per day'])
+            for activity in sorted(activities):
+                writer.writerow([
+                    activity,
+                    minutes_string(activity_totals.get(activity)),
+                    activity_counts.get(activity),
+                    len(activity_days.get(activity)),
+                    day_mins.get(activity),
+                    minutes_string(activity_totals.get(activity) / len(activity_days.get(activity))),
+                    day_maxes.get(activity)
+                ])
 
 if __name__ == '__main__':
     main()

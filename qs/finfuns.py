@@ -99,6 +99,7 @@ functions = ['account_to_sheet',
              'read_parentage_table',
              'remove_columns',
              'rename_column',
+             'replace_matching_rows',
              'select_columns',
              'setq',
              'sheet',
@@ -386,7 +387,10 @@ def find_amount(context, sheet, amount, approx_date, within):
     return sheet.find_amount(amount, approx_date, within)
 
 def flagged_as(context, formatname, payee, flag):
-    conversions = context['config']['formats'][formatname]['conversions']
+    conversions = context['config']['formats'][formatname].get(
+        'conversions',
+        context['config']['formats']['Default'].get('conversions',
+                                                    {}))
     payee_details = canonical_sheet.find_conversion(conversions, payee)
     if payee_details and 'flags' in payee_details:
         return flag in payee_details['flags']
@@ -518,6 +522,9 @@ def rename_column(context, sheet, oldname, newname):
                                                  [newname if name == oldname else name
                                                   for name in sheet.column_names],
                                                  rows=output_rows)
+
+def replace_matching_rows(context, sheet, other, match_columns):
+    return sheet.replace_matching_rows(other, match_columns)
 
 def select_columns_row(timestamp, row, output_rows, colnames):
     output_rows[timestamp] = {colname: row[colname] for colname in colnames}

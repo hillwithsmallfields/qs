@@ -21,9 +21,9 @@ class trace_sheet(base_sheet.base_sheet):
         self.filename = filename
         self.default_time = "01:02:03"
         if os.path.exists(filename):
-            self.read(filename)
+            self.read_sheet(filename)
 
-    def read(self, filename):
+    def read_sheet(self, filename):
         with open(os.path.expanduser(os.path.expandvars(filename))) as infile:
             # We can't construct this with a dictionary comprehension,
             # because unused_timestamp_from needs to see the entries

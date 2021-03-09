@@ -36,7 +36,7 @@ class csv_sheet(base_sheet.base_sheet):
         self.filename = input_filename
         self.origin_files = []
         if input_filename:
-            if not self.read(input_filename):
+            if not self.read_sheet(input_filename):
                 print("Could not construct csv_sheet from", input_filename)
         else:
             self.format_name = format_name
@@ -108,7 +108,7 @@ class csv_sheet(base_sheet.base_sheet):
     def column_names_list(self):
         return self.colseq
 
-    def read(self, filename):
+    def read_sheet(self, filename):
         """Read a spreadsheet, deducing the type.
         A collection of header lines is scanned to find the type."""
         filename = os.path.expanduser(os.path.expandvars(filename))
@@ -124,9 +124,7 @@ class csv_sheet(base_sheet.base_sheet):
                 _ = infile.readline()
             if self.format_name not in self.config['formats']:
                 print("Format name", self.format_name, "not known in", self.config['formats'].keys())
-            self.format = (self.config['formats'][self.format_name]
-                           if self.format_name in self.config['formats']
-                           else self.config['formats']['Default'])
+            self.format = self.config['formats'].get(self.format_name, self.config['formats']['Default'])
             self.column_names = self.format['columns']
             self.default_time = (self.format['column_defaults'].get('time', "01:00:00")
                                  if 'column_defaults' in self.format

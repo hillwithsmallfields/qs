@@ -5,7 +5,6 @@ OUTDIR=merge-results
 
 echo "merging latest (or other specified) statement"
 
-# source setupfintest
 source setupfinvars
 
 mkdir -p $OUTDIR
