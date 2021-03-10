@@ -10,6 +10,20 @@ import qsutils
 
 TRACE_RENDERING = False
 
+def write_headings(stream, colnames):
+    stream.write('  <tr>\n')
+    stream.write('    <th>Date</th>\n')
+    for colname in colnames:
+        stream.write('    <th>%s</th>\n' % colname)
+    stream.write('  </tr>\n')
+
+def write_extra_data(stream, col_extra_data, title, colnames):
+    if col_extra_data:
+        stream.write('    <th>%s</th>\n' % title)
+        for colname in colnames:
+            stream.write('    <th>%s</th>\n' % col_extra_data.get(colname))
+        stream.write('  </tr>\n')
+        
 class base_sheet:
 
     """To hold methods in common between csv_sheet and canonical_sheet."""
@@ -179,19 +193,13 @@ class base_sheet:
             stream.write(' class="%s"' % css_class)
         stream.write('>\n')
 
-        stream.write('  <tr>\n')
-        stream.write('    <th>Date</th>\n')
-        for colname in colnames:
-            stream.write('    <th>%s</th>\n' % colname)
-        stream.write('  </tr>\n')
+        write_headings(stream, colnames)
 
-        if col_extra_data:
-            stream.write('    <th>Threshold</th>\n')
-            for colname in colnames:
-                stream.write('    <th>%s</th>\n' % col_extra_data.get(colname))
-            stream.write('  </tr>\n')
+        write_extra_data(stream, col_extra_data, "Threshold", colnames)
 
         column_totals = {colname: 0 for colname in colnames}
+        column_maxima = {colname: 0 for colname in colnames}
+        column_minima = {colname: 100000000 for colname in colnames}
             
         for i in range(start, end):
             date = dates[i]
@@ -211,15 +219,22 @@ class base_sheet:
                         "%s: %s" % (date, colname),
                         extra_data=col_extra_data and col_extra_data.get(colname),
                         with_time=with_time))
-                    column_totals[colname] += cell_data.as_number()
+                    cell_value = cell_data.as_number()
+                    column_totals[colname] += cell_value
+                    if abs(cell_value) > abs(itemized_amount.as_number(column_maxima[colname])):
+                        column_maxima[colname] = cell_data
+                    if cell_value != 0 and abs(cell_value) < abs(itemized_amount.as_number(column_minima[colname])):
+                        column_minima[colname] = abs(cell_data)
                 else:
                     stream.write('    <td class="%s"><span class="overview">%s' % (colname.replace(' ', '_'), qsutils.tidy_for_output(cell_data)))
                     if hover_details:
-                        stream.write('<span class="details">Details to go here</span>')
+                        stream.write('<span class="details">Details were not provided</span>')
                     stream.write('</span></td>\n')
             stream.write('  </tr>\n')
 
         if summarize:
+            write_headings(stream, colnames)
+            write_extra_data(stream, col_extra_data, "Threshold", colnames)
             stream.write('    <th>Totals</th>\n')
             for colname in colnames:
                 stream.write('    <th>%s</th>\n' % qsutils.tidy_for_output(column_totals[colname]))
@@ -227,9 +242,30 @@ class base_sheet:
             start = self.earliest()
             end = self.latest()
             months = max(1, end.month - start.month + (end.year - start.year) * 12)
+
+            stream.write('    <th>Monthly minima</th>\n')
+            for colname in colnames:
+                if isinstance(column_minima[colname], itemized_amount.itemized_amount):
+                    stream.write('    %s\n' % column_minima[colname].html_cell(
+                        colname.replace(' ', '_'),
+                        "Max: %s" % (colname)))
+                else:
+                    stream.write('  <td></td>\n')
+            stream.write('  </tr>\n')
+
             stream.write('    <th>Monthly averages</th>\n')
             for colname in colnames:
                 stream.write('    <th>%s</th>\n' % qsutils.tidy_for_output(column_totals[colname] / months))
+            stream.write('  </tr>\n')
+
+            stream.write('    <th>Monthly maxima</th>\n')
+            for colname in colnames:
+                if isinstance(column_maxima[colname], itemized_amount.itemized_amount):
+                    stream.write('    %s\n' % column_maxima[colname].html_cell(
+                        colname.replace(' ', '_'),
+                        "Max: %s" % (colname)))
+                else:
+                    stream.write('  <td></td>\n')
             stream.write('  </tr>\n')
 
         stream.write('</table>\n')
