@@ -529,7 +529,10 @@ def replace_matching_rows(context, sheet, other, match_columns):
     return sheet.replace_matching_rows(other, match_columns)
 
 def select_columns_row(timestamp, row, output_rows, colnames):
-    output_rows[timestamp] = {colname: row[colname] for colname in colnames}
+    try:
+        output_rows[timestamp] = {colname: row[colname] for colname in colnames}
+    except KeyError:
+        print("Cannot select missing column; row:", row, "selected:", colnames)
 
 def select_columns(context, sheet, column_names):
     _, output_rows = qsutils.process_rows(column_names, # app-data

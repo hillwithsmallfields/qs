@@ -17,6 +17,14 @@
        (by-level-1 (by-hierarchy monthly 1 parentage-table))
        (by-level-2 (by-hierarchy monthly 2 parentage-table))
        (by-proportions (proportions by-category))
+
+       (balance (select-columns
+                 (read statements-file)
+                 '("Date" "Balance")))
+
+       (monthly-balance (last-of-month balance))
+       
+       (with-last-of-month (join-by-months by-class monthly-balance))
        )
   (print "parentage table is" parentage-table)
   (print "classifiers are:" classifiers)
@@ -29,8 +37,12 @@
   ;; (write-html monthly "monthly.html" "Raw monthly summary" nil t t)
   (write-csv by-category "by-category.csv")
   (write-csv by-parentage "by-parentage.csv")
-  (write-csv-with-averages by-class "by-class.csv")
+  ;; (write-csv-with-averages by-class "by-class.csv")
   (write-html (check "pre-rendering" by-class) "by-class.html" "Categorised monthly summary" thresholds t t)
+  (write-csv balance "balance.csv")
+  (write-csv monthly-balance "monthly-balance.csv")
+  (write-csv with-last-of-month "with-last-of-month.csv")
+  (write-html with-last-of-month "with-last-of-month.html" "Categorised monthly summary" thresholds t t)
   ;; (write-csv automatics "automatics.csv")
   ;; (write-csv by-level-0 "by-level-0.csv")
   ;; (write-csv by-level-1 "by-level-1.csv")

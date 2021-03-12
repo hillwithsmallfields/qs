@@ -26,19 +26,32 @@ def filtered_by_date(sheet, period, use_new):
 
 def join_by_dates(sheet_a, sheet_b, period):
     """Make a sheet containing data from two sheets.
-    Uses a given number of characters of the dates to determine
-    whether two dates are the same.
+
+    Uses a given function on the dates to determine whether two dates
+    are the same, taking the dates from the keys of the rows
+    dictionary of each sheet.
+
     This assumes that there is only one entry for each date in each of
     the input sheets.  The results may not be meaningful if this is
-    not the case."""
+    not the case.
+
+    """
     result = copy.copy(sheet_a)
     result.rows = {}
     for column in sheet_b.column_names:
         if column not in result.column_names:
             result.column_names.append(column)
-    for column in ('time', 'date', 'timestamp'):
-        if column not in result.column_names:
-            result.column_names = [column] + result.column_names
+    date_columns = {}
+    for column in ('Time', 'Date', 'Timestamp'):
+        found = (column
+                 if column in result.column_names
+                 else (column.lower()
+                       if column.lower() in result.column_names
+                       else None))
+        if found:
+            date_columns[column.lower()] = found
+            result.column_names.remove(found)
+            result.column_names.insert(0, found)
     by_a_keys = {period(k): v for k, v in sheet_a.rows.items()}
     by_b_keys = {period(k): v for k, v in sheet_b.rows.items()}
     for key in sorted(set([ak for ak in by_a_keys.keys()] + [bk for bk in by_b_keys.keys()])):
@@ -47,9 +60,12 @@ def join_by_dates(sheet_a, sheet_b, period):
             row.update(by_a_keys[key])
         if key in by_b_keys:
             row.update(by_b_keys[key])
-        row['timestamp'] = key
-        row['date'] = key.date()
-        row['time'] = key.time()
+        if 'timestamp' in date_columns:
+            row[date_columns['timestamp']] = key
+        if 'date' in date_columns:
+            row[date_columns['date']] = key.date()
+        if 'time' in date_columns:
+            row[date_columns['time']] = key.time()
         result.rows[key] = row
     return result
 
