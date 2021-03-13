@@ -71,7 +71,7 @@ class base_sheet:
             timestamp += datetime.timedelta(0,1)
         return timestamp
 
-    def column_names_list():
+    def column_names_list(self):
         """Return the column names for this sheet."""
         colseq = ordered_set.OrderedSet()
         for row in self.rows.values():
