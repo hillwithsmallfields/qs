@@ -52,11 +52,14 @@
 (defvar finances-completions-last-read nil
   "When the finances completions were last read.")
 
+(defvar finances-completions-file "$COMMON/var/finances-completions.el"
+  "The file to use for completions.")
+
 (defun finances-read-completions (&optional force)
   "Read the completions tables for finances columns.
 With optional FORCE, do it even if it seems unnecessary."
   (interactive)
-  (let* ((completions-file-name (substitute-in-file-name "$COMMON/var/finances-completions.el"))
+  (let* ((completions-file-name (substitute-in-file-name finances-completions-file))
          (completions-file-date (nth 5 (file-attributes completions-file-name))))
     (when (or force
               (null finances-completions-last-read)
@@ -99,7 +102,7 @@ With optional FORCE, do it even if it seems unnecessary."
   (let* ((completion-ignore-case t)
          (date (format-time-string "%F"))
          (time (format-time-string "%T"))
-         (amount (read (read-from-minibuffer "Amount:" )))
+         (amount (eval (read (read-from-minibuffer "Amount:" ))))
          (debit (y-or-n-p "Debit? "))
          (account (completing-read-with-preloaded-history
                    "Account: " 'account-completions
@@ -178,6 +181,9 @@ With optional FORCE, do it even if it seems unnecessary."
             "%.2f")
           amount))
 
+(defvar finances-transactions-file "$COMMON/finances/finances.csv"
+  "The file holding the transactions.")
+
 (defun finances-enter (date time
                             account amount currency
                             original-amount original-currency
@@ -188,7 +194,7 @@ The fields DATE TIME ACCOUNT AMOUNT CURRENCY ORIGINAL-AMOUNT
 ORIGINAL-CURRENCY CATEGORY PARENT PAYEE LOCATION PROJECT NOTE are
 as in the Financisto app."
   (interactive (finances-read-entry))
-  (find-file (substitute-in-file-name "$COMMON/finances/finances.csv"))
+  (find-file (substitute-in-file-name finances-transactions-file))
   (save-excursion
     (goto-char (point-max))
     (unless (looking-at "^$")
