@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Time-stamp: <2020-03-22 09:43:32 jcgs>
+# Time-stamp: <2021-04-21 20:47:18 jcgs>
 
 # Program to merge my Quantified Self files.
 
@@ -9,9 +9,11 @@ import csv
 import datetime
 import math
 import os
-import qsutils
 import re
 import shutil
+
+import file_types
+import qsutils
 
 def weight_tracker_parser(raw):
     if len(raw) == 0:
@@ -108,7 +110,7 @@ def excel_date(date1):          # from http://stackoverflow.com/questions/957479
 file_type_handlers = {
     'weight': {
         'row_parsers': {
-            "Weight Tracker|weight[-_]": weight_tracker_parser
+            "Weight Tracker|weight": weight_tracker_parser
         },
         'completer': weight_tracker_complete_row,
         'date': iso8601_date_only
@@ -173,13 +175,15 @@ def main():
     for incoming_file in args.incoming:
         row_parser = find_row_parser_for(file_type, incoming_file)
         if row_parser is None:
-            print("Skipping", incoming_file, "as I don't have a parser for it")
+            print("Skipping", incoming_file, "as I don't have a parser for", file_type)
         else:
             with open(incoming_file) as incoming:
-                inreader = csv.reader(incoming)
+                inreader = csv.DictReader(incoming)
                 for raw in inreader:
                     new_row = row_parser(raw)
                     if new_row is not None:
+                        if args.debug and args.verbose:
+                            print("row from", incoming_file, "is", new_row)
                         new_row_date = handler['date'](new_row['Date'])
                         if args.debug:
                             print("incoming raw date", new_row['Date'], "-->", new_row_date)
