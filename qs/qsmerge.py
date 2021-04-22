@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Time-stamp: <2021-04-21 20:47:18 jcgs>
+# Time-stamp: <2021-04-22 20:13:43 jcgs>
 
 # Program to merge my Quantified Self files.
 
@@ -47,54 +47,6 @@ def weight_tracker_complete_row(row):
         if 'Lbs total' in row and row['Lbs total'] != '':
             row['St total'] = float(row['Lbs total']) / 14
 
-# TODO: switch to using a dictreader, and perhaps a variant of the canonicalization system
-def financisto_parser(raw):
-    if len(raw) == 0:
-        return None
-    else:
-        # todo: handle transfers between accounts
-        return {'Date':              raw[0] + "T" + raw[1],
-                'Account':           raw[2],
-                'Amount':            raw[3],
-                'Currency':          raw[4],
-                'Original amount':   raw[5],
-                'Original currency': raw[6],
-                'Category':          raw[8] + ':' + raw[7],
-                'Payee':             raw[9],
-                'Location':          raw[10],
-                'Note':              raw[12],
-                'Origin':            "mobile"
-        }
-
-def money_value(s):
-    if s == '':
-        return 0
-    else:
-        parts = s.split('.')
-        if len(parts) == 1:
-            return int(parts[0]) * 100
-        else:
-            return int(parts[0]) * 100 + int(parts[1])
-
-def money_string(v):
-    return "%d.%02d" % (v / 100, abs(v) % 100)
-
-def handelsbanken_parser(raw):
-    if len(raw) == 0 or raw[0] == '' or raw[0] == 'Date':
-        return None
-    else:
-        return {'Date': iso8601_date_time(raw[0]) + "T23:59:59",
-                'Payee': raw[2],
-                'Amount': money_string((-money_value(raw[4])) + money_value(raw[6])),
-                'Balance': raw[8],
-                'Currency': 'GBP',
-                'Account': "Handelsbanken current account",
-                'Origin': "statement"
-                }
-
-def finances_complete_row(row):
-    pass
-
 def iso8601_date_time(timestamp):
     return timestamp.replace('/', '-').replace(' ', 'T')
 
@@ -114,15 +66,6 @@ file_type_handlers = {
         },
         'completer': weight_tracker_complete_row,
         'date': iso8601_date_only
-    },
-    'finances' : {
-        'row_parsers': {
-            "[0-9]{8}_[0-9]{6}_": financisto_parser,
-            "^[0-9]{6}\\.": handelsbanken_parser,
-            "handelsbanken": handelsbanken_parser
-        },
-        'completer': finances_complete_row,
-        'date': iso8601_date_time
     },
     'temperature': {'date': iso8601_date_only},
     'peak_flow': {'date': iso8601_date_only},
