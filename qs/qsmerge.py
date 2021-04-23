@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Time-stamp: <2021-04-22 20:44:16 jcgs>
+# Time-stamp: <2021-04-23 20:24:33 jcgs>
 
 # Program to merge my Quantified Self files.
 
@@ -80,40 +80,20 @@ def find_row_parser_for(file_type, filename):
             return parser
     return None
 
-def main():
+def qsmerge(mainfile, incoming, type_given, output):
     by_date = {}
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-o", "--output")
-    parser.add_argument("-t", "--type")
-    parser.add_argument("-v", "--verbose", action='store_true')
-    parser.add_argument("mainfile")
-    parser.add_argument('incoming', nargs='*')
-    args = parser.parse_args()
-    if args.output is None:
-        old_base, old_ext = os.path.splitext(args.mainfile)
-        shutil.copyfile(args.mainfile, old_base + "-old" + old_ext)
-        output = args.mainfile
-    else:
-        output = args.output
-    if args.verbose:
-        print("Main input is", args.mainfile, "and output is", output)
-        print("Incoming files are", args.incoming)
-    fieldnames = file_types.first_row(args.mainfile)
-    if args.type is None:
-        file_type = file_types.deduce_file_type(args.mainfile)
-        if args.verbose:
-            print("Deduced file type", file_type)
-    else:
-        file_type = args.type
+    fieldnames = file_types.first_row(mainfile)
+    file_type = type_given or file_types.deduce_file_type(mainfile)
+
     handler = file_type_handlers[file_type]
-    with open(args.mainfile) as csvfile:
+    with open(mainfile) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             row_date = handler['date'](row['Date'])
             row['Date'] = row_date
             by_date[row_date] = row
         csvfile.close()
-    for incoming_file in args.incoming:
+    for incoming_file in incoming:
         row_parser = find_row_parser_for(file_type, incoming_file)
         if row_parser is None:
             print("Skipping", incoming_file, "as I don't have a parser for", file_type)
@@ -142,6 +122,25 @@ def main():
         writer.writeheader()
         for date in sorted_dates:
             writer.writerow({k: qsutils.tidy_for_output(v) for k,v in by_date[date].items()})
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-o", "--output")
+    parser.add_argument("-t", "--type")
+    parser.add_argument("-v", "--verbose", action='store_true')
+    parser.add_argument("mainfile")
+    parser.add_argument('incoming', nargs='*')
+    args = parser.parse_args()
+    if args.output is None:
+        old_base, old_ext = os.path.splitext(args.mainfile)
+        shutil.copyfile(args.mainfile, old_base + "-old" + old_ext)
+        output = args.mainfile
+    else:
+        output = args.output
+    if args.verbose:
+        print("Main input is", args.mainfile, "and output is", output)
+        print("Incoming files are", args.incoming)
+    qsmerge(args.mainfile, args.incoming, args.type, args.output)
 
 if __name__ == "__main__":
     main()
