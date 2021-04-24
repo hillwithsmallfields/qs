@@ -62,6 +62,10 @@ def row_filter(filter_control, row):
     if 'match' in filter_control:
         if not filter_control['regexp'].match(row[filter_control['match']]):
             return False
+    if filter_control['units'] not in row:
+        return False
+    if row[filter_control['units']] in (None, "", 0, "0", "0.0"):
+        return False
     return True
 
 def parsetime(timestr):
@@ -74,10 +78,13 @@ def main():
     parser.add_argument("-t", "--type")
     parser.add_argument("-v", "--verbose", action='store_true')
 
-    parser.add_argument("-b", "--begin")
-    parser.add_argument("-e", "--end")
+    parser.add_argument("-b", "--begin",
+                        help="""The earliest date to chart.""")
+    parser.add_argument("-e", "--end",
+                        help="""The latest date to chart.""")
 
-    parser.add_argument("-m", "--match", nargs=2)
+    parser.add_argument("-m", "--match", nargs=2,
+                        help="""The column to match on, and the regexp to match it against.""")
 
     parser.add_argument("-u", "--units", default="stones")
 
@@ -97,7 +104,7 @@ def main():
 
     row_handler = ROW_HANDLERS[units]
 
-    filter_control = {}
+    filter_control = {'units': units}
     if args.begin:
         filter_control['begin'] = parsetime(args.begin)
     if args.end:
