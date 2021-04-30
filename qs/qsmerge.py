@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Time-stamp: <2021-04-23 20:24:33 jcgs>
+# Time-stamp: <2021-04-23 20:38:55 jcgs>
 
 # Program to merge my Quantified Self files.
 
@@ -106,7 +106,10 @@ def qsmerge(mainfile, incoming, type_given, output):
                         new_row_date = handler['date'](new_row['Date'])
                         new_row['Date'] = new_row_date
                         if new_row_date in by_date:
-                            by_date[new_row_date].update(new_row)
+                            existing_row = by_date[new_row_date]
+                            for nk, nv in new_row.items():
+                                if nv and nv != "" and (nk not in existing_row or existing_row[nk] == ""):
+                                    existing_row[nk] = nv
                         else:
                             by_date[new_row_date] = new_row
     completer = handler['completer']
