@@ -5,9 +5,14 @@
 import argparse
 import csv
 import datetime
-import qsutils
 import re
-import tempfile
+# import tempfile
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+import file_types
+import qsutils
 
 def handle_stone_row(row):
     return (((row['Stone']*14 + row['Lbs']) / 14)
@@ -35,19 +40,27 @@ def handle_pound_row(row):
                         else None)))
 
 ROW_HANDLERS = {
-    'stone': handle_stone_row
+    'stone': handle_stone_row,
     'kilogram': handle_kilogram_row,
     'pound': handle_pound_row,
 }
 
-possible_unit_names = {'stones': 'stone',
+POSSIBLE_UNIT_NAMES = {'stones': 'stone',
                        'pounds': 'pound',
                        'lbs': 'pound',
                        'kilograms': 'kilogram',
                        'kgs': 'kilogram'}
 
+UNIT_LABELS = {'stone': "Stone",
+               'kilogram': "Kg",
+               'pound': "Pounds"}
+
+UNIT_COLUMNS = {'stone': 'St total',
+                'pound': 'Lbs total',
+                'kilogram': 'Kg'}
+
 def normalize_unit_name(unit_name):
-    for k, v in possible_unit_names.items():
+    for k, v in POSSIBLE_UNIT_NAMES.items():
         if k.startswith(unit_name):
             return v
     return None
@@ -71,10 +84,30 @@ def row_filter(filter_control, row):
 def parsetime(timestr):
     return datetime.datetime.strptime(timestr, "%Y-%m-%d")
 
+def qschart(mainfile, units, filter_control, outfile):
+
+    data = pd.read_csv(mainfile, parse_dates=['Date'])
+    data.set_index("Date")
+
+    data['Lbs total'] = pd.to_numeric(data['Stone']) * 14 + data['Lbs']
+    data['St total'] = data['Lbs total'] / 14
+    data['Kg'] = data['Lbs total'] * 0.453592
+
+    fig, axs = plt.subplots(figsize=(11,8)) # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html for more parameters
+
+    # TODO: label every year; grid lines?
+    data.loc[data[UNIT_COLUMNS[units]] > 0, ['Date', UNIT_COLUMNS[units]]].plot(ax=axs, x="Date")
+
+    plt.xlabel("Date")
+    plt.ylabel(UNIT_LABELS[units])
+    plt.grid(axis='both')
+
+    fig.savefig(outfile)
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--debug", action='store_true')
-    parser.add_argument("-o", "--output", default="/tmp/weight.dat")
+    parser.add_argument("-o", "--output", default="/tmp/weight.png")
     parser.add_argument("-t", "--type")
     parser.add_argument("-v", "--verbose", action='store_true')
 
@@ -96,9 +129,9 @@ def main():
             print("Deduced file type", file_type)
     else:
         file_type = args.type
-    if file_type not in ROW_HANDLERS:
-        print("No handler for type", file_type)
-        return
+    # if file_type not in ROW_HANDLERS:
+    #     print("No handler for type", file_type)
+    #     return
 
     units = normalize_unit_name(args.units)
 
@@ -113,42 +146,7 @@ def main():
         filter_control['match'] = args.match[0]
         filter_control['regexp'] = re.compile(args.match[1])
 
-    epoch = datetime.datetime.utcfromtimestamp(0)
-    data_rows = {}
-
-    wanted_columns = ['Date', units]
-
-    with open(args.mainfile) as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            rowdate = parsetime(row['Date'])
-            row['__DATE__'] = rowdate
-            data_rows[rowdate] = row_handler(row)
-    results = [[row[col] for col in wanted_columns]
-               for row in [ data_rows[date]
-                            for date in sorted(data_rows.keys())
-                            if row_filter(filter_control, data_rows[date])]]
-    with open(tempfile.NamedTemporaryFile(), 'w') as datafile:
-        dataname = datafile.name
-        datawriter = csv.writer(datafile)
-        for row in results:
-            datawriter.writerow(row)
-
-# set title "My weight, 80.74-104.42"
-# set terminal png size 2560,1920
-# set output "/tmp/all-weight-kg.png"
-# set timefmt x "%Y-%m-%d"
-# set xdata time
-# set format x "%Y-%m"
-# # set xrange [ "80.74":"104.42" ]
-# set xtics rotate by 45 border offset 0,.5 out nomirror 2419200
-# set ylabel "Kilograms"
-# set y2label "Kg change in week"
-# set ytics nomirror
-# set y2tics
-# set grid xtics
-# set datafile separator ","
-# plot "/tmp/plot-weight.dat" using 1:7 with line axes x1y1 lc 7 title "Weight", "/tmp/plot-weight.dat" using 1:12 with line axes x1y1 lc 1 title "Average (week)", "/tmp/plot-weight.dat" using 1:14 with line axes x1y2 lc 3 title "Change (average) in week"
+    qschart(args.mainfile, units, filter_control, args.output)
 
 if __name__ == "__main__":
     main()

@@ -6,17 +6,10 @@ import os.path
 
 default_columns = ['account', 'currency', 'category', 'project']
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--output", "-o",
-                        help="""File to produce.""")
-    parser.add_argument("--input", "-i",
-                        help="""File to read.""")
-    parser.add_argument("columns",
-                        nargs='*',
-                        help="""Column to collect.""")
-    args = parser.parse_args()
-    with open(args.input or os.path.expandvars("$COMMON/finances/finances.csv")) as instream:
+def list_completions(input_file=os.path.expandvars("$COMMON/finances/finances.csv"),
+                     output_file=os.path.expandvars("$COMMON/var/finances-completions.el"),
+                     columns=default_columns):
+    with open(input_file ) as instream:
         rows = [row for row in csv.DictReader(instream)]
         payees = {p: [row['category']
                       for row in rows
@@ -39,9 +32,9 @@ def main():
                     highest_currency = currency
                     highest_count = count
                 account_currencies[account] = highest_currency
-        with open(args.output or os.path.expandvars("$COMMON/var/finances-completions.el"), 'w') as outstream:
+        with open(output_file , 'w') as outstream:
             outstream.write("(setq\n")
-            for column_name in (args.columns if len(args.columns) > 0 else default_columns):
+            for column_name in columns:
                 outstream.write("  " + column_name + '''-completions\n  '("''')
                 outstream.write('"\n    "'.join(sorted(set([row[column_name] for row in rows if row[column_name]]))))
                 outstream.write('")\n')
@@ -56,6 +49,18 @@ def main():
                                            for account in sorted(account_currencies.keys())]))
             outstream.write(")")
             outstream.write(')\n')
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output", "-o",
+                        help="""File to produce.""")
+    parser.add_argument("--input", "-i",
+                        help="""File to read.""")
+    parser.add_argument("columns",
+                        nargs='*',
+                        help="""Column to collect.""")
+    args = parser.parse_args()
+    list_completions(args.input, args.output, args.columns)
 
 if __name__ == "__main__":
     main()

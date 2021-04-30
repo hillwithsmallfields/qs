@@ -70,7 +70,7 @@ def make_empty_dir(_, dirname):
         os.remove(os.path.join(dirname, filename))
 
 finlisp_evaluation.def_finlisp_fn('make-empty-dir', make_empty_dir)
-    
+
 def finlisp_account(context, name, base_sheet):
     print("Making account from base_sheet", base_sheet)
     result = account.account(name, transactions=base_sheet, config=context['config'])
@@ -94,7 +94,7 @@ class NotApplicable(Exception):
     def __init__(self, action, value):
         self.action = action
         self.value = value
-        
+
 def finlisp_headers(_, x):
     return x.column_names_list()
 
@@ -138,13 +138,13 @@ for fname in finfuns.functions:
     finlisp_evaluation.def_finlisp_fn(fname.replace('_', '-'), eval("finfuns." + fname))
 
 def lisp_debug(context, *args):
-    config = context['config'] if len(args) < 2 else args[0].config 
+    config = context['config'] if len(args) < 2 else args[0].config
     label = args[-1]
     if config and 'formats' in config:
         print("at", label, "financisto column sequence is", len(config['formats']['financisto']['column-sequence']), "columns", config['formats']['financisto']['column-sequence'])
 
 finlisp_evaluation.def_finlisp_fn('debug', lisp_debug)
-        
+
 def main():
     parser = qsutils.program_argparser()
     parser.add_argument("--bind", "-D",
@@ -156,24 +156,29 @@ def main():
     parser.add_argument("script_files", nargs='*')
     args = parser.parse_args()
 
+    finlisp_main(args.script_files,
+                 args.output_dir,
+                 qsutils.program_load_config(args, quiet=True),
+                 args.verbose,
+                 args.bind)
+
+def finlisp_main(script_files, output_dir, config, verbose, bindings):
+
     initial_bindings = {
-        'output-dir': args.output_dir or ".",
-        'verbose': args.verbose,
+        'output-dir': output_dir or ".",
+        'verbose': verbose,
         't': True,
         'nil': False}
-    
-    context = {
-        'config': qsutils.program_load_config(args, quiet=True),
-        'bindings': [initial_bindings],
-        'eval-stack': []
-    }
 
-    if args.bind:
-        for binding in args.bind:
-            initial_bindings[binding[0]] = binding[1]
+    if bindings:
+        initial_bindings.update({binding[0]: binding[1]
+                                 for binding in bindings})
 
-    for filename in args.script_files:
-        finlisp_evaluation.finlisp_load_file(context, filename)
+    for filename in script_files:
+        finlisp_evaluation.finlisp_load_file({'config': config,
+                                              'bindings': [initial_bindings],
+                                              'eval-stack': []},
+                                             filename)
 
 if __name__ == "__main__":
     main()
