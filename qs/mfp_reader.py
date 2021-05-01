@@ -114,7 +114,7 @@ def fetch_streak_upto(when,
         time.sleep(pause)
     return accumulator
 
-def save_data(configuration, sheet_filename, rows, json_filename, so_far):
+def save_data(configuration, sheet_filename, rows, json_filename=None, so_far=None):
     if json_filename:
         with open(json_filename, 'w') as outstream:
             json.dump({d.isoformat(): v
@@ -128,6 +128,24 @@ def find_last_unfetched_date(dict_by_date):
     This is for working your way back through your historical record,
     not for updating since the last run."""
     return min(dict_by_date.keys()) - datetime.timedelta(days=1)
+
+def automatic(configuration, sheet):
+
+    with open(sheet) as instream:
+        rows = {datetime.date.fromisoformat(row['date']): row
+                for row in csv.DictReader(instream)}
+
+    mfp_reader.fetch_streak_upto(datetime.date.today() - datetime.timedelta(days=1),
+                                 None,
+                                 sheet=rows,
+                                 countdown=7,
+                                 overlap=3,
+                                 save_daily=None,
+                                 verbose=verbose,
+                                 minpause=args.minpause,
+                                 maxpause=args.maxpause)
+
+    save_data(configuration, sheet, rows)
 
 def main():
     parser = qsutils.program_argparser()

@@ -9,6 +9,7 @@ import shutil
 import check_merged_row_dates
 import finlisp
 import list_completions
+import mfp_reader
 import qschart
 import qsmerge
 import qsutils
@@ -16,18 +17,8 @@ import qsutils
 def file_newer_than_file(a, b):
     return os.path.getmtime(a) > os.path.getmtime(b)
 
-def automatic_actions(charts_dir, verbose):
-    configdir = os.path.expanduser("~/open-projects/github.com/hillwithsmallfields/qs/conf")
-    conversions_dir = os.path.expandvars("$COMMON/finances")
-    accounts_config = os.path.join(configdir, "accounts.yaml")
-    conversions_config = os.path.join(conversions_dir, "conversions.yaml")
+def automatic_finances(config, charts_dir, verbose):
 
-    config = qsutils.load_config(verbose, None, None, accounts_config, conversions_config)
-
-    physical = os.path.expandvars("$COMMON/health/physical.csv")
-    weight = os.path.expandvars("$COMMON/health/weight.csv")
-    # TODO: temperature, blood pressure, peak flow
-    phys_scratch = "/tmp/physical-tmp.csv"
     main_account = os.path.expandvars("$COMMON/finances/finances.csv")
     account_archive_dir = os.path.expanduser("~/archive")
     finances_completions = os.path.expandvars("$COMMON/var/finances-completions.el")
@@ -35,23 +26,10 @@ def automatic_actions(charts_dir, verbose):
     merge_results_dir = os.path.expanduser("~/scratch/auto-merge-results")
     merge_results_file = os.path.join(merge_results_dir, "merged-with-unmatched-all.csv")
 
-    os.makedirs(charts_dir, exist_ok=True)
-
-    qsmerge.qsmerge(physical, [weight], None, phys_scratch)
-
-    if check_merged_row_dates.check_merged_row_dates(phys_scratch, physical, weight):
-        shutil.copy(physical, physical+"-old")
-        shutil.copy(phys_scratch, physical)
-        for units in ('stone', 'kilogram', 'pound'):
-            qschart.qschart(physical,
-                            units,  {'units': units},
-                            os.path.join(charts_dir, "weight-%s.png" % units))
-    else:
-        print("merge of physical data produced the wrong number of rows")
-
     bank_statements = glob.glob(bank_statement_template)
     bank_statements.sort(key=os.path.getmtime)
     latest_bank_statement = bank_statements[-1]
+
     if file_newer_than_file(latest_bank_statement, main_account):
         print("Updating from latest bank statement", latest_bank_statement)
         if os.path.isdir(merge_results_dir):
@@ -82,6 +60,41 @@ def automatic_actions(charts_dir, verbose):
     if file_newer_than_file(finances_completions, main_account):
         print("updating finances completions")
         list_completions.list_completions()
+
+def automatic_physical(charts_dir):
+
+    physical = os.path.expandvars("$COMMON/health/physical.csv")
+    weight = os.path.expandvars("$COMMON/health/weight.csv")
+    # TODO: temperature, blood pressure, peak flow
+    phys_scratch = "/tmp/physical-tmp.csv"
+
+    qsmerge.qsmerge(physical, [weight], None, phys_scratch)
+
+    if check_merged_row_dates.check_merged_row_dates(phys_scratch, physical, weight):
+        shutil.copy(physical, physical+"-old")
+        shutil.copy(phys_scratch, physical)
+        for units in ('stone', 'kilogram', 'pound'):
+            qschart.qschart(physical,
+                            units,  {'units': units},
+                            os.path.join(charts_dir, "weight-%s.png" % units))
+    else:
+        print("merge of physical data produced the wrong number of rows")
+
+def automatic_actions(charts_dir, verbose):
+    configdir = os.path.expanduser("~/open-projects/github.com/hillwithsmallfields/qs/conf")
+    conversions_dir = os.path.expandvars("$COMMON/finances")
+    accounts_config = os.path.join(configdir, "accounts.yaml")
+    conversions_config = os.path.join(conversions_dir, "conversions.yaml")
+
+    config = qsutils.load_config(verbose, None, None, accounts_config, conversions_config)
+
+    mfp_filename = os.path.expandvars("$COMMON/health/mfp-accum.csv")
+
+    os.makedirs(charts_dir, exist_ok=True)
+
+    automatic_finances(config, charts_dir, verbose)
+    automatic_physical(charts_dir)
+    mfp_reader.automatic(config, mfp_filename)
 
 def main():
     parser = qsutils.program_argparser()
