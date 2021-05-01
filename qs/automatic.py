@@ -1,13 +1,16 @@
 #!/usr/bin/python3
 
 import argparse
+import csv
 import datetime
 import glob
 import os
 import shutil
 import sys
+import yaml
 
 import check_merged_row_dates
+import classify
 import finlisp
 import list_completions
 import mfp_reader
@@ -22,16 +25,48 @@ from throw_out_your_templates_p3 import htmltags as T
 
 sys.path.append(os.path.join(my_projects, "coimealta"))
 
-def construct_dashboard_page():
+CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
+
+DASHBOARD_STYLESHEET = """
+<style>
+td.ok {
+    background-color: green;
+}
+td.overspent {
+    background-color: red;
+}
+</style>
+"""
+
+def make_remaining_cell(thresholds, spent_this_month, coi):
+    available = float(thresholds.get(coi, 0))
+    spent_string = spent_this_month.get(coi, "")
+    spent = 0 if spent_string == "" else float(spent_string)
+    return T.td(class_="ok" if spent <= available else "overspent")[str(available + spent)]
+
+def construct_dashboard_page(config, charts_dir):
+    thresholds = classify.read_thresholds(config, "budgetting-thresholds.yaml")
+    print("thresholds are", thresholds)
+    with open(os.path.join(charts_dir, "by-class-this-year.csv")) as spent_stream:
+        spent = [row for row in csv.DictReader(spent_stream)]
+    spent_this_month = spent[-1]
     return [T.body[
         T.h1["My dashboard"],
         T.h2["Weight"],
         T.img(src="weight-stone.png"),
         T.h2["Spending"],
-        T.img(src="by-class.png")
-        # TODO: budget data for the month and quarter
-        # TODO: perishables from Coimealta
+        T.img(src="by-class.png"),
+        T.h3["Monthly budgets"],
+        T.table[T.tr[[T.th[""]] + [T.th[coi] for coi in CATEGORIES_OF_INTEREST]],
+                T.tr[[T.th["Thresholds"]] + [T.td[str(thresholds[coi])] for coi in CATEGORIES_OF_INTEREST]],
+                T.tr[[T.th["Spent"]] + [T.td[str(spent_this_month[coi])] for coi in CATEGORIES_OF_INTEREST]],
+                T.tr[[T.th["Remaining"]] + [make_remaining_cell(thresholds, spent_this_month, coi) for coi in CATEGORIES_OF_INTEREST]]
+
+        ],
+        T.h2["Upcoming birthdays"],
         # TODO: birthday list from Coimealta
+        T.h2["Food to use up in fridge"],
+        # TODO: perishables from Coimealta
         # TODO: actions list from org-mode
         # TODO: shopping list from org-mode
     ]]
@@ -42,10 +77,10 @@ def page_text(page_contents, style_text, script_text):
                                                      + script_text),
                              page_contents]))
 
-def write_dashboard_page(charts_dir):
+def write_dashboard_page(config, charts_dir):
     with open(os.path.join(charts_dir, "index.html"), 'w') as page_stream:
-        page_stream.write(page_text(construct_dashboard_page(),
-                                    "", ""))
+        page_stream.write(page_text(construct_dashboard_page(config, charts_dir),
+                                    DASHBOARD_STYLESHEET, ""))
 
 def file_newer_than_file(a, b):
     return os.path.getmtime(a) > os.path.getmtime(b)
@@ -105,7 +140,7 @@ def automatic_finances(config, charts_dir, begin_date, end_date, archive_dir, ve
                                         (back_from(today, 1, None, None), "by-class-past-year.png")]):
         qschart.qschart(os.path.join(charts_dir, "by-class.csv"),
                         'finances',
-                        ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel'],
+                        CATEGORIES_OF_INTEREST,
                         begin, end_date, None,
                         os.path.join(charts_dir, chart_filename))
 
@@ -177,7 +212,7 @@ def automatic_actions(charts_dir,
     if do_externals:
         mfp_reader.automatic(config, mfp_filename, verbose)
 
-    write_dashboard_page(charts_dir)
+    write_dashboard_page(config, charts_dir)
 
 def main():
     parser = qsutils.program_argparser()
