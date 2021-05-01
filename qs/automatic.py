@@ -85,6 +85,8 @@ def construct_dashboard_page(config, charts_dir):
     print("thresholds are", thresholds)
     with open(os.path.join(charts_dir, "by-class-this-year.csv")) as spent_stream:
         spent = [row for row in csv.DictReader(spent_stream)]
+    spent_month_before_last = spent[-3] if len(spent) >= 3 else None
+    spent_last_month = spent[-2] if len(spent) >= 2 else None
     spent_this_month = spent[-1]
     people_by_id, _ = contacts_data.read_contacts(os.path.expandvars("$COMMON/org/contacts.csv"))
     today = datetime.date.today()
@@ -93,28 +95,34 @@ def construct_dashboard_page(config, charts_dir):
                               for person in people_by_id.values()
                               if birthday_soon(person, this_year, today)],
                              key=lambda person: birthday(person, this_year))
+    # TODO: construct in sections, with automatic building of TOC
     return [T.body[
         T.h1["My dashboard"],
         T.h2["Weight"],
         T.img(src="weight-stone.png"),
         T.h2["Spending"],
+        T.p["Full details ", T.a(href="by-class.html")["here"], "."],
         T.img(src="by-class.png"),
         T.h3["Monthly budgets"],
-        T.table[T.tr[[T.th[""]] + [T.th[coi] for coi in CATEGORIES_OF_INTEREST]],
-                T.tr[[T.th["Thresholds"]] + [T.td[str(thresholds[coi])] for coi in CATEGORIES_OF_INTEREST]],
-                T.tr[[T.th["Spent"]] + [T.td[str(spent_this_month[coi])] for coi in CATEGORIES_OF_INTEREST]],
-                T.tr[[T.th["Remaining"]] + [make_remaining_cell(thresholds, spent_this_month, coi) for coi in CATEGORIES_OF_INTEREST]]
-
-        ],
+        T.table(class_='budgetting')[
+            T.tr[[T.th[""]] + [T.th[coi] for coi in CATEGORIES_OF_INTEREST]],
+            T.tr(class_='monthly_budget')[[T.th["Monthly budget"]] + [T.td(class_='budget')[str(thresholds[coi])] for coi in CATEGORIES_OF_INTEREST]],
+            (T.tr(class_='spent_month_before_last')[[T.th["Spent month before last"]] + [T.td(class_='spent')[str(spent_month_before_last[coi])] for coi in CATEGORIES_OF_INTEREST]]) if spent_month_before_last else [], # TODO: style according to whether over threshold
+            (T.tr(class_='spent_last_month')[[T.th["Spent last month"]] + [T.td(class_='spent')[str(spent_last_month[coi])] for coi in CATEGORIES_OF_INTEREST]]) if spent_last_month else [], # TODO: style according to whether over threshold
+            T.tr(class_='spent_this_month')[[T.th["Spent this month"]] + [T.td(class_='spent')[str(spent_this_month[coi])] for coi in CATEGORIES_OF_INTEREST]], # TODO: style according to whether over threshold
+            T.tr(class_='remaining_this_month')[[T.th["Remaining this month"]] + [make_remaining_cell(thresholds, spent_this_month, coi) for coi in CATEGORIES_OF_INTEREST]]],
         T.h2["Upcoming birthdays"],
-        T.table[[T.tr[T.td[str(birthday(person, this_year))],
-                      # TODO: put email address as link on name, if known
-                      T.td[contacts_data.make_name(person)],
-                      T.td[age_string(person, this_year)]
-        ]
+        T.table(class_='birthdays')[
+            T.tr[T.th["Birthday"], T.th["Name"], T.th["Age"]],
+            [T.tr[T.td(class_='birthday')[str(birthday(person, this_year))],
+                  # TODO: put email address as link on name, if known
+                      T.td(class_='name')[contacts_data.make_name(person)],
+                  T.td(class_='age')[age_string(person, this_year)]]
                  for person in birthday_people]],
         T.h2["Food to use up in fridge"],
         # TODO: perishables from Coimealta
+        # TODO: dietary data from MFP
+        # TODO: exercise data from MFP
         # TODO: actions list from org-mode
         # TODO: shopping list from org-mode
     ]]
