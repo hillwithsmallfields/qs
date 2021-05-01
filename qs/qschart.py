@@ -55,16 +55,16 @@ def normalize_column_name(unit_name):
     return None
 
 def parsetime(timestr):
-    return datetime.datetime.strptime(timestr, "%Y-%m-%d")
+    return datetime.datetime.strptime(timestr, "%Y-%m-%d") if isinstance(timestr, str) else timestr
 
 def qschart(mainfile, file_type, columns, begin, end, match, outfile):
 
     data = pd.read_csv(mainfile, parse_dates=['Date'])
 
     if begin:
-        pass                    # TODO: filter data
+        data = data.loc[data['Date'] >= begin]
     if end:
-        pass                    # TODO: filter data
+        data = data.loc[data['Date'] <= end]
     if match:
         pass                    # TODO: filter data
 
@@ -75,15 +75,9 @@ def qschart(mainfile, file_type, columns, begin, end, match, outfile):
 
     fig, axs = plt.subplots(figsize=(11,8)) # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html for more parameters
 
-    print("overall data is:")
-    print(data)
-
     # TODO: label every year; grid lines?
     # TODO: plot absolute values
     for column in columns:
-        print("data for", column, "which has header", column_header(column), "and label", column_label(column), "is:")
-        print(data.loc[data[column_header(column)] != 0, ['Date', column_header(column)]])
-
         data.loc[data[column_header(column)] != 0,
                  ['Date', column_header(column)]].plot(ax=axs, x="Date", y=column_header(column))
         plt.ylabel(column_label(column))
@@ -108,7 +102,8 @@ def main():
     parser.add_argument("-m", "--match", nargs=2,
                         help="""The column to match on, and the regexp to match it against.""")
 
-    parser.add_argument("-u", "--columns", default="stones")
+    parser.add_argument("--column",
+                        action='append')
 
     parser.add_argument("mainfile")
     args = parser.parse_args()
@@ -119,13 +114,9 @@ def main():
     else:
         file_type = args.type
 
-    column = normalize_column_name(args.column)
-
-    row_handler = ROW_HANDLERS[column]
-
     qschart(args.mainfile,
             file_type,
-            [column],
+            [normalize_column_name(column) for column in args.column],
             args.begin and parsetime(args.begin),
             args.end and parsetime(args.end),
             args.match,
