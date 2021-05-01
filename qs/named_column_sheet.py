@@ -96,7 +96,7 @@ class named_column_sheet(base_sheet.base_sheet):
         qsutils.ensure_directory_for_file(full_filename)
         with open(full_filename, 'w') as outfile:
             writer = csv.writer(outfile)
-            writer.writerow(([] if suppress_timestamp else ['timestamp']) + self.column_names)
+            writer.writerow(([] if suppress_timestamp else ['Date']) + [n for n in self.column_names if n != 'Date'])
             if show_averages:
                 avs = self.averages()
                 writer.writerow(['Averages'] + [qsutils.tidy_for_output(avs.get(col, ""))
@@ -106,7 +106,8 @@ class named_column_sheet(base_sheet.base_sheet):
                 writer.writerow(([]
                                  if suppress_timestamp
                                  else [date]) + [qsutils.tidy_for_output(row_data.get(n, ''))
-                                                 for n in self.column_names])
+                                                 for n in self.column_names
+                                                 if n != 'Date'])
 
     def sparse_row(self, row):
         """Return a dictionary containing the occupied entries in a row."""

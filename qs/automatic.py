@@ -62,6 +62,12 @@ def automatic_finances(config, charts_dir, archive_dir, verbose):
                           'classifiers-file': "budgetting-classes.yaml",
                           'thresholds-file': "budgetting-thresholds.yaml"})
 
+    qschart.qschart(os.path.join(charts_dir, "by-class.csv"),
+                    'finances',
+                    ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel'],
+                    None, None, None,
+                    os.path.join(charts_dir, "by-class.png"))
+
     if file_newer_than_file(finances_completions, main_account):
         if verbose: print("updating finances completions")
         list_completions.list_completions()
@@ -80,7 +86,9 @@ def automatic_physical(charts_dir, archive_dir):
         shutil.copy(phys_scratch, physical)
         for units in ('stone', 'kilogram', 'pound'):
             qschart.qschart(physical,
-                            units,  {'units': units},
+                            'weight',
+                            [units],
+                            None, None, None,
                             os.path.join(charts_dir, "weight-%s.png" % units))
     else:
         print("merge of physical data produced the wrong number of rows")

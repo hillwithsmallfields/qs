@@ -608,7 +608,7 @@ def write_csv(context, value, filename):
             filename,
             finlisp_evaluation.finlisp_var_value(context,
                                                  'output-dir')),
-                        suppress_timestamp=True)
+                        suppress_timestamp=False)
     else:
         print("Nothing to write to", filename)
     return value
