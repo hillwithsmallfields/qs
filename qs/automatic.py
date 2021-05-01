@@ -41,7 +41,7 @@ def automatic_finances(config, charts_dir, verbose):
                              merge_results_dir,
                              config,
                              verbose,
-                             [['incoming-statement', latest_bank_statement]])
+                             {'incoming-statement': latest_bank_statement})
         if os.path.isfile(merge_results_file):
             shutil.copy(main_account, os.path.join(account_archive_dir, "finances-to-%s.csv" % datetime.datetime.now().isoformat()))
             shutil.copy(merge_results_file, main_account)
@@ -52,10 +52,10 @@ def automatic_finances(config, charts_dir, verbose):
                          charts_dir,
                          config,
                          verbose,
-                         [['input-file', main_account],
-                          ['statements-file', os.path.expandvars("$COMMON/finances/handelsbanken/handelsbanken-full.csv")],
-                          ['classifiers-file', "budgetting-classes.yaml"],
-                          ['thresholds-file', "budgetting-thresholds.yaml"]])
+                         {'input-file': main_account,
+                          'statements-file': os.path.expandvars("$COMMON/finances/handelsbanken/handelsbanken-full.csv"),
+                          'classifiers-file': "budgetting-classes.yaml",
+                          'thresholds-file': "budgetting-thresholds.yaml"})
 
     if file_newer_than_file(finances_completions, main_account):
         print("updating finances completions")

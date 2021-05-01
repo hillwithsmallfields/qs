@@ -160,7 +160,8 @@ def main():
                  args.output_dir,
                  qsutils.program_load_config(args, quiet=True),
                  args.verbose,
-                 args.bind)
+                 {binding[0]: binding[1]
+                  for binding in args.bind})
 
 def finlisp_main(script_files, output_dir, config, verbose, bindings):
 
@@ -171,8 +172,7 @@ def finlisp_main(script_files, output_dir, config, verbose, bindings):
         'nil': False}
 
     if bindings:
-        initial_bindings.update({binding[0]: binding[1]
-                                 for binding in bindings})
+        initial_bindings.update(bindings)
 
     for filename in script_files:
         finlisp_evaluation.finlisp_load_file({'config': config,
