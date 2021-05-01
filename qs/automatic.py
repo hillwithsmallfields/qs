@@ -23,7 +23,7 @@ def backup(filename, archive_dir, template):
         os.path.join(archive_dir,
                      (template % datetime.datetime.now().isoformat()) + ".gz")))
 
-def automatic_finances(config, charts_dir, archive_dir, verbose):
+def automatic_finances(config, charts_dir, begin_date, end_date, archive_dir, verbose):
 
     main_account = os.path.expandvars("$COMMON/finances/finances.csv")
     finances_completions = os.path.expandvars("$COMMON/var/finances-completions.el")
@@ -62,17 +62,40 @@ def automatic_finances(config, charts_dir, archive_dir, verbose):
                           'classifiers-file': "budgetting-classes.yaml",
                           'thresholds-file': "budgetting-thresholds.yaml"})
 
-    qschart.qschart(os.path.join(charts_dir, "by-class.csv"),
-                    'finances',
-                    ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel'],
-                    None, None, None,
-                    os.path.join(charts_dir, "by-class.png"))
+    today = datetime.date.today()
+    for begin, chart_filename in ([(begin_date, "by-class.png")]
+                                  if begin_date
+                                  else [(None, "by-class.png"),
+                                        (back_from(today, None, None, 7), "by-class-past-week.png"),
+                                        (back_from(today, None, 1, None), "by-class-past-month.png"),
+                                        (back_from(today, None, 3, None), "by-class-past-quarter.png"),
+                                        (back_from(today, 1, None, None), "by-class-past-year.png")]):
+        qschart.qschart(os.path.join(charts_dir, "by-class.csv"),
+                        'finances',
+                        ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel'],
+                        begin, end_date, None,
+                        os.path.join(charts_dir, chart_filename))
 
     if file_newer_than_file(finances_completions, main_account):
         if verbose: print("updating finances completions")
         list_completions.list_completions()
 
-def automatic_physical(charts_dir, archive_dir):
+def back_from(when, years_back, months_back, days_back):
+    if months_back and months_back >= 12:
+        years_back = (years_back or 0) + months_back / 12
+        months_back %= 12
+    if years_back:
+        when = when.replace(year=when.year - years_back)
+    if months_back:
+        if months_back >= when.month:
+            when = when.replace(year=when.year - 1, month=12 + when.month - months_back)
+        else:
+            when = when.replace(month=when.month - months_back)
+    if days_back:
+        when = when - datetime.timedelta(days=days_back)
+    return datetime.datetime.combine(when, datetime.time())
+
+def automatic_physical(charts_dir, begin_date, end_date, archive_dir):
 
     physical = os.path.expandvars("$COMMON/health/physical.csv")
     weight = os.path.expandvars("$COMMON/health/weight.csv")
@@ -84,16 +107,26 @@ def automatic_physical(charts_dir, archive_dir):
     if check_merged_row_dates.check_merged_row_dates(phys_scratch, physical, weight):
         backup(physical, archive_dir, "physical-to-%s.csv")
         shutil.copy(phys_scratch, physical)
-        for units in ('stone', 'kilogram', 'pound'):
-            qschart.qschart(physical,
-                            'weight',
-                            [units],
-                            None, None, None,
-                            os.path.join(charts_dir, "weight-%s.png" % units))
+        today = datetime.date.today()
+        for begin, template in ([(begin_date, "weight-%s.png")]
+                                if begin_date
+                                else [(None, "weight-%s.png"),
+                                      (back_from(today, None, None, 7), "weight-past-week-%s.png"),
+                                      (back_from(today, None, 1, None), "weight-past-month-%s.png"),
+                                      (back_from(today, None, 3, None), "weight-past-quarter-%s.png"),
+                                      (back_from(today, 1, None, None), "weight-past-year-%s.png")]):
+            for units in ('stone', 'kilogram', 'pound'):
+                qschart.qschart(physical,
+                                'weight',
+                                [units],
+                                begin, end_date, None,
+                                os.path.join(charts_dir, template % units))
     else:
         print("merge of physical data produced the wrong number of rows")
 
-def automatic_actions(charts_dir, do_externals, verbose):
+def automatic_actions(charts_dir,
+                      begin_date, end_date,
+                      do_externals, verbose):
     archive_dir = os.path.expanduser("~/archive")
     configdir = os.path.expanduser("~/open-projects/github.com/hillwithsmallfields/qs/conf")
     conversions_dir = os.path.expandvars("$COMMON/finances")
@@ -106,8 +139,8 @@ def automatic_actions(charts_dir, do_externals, verbose):
 
     os.makedirs(charts_dir, exist_ok=True)
 
-    automatic_finances(config, charts_dir, archive_dir, verbose)
-    automatic_physical(charts_dir, archive_dir)
+    automatic_finances(config, charts_dir, begin_date, end_date, archive_dir, verbose)
+    automatic_physical(charts_dir, begin_date, end_date, archive_dir)
     if do_externals:
         mfp_reader.automatic(config, mfp_filename, verbose)
 
@@ -115,11 +148,17 @@ def main():
     parser = qsutils.program_argparser()
     parser.add_argument("--charts", default="/tmp",
                         help="""Directory to write charts into.""")
+    parser.add_argument("--begin",
+                        help="""Earliest date to chart.""")
+    parser.add_argument("--end",
+                        help="""Latest date to chart.""")
     parser.add_argument("--no-externals", action='store_true',
                         help="""Don't pester external servers""")
     args = parser.parse_args()
 
     automatic_actions(args.charts,
+                      args.begin,
+                      args.end,
                       not args.no_externals,
                       args.verbose)
 
