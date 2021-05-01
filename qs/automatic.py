@@ -5,6 +5,7 @@ import datetime
 import glob
 import os
 import shutil
+import sys
 
 import check_merged_row_dates
 import finlisp
@@ -13,6 +14,38 @@ import mfp_reader
 import qschart
 import qsmerge
 import qsutils
+
+my_projects = os.path.dirname(os.path.dirname(sys.path[0]))
+sys.path.append(os.path.join(my_projects, "makers", "untemplate"))
+import throw_out_your_templates_p3 as untemplate
+from throw_out_your_templates_p3 import htmltags as T
+
+sys.path.append(os.path.join(my_projects, "coimealta"))
+
+def construct_dashboard_page():
+    return [T.body[
+        T.h1["My dashboard"],
+        T.h2["Weight"],
+        T.img(src="weight-stone.png"),
+        T.h2["Spending"],
+        T.img(src="by-class.png")
+        # TODO: budget data for the month and quarter
+        # TODO: perishables from Coimealta
+        # TODO: birthday list from Coimealta
+        # TODO: actions list from org-mode
+        # TODO: shopping list from org-mode
+    ]]
+
+def page_text(page_contents, style_text, script_text):
+    return untemplate.Serializer(untemplate.examples_vmap, 'utf-8').serialize(
+        untemplate.HTML5Doc([untemplate.safe_unicode(style_text
+                                                     + script_text),
+                             page_contents]))
+
+def write_dashboard_page(charts_dir):
+    with open(os.path.join(charts_dir, "index.html"), 'w') as page_stream:
+        page_stream.write(page_text(construct_dashboard_page(),
+                                    "", ""))
 
 def file_newer_than_file(a, b):
     return os.path.getmtime(a) > os.path.getmtime(b)
@@ -144,9 +177,11 @@ def automatic_actions(charts_dir,
     if do_externals:
         mfp_reader.automatic(config, mfp_filename, verbose)
 
+    write_dashboard_page(charts_dir)
+
 def main():
     parser = qsutils.program_argparser()
-    parser.add_argument("--charts", default="/tmp",
+    parser.add_argument("--charts", default=os.path.expanduser("~/public_html/dashboard"),
                         help="""Directory to write charts into.""")
     parser.add_argument("--begin",
                         help="""Earliest date to chart.""")
