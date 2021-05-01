@@ -129,21 +129,25 @@ def find_last_unfetched_date(dict_by_date):
     not for updating since the last run."""
     return min(dict_by_date.keys()) - datetime.timedelta(days=1)
 
-def automatic(configuration, sheet):
+def automatic(configuration, sheet, verbose):
 
     with open(sheet) as instream:
         rows = {datetime.date.fromisoformat(row['date']): row
                 for row in csv.DictReader(instream)}
 
-    mfp_reader.fetch_streak_upto(datetime.date.today() - datetime.timedelta(days=1),
-                                 None,
-                                 sheet=rows,
-                                 countdown=7,
-                                 overlap=3,
-                                 save_daily=None,
-                                 verbose=verbose,
-                                 minpause=args.minpause,
-                                 maxpause=args.maxpause)
+    if verbose:
+        print("fetching data from myfitnesspal.com")
+
+    fetch_streak_upto(datetime.date.today() - datetime.timedelta(days=1),
+                      None,
+                      sheet=rows,
+                      countdown=7,
+                      overlap=3,
+                      save_daily=None,
+                      verbose=verbose)
+
+    if verbose:
+        print("finished fetching data from myfitnesspal.com")
 
     save_data(configuration, sheet, rows)
 

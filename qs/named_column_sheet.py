@@ -38,7 +38,7 @@ class named_column_sheet(base_sheet.base_sheet):
             total = sum(row.values())
             result.rows[ts] = {colname: cell/total for colname, cell in row.items()}
         return result
-        
+
     def abs_threshold(self, threshold):
         """Return a sheet like this but with any entries smaller than a given threshold omitted."""
         result = named_column_sheet(self.config, self.column_names_list())
@@ -89,7 +89,7 @@ class named_column_sheet(base_sheet.base_sheet):
                 totals[name] = value + totals.get(name, 0)
         count = len(self.rows)
         return {name: value/count for name, value in totals.items()}
-    
+
     def write_csv(self, filename, suppress_timestamp=False, show_averages=False):
         """Write a named-column sheet to a CSV file."""
         full_filename = os.path.expanduser(os.path.expandvars(filename))
@@ -99,10 +99,14 @@ class named_column_sheet(base_sheet.base_sheet):
             writer.writerow(([] if suppress_timestamp else ['timestamp']) + self.column_names)
             if show_averages:
                 avs = self.averages()
-                writer.writerow(['Averages'] + [qsutils.tidy_for_output(avs[col]) for col in self.column_names])
+                writer.writerow(['Averages'] + [qsutils.tidy_for_output(avs.get(col, ""))
+                                                for col in self.column_names])
             for date in sorted(self.rows):
                 row_data = self.rows[date]
-                writer.writerow(([] if suppress_timestamp else [date]) + [qsutils.tidy_for_output(row_data.get(n, '')) for n in self.column_names])
+                writer.writerow(([]
+                                 if suppress_timestamp
+                                 else [date]) + [qsutils.tidy_for_output(row_data.get(n, ''))
+                                                 for n in self.column_names])
 
     def sparse_row(self, row):
         """Return a dictionary containing the occupied entries in a row."""

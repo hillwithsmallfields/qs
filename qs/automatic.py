@@ -17,10 +17,15 @@ import qsutils
 def file_newer_than_file(a, b):
     return os.path.getmtime(a) > os.path.getmtime(b)
 
-def automatic_finances(config, charts_dir, verbose):
+def backup(filename, archive_dir, template):
+    os.system("gzip --to-stdout %s > %s" % (
+        filename,
+        os.path.join(archive_dir,
+                     (template % datetime.datetime.now().isoformat()) + ".gz")))
+
+def automatic_finances(config, charts_dir, archive_dir, verbose):
 
     main_account = os.path.expandvars("$COMMON/finances/finances.csv")
-    account_archive_dir = os.path.expanduser("~/archive")
     finances_completions = os.path.expandvars("$COMMON/var/finances-completions.el")
     bank_statement_template = os.path.expanduser("~/Downloads/Transaction*.csv")
     merge_results_dir = os.path.expanduser("~/scratch/auto-merge-results")
@@ -43,7 +48,7 @@ def automatic_finances(config, charts_dir, verbose):
                              verbose,
                              {'incoming-statement': latest_bank_statement})
         if os.path.isfile(merge_results_file):
-            shutil.copy(main_account, os.path.join(account_archive_dir, "finances-to-%s.csv" % datetime.datetime.now().isoformat()))
+            backup(main_account, archive_dir, "finances-to-%s.csv")
             shutil.copy(merge_results_file, main_account)
     else:
         print("Bank statement not newer than account file, so not updating")
@@ -58,10 +63,10 @@ def automatic_finances(config, charts_dir, verbose):
                           'thresholds-file': "budgetting-thresholds.yaml"})
 
     if file_newer_than_file(finances_completions, main_account):
-        print("updating finances completions")
+        if verbose: print("updating finances completions")
         list_completions.list_completions()
 
-def automatic_physical(charts_dir):
+def automatic_physical(charts_dir, archive_dir):
 
     physical = os.path.expandvars("$COMMON/health/physical.csv")
     weight = os.path.expandvars("$COMMON/health/weight.csv")
@@ -71,7 +76,7 @@ def automatic_physical(charts_dir):
     qsmerge.qsmerge(physical, [weight], None, phys_scratch)
 
     if check_merged_row_dates.check_merged_row_dates(phys_scratch, physical, weight):
-        shutil.copy(physical, physical+"-old")
+        backup(physical, archive_dir, "physical-to-%s.csv")
         shutil.copy(phys_scratch, physical)
         for units in ('stone', 'kilogram', 'pound'):
             qschart.qschart(physical,
@@ -80,7 +85,8 @@ def automatic_physical(charts_dir):
     else:
         print("merge of physical data produced the wrong number of rows")
 
-def automatic_actions(charts_dir, verbose):
+def automatic_actions(charts_dir, do_externals, verbose):
+    archive_dir = os.path.expanduser("~/archive")
     configdir = os.path.expanduser("~/open-projects/github.com/hillwithsmallfields/qs/conf")
     conversions_dir = os.path.expandvars("$COMMON/finances")
     accounts_config = os.path.join(configdir, "accounts.yaml")
@@ -92,17 +98,21 @@ def automatic_actions(charts_dir, verbose):
 
     os.makedirs(charts_dir, exist_ok=True)
 
-    automatic_finances(config, charts_dir, verbose)
-    automatic_physical(charts_dir)
-    mfp_reader.automatic(config, mfp_filename)
+    automatic_finances(config, charts_dir, archive_dir, verbose)
+    automatic_physical(charts_dir, archive_dir)
+    if do_externals:
+        mfp_reader.automatic(config, mfp_filename, verbose)
 
 def main():
     parser = qsutils.program_argparser()
     parser.add_argument("--charts", default="/tmp",
                         help="""Directory to write charts into.""")
+    parser.add_argument("--no-externals", action='store_true',
+                        help="""Don't pester external servers""")
     args = parser.parse_args()
 
     automatic_actions(args.charts,
+                      not args.no_externals,
                       args.verbose)
 
 if __name__ == '__main__':

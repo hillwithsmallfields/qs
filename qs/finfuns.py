@@ -228,7 +228,7 @@ def categorised(context, original):
                                  label="categorised")
 
 def categorised_by_key_fn(context, incoming_data, key_fn, label=""):
-    """For each date occurring in the incoming data, 
+    """For each date occurring in the incoming data,
     use a key function to categorise the rows on that date,
     and collect an itemized amount for each such category.
     Really meant for use on periodic summaries."""
@@ -317,7 +317,7 @@ def check(context, label, sheet):
         for count in sorted(transaction_count_histogram.keys()):
             print("in check", label, "  ", count, transaction_count_histogram[count])
     else:
-        print("in check", label, "No itemized amounts")    
+        print("in check", label, "No itemized amounts")
     return sheet
 
 def column_average(context, sheet, colname):
@@ -613,13 +613,13 @@ def write_csv(context, value, filename):
         print("Nothing to write to", filename)
     return value
 
-def write_csv_with_averages(context, value, filename):
+def write_csv_with_averages(context, value, filename, suppress_timestamp=False):
     if value:
         value.write_csv(qsutils.resolve_filename(
             filename,
             finlisp_evaluation.finlisp_var_value(context,
                                                  'output-dir')),
-                        suppress_timestamp=True,
+                        suppress_timestamp=suppress_timestamp,
                         show_averages=True)
     else:
         print("Nothing to write to", filename)
