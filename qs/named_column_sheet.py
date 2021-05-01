@@ -56,6 +56,22 @@ class named_column_sheet(base_sheet.base_sheet):
         result.column_names = [n for n in self.column_names_list() if n in column_names_seen]
         return result
 
+    def between_dates(self, begin_date, end_date):
+        """Return a sheet like this but with only the rows in a given date range.
+        False values for either end of the range mean no limit in that direction."""
+        if begin_date:
+            begin_date = qsutils.as_date(begin_date)
+        if end_date:
+            end_date = qsutils.as_date(end_date)
+        result = named_column_sheet(self.config, self.column_names_list())
+        result.rows = {timestamp: row
+                       for timestamp, row in self.rows.items()
+                       if (((not begin_date)
+                            or timestamp >= begin_date)
+                           and ((not end_date)
+                                or timestamp <= end_date))}
+        return result
+
     def annotate_matches(self, reference):
         """Make a named column sheet with matches to a reference sheet noted."""
         result = named_column_sheet(self.config, self.column_names_list())

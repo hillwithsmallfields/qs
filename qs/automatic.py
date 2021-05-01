@@ -5,6 +5,7 @@ import csv
 import datetime
 import glob
 import os
+import re
 import shutil
 import sys
 import yaml
@@ -20,10 +21,13 @@ import qsutils
 
 my_projects = os.path.dirname(os.path.dirname(sys.path[0]))
 sys.path.append(os.path.join(my_projects, "makers", "untemplate"))
+
 import throw_out_your_templates_p3 as untemplate
 from throw_out_your_templates_p3 import htmltags as T
 
-sys.path.append(os.path.join(my_projects, "coimealta"))
+sys.path.append(os.path.join(my_projects, "coimealta/contacts"))
+import link_contacts
+import contacts_data
 
 CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
 
@@ -44,12 +48,51 @@ def make_remaining_cell(thresholds, spent_this_month, coi):
     spent = 0 if spent_string == "" else float(spent_string)
     return T.td(class_="ok" if spent <= available else "overspent")[str(available + spent)]
 
+def birthday(person, this_year):
+    bday_string = person.get('Birthday', "") or ""
+    if bday_string == "":
+        return False
+    try:
+        bday = datetime.date.fromisoformat(bday_string)
+    except Exception:
+        match = re.search("-([0-9][0-9])-([0-9][0-9])", bday_string)
+        if match:
+            month = int(match.group(1))
+            if month == 0:
+                return False
+            day = int(match.group(2))
+            if day == 0:
+                return False
+            bday = datetime.date(year=this_year, month=month, day=day)
+        else:
+            return False
+    bday = bday.replace(year=this_year)
+    return bday
+
+def birthday_soon(person, this_year, today):
+    bday = birthday(person, this_year)
+    if not bday:
+        return False
+    interval_to_birthday = (bday - today).days
+    return interval_to_birthday > 0 and interval_to_birthday < 30
+
+def age_string(person, year):
+    age = contacts_data.age_in_year(person, year)
+    return str(age) if age else "?"
+
 def construct_dashboard_page(config, charts_dir):
     thresholds = classify.read_thresholds(config, "budgetting-thresholds.yaml")
     print("thresholds are", thresholds)
     with open(os.path.join(charts_dir, "by-class-this-year.csv")) as spent_stream:
         spent = [row for row in csv.DictReader(spent_stream)]
     spent_this_month = spent[-1]
+    people_by_id, _ = contacts_data.read_contacts(os.path.expandvars("$COMMON/org/contacts.csv"))
+    today = datetime.date.today()
+    this_year = today.year
+    birthday_people = sorted([person
+                              for person in people_by_id.values()
+                              if birthday_soon(person, this_year, today)],
+                             key=lambda person: birthday(person, this_year))
     return [T.body[
         T.h1["My dashboard"],
         T.h2["Weight"],
@@ -64,7 +107,12 @@ def construct_dashboard_page(config, charts_dir):
 
         ],
         T.h2["Upcoming birthdays"],
-        # TODO: birthday list from Coimealta
+        T.table[[T.tr[T.td[str(birthday(person, this_year))],
+                      # TODO: put email address as link on name, if known
+                      T.td[contacts_data.make_name(person)],
+                      T.td[age_string(person, this_year)]
+        ]
+                 for person in birthday_people]],
         T.h2["Food to use up in fridge"],
         # TODO: perishables from Coimealta
         # TODO: actions list from org-mode
@@ -192,6 +240,20 @@ def automatic_physical(charts_dir, begin_date, end_date, archive_dir):
     else:
         print("merge of physical data produced the wrong number of rows")
 
+def automatic_contacts(charts_dir, archive_dir):
+    contacts_file = os.path.expandvars("$COMMON/org/contacts.csv")
+    contacts_scratch = "/tmp/contacts_scratch.csv"
+    link_contacts.link_contacts_main(contacts_file, False, False, contacts_scratch)
+    with open(contacts_file) as confile:
+        original_lines = len(confile.readlines())
+    with open(contacts_scratch) as conscratch:
+        scratch_lines = len(conscratch.readlines())
+    if original_lines == scratch_lines:
+        backup(contacts_file, archive_dir, "contacts-%s.csv")
+        shutil.copy(contacts_scratch, contacts_file)
+    else:
+        print("wrong number of people after linking contacts, originally", original_lines, "but now", scratch_lines)
+
 def automatic_actions(charts_dir,
                       begin_date, end_date,
                       do_externals, verbose):
@@ -209,6 +271,7 @@ def automatic_actions(charts_dir,
 
     automatic_finances(config, charts_dir, begin_date, end_date, archive_dir, verbose)
     automatic_physical(charts_dir, begin_date, end_date, archive_dir)
+    automatic_contacts(charts_dir, archive_dir)
     if do_externals:
         mfp_reader.automatic(config, mfp_filename, verbose)
 

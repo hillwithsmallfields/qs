@@ -1,5 +1,6 @@
 # classify categories into groups, initially for charting etc
 
+import os
 import yaml
 
 def read_classifier(classification_file):
@@ -11,9 +12,21 @@ def read_classifier(classification_file):
             result[member] = name
     return result
 
-def read_thresholds(thresholds_file):
+def read_thresholds_file(thresholds_file):
     with open(thresholds_file) as instream:
         return yaml.safe_load(instream.read())['Thresholds']
+
+def read_thresholds(config, thresholds_file):
+    print("in read_thresholds, config['config_dirs'] is", config['config_dirs'])
+    if os.path.isabs(thresholds_file):
+        return read_thresholds_file(thresholds_file)
+    else:
+        for dirname in config['config_dirs']:
+            fullname = os.path.join(dirname, thresholds_file)
+            if os.path.isfile(fullname):
+                print("Loading thresholds from", fullname)
+                return read_thresholds_file(fullname)
+    return None
 
 def classify(category, parentage, classes, collect_unknowns=True, pass_unknowns=False):
     """Classify a category.

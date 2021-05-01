@@ -44,6 +44,7 @@ class UnsupportedOperation(BaseException):
         self.function_name = function_name
 
 functions = ['account_to_sheet',
+             'add_row',
              'add_sheet',
              'add_sheets',
              'adjustments_by_day',
@@ -51,7 +52,7 @@ functions = ['account_to_sheet',
              'adjustments_by_year',
              'annotate_by_timestamp',
              'annotate_matches',
-             'add_row',
+             'between_dates',
              'blank_sheet',
              'by_classification',
              'by_day',
@@ -105,6 +106,8 @@ functions = ['account_to_sheet',
              'sheet',
              'show',
              'subtract_cells',
+             'this_month',
+             'this_year',
              'threshold',
              'track',
              'unclassified_categories',
@@ -160,6 +163,9 @@ def annotate_by_timestamp(context, sheet, reference, annotation_columns):
 
 def annotate_matches(context, sheet, reference):
     return sheet.annotate_matches(reference)
+
+def between_dates(context, original, begin_date, end_date):
+    return original.between_dates(begin_date, end_date)
 
 def blank_sheet(context):
     return canonical_sheet.canonical_sheet(context['config'])
@@ -494,7 +500,7 @@ def read_classifier(context, filename):
     return classify.read_classifier(filename)
 
 def read_thresholds(context, filename):
-    return classify.read_thresholds(filename)
+    return classify.read_thresholds(context['config'], filename)
 
 def remove_columns_row(timestamp, row, output_rows, colnames):
     output_rows[timestamp] = {colname: row[colname] for colname in row.keys() if colname not in colnames}
@@ -577,6 +583,12 @@ def show(context, value, filename):
 def subtract_cells(context, sheet, subtrahend):
     """Return a sheet with the cells of the second subtracted from the cells of the first."""
     return sheet.subtract_cells(subtrahend)
+
+def this_month(context, original):
+    return between_dates(context, original, datetime.date.today().replace(day=1), None)
+
+def this_year(context, original):
+    return between_dates(context, original, datetime.date.today().replace(month=1, day=1), None)
 
 def threshold(context, sheet, threshold_level):
     return sheet.abs_threshold(threshold_level)

@@ -11,6 +11,8 @@
        (by-parentage (by-parent monthly parentage-table))
 
        (by-class (check "classified" (by-classification monthly parentage-table classifiers t nil)))
+       (by-class-this-month (this-month by-class))
+       (by-class-this-year (this-year by-class))
        
        (automatics (by-classification monthly parentage-table automatic-categories t nil)) ; damages by-class
        (by-level-0 (by-hierarchy monthly 0 parentage-table)) ; causes problems
@@ -39,6 +41,8 @@
   (write-csv by-parentage "by-parentage.csv")
   (write-csv-with-averages by-class "by-class-with-averages.csv")
   (write-csv by-class "by-class.csv")
+  (write-csv by-class-this-month "by-class-this-month.csv")
+  (write-csv by-class-this-year "by-class-this-year.csv")
   (write-html (check "pre-rendering" by-class) "by-class.html" "Categorised monthly summary" thresholds t t)
   (write-csv balance "balance.csv")
   (write-csv monthly-balance "monthly-balance.csv")

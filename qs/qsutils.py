@@ -39,7 +39,7 @@ def subtract_cell(row_a, row_b, name):
 def subtracted_row(row, other_row, column_names):
     # print("subtracting", other_row, "from", row, "with columns", column_names)
     return {colname: subtract_cell(row, other_row, colname)
-            for colname in column_names} 
+            for colname in column_names}
 
 def big_enough(row, colname, threshold):
     if colname not in row:
@@ -47,7 +47,7 @@ def big_enough(row, colname, threshold):
     try:
         return abs(float(row[colname])) >= threshold
     except (TypeError, ValueError):
-        return False    
+        return False
 
 def thresholded_row(row, threshold):
     return {colname: row[colname]
@@ -156,7 +156,7 @@ def combine_transactions(a, b):
 
 def merge_by_date(by_timestamp, period):
     """Return a dictionary with the entries in the input combined by date.
-    
+
     `period' is a function which should return the starting
     datetime.datetime of the period containing the date it is
     given."""
@@ -168,13 +168,16 @@ def merge_by_date(by_timestamp, period):
 
 def load_multiple_yaml(target_dict, suggested_dir, yaml_files):
     """Load several YAML files, merging the data from them."""
+    directories_used = set()
     for yaml_file in yaml_files:
         if yaml_file is None:
             continue
         filename = resolve_filename(yaml_file, suggested_dir)
         if os.path.exists(filename):
+            directories_used.add(os.path.dirname(filename))
             with open(filename) as yaml_handle:
                 rec_update(target_dict, yaml.safe_load(yaml_handle))
+    return directories_used
 
 DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
 
@@ -183,7 +186,8 @@ def load_config(verbose, base_config, suggested_dir, *config_files):
     You can give None and it will be skipped."""
     if base_config is None:
         base_config = {}
-    load_multiple_yaml(base_config, suggested_dir, config_files)
+    directories_used = load_multiple_yaml(base_config, suggested_dir, config_files)
+    base_config['config_dirs'] = list(set(base_config.get('config_dirs', [])) | directories_used)
     if 'equivalents' in base_config:
         equivalents = base_config['equivalents']
         equiv_table = {}
@@ -273,6 +277,24 @@ def normalize_date(date_in):
         return date_in.replace('/', '-')
     return date_in
 
+def as_datetime(date_in):
+    return (date_in
+            if isinstance(date_in, datetime.datetime)
+            else (datetime.datetime.fromisoformat(datetime)
+                  if isinstance(date_in, str)
+                  else (datetime.datetime.combine(date_in, datetime.time())
+                        if isinstance(date_in, datetime.date)
+                        else date_in)))
+
+def as_date(date_in):
+    return (date_in
+            if isinstance(date_in, datetime.date)
+            else (datetime.date.fromisoformat(datetime)
+                  if isinstance(date_in, str)
+                  else (date_in.date
+                        if isinstance(date_in, datetime.datetime)
+                        else date_in)))
+
 later = datetime.timedelta(0, 1)
 
 def read_fin_csv(args, config, input_filename):
@@ -287,7 +309,7 @@ def read_fin_csv(args, config, input_filename):
         if input_format_name is None:
             print("Could not deduce input format name for", input_filename, "amongst", ", ".join(config['formats']))
             input_format_name = 'Default'
-            
+
         input_format = config['formats'][input_format_name]
 
         in_columns = input_format['columns']
