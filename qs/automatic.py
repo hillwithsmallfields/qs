@@ -262,6 +262,11 @@ def backup(filename, archive_dir, template):
         os.path.join(archive_dir,
                      (template % datetime.datetime.now().isoformat()) + ".gz")))
 
+def latest_file_matching(template):
+    files = glob.glob(template)
+    print("looking for files matching", template, "and got", files)
+    return files and sorted(files, key=os.path.getmtime)[-1]
+
 def automatic_finances(config, charts_dir, begin_date, end_date, archive_dir, verbose):
 
     main_account = os.path.expandvars("$COMMON/finances/finances.csv")
@@ -270,11 +275,9 @@ def automatic_finances(config, charts_dir, begin_date, end_date, archive_dir, ve
     merge_results_dir = os.path.expanduser("~/scratch/auto-merge-results")
     merge_results_file = os.path.join(merge_results_dir, "merged-with-unmatched-all.csv")
 
-    bank_statements = glob.glob(bank_statement_template)
-    bank_statements.sort(key=os.path.getmtime)
-    latest_bank_statement = bank_statements[-1]
+    latest_bank_statement = latest_file_matching(bank_statement_template)
 
-    if file_newer_than_file(latest_bank_statement, main_account):
+    if latest_bank_statement and file_newer_than_file(latest_bank_statement, main_account):
         print("Updating from latest bank statement", latest_bank_statement)
         if os.path.isdir(merge_results_dir):
             for file in os.listdir(merge_results_dir):
@@ -370,10 +373,19 @@ def automatic_physical(charts_dir, begin_date, end_date, archive_dir):
                     begin_date, end_date, None,
                     os.path.join(charts_dir, "meal_calories.png"))
     qschart.qschart(mfp_filename,
-                    'calories',
-                    ['calories', 'carbohydrates', 'fat', 'protein', 'sugar'],
+                    'food_groups',
+                    ['carbohydrates', 'fat', 'protein', 'sugar'],
                     begin_date, end_date, None,
                     os.path.join(charts_dir, "origin_calories.png"))
+
+def automatic_update_startpage():
+    startpage = os.path.expanduser("~/public_html/startpage.html")
+    startpage_source = os.path.expanduser("~/common/org/startpage.yaml")
+    startpage_style = os.path.expanduser("~/common/org/startpage.css")
+    if (os.path.getmtime(startpage_source) > os.path.getmtime(startpage)
+        or os.path.getmtime(startpage_style) > os.path.getmtime(startpage)):
+        os.system("make_link_table.py --output %s --stylesheet %s %s"
+                  % (startpage, startpage_style, startpage_source))
 
 def automatic_contacts(charts_dir, archive_dir):
     contacts_file = os.path.expandvars("$COMMON/org/contacts.csv")
@@ -388,7 +400,50 @@ def automatic_contacts(charts_dir, archive_dir):
         shutil.copy(contacts_scratch, contacts_file)
     else:
         print("wrong number of people after linking contacts, originally", original_lines, "but now", scratch_lines)
-    # todo: backup files generally
+
+def make_tarball(tarball, parent_directory, of_directory):
+    if not os.path.isfile(tarball):
+        command = "tar cz -C %s %s > %s" % (parent_directory, of_directory, tarball)
+        print("backup command is", command)
+        os.system(command)
+
+def automatic_backups():
+    common_backups = os.path.expanduser("~/common-backups")
+    daily_backup_template = "org-%s.tgz"
+    weekly_backup_template = "common-%s.tgz"
+    today = datetime.date.today()
+    make_tarball(os.path.join(common_backups, daily_backup_template % today.isoformat()),
+                 os.path.expandvars("$COMMON"),
+                 "org")
+    weekly_backup_day = 2    # Wednesday, probably the least likely day to be on holiday and not using the computer
+    if today.weekday() == weekly_backup_day:
+        make_tarball(os.path.join(common_backups, weekly_backup_template % today.isoformat()),
+                     os.path.expandvars("$HOME"), "common")
+    if today.day == 1:
+        backup_isos_directory = os.path.expanduser("~/isos/backups")
+        monthly_backup_name = os.path.join(backup_isos_directory, "backup-%s.iso" % today.isoformat())
+        if not os.path.isfile(monthly_backup_name):
+            # make_tarball("/tmp/music.tgz", os.path.expandvars("$HOME"), "Music")
+            make_tarball("/tmp/github.tgz", os.path.expanduser("~/open-projects/github.com"), "hillwithsmallfields")
+            files_to_backup = [
+                latest_file_matching(os.path.join(common_backups, daily_backup_template % "*")),
+                latest_file_matching(os.path.join(common_backups, weekly_backup_template % "*")),
+                # too large for genisoimage:
+                # "/tmp/music.tgz",
+                "/tmp/github.tgz"]
+            # look for the output of https://github.com/hillwithsmallfields/JCGS-scripts/blob/master/backup-confidential
+            confidential_backup = latest_file_matching("/tmp/personal-*.tgz.gpg")
+            if confidential_backup:
+                files_to_backup.append(confidential_backup)
+                digest = confidential_backup.replace('gpg', 'sha256sum')
+                if os.path.isfile(digest):
+                    files_to_backup.append(digest)
+                sig = digest + ".sig"
+                if os.path.isfile(sig):
+                    files_to_backup.append(sig)
+            print("Time to take a monthly backup of", files_to_backup, "into", monthly_backup_name)
+            os.system("genisoimage -o %s %s" % (monthly_backup_name, " ".join(files_to_backup)))
+            print("made backup in", monthly_backup_name)
 
 def automatic_actions(charts_dir,
                       begin_date, end_date,
@@ -414,10 +469,13 @@ def automatic_actions(charts_dir,
             < datetime.datetime.now()):
             print("Fetching data from myfitnesspal.com")
             mfp_reader.automatic(config, mfp_filename, verbose)
+            print("Fetched data from myfitnesspal.com")
         else:
             print("myfitnesspal.com data fetched within the past day or so, so not doing again yet")
 
     write_dashboard_page(config, charts_dir)
+    automatic_update_startpage()
+    automatic_backups()
 
 def main():
     parser = qsutils.program_argparser()
