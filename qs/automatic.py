@@ -5,6 +5,7 @@ import csv
 import datetime
 import glob
 import os
+import random
 import re
 import shutil
 import sys
@@ -205,6 +206,23 @@ def perishables_section():
                          T.td[str(row['Quantity'])]]
         for row in perishables.get_perishables()]]
 
+def diet_section():
+    return T.div(class_="dietary")[
+        T.h3["Calories by meal"],
+        T.img(src="meal_calories.png"),
+        T.h3("Food groups"),
+        T.img(src="origin_calories.png")]
+
+def random_reflection():
+    reflections_dir = os.path.expandvars("$COMMON/texts/reflection")
+    with open(random.choice(glob.glob(os.path.join(reflections_dir, "*.txt")))) as instream:
+        return random.choice([line.strip() for line in instream if line != "\n"])
+
+def reflection_section():
+    return T.div(class_="reflection")[
+        T.p[random_reflection()],
+        T.p[random_reflection()]]
+
 def construct_dashboard_page(config, charts_dir):
     page = SectionalPage()
     page.add_section("Weight", weight_section())
@@ -213,11 +231,12 @@ def construct_dashboard_page(config, charts_dir):
     page.add_section("Upcoming birthdays", birthdays_section())
     page.add_section("People to contact", contact_section())
     page.add_section("Food to use up in fridge", perishables_section())
-    page.add_section("Diet", T.p["placeholder"])
-    page.add_section("Exercise", T.p["placeholder"])
-    page.add_section("Actions", T.p["placeholder"])
-    page.add_section("Shopping", T.p["placeholder"])
-    page.add_section("Texts", T.p["placeholder"])
+    page.add_section("Diet", diet_section())
+    # page.add_section("Exercise", T.p["placeholder for exercise data from MFP"])
+    # page.add_section("Actions", T.p["placeholder for data from org-ql"])
+    # page.add_section("Shopping", T.p["placeholder for data from org-ql"])
+    # page.add_section("Travel", T.p["placeholder for google movement tracking"])
+    page.add_section("Text for reflection", reflection_section())
     return [T.body[
         T.h1["My dashboard"],
         row(page.toc(), T.p[timetable_section()]),
@@ -319,6 +338,7 @@ def automatic_physical(charts_dir, begin_date, end_date, archive_dir):
 
     physical = os.path.expandvars("$COMMON/health/physical.csv")
     weight = os.path.expandvars("$COMMON/health/weight.csv")
+    mfp_filename = os.path.expandvars("$COMMON/health/mfp-accum.csv")
     # TODO: temperature, blood pressure, peak flow
     phys_scratch = "/tmp/physical-tmp.csv"
 
@@ -343,6 +363,17 @@ def automatic_physical(charts_dir, begin_date, end_date, archive_dir):
                                 os.path.join(charts_dir, template % units))
     else:
         print("merge of physical data produced the wrong number of rows")
+
+    qschart.qschart(mfp_filename,
+                    'calories',
+                    ['calories', 'breakfast', 'lunch', 'dinner', 'snacks'],
+                    begin_date, end_date, None,
+                    os.path.join(charts_dir, "meal_calories.png"))
+    qschart.qschart(mfp_filename,
+                    'calories',
+                    ['calories', 'carbohydrates', 'fat', 'protein', 'sugar'],
+                    begin_date, end_date, None,
+                    os.path.join(charts_dir, "origin_calories.png"))
 
 def automatic_contacts(charts_dir, archive_dir):
     contacts_file = os.path.expandvars("$COMMON/org/contacts.csv")
@@ -378,7 +409,9 @@ def automatic_actions(charts_dir,
     automatic_physical(charts_dir, begin_date, end_date, archive_dir)
     automatic_contacts(charts_dir, archive_dir)
     if do_externals:
-        if os.path.getmtime(mfp_filename) + datetime.timedelta(hours=23, minutes=30) < datetime.datetime.now():
+        if ((datetime.datetime.fromtimestamp(os.path.getmtime(mfp_filename))
+             + datetime.timedelta(hours=23, minutes=30))
+            < datetime.datetime.now()):
             print("Fetching data from myfitnesspal.com")
             mfp_reader.automatic(config, mfp_filename, verbose)
         else:
