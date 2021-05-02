@@ -29,6 +29,9 @@ sys.path.append(os.path.join(my_projects, "coimealta/contacts"))
 import link_contacts
 import contacts_data
 
+sys.path.append(os.path.join(my_projects, "coimealta/inventory"))
+import perishables
+
 sys.path.append(os.path.join(my_projects, "noticeboard"))
 
 import announce
@@ -155,13 +158,19 @@ def birthdays_section():
                               if birthday_soon(person, this_year, today)],
                               key=lambda person: birthday(person, this_year))]]
 
+def perishables_section():
+    return T.table[[T.tr[T.td[row['Best before'].isoformat()],
+                         T.td[row['Product']],
+                         T.td[str(row['Quantity'])]]
+        for row in perishables.get_perishables()]]
+
 def construct_dashboard_page(config, charts_dir):
     page = SectionalPage()
     page.add_section("Weight", weight_section())
     page.add_section("Spending", spending_section())
     page.add_section("Monthly budgets", budgetting_section(config, charts_dir))
     page.add_section("Upcoming birthdays", birthdays_section())
-    page.add_section("Food to use up in fridge", T.p["placeholder"])
+    page.add_section("Food to use up in fridge", perishables_section())
     page.add_section("Diet", T.p["placeholder"])
     page.add_section("Exercise", T.p["placeholder"])
     page.add_section("Actions", T.p["placeholder"])
