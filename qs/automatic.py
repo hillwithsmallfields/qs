@@ -29,6 +29,10 @@ sys.path.append(os.path.join(my_projects, "coimealta/contacts"))
 import link_contacts
 import contacts_data
 
+sys.path.append(os.path.join(my_projects, "noticeboard"))
+
+import announce
+
 CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
 
 DASHBOARD_STYLESHEET = """
@@ -115,6 +119,11 @@ def spending_section():
     return T.div[T.p["Full details ", T.a(href="by-class.html")["here"], "."],
                  T.img(src="by-class.png")]
 
+def timetable_section():
+    return T.table[
+        [[T.tr[T.td[slot.start.strftime("%H:%M")], T.td[slot.activity]]
+          for slot in announce.get_day_announcer(os.path.expandvars("$COMMON/timetables/timetable.csv")).ordered()]]]
+
 def budgetting_section(config, charts_dir):
     thresholds = classify.read_thresholds(config, "budgetting-thresholds.yaml")
     with open(os.path.join(charts_dir, "by-class-this-year.csv")) as spent_stream:
@@ -160,7 +169,7 @@ def construct_dashboard_page(config, charts_dir):
     page.add_section("Texts", T.p["placeholder"])
     return [T.body[
         T.h1["My dashboard"],
-        row(page.toc(), "Text to right of TOC"),
+        row(page.toc(), T.p[timetable_section()]),
         page.sections()]]
 
 def page_text(page_contents, style_text, script_text):
