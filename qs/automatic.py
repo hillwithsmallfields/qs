@@ -83,6 +83,34 @@ def birthday_soon(person, this_year, today):
     interval_to_birthday = (bday - today).days
     return interval_to_birthday > 0 and interval_to_birthday < 30
 
+def last_contacted(person):
+    cday_string = person.get('In touch', "")
+    if not cday_string:
+        return None
+    try:
+        cday = datetime.date.fromisoformat(cday_string)
+    except:
+        match = re.search("([0-9][0-9][0-9][0-9])-([0-9][0-9])", cday_string)
+        if match:
+            year = int(match.group(1))
+            if year == 0:
+                return False
+            month = int(match.group(2))
+            if month == 0:
+                month = 1
+            cday = datetime.date(year=year, month=month, day=1)
+        else:
+            match = re.search("([0-9][0-9][0-9][0-9])", cday_string)
+            if match:
+                cday = datetime.date(year=int(match.group(1)), month=1, day=1)
+            else:
+                return None
+    return cday
+
+def contact_soon(person, today):
+    cday = last_contacted(person)
+    return cday and (today - cday).days > 45
+
 def age_string(person, year):
     age = contacts_data.age_in_year(person, year)
     return str(age) if age else "?"
@@ -149,7 +177,6 @@ def birthdays_section():
     return T.table(class_='birthdays')[
         T.tr[T.th["Birthday"], T.th["Name"], T.th["Age"]],
         [T.tr[T.td(class_='birthday')[str(birthday(person, this_year))],
-              # TODO: put email address as link on name, if known
               T.td(class_='name')[make_name_with_email(contacts_data.make_name(person),
                                                        person.get('Primary email', ""))],
               T.td(class_='age')[age_string(person, this_year)]]
@@ -157,6 +184,20 @@ def birthdays_section():
                               for person in people_by_id.values()
                               if birthday_soon(person, this_year, today)],
                               key=lambda person: birthday(person, this_year))]]
+
+def contact_section():
+    people_by_id, _ = contacts_data.read_contacts(os.path.expandvars("$COMMON/org/contacts.csv"))
+    today = datetime.date.today()
+    this_year = today.year
+    return T.table(class_='contact_soon')[
+        T.tr[T.th["Last contacted"], T.th["Name"]],
+        [T.tr[T.td(class_='last_contacted')[str(last_contacted(person))],
+              T.td(class_='name')[make_name_with_email(contacts_data.make_name(person),
+                                                       person.get('Primary email', ""))]]
+         for person in sorted([person
+                              for person in people_by_id.values()
+                              if contact_soon(person, today)],
+                              key=lambda person: last_contacted(person))]]
 
 def perishables_section():
     return T.table[[T.tr[T.td[row['Best before'].isoformat()],
@@ -170,6 +211,7 @@ def construct_dashboard_page(config, charts_dir):
     page.add_section("Spending", spending_section())
     page.add_section("Monthly budgets", budgetting_section(config, charts_dir))
     page.add_section("Upcoming birthdays", birthdays_section())
+    page.add_section("People to contact", contact_section())
     page.add_section("Food to use up in fridge", perishables_section())
     page.add_section("Diet", T.p["placeholder"])
     page.add_section("Exercise", T.p["placeholder"])
