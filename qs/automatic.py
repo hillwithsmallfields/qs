@@ -472,6 +472,8 @@ def automatic_actions(charts_dir,
             print("Fetched data from myfitnesspal.com")
         else:
             print("myfitnesspal.com data fetched within the past day or so, so not doing again yet")
+        # TODO: get oura.com data
+        # TODO: get garmin data
 
     write_dashboard_page(config, charts_dir)
     automatic_update_startpage()
