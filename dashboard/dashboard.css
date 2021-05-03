@@ -1,0 +1,6 @@
+td.ok {
+    background-color: green;
+}
+td.overspent {
+    background-color: red;
+}

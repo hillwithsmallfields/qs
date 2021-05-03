@@ -9,6 +9,8 @@ import shutil
 import sys
 import yaml
 
+import numpy as np
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import utils.check_merged_row_dates
 import dashboard.dashboard
@@ -24,6 +26,10 @@ print("update.py sees my_projects as", my_projects)
 sys.path.append(os.path.join(my_projects, "coimealta/contacts"))
 import link_contacts
 
+CHART_SIZES = {'thumb': {'figsize': (3,2)},
+               'small': {'figsize': (5,4)},
+               'large': {'figsize': (11,8)}}
+
 def file_newer_than_file(a, b):
     return os.path.getmtime(a) > os.path.getmtime(b)
 
@@ -38,7 +44,7 @@ def latest_file_matching(template):
     print("looking for files matching", template, "and got", files)
     return files and sorted(files, key=os.path.getmtime)[-1]
 
-def update_finances(config, charts_dir, begin_date, end_date, archive_dir, verbose):
+def update_finances(config, charts_dir, archive_dir, verbose):
 
     main_account = os.path.expandvars("$COMMON/finances/finances.csv")
     finances_completions = os.path.expandvars("$COMMON/var/finances-completions.el")
@@ -67,48 +73,28 @@ def update_finances(config, charts_dir, begin_date, end_date, archive_dir, verbo
         print("Bank statement not newer than account file, so not updating")
 
     financial.finlisp.finlisp_main([os.path.join(my_projects, "qs/financial", "chart-categories.lisp")],
-                         charts_dir,
-                         config,
-                         verbose,
-                         {'input-file': main_account,
-                          'statements-file': os.path.expandvars("$COMMON/finances/handelsbanken/handelsbanken-full.csv"),
-                          'classifiers-file': "budgetting-classes.yaml",
-                          'thresholds-file': "budgetting-thresholds.yaml"})
-
-    today = datetime.date.today()
-    for begin, chart_filename in ([(begin_date, "by-class.png")]
-                                  if begin_date
-                                  else [(None, "by-class.png"),
-                                        (back_from(today, None, None, 7), "by-class-past-week.png"),
-                                        (back_from(today, None, 1, None), "by-class-past-month.png"),
-                                        (back_from(today, None, 3, None), "by-class-past-quarter.png"),
-                                        (back_from(today, 1, None, None), "by-class-past-year.png")]):
-        utils.qschart.qschart(os.path.join(charts_dir, "by-class.csv"),
-                              'finances',
-                              dashboard.dashboard.CATEGORIES_OF_INTEREST,
-                              begin, end_date, None,
-                              os.path.join(charts_dir, chart_filename))
+                                   charts_dir,
+                                   config,
+                                   verbose,
+                                   {'input-file': main_account,
+                                    'statements-file': os.path.expandvars("$COMMON/finances/handelsbanken/handelsbanken-full.csv"),
+                                    'classifiers-file': "budgetting-classes.yaml",
+                                    'thresholds-file': "budgetting-thresholds.yaml"})
 
     if file_newer_than_file(finances_completions, main_account):
         if verbose: print("updating finances completions")
         list_completions.list_completions()
 
-def back_from(when, years_back, months_back, days_back):
-    if months_back and months_back >= 12:
-        years_back = (years_back or 0) + months_back / 12
-        months_back %= 12
-    if years_back:
-        when = when.replace(year=when.year - years_back)
-    if months_back:
-        if months_back >= when.month:
-            when = when.replace(year=when.year - 1, month=12 + when.month - months_back)
-        else:
-            when = when.replace(month=when.month - months_back)
-    if days_back:
-        when = when - datetime.timedelta(days=days_back)
-    return datetime.datetime.combine(when, datetime.time())
+def update_finances_charts(config, charts_dir, begin_date, end_date, date_suffix, verbose):
 
-def update_physical(charts_dir, begin_date, end_date, archive_dir):
+    utils.qschart.qscharts(os.path.join(charts_dir, "by-class.csv"),
+                           'finances',
+                           dashboard.dashboard.CATEGORIES_OF_INTEREST,
+                           begin_date, end_date, None,
+                           os.path.join(charts_dir, "by-class-%s-%%s.png" % date_suffix),
+                           CHART_SIZES)
+
+def update_physical(charts_dir, begin_date, end_date, date_suffix, archive_dir):
 
     physical = os.path.expandvars("$COMMON/health/physical.csv")
     weight = os.path.expandvars("$COMMON/health/weight.csv")
@@ -121,33 +107,28 @@ def update_physical(charts_dir, begin_date, end_date, archive_dir):
     if utils.check_merged_row_dates.check_merged_row_dates(phys_scratch, physical, weight):
         backup(physical, archive_dir, "physical-to-%s.csv")
         shutil.copy(phys_scratch, physical)
-        today = datetime.date.today()
-        for begin, template in ([(begin_date, "weight-%s.png")]
-                                if begin_date
-                                else [(None, "weight-%s.png"),
-                                      (back_from(today, None, None, 7), "weight-past-week-%s.png"),
-                                      (back_from(today, None, 1, None), "weight-past-month-%s.png"),
-                                      (back_from(today, None, 3, None), "weight-past-quarter-%s.png"),
-                                      (back_from(today, 1, None, None), "weight-past-year-%s.png")]):
-            for units in ('stone', 'kilogram', 'pound'):
-                utils.qschart.qschart(physical,
-                                      'weight',
-                                      [units],
-                                      begin, end_date, None,
-                                      os.path.join(charts_dir, template % units))
+        for units in ('stone', 'kilogram', 'pound'):
+            utils.qschart.qscharts(physical,
+                                   'weight',
+                                   [units],
+                                   begin_date, end_date, None,
+                                   os.path.join(charts_dir, "weight-%s-%s-%%s.png" % (units, date_suffix)),
+                                   CHART_SIZES)
     else:
         print("merge of physical data produced the wrong number of rows")
 
-    utils.qschart.qschart(mfp_filename,
-                          'calories',
-                          ['calories', 'breakfast', 'lunch', 'dinner', 'snacks'],
-                          begin_date, end_date, None,
-                          os.path.join(charts_dir, "meal_calories.png"))
-    utils.qschart.qschart(mfp_filename,
-                          'food_groups',
-                          ['carbohydrates', 'fat', 'protein', 'sugar'],
-                          begin_date, end_date, None,
-                          os.path.join(charts_dir, "origin_calories.png"))
+    utils.qschart.qscharts(mfp_filename,
+                           'calories',
+                           ['calories', 'breakfast', 'lunch', 'dinner', 'snacks'],
+                           begin_date, end_date, None,
+                           os.path.join(charts_dir, "meal_calories-%s-%%s.png" % date_suffix),
+                           CHART_SIZES)
+    utils.qschart.qscharts(mfp_filename,
+                           'food_groups',
+                           ['carbohydrates', 'fat', 'protein', 'sugar'],
+                           begin_date, end_date, None,
+                           os.path.join(charts_dir, "origin_calories-%s-%%s.png" % date_suffix),
+                           CHART_SIZES)
 
 def update_startpage():
     startpage = os.path.expanduser("~/private_html/startpage.html")
@@ -216,6 +197,21 @@ def update_backups():
             os.system("genisoimage -o %s %s" % (monthly_backup_name, " ".join(files_to_backup)))
             print("made backup in", monthly_backup_name)
 
+def back_from(when, years_back, months_back, days_back):
+    if months_back and months_back >= 12:
+        years_back = (years_back or 0) + months_back / 12
+        months_back %= 12
+    if years_back:
+        when = when.replace(year=when.year - years_back)
+    if months_back:
+        if months_back >= when.month:
+            when = when.replace(year=when.year - 1, month=12 + when.month - months_back)
+        else:
+            when = when.replace(month=when.month - months_back)
+    if days_back:
+        when = when - datetime.timedelta(days=days_back)
+    return datetime.datetime.combine(when, datetime.time())
+
 def updates(charts_dir,
             begin_date, end_date,
             do_externals, verbose):
@@ -227,10 +223,7 @@ def updates(charts_dir,
 
     config = qsutils.load_config(verbose, None, None, accounts_config, conversions_config)
 
-    os.makedirs(charts_dir, exist_ok=True)
-
-    update_finances(config, charts_dir, begin_date, end_date, archive_dir, verbose)
-    update_physical(charts_dir, begin_date, end_date, archive_dir)
+    update_finances(config, charts_dir, archive_dir, verbose)
     update_contacts(charts_dir, archive_dir)
     if do_externals:
         mfp_filename = os.path.expandvars("$COMMON/health/mfp-accum.csv")
@@ -242,6 +235,21 @@ def updates(charts_dir,
             print("Fetched data from myfitnesspal.com")
         else:
             print("myfitnesspal.com data fetched within the past day or so, so not doing again yet")
+
+    os.makedirs(charts_dir, exist_ok=True)
+
+    today = datetime.date.today()
+    periods = {'all': datetime.date(year=1973, month=1, day=1),
+               'past-week': back_from(today, None, None, 7),
+               'past-month': back_from(today, None, 1, None),
+               'past-quarter': back_from(today, None, 3, None),
+               'past-year': back_from(today, 1, None, None)}
+    for date_suffix, begin in ({'custom': begin_date}
+                               if begin_date
+                               else periods).items():
+        begin = np.datetime64(datetime.datetime.combine(begin, datetime.time())) # .timestamp()
+        update_finances_charts(config, charts_dir, begin, end_date, date_suffix, verbose)
+        update_physical(charts_dir, begin, end_date, date_suffix, archive_dir)
         # TODO: get oura.com data
         # TODO: get garmin data
 

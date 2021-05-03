@@ -82,7 +82,11 @@ def normalize_column_name(unit_name):
 def parsetime(timestr):
     return datetime.datetime.strptime(timestr, "%Y-%m-%d") if isinstance(timestr, str) else timestr
 
-def qschart(mainfile, file_type, columns, begin, end, match, outfile):
+def qscharts(mainfile, file_type, columns, begin, end, match, outfile_template, plot_param_sets):
+    for name_suffix, params in plot_param_sets.items():
+        qschart(mainfile, file_type, columns, begin, end, match, outfile_template % name_suffix, **params)
+
+def qschart(mainfile, file_type, columns, begin, end, match, outfile, **plot_params):
 
     data = pd.read_csv(mainfile, parse_dates=['Date'])
 
@@ -98,7 +102,7 @@ def qschart(mainfile, file_type, columns, begin, end, match, outfile):
     if file_type in MUNGERS:
         MUNGERS[file_type](data)
 
-    fig, axs = plt.subplots(figsize=(11,8)) # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html for more parameters
+    fig, axs = plt.subplots(**plot_params) # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html for more parameters
 
     # TODO: label every year; grid lines?
     # TODO: plot absolute values

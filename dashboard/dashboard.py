@@ -5,6 +5,7 @@ import datetime
 import glob
 import os
 import random
+import shutil
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
@@ -27,17 +28,6 @@ sys.path.append(os.path.join(my_projects, "coimealta/inventory"))
 import perishables
 
 CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
-
-DASHBOARD_STYLESHEET = """
-<style>
-td.ok {
-    background-color: green;
-}
-td.overspent {
-    background-color: red;
-}
-</style>
-"""
 
 def make_remaining_cell(thresholds, spent_this_month, coi):
     available = float(thresholds.get(coi, 0))
@@ -73,12 +63,15 @@ class SectionalPage(object):
         return [[T.div(class_="section")[T.h2[T.a(name=namify(section[0]))[section[0]]],
                        T.div(class_="sectionbody")[section[1]]] for section in self._sections]]
 
+def linked_image(image_name):
+    return T.a(href="%s-all-large.png" % image_name)[T.img(src="%s-all-small.png" % image_name)]
+
 def weight_section():
-    return T.img(src="weight-stone.png")
+    return linked_image("weight-stone")
 
 def spending_section():
     return T.div[T.p["Full details ", T.a(href="by-class.html")["here"], "."],
-                 T.img(src="by-class.png")]
+                 linked_image("by-class")]
 
 def timetable_section():
     return T.table[
@@ -138,9 +131,9 @@ def perishables_section():
 def diet_section():
     return T.div(class_="dietary")[
         T.h3["Calories by meal"],
-        T.img(src="meal_calories.png"),
+        linked_image("meal_calories"),
         T.h3("Food groups"),
-        T.img(src="origin_calories.png")]
+        linked_image("origin_calories")]
 
 def random_reflection():
     reflections_dir = os.path.expandvars("$COMMON/texts/reflection")
@@ -167,20 +160,29 @@ def construct_dashboard_page(config, charts_dir):
     # page.add_section("Travel", T.p["placeholder for google movement tracking"])
     page.add_section("Text for reflection", reflection_section())
     return [T.body[
+        T.script(src="dashboard.js"),
         T.h1["My dashboard"],
         row(page.toc(), T.p[timetable_section()]),
         page.sections()]]
 
-def page_text(page_contents, style_text, script_text):
+def page_text(page_contents):
     return untemplate.Serializer(untemplate.examples_vmap, 'utf-8').serialize(
-        untemplate.HTML5Doc([untemplate.safe_unicode(style_text
-                                                     + script_text),
-                             page_contents]))
+        untemplate.HTML5Doc([page_contents],
+                            head=T.head[T.meta(rel='stylesheet',
+                                               type_='text/css',
+                                               href="dashboard.css"),
+                                        T.title["Dashboard"]]))
 
 def write_dashboard_page(config, charts_dir):
     with open(os.path.join(charts_dir, "index.html"), 'w') as page_stream:
-        page_stream.write(page_text(construct_dashboard_page(config, charts_dir),
-                                    DASHBOARD_STYLESHEET, ""))
+        page_stream.write(page_text(construct_dashboard_page(config, charts_dir)))
+    source_dir = os.path.dirname(os.path.realpath(__file__))
+    for filename in ("dashboard.css", "dashboard.js"):
+        fromfile = os.path.join(source_dir, filename)
+        tofile = os.path.join(charts_dir, filename)
+        print("copying", fromfile, "to", tofile)
+        shutil.copy(fromfile,
+                    tofile)
 
 def main():
     parser = qsutils.program_argparser()
