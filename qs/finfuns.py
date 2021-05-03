@@ -484,7 +484,11 @@ def occupied_columns(context, sheet):
     return sheet.occupied_columns()
 
 def read_parentage_table(context, parentage_filename):
-    return parentage.read_parentage_table(parentage_filename)
+    return parentage.read_parentage_table(parentage_filename
+                                          if os.path.isabs(parentage_filename)
+                                          else os.path.join(context['project_source'],
+                                                            "conf",
+                                                            parentage_filename))
 
 def payees(context, original, pattern=None):
     return base_sheet.base_sheet(None,
@@ -497,7 +501,11 @@ def proportions(context, original):
     return original.proportions()
 
 def read_classifier(context, filename):
-    return classify.read_classifier(filename)
+    return classify.read_classifier(filename
+                                    if os.path.isabs(filename)
+                                    else os.path.join(context['project_source'],
+                                                      "conf",
+                                                      filename))
 
 def read_thresholds(context, filename):
     return classify.read_thresholds(context['config'], filename)

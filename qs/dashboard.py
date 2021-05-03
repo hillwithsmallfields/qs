@@ -9,8 +9,7 @@ import sys
 
 import classify
 
-my_projects = os.path.dirname(os.path.dirname(sys.path[0]))
-
+my_projects = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(os.path.join(my_projects, "makers", "untemplate"))
 
 import throw_out_your_templates_p3 as untemplate

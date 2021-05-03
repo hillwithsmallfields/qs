@@ -26,9 +26,8 @@ def read_parentage_table(parentage_filename):
 
 def main():
     """Test program for read_parentage_table."""
-    for key, value in read_parentage_table("cats.yaml").items():
+    for key, value in read_parentage_table("../conf/cats.yaml").items():
         print(key, value)
-            
+
 if __name__ == "__main__":
     main()
-    

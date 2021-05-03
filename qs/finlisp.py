@@ -176,6 +176,7 @@ def finlisp_main(script_files, output_dir, config, verbose, bindings):
 
     for filename in script_files:
         finlisp_evaluation.finlisp_load_file({'config': config,
+                                              'project_source': os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
                                               'bindings': [initial_bindings],
                                               'eval-stack': []},
                                              filename)

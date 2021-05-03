@@ -18,8 +18,8 @@ import qschart
 import qsmerge
 import qsutils
 
-my_projects = os.path.dirname(os.path.dirname(sys.path[0]))
-
+my_projects = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+print("update.py sees my_projects as", my_projects)
 sys.path.append(os.path.join(my_projects, "coimealta/contacts"))
 import link_contacts
 
@@ -65,7 +65,7 @@ def update_finances(config, charts_dir, begin_date, end_date, archive_dir, verbo
     else:
         print("Bank statement not newer than account file, so not updating")
 
-    finlisp.finlisp_main(["chart-categories.lisp"],
+    finlisp.finlisp_main([os.path.join(my_projects, "qs/qs", "chart-categories.lisp")],
                          charts_dir,
                          config,
                          verbose,
@@ -250,7 +250,7 @@ def updates(charts_dir,
 
 def main():
     parser = qsutils.program_argparser()
-    parser.add_argument("--charts", default=os.path.expanduser("~/public_html/dashboard"),
+    parser.add_argument("--charts", default=os.path.expanduser("~/private_html/dashboard"),
                         help="""Directory to write charts into.""")
     parser.add_argument("--begin",
                         help="""Earliest date to chart.""")
