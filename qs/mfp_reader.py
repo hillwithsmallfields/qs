@@ -129,7 +129,7 @@ def find_last_unfetched_date(dict_by_date):
     not for updating since the last run."""
     return min(dict_by_date.keys()) - datetime.timedelta(days=1)
 
-def automatic(configuration, sheet, verbose):
+def update_mfp(configuration, sheet, verbose):
 
     with open(sheet) as instream:
         rows = {datetime.date.fromisoformat(row['Date']): row
