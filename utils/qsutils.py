@@ -168,7 +168,6 @@ def merge_by_date(by_timestamp, period):
 
 def load_multiple_yaml(target_dict, suggested_dir, yaml_files):
     """Load several YAML files, merging the data from them."""
-    print("load_multiple_yaml", target_dict, suggested_dir, yaml_files)
     directories_used = set()
     for yaml_file in yaml_files:
         if yaml_file is None:
@@ -176,11 +175,8 @@ def load_multiple_yaml(target_dict, suggested_dir, yaml_files):
         filename = resolve_filename(yaml_file, suggested_dir)
         if os.path.exists(filename):
             directories_used.add(os.path.dirname(filename))
-            print("load_multiple_yaml", filename)
             with open(filename) as yaml_handle:
                 rec_update(target_dict, yaml.safe_load(yaml_handle))
-            for fname, fdef in target_dict.get('formats', {}).items():
-                print("after loading", filename, "fname", fname, "binds", sorted(fdef.keys()))
     return directories_used
 
 DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
@@ -443,7 +439,7 @@ def program_argparser():
     return parser
 
 def program_load_config(args, quiet=False):
-    return load_config(True,
+    return load_config(args.verbose and not quiet,
                        None,
                        None,
                        DEFAULT_CONF if not args.no_default_config else None,

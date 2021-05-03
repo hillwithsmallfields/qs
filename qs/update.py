@@ -9,12 +9,13 @@ import shutil
 import sys
 import yaml
 
-import check_merged_row_dates
-import dashboard
-import finlisp
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+import utils.check_merged_row_dates
+import dashboard.dashboard
+import financial.finlisp
 import list_completions
-import mfp_reader
-import qschart
+import physical.mfp_reader
+import utils.qschart
 import qsmerge
 import qsutils
 
@@ -54,7 +55,7 @@ def update_finances(config, charts_dir, begin_date, end_date, archive_dir, verbo
                 os.remove(os.path.join(merge_results_dir, file))
         else:
             os.makedirs(merge_results_dir, exist_ok=True)
-        finlisp.finlisp_main(["merge-latest-statement.lisp"],
+        financial.finlisp.finlisp_main([os.path.join(my_projects, "qs/financial", "merge-latest-statement.lisp")],
                              merge_results_dir,
                              config,
                              verbose,
@@ -65,7 +66,7 @@ def update_finances(config, charts_dir, begin_date, end_date, archive_dir, verbo
     else:
         print("Bank statement not newer than account file, so not updating")
 
-    finlisp.finlisp_main([os.path.join(my_projects, "qs/qs", "chart-categories.lisp")],
+    financial.finlisp.finlisp_main([os.path.join(my_projects, "qs/financial", "chart-categories.lisp")],
                          charts_dir,
                          config,
                          verbose,
@@ -82,11 +83,11 @@ def update_finances(config, charts_dir, begin_date, end_date, archive_dir, verbo
                                         (back_from(today, None, 1, None), "by-class-past-month.png"),
                                         (back_from(today, None, 3, None), "by-class-past-quarter.png"),
                                         (back_from(today, 1, None, None), "by-class-past-year.png")]):
-        qschart.qschart(os.path.join(charts_dir, "by-class.csv"),
-                        'finances',
-                        dashboard.CATEGORIES_OF_INTEREST,
-                        begin, end_date, None,
-                        os.path.join(charts_dir, chart_filename))
+        utils.qschart.qschart(os.path.join(charts_dir, "by-class.csv"),
+                              'finances',
+                              dashboard.dashboard.CATEGORIES_OF_INTEREST,
+                              begin, end_date, None,
+                              os.path.join(charts_dir, chart_filename))
 
     if file_newer_than_file(finances_completions, main_account):
         if verbose: print("updating finances completions")
@@ -117,7 +118,7 @@ def update_physical(charts_dir, begin_date, end_date, archive_dir):
 
     qsmerge.qsmerge(physical, [weight], None, phys_scratch)
 
-    if check_merged_row_dates.check_merged_row_dates(phys_scratch, physical, weight):
+    if utils.check_merged_row_dates.check_merged_row_dates(phys_scratch, physical, weight):
         backup(physical, archive_dir, "physical-to-%s.csv")
         shutil.copy(phys_scratch, physical)
         today = datetime.date.today()
@@ -129,24 +130,24 @@ def update_physical(charts_dir, begin_date, end_date, archive_dir):
                                       (back_from(today, None, 3, None), "weight-past-quarter-%s.png"),
                                       (back_from(today, 1, None, None), "weight-past-year-%s.png")]):
             for units in ('stone', 'kilogram', 'pound'):
-                qschart.qschart(physical,
-                                'weight',
-                                [units],
-                                begin, end_date, None,
-                                os.path.join(charts_dir, template % units))
+                utils.qschart.qschart(physical,
+                                      'weight',
+                                      [units],
+                                      begin, end_date, None,
+                                      os.path.join(charts_dir, template % units))
     else:
         print("merge of physical data produced the wrong number of rows")
 
-    qschart.qschart(mfp_filename,
-                    'calories',
-                    ['calories', 'breakfast', 'lunch', 'dinner', 'snacks'],
-                    begin_date, end_date, None,
-                    os.path.join(charts_dir, "meal_calories.png"))
-    qschart.qschart(mfp_filename,
-                    'food_groups',
-                    ['carbohydrates', 'fat', 'protein', 'sugar'],
-                    begin_date, end_date, None,
-                    os.path.join(charts_dir, "origin_calories.png"))
+    utils.qschart.qschart(mfp_filename,
+                          'calories',
+                          ['calories', 'breakfast', 'lunch', 'dinner', 'snacks'],
+                          begin_date, end_date, None,
+                          os.path.join(charts_dir, "meal_calories.png"))
+    utils.qschart.qschart(mfp_filename,
+                          'food_groups',
+                          ['carbohydrates', 'fat', 'protein', 'sugar'],
+                          begin_date, end_date, None,
+                          os.path.join(charts_dir, "origin_calories.png"))
 
 def update_startpage():
     startpage = os.path.expanduser("~/public_html/startpage.html")
@@ -237,14 +238,14 @@ def updates(charts_dir,
              + datetime.timedelta(hours=23, minutes=30))
             < datetime.datetime.now()):
             print("Fetching data from myfitnesspal.com")
-            mfp_reader.update_mfp(config, mfp_filename, verbose)
+            physical.mfp_reader.update_mfp(config, mfp_filename, verbose)
             print("Fetched data from myfitnesspal.com")
         else:
             print("myfitnesspal.com data fetched within the past day or so, so not doing again yet")
         # TODO: get oura.com data
         # TODO: get garmin data
 
-    dashboard.write_dashboard_page(config, charts_dir)
+    dashboard.dashboard.write_dashboard_page(config, charts_dir)
     update_startpage()
     update_backups()
 

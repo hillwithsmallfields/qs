@@ -7,7 +7,8 @@ import os
 import random
 import sys
 
-import classify
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+import financial.classify
 
 my_projects = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(os.path.join(my_projects, "makers", "untemplate"))
@@ -85,7 +86,7 @@ def timetable_section():
           for slot in announce.get_day_announcer(os.path.expandvars("$COMMON/timetables/timetable.csv")).ordered()]]]
 
 def budgetting_section(config, charts_dir):
-    thresholds = classify.read_thresholds(config, "budgetting-thresholds.yaml")
+    thresholds = financial.classify.read_thresholds(config, "budgetting-thresholds.yaml")
     with open(os.path.join(charts_dir, "by-class-this-year.csv")) as spent_stream:
         spent = [row for row in csv.DictReader(spent_stream)]
         spent_month_before_last = spent[-3] if len(spent) >= 3 else None
