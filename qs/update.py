@@ -150,7 +150,7 @@ def update_physical(charts_dir, begin_date, end_date, archive_dir):
                           os.path.join(charts_dir, "origin_calories.png"))
 
 def update_startpage():
-    startpage = os.path.expanduser("~/public_html/startpage.html")
+    startpage = os.path.expanduser("~/private_html/startpage.html")
     startpage_source = os.path.expanduser("~/common/org/startpage.yaml")
     startpage_style = os.path.expanduser("~/common/org/startpage.css")
     if (os.path.getmtime(startpage_source) > os.path.getmtime(startpage)
