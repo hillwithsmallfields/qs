@@ -173,24 +173,33 @@ def construct_dashboard_page(config, charts_dir):
         row(page.toc(), T.p[timetable_section()]),
         page.sections()]]
 
-def page_text(page_contents):
+def page_text(page_contents, style_text, script_text):
     return untemplate.Serializer(untemplate.examples_vmap, 'utf-8').serialize(
-        untemplate.HTML5Doc([page_contents],
+        untemplate.HTML5Doc([untemplate.safe_unicode(style_text
+                                                     + script_text),
+                             page_contents],
                             head=T.head[T.meta(rel='stylesheet',
                                                type_='text/css',
                                                href="dashboard.css"),
                                         T.title["Dashboard"]]))
 
-def write_dashboard_page(config, charts_dir):
-    with open(os.path.join(charts_dir, "index.html"), 'w') as page_stream:
-        page_stream.write(page_text(construct_dashboard_page(config, charts_dir)))
+def file_contents(filename):
+    with open(filename) as instream:
+        return instream.read()
+
+def tagged(tag, text):
+    return "<" + tag + ">" + text + "</" + tag + ">"
+
+def write_dashboard_page(config, charts_dir, inline=True):
     source_dir = os.path.dirname(os.path.realpath(__file__))
-    for filename in ("dashboard.css", "dashboard.js"):
-        fromfile = os.path.join(source_dir, filename)
-        tofile = os.path.join(charts_dir, filename)
-        print("copying", fromfile, "to", tofile)
-        shutil.copy(fromfile,
-                    tofile)
+    with open(os.path.join(charts_dir, "index.html"), 'w') as page_stream:
+        page_stream.write(page_text(construct_dashboard_page(config, charts_dir),
+                                    tagged("style", file_contents(os.path.join(source_dir, "dashboard.css"))) if inline else "",
+                                    tagged("script", file_contents(os.path.join(source_dir, "dashboard.js"))) if inline else ""))
+    if not inline:
+        for filename in ("dashboard.css", "dashboard.js"):
+            shutil.copy(os.path.join(source_dir, filename),
+                        os.path.join(charts_dir, filename))
 
 def main():
     parser = qsutils.program_argparser()
