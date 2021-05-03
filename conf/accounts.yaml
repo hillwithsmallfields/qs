@@ -10,68 +10,8 @@ formats:
       balance: Balance
     currency:  GBP
     name:      HB current statement
-    currency_conversion: "^([A-Za-z ]+) +[0-9][0-9][0-9][0-9] ([A-Z][A-Z][A-Z]) ([0-9.]+).+"
-  handelsbanken-raw:
-    # column-sequence: ["Account", "Date", None, "Details", None, "Money out", None, "Money in", None, "Balance"]
-    column-sequence: ["Account", "Date", "Details", "Money out", "Money in", "Balance"]
-    columns:
-      date:    Date
-      payee:   Details
-      credits: Money in
-      debits:  Money out
-      balance: Balance
-    currency:  GBP
-    name:      HB current statement
-    currency_conversion: "^([A-Za-z ]+) +[0-9][0-9][0-9][0-9] ([A-Z][A-Z][A-Z]) ([0-9.]+).+"
   financisto:
-    column-sequence:     ["date", "time", "account", "amount", "currency", "original amount", "original currency", "category", "parent", "payee", "location", "project", "note"]
-    columns:
-      date:              date
-      time:              time
-      payee:             payee
-      amount:            amount
-      original_amount:   original amount
-      credits:           amount
-      account:           account
-      original_currency: original currency
-      currency:          currency
-      category:          category
-      parent:            parent
-      project:           project
-      message:           note
-    transfer-handling:
-      credit:
-        location:        Transfer In
-      debit:
-        location:        Transfer Out
-    column-defaults:
-      original_currency: GBP
-      currency:          GBP
-      project:           No project
-      time:              04:00:00
-    name:                Financisto export
-  Default:
-    column-sequence: ["date", "time", "account", "amount", "currency", "original_amount", "original_currency", "balance", "payee", "category", "project", "item", "message", "combicount"]
-    columns:
-      date:     date
-      time:     time
-      payee:    payee
-      amount:   amount
-      credits:  amount
-      account:  account
-      currency: currency
-      category: category
-      parent:   parent
-      project:  project
-      item:     item
-      message:  note
-    column-defaults:
-      project: No project
-      time:    04:00:00
-    name:      Default format
-  combined:
-  Old-default:
-    column-sequence: ["date", "time", "account", "amount", "currency", "original_amount", "original_currency", "balance", "payee", "category", "project", "message"]
+    column-sequence: ["date", "time", "account", "amount", "currency", "original amount", "original currency", "category", "parent", "payee", "location", "project", "note"]
     columns:
       date:     date
       time:     time
@@ -87,7 +27,7 @@ formats:
     column-defaults:
       project: No project
       time:    04:00:00
-    name:      Default format
+    name:      Financisto export
   combined:
     column-sequence: [date, time,
                       HB current, HB Balance, HB current statement, HB current statement balance, HB comparison,
@@ -134,6 +74,3 @@ formats:
         Kristi's card:                 Kristi's gift card
       category:  category
       parent:    parent
-equivalents:
-  Handelsbanken current account:
-    - HB current statement

@@ -1,9 +1,14 @@
 #!/usr/bin/python3
 
 import datetime
-import traceback
 import functools
 import numbers
+import os
+import sys
+import traceback
+
+qs_project = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.append(os.path.join(qs_project, "utils"))
 
 import qsutils
 
@@ -138,7 +143,7 @@ class itemized_amount:
         a = itemized_amount(self.transactions)
         a.amount = abs(self.as_number())
         return a
-    
+
     def normalize(self):
         amount = self.amount
         if isinstance(amount, itemized_amount):

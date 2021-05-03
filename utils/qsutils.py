@@ -222,6 +222,9 @@ def deduce_format(first_row, formats, verbose=False):
     if verbose:
         print("Trying to deduce format using sample row", condensed_row)
     for format_name, format_def in formats.items():
+        if 'column-sequence' not in format_def:
+            print("Format", format_name, "has no column-sequence")
+            continue
         sequence = [col for col in format_def['column-sequence'] if col]
         if verbose:
             print("  Comparing with", format_name, "sample row", sequence)

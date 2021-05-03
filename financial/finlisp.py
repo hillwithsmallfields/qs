@@ -174,6 +174,8 @@ def finlisp_main(script_files, output_dir, config, verbose, bindings):
     if bindings:
         initial_bindings.update(bindings)
 
+    print("finlisp_main using config", config)
+
     for filename in script_files:
         finlisp_evaluation.finlisp_load_file({'config': config,
                                               'project_source': os.path.dirname(os.path.dirname(os.path.realpath(__file__))),

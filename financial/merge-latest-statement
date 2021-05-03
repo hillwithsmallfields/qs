@@ -12,6 +12,8 @@ rm -rf $OUTDIR/*
 
 echo done setup
 
+echo Using $CONFIGDIR/accounts.yaml and $CONVDIR/conversions.yaml as config
+
 ./finlisp.py \
     --no-default-config \
     --output-dir $OUTDIR \
