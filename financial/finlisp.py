@@ -174,7 +174,9 @@ def finlisp_main(script_files, output_dir, config, verbose, bindings):
     if bindings:
         initial_bindings.update(bindings)
 
-    print("finlisp_main using config", config)
+    # print("finlisp_main using config formats", config['formats'])
+    for fname, fdef in config['formats'].items():
+        print("fname", fname, "binds", sorted(fdef.keys()))
 
     for filename in script_files:
         finlisp_evaluation.finlisp_load_file({'config': config,

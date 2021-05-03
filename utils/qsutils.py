@@ -168,6 +168,7 @@ def merge_by_date(by_timestamp, period):
 
 def load_multiple_yaml(target_dict, suggested_dir, yaml_files):
     """Load several YAML files, merging the data from them."""
+    print("load_multiple_yaml", target_dict, suggested_dir, yaml_files)
     directories_used = set()
     for yaml_file in yaml_files:
         if yaml_file is None:
@@ -175,6 +176,7 @@ def load_multiple_yaml(target_dict, suggested_dir, yaml_files):
         filename = resolve_filename(yaml_file, suggested_dir)
         if os.path.exists(filename):
             directories_used.add(os.path.dirname(filename))
+            print("load_multiple_yaml", filename)
             with open(filename) as yaml_handle:
                 rec_update(target_dict, yaml.safe_load(yaml_handle))
     return directories_used
