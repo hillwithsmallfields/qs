@@ -22,14 +22,35 @@ POSSIBLE_COLUMN_NAMES = {'stones': 'stone',
 
 COLUMN_LABELS = {'stone': "Stone",
                  'kilogram': "Kg",
-                 'pound': "Pounds"}
+                 'pound': "Pounds",
+                 'calories': "Calories",
+                 'breakfast': "Breakfast calories",
+                 'lunch': "Lunch calories",
+                 'dinner': "Dinner calories",
+                 'snacks': "Snack calories",
+                 # todo: are these calories or weights?
+                 'carbohydrates': "Carbohydrates",
+                 'fat': "Fat",
+                 'protein': "Protein",
+                 'sugar': "Sugar"
+}
 
 def column_label(column):
     return COLUMN_LABELS.get(column, column)
 
 COLUMN_HEADERS = {'stone': 'St total',
                   'pound': 'Lbs total',
-                  'kilogram': 'Kg'}
+                  'kilogram': 'Kg',
+                  'calories': 'calories',
+                  'breakfast': 'breakfast_cals',
+                  'lunch': 'lunch_cals',
+                  'dinner': 'dinner_cals',
+                  'snacks': 'snacks_cals',
+                  'carbohydrates': "carbohydrates",
+                  'fat': "fat",
+                  'protein': "protein",
+                  'sugar': "sugar"
+}
 
 def column_header(column):
     return COLUMN_HEADERS.get(column, column)
@@ -43,8 +64,12 @@ def munge_finances(data):
     # data['Date'] = data['timestamp']
     pass
 
+def munge_calories(data):
+    pass
+
 MUNGERS = {
     'weight': munge_weights,
+    'calories': munge_calories,
     'finances': munge_finances
 }
 
