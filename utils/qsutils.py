@@ -179,6 +179,8 @@ def load_multiple_yaml(target_dict, suggested_dir, yaml_files):
             print("load_multiple_yaml", filename)
             with open(filename) as yaml_handle:
                 rec_update(target_dict, yaml.safe_load(yaml_handle))
+            for fname, fdef in target_dict.get('formats', {}).items():
+                print("after loading", filename, "fname", fname, "binds", sorted(fdef.keys()))
     return directories_used
 
 DEFAULT_CONF = "/usr/local/share/qs-accounts.yaml"
@@ -441,7 +443,7 @@ def program_argparser():
     return parser
 
 def program_load_config(args, quiet=False):
-    return load_config(args.verbose and not quiet,
+    return load_config(True,
                        None,
                        None,
                        DEFAULT_CONF if not args.no_default_config else None,
