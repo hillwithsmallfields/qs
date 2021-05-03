@@ -37,7 +37,7 @@ def latest_file_matching(template):
     print("looking for files matching", template, "and got", files)
     return files and sorted(files, key=os.path.getmtime)[-1]
 
-def automatic_finances(config, charts_dir, begin_date, end_date, archive_dir, verbose):
+def update_finances(config, charts_dir, begin_date, end_date, archive_dir, verbose):
 
     main_account = os.path.expandvars("$COMMON/finances/finances.csv")
     finances_completions = os.path.expandvars("$COMMON/var/finances-completions.el")
@@ -107,7 +107,7 @@ def back_from(when, years_back, months_back, days_back):
         when = when - datetime.timedelta(days=days_back)
     return datetime.datetime.combine(when, datetime.time())
 
-def automatic_physical(charts_dir, begin_date, end_date, archive_dir):
+def update_physical(charts_dir, begin_date, end_date, archive_dir):
 
     physical = os.path.expandvars("$COMMON/health/physical.csv")
     weight = os.path.expandvars("$COMMON/health/weight.csv")
@@ -148,7 +148,7 @@ def automatic_physical(charts_dir, begin_date, end_date, archive_dir):
                     begin_date, end_date, None,
                     os.path.join(charts_dir, "origin_calories.png"))
 
-def automatic_update_startpage():
+def update_startpage():
     startpage = os.path.expanduser("~/public_html/startpage.html")
     startpage_source = os.path.expanduser("~/common/org/startpage.yaml")
     startpage_style = os.path.expanduser("~/common/org/startpage.css")
@@ -157,7 +157,7 @@ def automatic_update_startpage():
         os.system("make_link_table.py --output %s --stylesheet %s %s"
                   % (startpage, startpage_style, startpage_source))
 
-def automatic_contacts(charts_dir, archive_dir):
+def update_contacts(charts_dir, archive_dir):
     contacts_file = os.path.expandvars("$COMMON/org/contacts.csv")
     contacts_scratch = "/tmp/contacts_scratch.csv"
     link_contacts.link_contacts_main(contacts_file, False, False, contacts_scratch)
@@ -177,7 +177,7 @@ def make_tarball(tarball, parent_directory, of_directory):
         print("backup command is", command)
         os.system(command)
 
-def automatic_backups():
+def update_backups():
     common_backups = os.path.expanduser("~/common-backups")
     daily_backup_template = "org-%s.tgz"
     weekly_backup_template = "common-%s.tgz"
@@ -215,9 +215,9 @@ def automatic_backups():
             os.system("genisoimage -o %s %s" % (monthly_backup_name, " ".join(files_to_backup)))
             print("made backup in", monthly_backup_name)
 
-def automatic_actions(charts_dir,
-                      begin_date, end_date,
-                      do_externals, verbose):
+def updates(charts_dir,
+            begin_date, end_date,
+            do_externals, verbose):
     archive_dir = os.path.expanduser("~/archive")
     configdir = os.path.expanduser("~/open-projects/github.com/hillwithsmallfields/qs/conf")
     conversions_dir = os.path.expandvars("$COMMON/finances")
@@ -226,19 +226,18 @@ def automatic_actions(charts_dir,
 
     config = qsutils.load_config(verbose, None, None, accounts_config, conversions_config)
 
-    mfp_filename = os.path.expandvars("$COMMON/health/mfp-accum.csv")
-
     os.makedirs(charts_dir, exist_ok=True)
 
-    automatic_finances(config, charts_dir, begin_date, end_date, archive_dir, verbose)
-    automatic_physical(charts_dir, begin_date, end_date, archive_dir)
-    automatic_contacts(charts_dir, archive_dir)
+    update_finances(config, charts_dir, begin_date, end_date, archive_dir, verbose)
+    update_physical(charts_dir, begin_date, end_date, archive_dir)
+    update_contacts(charts_dir, archive_dir)
     if do_externals:
+        mfp_filename = os.path.expandvars("$COMMON/health/mfp-accum.csv")
         if ((datetime.datetime.fromtimestamp(os.path.getmtime(mfp_filename))
              + datetime.timedelta(hours=23, minutes=30))
             < datetime.datetime.now()):
             print("Fetching data from myfitnesspal.com")
-            mfp_reader.automatic(config, mfp_filename, verbose)
+            mfp_reader.update_mfp(config, mfp_filename, verbose)
             print("Fetched data from myfitnesspal.com")
         else:
             print("myfitnesspal.com data fetched within the past day or so, so not doing again yet")
@@ -246,8 +245,8 @@ def automatic_actions(charts_dir,
         # TODO: get garmin data
 
     dashboard.write_dashboard_page(config, charts_dir)
-    automatic_update_startpage()
-    automatic_backups()
+    update_startpage()
+    update_backups()
 
 def main():
     parser = qsutils.program_argparser()
@@ -261,11 +260,11 @@ def main():
                         help="""Don't pester external servers""")
     args = parser.parse_args()
 
-    automatic_actions(args.charts,
-                      args.begin,
-                      args.end,
-                      not args.no_externals,
-                      args.verbose)
+    updates(args.charts,
+            args.begin,
+            args.end,
+            not args.no_externals,
+            args.verbose)
 
 if __name__ == '__main__':
     main()
