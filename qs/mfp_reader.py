@@ -93,7 +93,7 @@ def fetch_streak_upto(when,
                 row['cardio_minutes'] = sum([exercise['nutrition_information']['minutes'] for exercise in cardio])
                 row['cardio_calories'] = sum([exercise['nutrition_information']['calories burned'] for exercise in cardio])
                 row.update(day_data.totals)
-                row['date'] = when
+                row['Date'] = when
                 if verbose:
                     print("adding", row, "to sheet with date", when)
                 sheet[when] = row
@@ -132,7 +132,7 @@ def find_last_unfetched_date(dict_by_date):
 def automatic(configuration, sheet, verbose):
 
     with open(sheet) as instream:
-        rows = {datetime.date.fromisoformat(row['date']): row
+        rows = {datetime.date.fromisoformat(row['Date']): row
                 for row in csv.DictReader(instream)}
 
     if verbose:
@@ -203,7 +203,7 @@ def main():
     rows = {}
     if args.update and args.sheet:
         with open(args.sheet) as instream:
-            rows = {datetime.date.fromisoformat(row['date']): row
+            rows = {datetime.date.fromisoformat(row['Date']): row
                      for row in csv.DictReader(instream)}
 
     upto_date = (datetime.date.fromisoformat(args.latest)
