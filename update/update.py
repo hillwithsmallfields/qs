@@ -239,11 +239,11 @@ def updates(charts_dir,
     os.makedirs(charts_dir, exist_ok=True)
 
     today = datetime.date.today()
-    periods = {'all': datetime.date(year=1973, month=1, day=1),
-               'past-week': back_from(today, None, None, 7),
-               'past-month': back_from(today, None, 1, None),
-               'past-quarter': back_from(today, None, 3, None),
-               'past-year': back_from(today, 1, None, None)}
+    periods = {'all_time': datetime.date(year=1973, month=1, day=1),
+               'past_week': back_from(today, None, None, 7),
+               'past_month': back_from(today, None, 1, None),
+               'past_quarter': back_from(today, None, 3, None),
+               'past_year': back_from(today, 1, None, None)}
     for date_suffix, begin in ({'custom': begin_date}
                                if begin_date
                                else periods).items():

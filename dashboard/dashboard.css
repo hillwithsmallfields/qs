@@ -4,3 +4,23 @@ td.ok {
 td.overspent {
     background-color: red;
 }
+
+.all_time {
+    visibility: hidden;
+}
+
+.past_year {
+    visibility: hidden;
+}
+
+.past_quarter {
+    visibility: visible;
+}
+
+.past_month {
+    visibility: hidden;
+}
+
+.past_week {
+    visibility: hidden;
+}

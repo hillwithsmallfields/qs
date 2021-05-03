@@ -64,7 +64,15 @@ class SectionalPage(object):
                        T.div(class_="sectionbody")[section[1]]] for section in self._sections]]
 
 def linked_image(image_name):
-    return T.a(href="%s-all-large.png" % image_name)[T.img(src="%s-all-small.png" % image_name)]
+    # return T.a(href="%s-all-large.png" % image_name)[T.img(src="%s-all-small.png" % image_name)]
+    return T.div(class_='imageswitcher')[
+        [T.div(class_="%s" % period)[T.a(href="%s-%s-large.png" % (image_name, period))[
+            T.img(src="%s-%s-small.png" % (image_name, period))]] for period in ('all_time', 'past_year', 'past_quarter', 'past_month', 'past_week')],
+        T.form[T.button['all'],
+               T.button['year'],
+               T.button['quarter'],
+               T.button['month'],
+               T.button['week']]]
 
 def weight_section():
     return linked_image("weight-stone")
