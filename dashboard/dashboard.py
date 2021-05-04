@@ -10,6 +10,7 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import financial.classify
+import utils.qsutils
 
 my_projects = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(os.path.join(my_projects, "makers", "untemplate"))
@@ -44,7 +45,7 @@ def make_name_with_email(name, email):
             else name)
 
 def row(*things):
-    return T.table(width="100%")[T.tr[[T.td[thing] for thing in things]]]
+    return T.table(width="100%")[T.tr[[T.td(valign="top")[thing] for thing in things]]]
 
 class SectionalPage(object):
     pass
@@ -63,30 +64,31 @@ class SectionalPage(object):
         return [[T.div(class_="section")[T.h2[T.a(name=namify(section[0]))[section[0]]],
                        T.div(class_="sectionbody")[section[1]]] for section in self._sections]]
 
-def linked_image(image_name):
-    # return T.a(href="%s-all-large.png" % image_name)[T.img(src="%s-all-small.png" % image_name)]
-    return T.div(class_='imageswitcher')[
+def linked_image(image_name, label):
+    return T.div(class_='imageswitcher', id=label)[
         [T.div(class_="%s" % period)[T.a(href="%s-%s-large.png" % (image_name, period))[
+            # TODO: use thumb image, with small image revealed on hover, keeeping the large one linked
             T.img(src="%s-%s-small.png" % (image_name, period))]] for period in ('all_time', 'past_year', 'past_quarter', 'past_month', 'past_week')],
-        T.form[T.button['all'],
-               T.button['year'],
-               T.button['quarter'],
-               T.button['month'],
-               T.button['week']]]
+        T.form[T.button(class_='inactive', onclick='setperiod("%s", "all_time")'%label)['all'],
+               T.button(class_='inactive', onclick='setperiod("%s", "past_year")'%label)['year'],
+               T.button(class_='active', onclick='setperiod("%s", "past_quarter")'%label)['quarter'],
+               T.button(class_='inactive', onclick='setperiod("%s", "past_month")'%label)['month'],
+               T.button(class_='inactive', onclick='setperiod("%s", "past_week")'%label)['week']]]
 
 def weight_section():
-    return linked_image("weight-stone")
+    return linked_image("weight-stone", "weight")
 
-def spending_section():
+def transactions_section():
     return T.div[T.p["Full details ", T.a(href="by-class.html")["here"], "."],
-                 linked_image("by-class")]
+                 linked_image("by-class", "transactions")]
 
 def timetable_section():
-    return T.table[
+    return T.div[T.table[
+        T.h2["Timetable for %s" % datetime.date.today().isoformat()],
         [[T.tr[T.td[slot.start.strftime("%H:%M")], T.td[slot.activity]]
-          for slot in announce.get_day_announcer(os.path.expandvars("$COMMON/timetables/timetable.csv")).ordered()]]]
+          for slot in announce.get_day_announcer(os.path.expandvars("$COMMON/timetables/timetable.csv")).ordered()]]]]
 
-def budgetting_section(config, charts_dir):
+def budget_section(config, charts_dir):
     thresholds = financial.classify.read_thresholds(config, "budgetting-thresholds.yaml")
     with open(os.path.join(charts_dir, "by-class-this-year.csv")) as spent_stream:
         spent = [row for row in csv.DictReader(spent_stream)]
@@ -138,10 +140,10 @@ def perishables_section():
 
 def diet_section():
     return T.div(class_="dietary")[
-        T.h3["Calories by meal"],
-        linked_image("meal_calories"),
-        T.h3("Food groups"),
-        linked_image("origin_calories")]
+        row(T.div[T.h3["Calories by meal"],
+                  linked_image("meal_calories", "meal_calories")],
+            T.div[T.h3("Food groups"),
+                  linked_image("origin_calories", "origins")])]
 
 def random_reflection():
     reflections_dir = os.path.expandvars("$COMMON/texts/reflection")
@@ -156,13 +158,15 @@ def reflection_section():
 def construct_dashboard_page(config, charts_dir):
     page = SectionalPage()
     page.add_section("Weight", weight_section())
-    page.add_section("Spending", spending_section())
-    page.add_section("Monthly budgets", budgetting_section(config, charts_dir))
-    page.add_section("Upcoming birthdays", birthdays_section())
-    page.add_section("People to contact", contact_section())
-    page.add_section("Food to use up in fridge", perishables_section())
-    page.add_section("Diet", diet_section())
     # page.add_section("Exercise", T.p["placeholder for exercise data from MFP"])
+    # page.add_section("Sleep", T.p["placeholder for sleep data from Oura"])
+    page.add_section("Diet", diet_section())
+    page.add_section("Spending", transactions_section())
+    # TODO: insert recent transaction chart from file
+    # page.add_section("Spending", untemplate.safe_unicode(file_contents(spending_chart_file)))
+    page.add_section("Monthly budgets", budget_section(config, charts_dir))
+    page.add_section("Contacting people", row(birthdays_section(), contact_section()))
+    page.add_section("Food to use up in fridge", perishables_section())
     # page.add_section("Actions", T.p["placeholder for data from org-ql"])
     # page.add_section("Shopping", T.p["placeholder for data from org-ql"])
     # page.add_section("Travel", T.p["placeholder for google movement tracking"])
@@ -170,7 +174,7 @@ def construct_dashboard_page(config, charts_dir):
     return [T.body[
         T.script(src="dashboard.js"),
         T.h1["My dashboard"],
-        row(page.toc(), T.p[timetable_section()]),
+        row(page.toc(), T.div(class_="timetable")[timetable_section()]),
         page.sections()]]
 
 def page_text(page_contents, style_text, script_text):
@@ -190,25 +194,30 @@ def file_contents(filename):
 def tagged(tag, text):
     return "<" + tag + ">" + text + "</" + tag + ">"
 
+def tagged_file_contents(tag, filename):
+    return tagged(tag, file_contents(filename))
+
 def write_dashboard_page(config, charts_dir, inline=True):
     source_dir = os.path.dirname(os.path.realpath(__file__))
     with open(os.path.join(charts_dir, "index.html"), 'w') as page_stream:
-        page_stream.write(page_text(construct_dashboard_page(config, charts_dir),
-                                    tagged("style", file_contents(os.path.join(source_dir, "dashboard.css"))) if inline else "",
-                                    tagged("script", file_contents(os.path.join(source_dir, "dashboard.js"))) if inline else ""))
+        page_stream.write(
+            page_text(
+                construct_dashboard_page(config, charts_dir),
+                tagged_file_contents("style", os.path.join(source_dir, "dashboard.css")) if inline else "",
+                tagged_file_contents("script", os.path.join(source_dir, "dashboard.js")) if inline else ""))
     if not inline:
         for filename in ("dashboard.css", "dashboard.js"):
             shutil.copy(os.path.join(source_dir, filename),
                         os.path.join(charts_dir, filename))
 
 def main():
-    parser = qsutils.program_argparser()
+    parser = utils.qsutils.program_argparser()
     parser.add_argument("--charts", default=os.path.expanduser("~/private_html/dashboard"),
                         help="""Directory to write charts into.""")
     args = parser.parse_args()
 
     configdir = os.path.expanduser("~/open-projects/github.com/hillwithsmallfields/qs/conf")
-    config = qsutils.load_config(verbose, None, None, accounts_config, conversions_config)
+    config = utils.qsutils.load_config(args.verbose, None, None, accounts_config, conversions_config)
     write_dashboard_page(config, args.charts)
 
 if __name__ == '__main__':
