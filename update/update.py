@@ -197,21 +197,6 @@ def update_backups():
             os.system("genisoimage -o %s %s" % (monthly_backup_name, " ".join(files_to_backup)))
             print("made backup in", monthly_backup_name)
 
-def back_from(when, years_back, months_back, days_back):
-    if months_back and months_back >= 12:
-        years_back = (years_back or 0) + months_back / 12
-        months_back %= 12
-    if years_back:
-        when = when.replace(year=when.year - years_back)
-    if months_back:
-        if months_back >= when.month:
-            when = when.replace(year=when.year - 1, month=12 + when.month - months_back)
-        else:
-            when = when.replace(month=when.month - months_back)
-    if days_back:
-        when = when - datetime.timedelta(days=days_back)
-    return datetime.datetime.combine(when, datetime.time())
-
 def updates(charts_dir,
             begin_date, end_date,
             do_externals, verbose):
@@ -239,11 +224,15 @@ def updates(charts_dir,
     os.makedirs(charts_dir, exist_ok=True)
 
     today = datetime.date.today()
+    _, background_colour = dashboard.dashboard.dashboard_page_colours()
+    for param_set in CHART_SIZES.values():
+        param_set['facecolor'] = background_colour
+
     periods = {'all_time': datetime.date(year=1973, month=1, day=1),
-               'past_week': back_from(today, None, None, 7),
-               'past_month': back_from(today, None, 1, None),
-               'past_quarter': back_from(today, None, 3, None),
-               'past_year': back_from(today, 1, None, None)}
+               'past_week': qsutils.back_from(today, None, None, 7),
+               'past_month': qsutils.back_from(today, None, 1, None),
+               'past_quarter': qsutils.back_from(today, None, 3, None),
+               'past_year': qsutils.back_from(today, 1, None, None)}
     for date_suffix, begin in ({'custom': begin_date}
                                if begin_date
                                else periods).items():

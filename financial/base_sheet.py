@@ -23,7 +23,7 @@ def write_extra_data(stream, col_extra_data, title, colnames):
         for colname in colnames:
             stream.write('    <th>%s</th>\n' % col_extra_data.get(colname))
         stream.write('  </tr>\n')
-        
+
 class base_sheet:
 
     """To hold methods in common between csv_sheet and canonical_sheet."""
@@ -44,7 +44,7 @@ class base_sheet:
     def latest(self):
         """Return the date of the latest row in the sheet."""
         return max(self.rows.keys())
-    
+
     def timestamp_from(self, base_date, base_time=None):
         """Return a timestamp at the given date and time."""
         if isinstance(base_date, datetime.datetime):
@@ -169,10 +169,12 @@ class base_sheet:
                          col_extra_data=None,
                          start_date=None, end_date=None,
                          with_time=False,
-                         summarize=True):
+                         summarize=True,
+                         colnames=None):
         """Write a canonical spreadsheet as HTML."""
         dates = sorted(self.rows.keys())
-        colnames = self.column_names_list()
+        if colnames is None:
+            colnames = self.column_names_list()
         start = 0
 
         if start_date:
@@ -200,7 +202,7 @@ class base_sheet:
         column_totals = {colname: 0 for colname in colnames}
         column_maxima = {colname: 0 for colname in colnames}
         column_minima = {colname: 100000000 for colname in colnames}
-            
+
         for i in range(start, end):
             date = dates[i]
             if TRACE_RENDERING:

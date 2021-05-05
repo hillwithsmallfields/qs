@@ -82,7 +82,11 @@ def normalize_column_name(unit_name):
 def parsetime(timestr):
     return datetime.datetime.strptime(timestr, "%Y-%m-%d") if isinstance(timestr, str) else timestr
 
-def qscharts(mainfile, file_type, columns, begin, end, match, outfile_template, plot_param_sets):
+def qscharts(mainfile, file_type,
+             columns, begin, end, match,
+             outfile_template,
+             # background_colour,
+             plot_param_sets):
     for name_suffix, params in plot_param_sets.items():
         qschart(mainfile, file_type, columns, begin, end, match, outfile_template % name_suffix, **params)
 
@@ -114,7 +118,9 @@ def qschart(mainfile, file_type, columns, begin, end, match, outfile, **plot_par
     plt.xlabel("Date")
     plt.grid(axis='both')
 
-    fig.savefig(outfile)
+    fig.savefig(outfile,
+                facecolor=fig.get_facecolor()
+    )
 
 def main():
     parser = argparse.ArgumentParser()

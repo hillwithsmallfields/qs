@@ -298,7 +298,80 @@ def as_date(date_in):
                         if isinstance(date_in, datetime.datetime)
                         else date_in)))
 
+def back_from(when, years_back, months_back, days_back):
+    if months_back and months_back >= 12:
+        years_back = (years_back or 0) + months_back / 12
+        months_back %= 12
+    if years_back:
+        when = when.replace(year=when.year - years_back)
+    if months_back:
+        if months_back >= when.month:
+            when = when.replace(year=when.year - 1, month=12 + when.month - months_back)
+        else:
+            when = when.replace(month=when.month - months_back)
+    if days_back:
+        when = when - datetime.timedelta(days=days_back)
+    return when # datetime.datetime.combine(when, datetime.time())
+
 later = datetime.timedelta(0, 1)
+
+HOVERCSS = '''
+<style>
+.overview {
+  position: relative;
+  display: inline-block;
+}
+.large {
+  font-weight: bold;
+}
+.credit {
+  color: green;
+}
+.ic {
+  font-size: xx-small;
+}
+.details {
+  visibility: hidden;
+  background-color: %s;
+  z-index: 1;
+  position: absolute;
+}
+.dethead {
+    font-size: x-small;
+}
+.detdate {
+    font-size: x-small;
+}
+.detamt {
+    font-size: x-small;
+}
+.detpay {
+    font-size: x-small;
+}
+.detcat {
+    font-size: x-small;
+}
+.detitem {
+    font-size: x-small;
+}
+.overview:hover .details {
+  visibility: visible;
+}
+table.summarytable {
+  border: 1px solid black;
+  width: 100%%;
+}
+.duplicated {
+  color: red;
+}
+</style>
+'''
+
+def table_support_css(details_background_colour):
+    return HOVERCSS % details_background_colour
+
+def write_table_support_css(stream, details_background_colour):
+    stream.write(table_support_css(details_background_colour))
 
 def read_fin_csv(args, config, input_filename):
     """Read an account spreadsheet file."""

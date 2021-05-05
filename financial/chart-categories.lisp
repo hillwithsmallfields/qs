@@ -12,6 +12,7 @@
 
        (by-class (check "classified" (by-classification monthly parentage-table classifiers t nil)))
        (by-class-this-month (this-month by-class))
+       (by-class-past-three-months (past-months by-class 3))
        (by-class-this-year (this-year by-class))
        
        (automatics (by-classification monthly parentage-table automatic-categories t nil)) ; damages by-class
@@ -42,12 +43,18 @@
   (write-csv-with-averages by-class "by-class-with-averages.csv")
   (write-csv by-class "by-class.csv")
   (write-csv by-class-this-month "by-class-this-month.csv")
+  (write-csv by-class-past-three-months "by-class-past-three-months.csv")
   (write-csv by-class-this-year "by-class-this-year.csv")
-  (write-html (check "pre-rendering" by-class) "by-class.html" "Categorised monthly summary" thresholds t t)
+  (write-html (check "pre-rendering" by-class) "by-class.html"
+              "Categorised monthly summary" thresholds t t)
+  (write-table by-class-past-three-months "past-quarter.html"
+               '("Eating in" "Eating out" "Projects" "Hobbies" "Travel")
+               thresholds)
   (write-csv balance "balance.csv")
   (write-csv monthly-balance "monthly-balance.csv")
   (write-csv with-last-of-month "with-last-of-month.csv")
-  (write-html with-last-of-month "with-last-of-month.html" "Categorised monthly summary" thresholds t t)
+  (write-html with-last-of-month "with-last-of-month.html"
+              "Categorised monthly summary" thresholds t t)
   ;; (write-csv automatics "automatics.csv")
   ;; (write-csv by-level-0 "by-level-0.csv")
   ;; (write-csv by-level-1 "by-level-1.csv")

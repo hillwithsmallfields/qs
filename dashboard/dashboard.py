@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import cssutils
 import csv
 import datetime
 import glob
@@ -8,11 +9,13 @@ import random
 import shutil
 import sys
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+source_dir = os.path.dirname(os.path.realpath(__file__))
+
+sys.path.append(os.path.dirname(source_dir))
 import financial.classify
 import utils.qsutils
 
-my_projects = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+my_projects = os.path.dirname(os.path.dirname(source_dir))
 sys.path.append(os.path.join(my_projects, "makers", "untemplate"))
 
 import throw_out_your_templates_p3 as untemplate
@@ -47,6 +50,16 @@ def make_name_with_email(name, email):
 def row(*things):
     return T.table(width="100%")[T.tr[[T.td(valign="top")[thing] for thing in things]]]
 
+def wrap_box(*things):
+    return (T.div(class_='flex-container')[[T.div[thing]
+                                            for thing in things
+                                            if thing]]
+            if any(things)
+            else None)
+
+def labelled_section(title, body):
+    return T.div[T.h2[title], body] if body else None
+
 class SectionalPage(object):
     pass
 
@@ -54,7 +67,8 @@ class SectionalPage(object):
         self._sections = []
 
     def add_section(self, title, body):
-        self._sections.append((title, body))
+        if body:
+            self._sections.append((title, body))
 
     def toc(self):
         return [T.h2["Table of contents"],
@@ -63,6 +77,22 @@ class SectionalPage(object):
     def sections(self):
         return [[T.div(class_="section")[T.h2[T.a(name=namify(section[0]))[section[0]]],
                        T.div(class_="sectionbody")[section[1]]] for section in self._sections]]
+
+def dashboard_page_colours():
+    sheet = cssutils.parseFile(os.path.join(source_dir, "dashboard.css"))
+    print("parsed css sheet is", sheet)
+
+    for rule in sheet:
+        print("  ", rule.type)
+    #     if rule.type == rule.STYLE_RULE:
+    #         # find property
+    #         for property in rule.style:
+    #             if property.name == 'color':
+    #                 property.value = 'green'
+    #                 property.priority = 'IMPORTANT'
+    #                 break
+
+    return "maroon", "#f0e0b0"
 
 def linked_image(image_name, label):
     return T.div(class_='imageswitcher', id=label)[
@@ -78,30 +108,25 @@ def linked_image(image_name, label):
 def weight_section():
     return linked_image("weight-stone", "weight")
 
-def transactions_section():
+def transactions_section(charts_dir):
+    spending_chart_file = os.path.join(charts_dir, "past-quarter.html")
     return T.div[T.p["Full details ", T.a(href="by-class.html")["here"], "."],
-                 linked_image("by-class", "transactions")]
+                 wrap_box(linked_image("by-class", "transactions"),
+                          untemplate.safe_unicode(file_contents(spending_chart_file)))]
 
 def timetable_section():
+    today = datetime.date.today()
+    day_of_week = today.strftime("%A")
+    day_file = os.path.join(os.path.expandvars("$COMMON/timetables"), day_of_week + ".csv")
+    extras = []
+    if os.path.isfile(day_file):
+        extras.append(day_file)
     return T.div[T.table[
-        T.h2["Timetable for %s" % datetime.date.today().isoformat()],
+        T.h2["Timetable for %s %s" % (day_of_week, today.isoformat())],
         [[T.tr[T.td[slot.start.strftime("%H:%M")], T.td[slot.activity]]
-          for slot in announce.get_day_announcer(os.path.expandvars("$COMMON/timetables/timetable.csv")).ordered()]]]]
-
-def budget_section(config, charts_dir):
-    thresholds = financial.classify.read_thresholds(config, "budgetting-thresholds.yaml")
-    with open(os.path.join(charts_dir, "by-class-this-year.csv")) as spent_stream:
-        spent = [row for row in csv.DictReader(spent_stream)]
-        spent_month_before_last = spent[-3] if len(spent) >= 3 else None
-        spent_last_month = spent[-2] if len(spent) >= 2 else None
-        spent_this_month = spent[-1]
-        return T.table(class_='budgetting')[
-            T.tr[[T.th[""]] + [T.th[coi] for coi in CATEGORIES_OF_INTEREST]],
-            T.tr(class_='monthly_budget')[[T.th["Monthly budget"]] + [T.td(class_='budget')[str(thresholds[coi])] for coi in CATEGORIES_OF_INTEREST]],
-            (T.tr(class_='spent_month_before_last')[[T.th["Spent month before last"]] + [T.td(class_='spent')[str(spent_month_before_last[coi])] for coi in CATEGORIES_OF_INTEREST]]) if spent_month_before_last else [], # TODO: style according to whether over threshold
-            (T.tr(class_='spent_last_month')[[T.th["Spent last month"]] + [T.td(class_='spent')[str(spent_last_month[coi])] for coi in CATEGORIES_OF_INTEREST]]) if spent_last_month else [], # TODO: style according to whether over threshold
-            T.tr(class_='spent_this_month')[[T.th["Spent this month"]] + [T.td(class_='spent')[str(spent_this_month[coi])] for coi in CATEGORIES_OF_INTEREST]], # TODO: style according to whether over threshold
-            T.tr(class_='remaining_this_month')[[T.th["Remaining this month"]] + [make_remaining_cell(thresholds, spent_this_month, coi) for coi in CATEGORIES_OF_INTEREST]]]
+          for slot in announce.get_day_announcer(
+                  os.path.expandvars("$COMMON/timetables/timetable.csv"),
+                  extra_files=extras).ordered()]]]]
 
 def birthdays_section():
     people_by_id, _ = contacts_data.read_contacts(os.path.expandvars("$COMMON/org/contacts.csv"))
@@ -122,28 +147,52 @@ def contact_section():
     people_by_id, _ = contacts_data.read_contacts(os.path.expandvars("$COMMON/org/contacts.csv"))
     today = datetime.date.today()
     this_year = today.year
+    long_uncontacted = [person
+                        for person in people_by_id.values()
+                        if contacts_data.contact_soon(person, today)]
+    if len(long_uncontacted) == 0:
+        return T.p["No pending contacts."]
     return T.table(class_='contact_soon')[
         T.tr[T.th["Last contacted"], T.th["Name"]],
         [T.tr[T.td(class_='last_contacted')[str(contacts_data.last_contacted(person))],
               T.td(class_='name')[make_name_with_email(contacts_data.make_name(person),
                                                        person.get('Primary email', ""))]]
-         for person in sorted([person
-                              for person in people_by_id.values()
-                              if contacts_data.contact_soon(person, today)],
+         for person in sorted(long_uncontacted,
                               key=lambda person: contacts_data.last_contacted(person))]]
 
 def perishables_section():
-    return T.table[[T.tr[T.td[row['Best before'].isoformat()],
-                         T.td[row['Product']],
-                         T.td[str(row['Quantity'])]]
-        for row in perishables.get_perishables()]]
+    items = perishables.get_perishables()
+    return (T.p["No items on record."]
+            if len(items) == 0
+            else T.table[[T.tr[T.td[row['Best before'].isoformat()],
+                               T.td[row['Product']],
+                               T.td[str(row['Quantity'])]]
+                          for row in items]])
 
-def diet_section():
-    return T.div(class_="dietary")[
-        row(T.div[T.h3["Calories by meal"],
-                  linked_image("meal_calories", "meal_calories")],
-            T.div[T.h3("Food groups"),
-                  linked_image("origin_calories", "origins")])]
+def meals_section():
+    return linked_image("meal_calories", "meal_calories")
+
+def foods_section():
+    return linked_image("origin_calories", "origins")
+
+def weather_section():
+    # todo: use openweathermap python API wrapper (pyowm)
+    return None
+
+def exercise_section():
+    return None
+
+def sleep_section():
+    return None
+
+def actions_section():
+    return None
+
+def shopping_section():
+    return None
+
+def travel_section():
+    return None
 
 def random_reflection():
     reflections_dir = os.path.expandvars("$COMMON/texts/reflection")
@@ -157,24 +206,27 @@ def reflection_section():
 
 def construct_dashboard_page(config, charts_dir):
     page = SectionalPage()
-    page.add_section("Weight", weight_section())
-    # page.add_section("Exercise", T.p["placeholder for exercise data from MFP"])
-    # page.add_section("Sleep", T.p["placeholder for sleep data from Oura"])
-    page.add_section("Diet", diet_section())
-    page.add_section("Spending", transactions_section())
-    # TODO: insert recent transaction chart from file
-    # page.add_section("Spending", untemplate.safe_unicode(file_contents(spending_chart_file)))
-    page.add_section("Monthly budgets", budget_section(config, charts_dir))
-    page.add_section("Contacting people", row(birthdays_section(), contact_section()))
+    page.add_section("Weather", weather_section())
+    page.add_section("Health", wrap_box(
+        labelled_section("Weight", weight_section()),
+        labelled_section("Meals", meals_section()),
+        labelled_section("Food groups", foods_section()),
+        labelled_section("Exercise", exercise_section()),
+        labelled_section("Sleep", sleep_section())))
+    page.add_section("Spending", transactions_section(charts_dir))
+    page.add_section("Contacting people", wrap_box(
+        birthdays_section(),
+        contact_section()))
     page.add_section("Food to use up in fridge", perishables_section())
-    # page.add_section("Actions", T.p["placeholder for data from org-ql"])
-    # page.add_section("Shopping", T.p["placeholder for data from org-ql"])
-    # page.add_section("Travel", T.p["placeholder for google movement tracking"])
+    page.add_section("Actions", actions_section())
+    page.add_section("Shopping", shopping_section())
+    page.add_section("Travel", travel_section())
     page.add_section("Text for reflection", reflection_section())
     return [T.body[
         T.script(src="dashboard.js"),
         T.h1["My dashboard"],
-        row(page.toc(), T.div(class_="timetable")[timetable_section()]),
+        wrap_box(page.toc(),
+                 T.div(class_="timetable")[timetable_section()]),
         page.sections()]]
 
 def page_text(page_contents, style_text, script_text):
@@ -198,15 +250,17 @@ def tagged_file_contents(tag, filename):
     return tagged(tag, file_contents(filename))
 
 def write_dashboard_page(config, charts_dir, inline=True):
-    source_dir = os.path.dirname(os.path.realpath(__file__))
     with open(os.path.join(charts_dir, "index.html"), 'w') as page_stream:
         page_stream.write(
             page_text(
                 construct_dashboard_page(config, charts_dir),
-                tagged_file_contents("style", os.path.join(source_dir, "dashboard.css")) if inline else "",
+                (tagged_file_contents("style", os.path.join(source_dir, "dashboard.css"))
+                 + utils.qsutils.table_support_css("gold")) if inline else "",
                 tagged_file_contents("script", os.path.join(source_dir, "dashboard.js")) if inline else ""))
     if not inline:
-        for filename in ("dashboard.css", "dashboard.js"):
+        for filename in ("dashboard.css",
+                         # TODO: put table_support_css into a file and add it here
+                         "dashboard.js"):
             shutil.copy(os.path.join(source_dir, filename),
                         os.path.join(charts_dir, filename))
 

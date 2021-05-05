@@ -93,6 +93,7 @@ functions = ['account_to_sheet',
              'list_accounts',
              'make_update_sheet',
              'occupied_columns',
+             'past_months',
              'payees',
              'proportions',
              'read_classifier',
@@ -116,6 +117,7 @@ functions = ['account_to_sheet',
              'write_csv_with_averages',
              'write_html',
              'write_json',
+             'write_table',
              'write_debug']
 
 functions_regexp = re.compile(r"\b(" + "|".join(functions) + r")\(")
@@ -483,12 +485,10 @@ def occupied_columns(context, sheet):
     """Return a copy of a sheet but with all empty columns removed."""
     return sheet.occupied_columns()
 
-def read_parentage_table(context, parentage_filename):
-    return parentage.read_parentage_table(parentage_filename
-                                          if os.path.isabs(parentage_filename)
-                                          else os.path.join(context['project_source'],
-                                                            "conf",
-                                                            parentage_filename))
+def past_months(context, original, months):
+    return between_dates(context, original,
+                         qsutils.back_from(datetime.date.today(), 0, months, 0),
+                         None)
 
 def payees(context, original, pattern=None):
     return base_sheet.base_sheet(None,
@@ -506,6 +506,13 @@ def read_classifier(context, filename):
                                     else os.path.join(context['project_source'],
                                                       "conf",
                                                       filename))
+
+def read_parentage_table(context, parentage_filename):
+    return parentage.read_parentage_table(parentage_filename
+                                          if os.path.isabs(parentage_filename)
+                                          else os.path.join(context['project_source'],
+                                                            "conf",
+                                                            parentage_filename))
 
 def read_thresholds(context, filename):
     return classify.read_thresholds(context['config'], filename)
@@ -645,62 +652,31 @@ def write_csv_with_averages(context, value, filename, suppress_timestamp=False):
         print("Nothing to write to", filename)
     return value
 
-hovercss = '''
-<style>
-.overview {
-  position: relative;
-  display: inline-block;
-}
-.large {
-  font-weight: bold;
-}
-.credit {
-  color: green;
-}
-.ic {
-  font-size: xx-small;
-}
-.details {
-  visibility: hidden;
-  background-color: yellow;
-  z-index: 1;
-  position: absolute;
-}
-.dethead {
-    font-size: x-small;
-}
-.detdate {
-    font-size: x-small;
-}
-.detamt {
-    font-size: x-small;
-}
-.detpay {
-    font-size: x-small;
-}
-.detcat {
-    font-size: x-small;
-}
-.detitem {
-    font-size: x-small;
-}
-.overview:hover .details {
-  visibility: visible;
-}
-table.summarytable {
-  border: 1px solid black;
-  width: 100%;
-}
-.duplicated {
-  color: red;
-}
-</style>
-'''
+def write_table(context, sheet, filename,
+                colnames,
+                thresholds,
+                details=False,
+                with_time=False,
+                details_background_colour="yellow"):
+    full_filename = qsutils.resolve_filename(
+        filename,
+        finlisp_evaluation.finlisp_var_value(context,
+                                             'output-dir'))
+    qsutils.ensure_directory_for_file(full_filename)
+    with open(full_filename, 'w') as outstream:
+        sheet.write_html_table(outstream,
+                               css_class="summarytable",
+                               hover_details=details,
+                               col_extra_data=thresholds,
+                               with_time=with_time,
+                               colnames=colnames)
 
 def write_html(context, sheet, filename, title,
                thresholds=None, details=False,
                with_time=False,
-               explanation=None):
+               explanation=None,
+               colnames=None,
+               details_background_colour="yellow"):
     full_filename = qsutils.resolve_filename(
         filename,
         finlisp_evaluation.finlisp_var_value(context,
@@ -709,7 +685,7 @@ def write_html(context, sheet, filename, title,
     with open(full_filename, 'w') as outstream:
         outstream.write('<html><head><title>%s</title></head>' % title)
         if details:
-            outstream.write(hovercss)
+            qsutils.write_table_support_css(outstream, details_background_colour)
         outstream.write('\n<body>\n')
         if explanation:
             outstream.write("\n<p>" + explanation + "</p>\n")
@@ -717,7 +693,8 @@ def write_html(context, sheet, filename, title,
                                css_class="summarytable",
                                hover_details=details,
                                col_extra_data=thresholds,
-                               with_time=with_time)
+                               with_time=with_time,
+                               colnames=colnames)
         outstream.write('</body></html>\n')
 
 def write_json(context, value, filename):

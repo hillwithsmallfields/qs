@@ -1,3 +1,69 @@
+BODY {
+    color: maroon;
+
+    /* TODO: which of these should it be? */
+    background:       #f0e0b0; /* vellum */
+    background-color: #f0e0b0; /* vellum */
+
+    font-family:      sans-serif;
+    font-size:        small;
+    font-style:       normal;
+    font-weight:      normal;
+    margin-top:       2em;
+    margin-bottom:    5em;
+    margin-left:      5%;
+    margin-right:     8%;
+    text-align:       left;   /* discourage justification */
+    letter-spacing:   0;  /* in fact, switch it right off */
+    /* line-height: 125% */
+}
+
+A:link    { color: #000060; text-decoration: none }
+A:active  { color: green; text-decoration: none }
+A:visited { color: purple; text-decoration: none }
+
+H1 {
+    font-size:      large;
+    font-style:     normal;
+    font-weight:    bold;
+    padding:        4px;
+    background:     #e0d0a0;
+    color:          maroon;
+    border-top:     2px solid maroon;
+    border-bottom:  2px solid maroon;
+    border-left:    2px solid maroon;
+    border-right:   2px solid maroon;
+    border-radius:  8px;
+}
+
+H2 {
+    font-size:      medium;
+    font-style:     normal;
+    font-weight:    bold;
+    padding:        4px;
+    background:     #e0d0a0;
+    color:          maroon;
+    border-top:     2px solid maroon;
+    border-bottom:  2px solid maroon;
+    border-left:    2px solid maroon;
+    border-right:   2px solid maroon;
+    border-radius:  8px;
+}
+
+H3 {
+    font-size:      small;
+    font-style:     normal;
+    font-weight:    bold;
+    padding:        4px;
+    background:     #e0d0a0;
+    color:          maroon;
+    border-top:     2px solid maroon;
+    border-bottom:  2px solid maroon;
+    border-left:    2px solid maroon;
+    border-right:   2px solid maroon;
+    border-radius:  8px;
+}
+
 td.ok {
     background-color: green;
 }
@@ -5,22 +71,44 @@ td.overspent {
     background-color: red;
 }
 
+button.active {
+    background-color: maroon;
+    color:            #f0e0b0;
+}
+
+button.inactive {
+    background-color: #f0e0b0;
+    color:            maroon;
+}
+
 .all_time {
-    visibility: hidden;
+    display: none;
 }
 
 .past_year {
-    visibility: hidden;
+    display: none;
 }
 
 .past_quarter {
-    visibility: visible;
+    display: block;
 }
 
 .past_month {
-    visibility: hidden;
+    display: none;
 }
 
 .past_week {
-    visibility: hidden;
+    display: none;
+}
+
+/* Use with: */
+/*  <div class="flex-container"> */
+/*   <div>1</div> */
+/*   <div>2</div> */
+/*   <div>3</div> */
+/* </div>  */
+
+.flex-container {
+    display: flex;
+    flex-wrap: wrap;
 }
