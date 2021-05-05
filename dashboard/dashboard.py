@@ -3,8 +3,10 @@
 import cssutils
 import csv
 import datetime
+import decouple
 import glob
 import os
+import pyowm
 import random
 import shutil
 import sys
@@ -176,7 +178,15 @@ def foods_section():
     return linked_image("origin_calories", "origins")
 
 def weather_section():
-    # todo: use openweathermap python API wrapper (pyowm)
+    # https://pyowm.readthedocs.io/en/latest/v3/code-recipes.html
+    owm = pyowm.owm.OWM(decouple.config('OWM_API_KEY'))
+    reg = owm.city_id_registry()
+    list_of_locations = reg.locations_for('cambridge', country='GB')
+    cambridge = list_of_locations[0]
+    mgr = owm.weather_manager()
+    one_call = mgr.one_call(lat=cambridge.lat, lon=cambridge.lon)
+    temp = one_call.forecast_daily[0].temperature('celsius').get('feels_like_morn', None)
+    print("temp is", temp)
     return None
 
 def exercise_section():
