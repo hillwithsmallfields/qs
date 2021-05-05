@@ -84,17 +84,22 @@ def dashboard_page_colours():
     sheet = cssutils.parseFile(os.path.join(source_dir, "dashboard.css"))
     print("parsed css sheet is", sheet)
 
-    for rule in sheet:
-        print("  ", rule.type)
-    #     if rule.type == rule.STYLE_RULE:
-    #         # find property
-    #         for property in rule.style:
-    #             if property.name == 'color':
-    #                 property.value = 'green'
-    #                 property.priority = 'IMPORTANT'
-    #                 break
+    foreground = None
+    background = None
 
-    return "maroon", "#f0e0b0"
+    for rule in sheet:
+        if rule.selectorText == 'BODY':
+            for property in rule.style:
+                if property.name == 'color':
+                    foreground = property.value
+                    continue
+                if property.name == 'background-color':
+                    background = property.value
+                    continue
+        if foreground and background:
+            break
+
+    return foreground, background
 
 def linked_image(image_name, label):
     return T.div(class_='imageswitcher', id=label)[
@@ -185,8 +190,11 @@ def weather_section():
     cambridge = list_of_locations[0]
     mgr = owm.weather_manager()
     one_call = mgr.one_call(lat=cambridge.lat, lon=cambridge.lon)
+    three_h_forecast = mgr.forecast_at_place('Cambridge,GB', '3h').forecast
+    print("three_h_forecast is", three_h_forecast)
     temp = one_call.forecast_daily[0].temperature('celsius').get('feels_like_morn', None)
     print("temp is", temp)
+    print("one_call is", one_call)
     return None
 
 def exercise_section():
