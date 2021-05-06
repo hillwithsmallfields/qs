@@ -133,7 +133,10 @@ def timetable_section():
     # TODO: fetch from Google calendar
     return T.div[T.table[
         T.h2["Timetable for %s %s" % (day_of_week, today.isoformat())],
-        [[T.tr(class_="inactive")[T.td[slot.start.strftime("%H:%M")], T.td[slot.activity]]
+        [[T.tr(class_="inactive")[T.td[slot.start.strftime("%H:%M")],
+                                  T.td[T.a(href=slot.link)[slot.activity]
+                                       if slot.link
+                                       else slot.activity]]
           for slot in announce.get_day_announcer(
                   os.path.expandvars("$COMMON/timetables/timetable.csv"),
                   extra_files=extras).ordered()]]]]
