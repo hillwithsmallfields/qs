@@ -106,7 +106,10 @@ def qschart(mainfile, file_type, columns, begin, end, match, outfile, **plot_par
     if file_type in MUNGERS:
         MUNGERS[file_type](data)
 
-    fig, axs = plt.subplots(**plot_params) # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html for more parameters
+    fig, axs = plt.subplots(**plot_params) # the background colour comes in here
+    # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html for more parameters
+
+    axs.set_facecolor(fig.get_facecolor())
 
     # TODO: label every year; grid lines?
     # TODO: plot absolute values
@@ -119,8 +122,7 @@ def qschart(mainfile, file_type, columns, begin, end, match, outfile, **plot_par
     plt.grid(axis='both')
 
     fig.savefig(outfile,
-                facecolor=fig.get_facecolor()
-    )
+                facecolor=fig.get_facecolor())
 
 def main():
     parser = argparse.ArgumentParser()
