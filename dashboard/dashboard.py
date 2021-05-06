@@ -82,7 +82,6 @@ class SectionalPage(object):
 
 def dashboard_page_colours():
     sheet = cssutils.parseFile(os.path.join(source_dir, "dashboard.css"))
-    print("parsed css sheet is", sheet)
 
     foreground = None
     background = None
@@ -106,11 +105,11 @@ def linked_image(image_name, label):
         [T.div(class_="%s" % period)[T.a(href="%s-%s-large.png" % (image_name, period))[
             # TODO: use thumb image, with small image revealed on hover, keeeping the large one linked
             T.img(src="%s-%s-small.png" % (image_name, period))]] for period in ('all_time', 'past_year', 'past_quarter', 'past_month', 'past_week')],
-        T.form[T.button(class_='inactive', onclick='setperiod("%s", "all_time")'%label)['all'],
-               T.button(class_='inactive', onclick='setperiod("%s", "past_year")'%label)['year'],
-               T.button(class_='active', onclick='setperiod("%s", "past_quarter")'%label)['quarter'],
-               T.button(class_='inactive', onclick='setperiod("%s", "past_month")'%label)['month'],
-               T.button(class_='inactive', onclick='setperiod("%s", "past_week")'%label)['week']]]
+        T.form[T.button(class_='inactive', onclick="setperiod('%s', 'all_time')"%label)['all'],
+               T.button(class_='inactive', onclick="setperiod('%s', 'past_year')"%label)['year'],
+               T.button(class_='active', onclick="setperiod('%s', 'past_quarter')"%label)['quarter'],
+               T.button(class_='inactive', onclick="setperiod('%s', 'past_month')"%label)['month'],
+               T.button(class_='inactive', onclick="setperiod('%s', 'past_week')"%label)['week']]]
 
 def weight_section():
     return linked_image("weight-stone", "weight")
@@ -122,15 +121,19 @@ def transactions_section(charts_dir):
                           untemplate.safe_unicode(file_contents(spending_chart_file)))]
 
 def timetable_section():
+    # TODO: possibly add columns for weather data for the same times
+    # TODO: add script to change the row class for the row containing the current time
     today = datetime.date.today()
     day_of_week = today.strftime("%A")
     day_file = os.path.join(os.path.expandvars("$COMMON/timetables"), day_of_week + ".csv")
     extras = []
     if os.path.isfile(day_file):
+        # TODO: debug this merge, I don't think it's right yet
         extras.append(day_file)
+    # TODO: fetch from Google calendar
     return T.div[T.table[
         T.h2["Timetable for %s %s" % (day_of_week, today.isoformat())],
-        [[T.tr[T.td[slot.start.strftime("%H:%M")], T.td[slot.activity]]
+        [[T.tr(class_="inactive")[T.td[slot.start.strftime("%H:%M")], T.td[slot.activity]]
           for slot in announce.get_day_announcer(
                   os.path.expandvars("$COMMON/timetables/timetable.csv"),
                   extra_files=extras).ordered()]]]]
@@ -151,6 +154,7 @@ def birthdays_section():
                               key=lambda person: contacts_data.birthday(person, this_year))]]
 
 def contact_section():
+    """List people who I mean to keep in touch with but haven't for a while."""
     people_by_id, _ = contacts_data.read_contacts(os.path.expandvars("$COMMON/org/contacts.csv"))
     today = datetime.date.today()
     this_year = today.year
@@ -168,6 +172,7 @@ def contact_section():
                               key=lambda person: contacts_data.last_contacted(person))]]
 
 def perishables_section():
+    """List things to use up from the fridge, in order of expiry date."""
     items = perishables.get_perishables()
     return (T.p["No items on record."]
             if len(items) == 0
@@ -175,6 +180,9 @@ def perishables_section():
                                T.td[row['Product']],
                                T.td[str(row['Quantity'])]]
                           for row in items]])
+
+def calories_section():
+    return linked_image("total_calories", "total_calories")
 
 def meals_section():
     return linked_image("meal_calories", "meal_calories")
@@ -193,23 +201,29 @@ def weather_section():
     three_h_forecast = mgr.forecast_at_place('Cambridge,GB', '3h').forecast
     print("three_h_forecast is", three_h_forecast)
     temp = one_call.forecast_daily[0].temperature('celsius').get('feels_like_morn', None)
+    # TODO: pick out the data I want
     print("temp is", temp)
     print("one_call is", one_call)
     return None
 
 def exercise_section():
+    # TODO: fetch from MFP and Garmin
     return None
 
 def sleep_section():
+    # TODO: read from data fetched from Oura (sleep.csv)
     return None
 
 def actions_section():
+    # TODO: use org-ql to produce a filee
     return None
 
 def shopping_section():
+    # TODO: use org-ql to produce a filee
     return None
 
 def travel_section():
+    # TODO: fetch from Google
     return None
 
 def random_reflection():
@@ -227,19 +241,21 @@ def construct_dashboard_page(config, charts_dir):
     page.add_section("Weather", weather_section())
     page.add_section("Health", wrap_box(
         labelled_section("Weight", weight_section()),
+        labelled_section("Calories", calories_section()),
         labelled_section("Meals", meals_section()),
         labelled_section("Food groups", foods_section()),
         labelled_section("Exercise", exercise_section()),
         labelled_section("Sleep", sleep_section())))
     page.add_section("Spending", transactions_section(charts_dir))
-    page.add_section("Contacting people", wrap_box(
-        birthdays_section(),
-        contact_section()))
+    page.add_section("People", wrap_box(
+        labelled_section("Birthdays", birthdays_section()),
+        labelled_section("To contact", contact_section())))
     page.add_section("Food to use up in fridge", perishables_section())
-    page.add_section("Actions", actions_section())
-    page.add_section("Shopping", shopping_section())
+    page.add_section("Agenda", wrap_box(
+        labelled_section("Actions", actions_section()),
+        labelled_section("Shopping", shopping_section())))
     page.add_section("Travel", travel_section())
-    page.add_section("Text for reflection", reflection_section())
+    page.add_section("Texts for reflection", reflection_section())
     return [T.body[
         T.script(src="dashboard.js"),
         T.h1["My dashboard"],
@@ -252,7 +268,8 @@ def page_text(page_contents, style_text, script_text):
         untemplate.HTML5Doc([untemplate.safe_unicode(style_text
                                                      + script_text),
                              page_contents],
-                            head=T.head[T.meta(rel='stylesheet',
+                            head=T.head[T.meta(charset='utf-8'),
+                                        T.meta(rel='stylesheet',
                                                type_='text/css',
                                                href="dashboard.css"),
                                         T.title["Dashboard"]]))

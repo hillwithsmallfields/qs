@@ -669,7 +669,8 @@ def write_table(context, sheet, filename,
                                hover_details=details,
                                col_extra_data=thresholds,
                                with_time=with_time,
-                               colnames=colnames)
+                               colnames=colnames,
+                               summarize=False)
 
 def write_html(context, sheet, filename, title,
                thresholds=None, details=False,

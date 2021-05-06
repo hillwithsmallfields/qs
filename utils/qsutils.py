@@ -315,60 +315,9 @@ def back_from(when, years_back, months_back, days_back):
 
 later = datetime.timedelta(0, 1)
 
-HOVERCSS = '''
-<style>
-.overview {
-  position: relative;
-  display: inline-block;
-}
-.large {
-  font-weight: bold;
-}
-.credit {
-  color: green;
-}
-.ic {
-  font-size: xx-small;
-}
-.details {
-  visibility: hidden;
-  background-color: %s;
-  z-index: 1;
-  position: absolute;
-}
-.dethead {
-    font-size: x-small;
-}
-.detdate {
-    font-size: x-small;
-}
-.detamt {
-    font-size: x-small;
-}
-.detpay {
-    font-size: x-small;
-}
-.detcat {
-    font-size: x-small;
-}
-.detitem {
-    font-size: x-small;
-}
-.overview:hover .details {
-  visibility: visible;
-}
-table.summarytable {
-  border: 1px solid black;
-  width: 100%%;
-}
-.duplicated {
-  color: red;
-}
-</style>
-'''
-
 def table_support_css(details_background_colour):
-    return HOVERCSS % details_background_colour
+    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "hover-details.css")) as css_stream:
+        return css_stream.read() % details_background_colour
 
 def write_table_support_css(stream, details_background_colour):
     stream.write(table_support_css(details_background_colour))

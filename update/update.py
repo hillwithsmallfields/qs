@@ -119,7 +119,13 @@ def update_physical(charts_dir, begin_date, end_date, date_suffix, archive_dir):
 
     utils.qschart.qscharts(mfp_filename,
                            'calories',
-                           ['calories', 'breakfast', 'lunch', 'dinner', 'snacks'],
+                           ['calories'],
+                           begin_date, end_date, None,
+                           os.path.join(charts_dir, "total_calories-%s-%%s.png" % date_suffix),
+                           CHART_SIZES)
+    utils.qschart.qscharts(mfp_filename,
+                           'meals',
+                           ['breakfast', 'lunch', 'dinner', 'snacks'],
                            begin_date, end_date, None,
                            os.path.join(charts_dir, "meal_calories-%s-%%s.png" % date_suffix),
                            CHART_SIZES)

@@ -64,19 +64,12 @@ H3 {
     border-radius:  8px;
 }
 
-td.ok {
-    background-color: green;
-}
-td.overspent {
-    background-color: red;
-}
-
-button.active {
+.active {
     background-color: maroon;
     color:            #f0e0b0;
 }
 
-button.inactive {
+.inactive {
     background-color: #f0e0b0;
     color:            maroon;
 }
