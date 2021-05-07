@@ -13,29 +13,34 @@ import sys
 
 source_dir = os.path.dirname(os.path.realpath(__file__))
 
+# other parts of this project group
 sys.path.append(os.path.dirname(source_dir))
-import financial.classify
-import utils.qsutils
+import financial.classify       # https://github.com/hillwithsmallfields/qs/blob/master/financial/classify.py
+import utils.qsutils            # https://github.com/hillwithsmallfields/qs/blob/master/utils/qsutils.py
 
+# This corresponds to https://github.com/hillwithsmallfields
 my_projects = os.path.dirname(os.path.dirname(source_dir))
+
 sys.path.append(os.path.join(my_projects, "makers", "untemplate"))
 
 import throw_out_your_templates_p3 as untemplate
 from throw_out_your_templates_p3 import htmltags as T
 
 sys.path.append(os.path.join(my_projects, "coimealta/contacts"))
-import contacts_data
+import contacts_data            # https://github.com/hillwithsmallfields/coimealta/blob/master/contacts/contacts_data.py
 
 sys.path.append(os.path.join(my_projects, "noticeboard"))
 
-import announce
+import announce                 # https://github.com/hillwithsmallfields/noticeboard/blob/master/announce.py
 
 sys.path.append(os.path.join(my_projects, "coimealta/inventory"))
-import perishables
+import perishables              # https://github.com/hillwithsmallfields/coimealta/blob/master/inventory/perishables.py
 
 CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
 
 def make_remaining_cell(thresholds, spent_this_month, coi):
+    """Return a table cell showing how much is left in a budget category."""
+    # TODO: put this back into use
     available = float(thresholds.get(coi, 0))
     spent_string = spent_this_month.get(coi, "")
     spent = 0 if spent_string == "" else float(spent_string)
@@ -63,6 +68,11 @@ def labelled_section(title, body):
     return T.div[T.h2[title], body] if body else None
 
 class SectionalPage(object):
+
+    """Holder for collecting section to make up a page.
+    Each section has an H2 heading, and these are used to make a table of contents.
+    Empty sections are not added."""
+
     pass
 
     def __init__(self):
@@ -81,9 +91,12 @@ class SectionalPage(object):
                        T.div(class_="sectionbody")[section[1]]] for section in self._sections]]
 
 def dashboard_page_colours():
+    """Return the foreground and background colours, and a shading colour, specified in the stylesheet."""
+
     sheet = cssutils.parseFile(os.path.join(source_dir, "dashboard.css"))
 
     foreground = None
+    shading = None
     background = None
 
     for rule in sheet:
@@ -95,12 +108,19 @@ def dashboard_page_colours():
                 if property.name == 'background-color':
                     background = property.value
                     continue
-        if foreground and background:
+        elif rule.selectorText == 'H1':
+            for property in rule.style:
+                if property.name == 'background':
+                    shading = property.value
+                    continue
+        if foreground and background and shading:
             break
 
-    return foreground, background
+    return foreground, background, shading
 
 def linked_image(image_name, label):
+    """Return a collection of images wrapped in switcher,
+    with each image linked to a larger version."""
     return T.div(class_='imageswitcher', id=label)[
         [T.div(class_="%s" % period)[T.a(href="%s-%s-large.png" % (image_name, period))[
             # TODO: use thumb image, with small image revealed on hover, keeeping the large one linked
@@ -115,6 +135,8 @@ def weight_section():
     return linked_image("weight-stone", "weight")
 
 def transactions_section(charts_dir):
+    """Incorporate the file of recent spending in monitored categories
+    that is produced by chart-categories.lisp."""
     spending_chart_file = os.path.join(charts_dir, "past-quarter.html")
     return T.div[T.p["Full details ", T.a(href="by-class.html")["here"], "."],
                  wrap_box(linked_image("by-class", "transactions"),
@@ -153,17 +175,17 @@ def birthdays_section():
               T.td(class_='age')[contacts_data.age_string(person, this_year)]]
          for person in sorted([person
                               for person in people_by_id.values()
-                              if contacts_data.birthday_soon(person, this_year, today)],
+                              if contacts_data.birthday_soon(person, this_year, today, within_days=31)],
                               key=lambda person: contacts_data.birthday(person, this_year))]]
 
-def contact_section():
+def keep_in_touch_section():
     """List people who I mean to keep in touch with but haven't for a while."""
     people_by_id, _ = contacts_data.read_contacts(os.path.expandvars("$COMMON/org/contacts.csv"))
     today = datetime.date.today()
     this_year = today.year
     long_uncontacted = [person
                         for person in people_by_id.values()
-                        if contacts_data.contact_soon(person, today)]
+                        if contacts_data.contact_soon(person, today, days_since_last_contact=90)]
     if len(long_uncontacted) == 0:
         return T.p["No pending contacts."]
     return T.table(class_='contact_soon')[
@@ -173,6 +195,37 @@ def contact_section():
                                                        person.get('Primary email', ""))]]
          for person in sorted(long_uncontacted,
                               key=lambda person: contacts_data.last_contacted(person))]]
+
+def counts_table(caption, group):
+    pairs = [(name, len(members)) for name, members in group.items()]
+    s = sorted(pairs, key=lambda p: p[1])
+    r = reversed(s)
+    return T.div(class_="contacts_characteristics")[T.table[
+        T.caption[caption],
+        [T.tr[T.td[name], T.td[str(members)]]
+         for name, members in r]]]
+
+def contacts_section(contacts_analysis):
+    n_people = contacts_analysis['n_people']
+    return T.dl[
+        T.dt["Number of people"], T.dd[str(n_people)],
+        T.dt["By gender"],
+        T.dd["; ".join(["%s: %d" % (k, len(v))
+                        for k, v in contacts_analysis['by_gender'].items()])],
+        T.dt["Ordained"],
+        T.dd["%d (%g of total)" % (contacts_analysis['ordained'],
+                                   contacts_analysis['ordained']/n_people)],
+        T.dt["Dr/Prof"],
+        T.dd["%d (%g of total)" % (contacts_analysis['doctored'],
+                                   contacts_analysis['doctored']/n_people)]]
+
+def people_groups_section(contacts_analysis):
+    return row(counts_table("By nationality",
+                            contacts_analysis['by_nationality']),
+               counts_table("By title",
+                            contacts_analysis['by_title']),
+               counts_table("By place met",
+                            contacts_analysis['by_place_met']))
 
 def perishables_section():
     """List things to use up from the fridge, in order of expiry date."""
@@ -225,8 +278,12 @@ def shopping_section():
     # TODO: use org-ql to produce a filee
     return None
 
+def inventory_section():
+    # TODO: use coimealta/inventory
+    return None
+
 def travel_section():
-    # TODO: fetch from Google
+    # TODO: read travel.csv and a journeys file generated from Google
     return None
 
 def random_reflection():
@@ -239,7 +296,7 @@ def reflection_section():
         T.p[random_reflection()],
         T.p[random_reflection()]]
 
-def construct_dashboard_page(config, charts_dir):
+def construct_dashboard_page(config, charts_dir, contacts_analysis):
     page = SectionalPage()
     page.add_section("Weather", weather_section())
     page.add_section("Health", wrap_box(
@@ -252,12 +309,15 @@ def construct_dashboard_page(config, charts_dir):
     page.add_section("Spending", transactions_section(charts_dir))
     page.add_section("People", wrap_box(
         labelled_section("Birthdays", birthdays_section()),
-        labelled_section("To contact", contact_section())))
+        labelled_section("To contact", keep_in_touch_section()),
+        labelled_section("People", contacts_section(contacts_analysis)),
+        labelled_section("People groups", people_groups_section(contacts_analysis))))
     page.add_section("Food to use up in fridge", perishables_section())
     page.add_section("Agenda", wrap_box(
         labelled_section("Actions", actions_section()),
         labelled_section("Shopping", shopping_section())))
     page.add_section("Travel", travel_section())
+    page.add_section("Inventory", inventory_section())
     page.add_section("Texts for reflection", reflection_section())
     return [T.body[
         T.script(src="dashboard.js"),
@@ -287,13 +347,13 @@ def tagged(tag, text):
 def tagged_file_contents(tag, filename):
     return tagged(tag, file_contents(filename))
 
-def write_dashboard_page(config, charts_dir, inline=True):
+def write_dashboard_page(config, charts_dir, contacts_analysis, details_background_color="gold", inline=True):
     with open(os.path.join(charts_dir, "index.html"), 'w') as page_stream:
         page_stream.write(
             page_text(
-                construct_dashboard_page(config, charts_dir),
+                construct_dashboard_page(config, charts_dir, contacts_analysis),
                 (tagged_file_contents("style", os.path.join(source_dir, "dashboard.css"))
-                 + utils.qsutils.table_support_css("gold")) if inline else "",
+                 + utils.qsutils.table_support_css(details_background_color)) if inline else "",
                 tagged_file_contents("script", os.path.join(source_dir, "dashboard.js")) if inline else ""))
     if not inline:
         for filename in ("dashboard.css",

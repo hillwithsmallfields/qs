@@ -253,9 +253,9 @@ class itemized_amount:
         return ('<td class="%s">' % css_class
                 + '<span class="overview%s">%s' % (self.magnitude_class(title, extra_data), str(self))
                 + ' <span class="ic">[%d%s]</span>\n' % (len(self.transactions), dupstring)
-                + '      <span class="details">\n        <table border>\n'
+                + '      <div class="details">\n        <table border>\n'
                 + ('''          <tr><th colspan="5" class="dethead">%s (%s in %d items)</th></tr>\n'''
                           % (title, str(self), len(self.transactions)))
                 + ('\n'.join([tooltip_string(item, with_time)
                               for item in self.transactions]))
-                + '\n        </table>\n      </span>\n    </td>')
+                + '\n        </table>\n      </div>\n    </td>')

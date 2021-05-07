@@ -11,6 +11,7 @@ import yaml
 
 import numpy as np
 
+# other parts of this project group:
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import utils.check_merged_row_dates
 import dashboard.dashboard
@@ -22,9 +23,8 @@ import qsmerge
 import qsutils
 
 my_projects = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-print("update.py sees my_projects as", my_projects)
 sys.path.append(os.path.join(my_projects, "coimealta/contacts"))
-import link_contacts
+import link_contacts # https://github.com/hillwithsmallfields/coimealta/blob/master/contacts/link_contacts.py
 
 CHART_SIZES = {'thumb': {'figsize': (3,2)},
                'small': {'figsize': (5,4)},
@@ -148,7 +148,7 @@ def update_startpage():
 def update_contacts(charts_dir, archive_dir):
     contacts_file = os.path.expandvars("$COMMON/org/contacts.csv")
     contacts_scratch = "/tmp/contacts_scratch.csv"
-    link_contacts.link_contacts_main(contacts_file, False, False, contacts_scratch)
+    contacts_analysis = link_contacts.link_contacts_main(contacts_file, True, False, contacts_scratch)
     with open(contacts_file) as confile:
         original_lines = len(confile.readlines())
     with open(contacts_scratch) as conscratch:
@@ -158,6 +158,15 @@ def update_contacts(charts_dir, archive_dir):
         shutil.copy(contacts_scratch, contacts_file)
     else:
         print("wrong number of people after linking contacts, originally", original_lines, "but now", scratch_lines)
+    return contacts_analysis
+
+def update_travel(do_externals):
+    # TODO: write travel section of QS code
+    if do_externals:
+        # TODO: fetch from Google
+        pass
+    # TODO: calculate distances
+    pass
 
 def make_tarball(tarball, parent_directory, of_directory):
     if not os.path.isfile(tarball):
@@ -189,6 +198,9 @@ def update_backups():
                 # too large for genisoimage:
                 # "/tmp/music.tgz",
                 "/tmp/github.tgz"]
+            # prepare a backup of my encrypted partition, if mounted
+            if os.path.isdir(os.path.expandvars("/mnt/crypted/$USER")):
+                os.system("backup-confidential")
             # look for the output of https://github.com/hillwithsmallfields/JCGS-scripts/blob/master/backup-confidential
             confidential_backup = latest_file_matching("/tmp/personal-*.tgz.gpg")
             if confidential_backup:
@@ -215,7 +227,8 @@ def updates(charts_dir,
     config = qsutils.load_config(verbose, None, None, accounts_config, conversions_config)
 
     update_finances(config, charts_dir, archive_dir, verbose)
-    update_contacts(charts_dir, archive_dir)
+    contacts_analysis = update_contacts(charts_dir, archive_dir)
+    update_travel(do_externals)
     if do_externals:
         mfp_filename = os.path.expandvars("$COMMON/health/mfp-accum.csv")
         if ((datetime.datetime.fromtimestamp(os.path.getmtime(mfp_filename))
@@ -230,7 +243,7 @@ def updates(charts_dir,
     os.makedirs(charts_dir, exist_ok=True)
 
     today = datetime.date.today()
-    _, background_colour = dashboard.dashboard.dashboard_page_colours()
+    text_colour, background_colour, shading = dashboard.dashboard.dashboard_page_colours()
     for param_set in CHART_SIZES.values():
         param_set['facecolor'] = background_colour
 
@@ -248,7 +261,7 @@ def updates(charts_dir,
         # TODO: get oura.com data
         # TODO: get garmin data
 
-    dashboard.dashboard.write_dashboard_page(config, charts_dir)
+    dashboard.dashboard.write_dashboard_page(config, charts_dir, contacts_analysis, details_background_color=shading)
     update_startpage()
     update_backups()
 

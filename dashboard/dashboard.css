@@ -64,6 +64,11 @@ H3 {
     border-radius:  8px;
 }
 
+div.contacts_characteristics {
+    overflow: scroll;
+    height: 24em;
+}
+
 .active {
     background-color: maroon;
     color:            #f0e0b0;
