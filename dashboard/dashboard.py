@@ -138,9 +138,12 @@ def transactions_section(charts_dir):
     """Incorporate the file of recent spending in monitored categories
     that is produced by chart-categories.lisp."""
     spending_chart_file = os.path.join(charts_dir, "past-quarter.html")
-    return T.div[T.p["Full details ", T.a(href="by-class.html")["here"], "."],
-                 wrap_box(linked_image("by-class", "transactions"),
-                          untemplate.safe_unicode(file_contents(spending_chart_file)))]
+    return T.div[wrap_box(linked_image("by-class", "transactions"),
+                          # I'd like to do this, but keeping the maroon colours
+                          T.a(class_="plainlink", href="by-class.html")[
+                              untemplate.safe_unicode(file_contents(spending_chart_file))
+                          ]
+    )]
 
 def timetable_section():
     # TODO: possibly add columns for weather data for the same times
@@ -213,11 +216,11 @@ def contacts_section(contacts_analysis):
         T.dd["; ".join(["%s: %d" % (k, len(v))
                         for k, v in contacts_analysis['by_gender'].items()])],
         T.dt["Ordained"],
-        T.dd["%d (%g of total)" % (contacts_analysis['ordained'],
-                                   contacts_analysis['ordained']/n_people)],
+        T.dd["%d (%d%% of total)" % (contacts_analysis['ordained'],
+                                     round(100*contacts_analysis['ordained']/n_people))],
         T.dt["Dr/Prof"],
-        T.dd["%d (%g of total)" % (contacts_analysis['doctored'],
-                                   contacts_analysis['doctored']/n_people)]]
+        T.dd["%d (%d%% of total)" % (contacts_analysis['doctored'],
+                                     round(100*contacts_analysis['doctored']/n_people))]]
 
 def people_groups_section(contacts_analysis):
     return row(counts_table("By nationality",
@@ -310,7 +313,7 @@ def construct_dashboard_page(config, charts_dir, contacts_analysis):
     page.add_section("People", wrap_box(
         labelled_section("Birthdays", birthdays_section()),
         labelled_section("To contact", keep_in_touch_section()),
-        labelled_section("People", contacts_section(contacts_analysis)),
+        labelled_section("People in contacts file", contacts_section(contacts_analysis)),
         labelled_section("People groups", people_groups_section(contacts_analysis))))
     page.add_section("Food to use up in fridge", perishables_section())
     page.add_section("Agenda", wrap_box(

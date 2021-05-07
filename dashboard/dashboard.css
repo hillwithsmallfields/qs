@@ -22,6 +22,18 @@ A:link    { color: #000060; text-decoration: none }
 A:active  { color: green; text-decoration: none }
 A:visited { color: purple; text-decoration: none }
 
+a.plainlink:link {
+    color: maroon;
+}
+
+a.plainlink:active {
+    color: maroon;
+}
+
+a.plainlink:visited {
+    color: maroon;
+}
+
 H1 {
     font-size:      large;
     font-style:     normal;
