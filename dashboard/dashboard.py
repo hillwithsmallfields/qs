@@ -122,14 +122,15 @@ def linked_image(image_name, label):
     """Return a collection of images wrapped in switcher,
     with each image linked to a larger version."""
     # TODO: use thumb image, with small image revealed on hover, keeeping the large one linked
-    return T.div(class_='switcher', id_=label)[
-        [T.div(class_="choice", name=period)[T.a(href="%s-%s-large.png" % (image_name, period))[
-            T.img(src="%s-%s-small.png" % (image_name, period))]] for period in ('all_time', 'past_year', 'past_quarter', 'past_month', 'past_week')],
-        T.div[T.button(class_='inactive', onclick="select_version('%s', 'all_time')"%label)['all'],
-              T.button(class_='inactive', onclick="select_version('%s', 'past_year')"%label)['year'],
-              T.button(class_='active', onclick="select_version('%s', 'past_quarter')"%label)['quarter'],
-              T.button(class_='inactive', onclick="select_version('%s', 'past_month')"%label)['month'],
-              T.button(class_='inactive', onclick="select_version('%s', 'past_week')"%label)['week']]]
+    return T.table(class_='switcher', id_=label)[
+        T.tr(align="center")[T.td[[T.div(class_="choice", name=period)[T.a(href="%s-%s-large.png" % (image_name, period))[
+            T.img(src="%s-%s-small.png" % (image_name, period))]] for period in ('all_time', 'past_year', 'past_quarter', 'past_month', 'past_week')]]],
+        T.tr(align="center")[
+            T.td[T.div[T.button(class_='inactive', name='all_time', onclick="select_version('%s', 'all_time')"%label)['all'],
+                       T.button(class_='inactive', name='past_year', onclick="select_version('%s', 'past_year')"%label)['year'],
+                       T.button(class_='active', name='past_quarter', onclick="select_version('%s', 'past_quarter')"%label)['quarter'],
+                       T.button(class_='inactive', name='past_month', onclick="select_version('%s', 'past_month')"%label)['month'],
+                       T.button(class_='inactive', name='past_week', onclick="select_version('%s', 'past_week')"%label)['week']]]]]
 
 def weight_section():
     return linked_image("weight-stone", "weight")
