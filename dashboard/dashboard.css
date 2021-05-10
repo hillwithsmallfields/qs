@@ -91,23 +91,23 @@ div.contacts_characteristics {
     color:            maroon;
 }
 
-.all_time {
+div[name="all_time"] {
     display: none;
 }
 
-.past_year {
+div[name="past_year"] {
     display: none;
 }
 
-.past_quarter {
+div[name="past_quarter"] {
     display: block;
 }
 
-.past_month {
+div[name="past_month"] {
     display: none;
 }
 
-.past_week {
+div[name="past_week"] {
     display: none;
 }
 

@@ -1,37 +1,24 @@
 // dashboard support
 
-function highlight_one(container_id, highlighted_name,
-                       hl_display, hl_class,
-                       ll_display, ll_class) {
+function select_version(container_id, choice) {
     var container = document.getElementById(container_id);
-    console.info("container is %o", container);
-    container.childNodes.forEach(function(child) {
-        console.info("  child is %o", child);
-        if (child.Name === highlighted_name) {
-            if (hl_display) {
-                child.style.display = hl_display;
-            }
-            if (hl_class) {
-                child.class = hl_class;
-            }
+    choices = container.getElementsByClassName('choice');
+    for (let i=0; i<choices.length; i++) {
+        if (choices[i].getAttribute('name') === choice) {
+            choices[i].style.display = 'block';
         } else {
-            if (ll_display) {
-                child.style.display = ll_display;
-            }
-            if (ll_class) {
-                child.class = ll_class;
-            }
+            choices[i].style.display = 'none';
         }
-    })
+    }
+    buttons = container.getElementsByTagName('button');
+    for (let i=0; i<buttons.length; i++) {
+        if (buttons[i].getAttribute('name') === choice) {
+            buttons[i].className = 'active';
+        } else {
+            buttons[i].className = 'inactive';
+        }
+    }
 }
-
-function setperiod(chartid, period) {
-    console.log("setperiod", chartid, period);
-    highlight_one(chartid, period,
-                  "block", null,
-                  "none", null);
-}
-
 
 function timetable_updater() {
     setInterval(function () {

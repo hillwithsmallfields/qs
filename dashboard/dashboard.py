@@ -121,22 +121,27 @@ def dashboard_page_colours():
 def linked_image(image_name, label):
     """Return a collection of images wrapped in switcher,
     with each image linked to a larger version."""
-    return T.div(class_='imageswitcher', id=label)[
-        [T.div(class_="%s" % period)[T.a(href="%s-%s-large.png" % (image_name, period))[
-            # TODO: use thumb image, with small image revealed on hover, keeeping the large one linked
+    # TODO: use thumb image, with small image revealed on hover, keeeping the large one linked
+    return T.div(class_='switcher', id_=label)[
+        [T.div(class_="choice", name=period)[T.a(href="%s-%s-large.png" % (image_name, period))[
             T.img(src="%s-%s-small.png" % (image_name, period))]] for period in ('all_time', 'past_year', 'past_quarter', 'past_month', 'past_week')],
-        T.form[T.button(class_='inactive', onclick="setperiod('%s', 'all_time')"%label)['all'],
-               T.button(class_='inactive', onclick="setperiod('%s', 'past_year')"%label)['year'],
-               T.button(class_='active', onclick="setperiod('%s', 'past_quarter')"%label)['quarter'],
-               T.button(class_='inactive', onclick="setperiod('%s', 'past_month')"%label)['month'],
-               T.button(class_='inactive', onclick="setperiod('%s', 'past_week')"%label)['week']]]
+        T.div[T.button(class_='inactive', onclick="select_version('%s', 'all_time')"%label)['all'],
+              T.button(class_='inactive', onclick="select_version('%s', 'past_year')"%label)['year'],
+              T.button(class_='active', onclick="select_version('%s', 'past_quarter')"%label)['quarter'],
+              T.button(class_='inactive', onclick="select_version('%s', 'past_month')"%label)['month'],
+              T.button(class_='inactive', onclick="select_version('%s', 'past_week')"%label)['week']]]
 
 def weight_section():
     return linked_image("weight-stone", "weight")
 
+def peak_flow_section():
+    # TODO: get peak flow data
+    return None
+
 def transactions_section(charts_dir):
     """Incorporate the file of recent spending in monitored categories
     that is produced by chart-categories.lisp."""
+    # TODO: spending per category per day of month/week
     spending_chart_file = os.path.join(charts_dir, "past-quarter.html")
     return T.div[wrap_box(linked_image("by-class", "transactions"),
                           # I'd like to do this, but keeping the maroon colours
@@ -156,12 +161,14 @@ def timetable_section():
         # TODO: debug this merge, I don't think it's right yet
         extras.append(day_file)
     # TODO: fetch from Google calendar
-    return T.div[T.table[
-        T.h2["Timetable for %s %s" % (day_of_week, today.isoformat())],
-        [[T.tr(class_="inactive")[T.td[slot.start.strftime("%H:%M")],
-                                  T.td[T.a(href=slot.link)[slot.activity]
-                                       if slot.link
-                                       else slot.activity]]
+    return T.div[T.h2["Timetable for %s %s" % (day_of_week, today.isoformat())],
+                 T.table(id_="timetable")[
+                     [[T.tr(class_="inactive",
+                            name=slot.start.strftime("%H:%M"))[
+                                T.td[slot.start.strftime("%H:%M")],
+                                T.td[T.a(href=slot.link)[slot.activity]
+                                     if slot.link
+                                     else slot.activity]]
           for slot in announce.get_day_announcer(
                   os.path.expandvars("$COMMON/timetables/timetable.csv"),
                   extra_files=extras).ordered()]]]]
@@ -246,6 +253,10 @@ def calories_section():
 def meals_section():
     return linked_image("meal_calories", "meal_calories")
 
+def calories_per_day_of_week():
+    # TODO: make file with calories split by day of week, and display that
+    return None
+
 def foods_section():
     return linked_image("origin_calories", "origins")
 
@@ -270,15 +281,18 @@ def exercise_section():
     return None
 
 def sleep_section():
-    # TODO: read from data fetched from Oura (sleep.csv)
+    return linked_image("sleep", "sleep")
+
+def temperature_section():
+    # TODO: make temperature chart
     return None
 
 def actions_section():
-    # TODO: use org-ql to produce a filee
+    # TODO: use org-ql to produce a file
     return None
 
 def shopping_section():
-    # TODO: use org-ql to produce a filee
+    # TODO: use org-ql to produce a file
     return None
 
 def inventory_section():
@@ -306,9 +320,12 @@ def construct_dashboard_page(config, charts_dir, contacts_analysis):
         labelled_section("Weight", weight_section()),
         labelled_section("Calories", calories_section()),
         labelled_section("Meals", meals_section()),
+        labelled_section("By day of week", calories_per_day_of_week()),
         labelled_section("Food groups", foods_section()),
         labelled_section("Exercise", exercise_section()),
-        labelled_section("Sleep", sleep_section())))
+        labelled_section("Peak flow", peak_flow_section()),
+        labelled_section("Sleep", sleep_section()),
+        labelled_section("Temperature", temperature_section())))
     page.add_section("Spending", transactions_section(charts_dir))
     page.add_section("People", wrap_box(
         labelled_section("Birthdays", birthdays_section()),
