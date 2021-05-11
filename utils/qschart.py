@@ -67,10 +67,16 @@ def munge_finances(data):
 def munge_calories(data):
     pass
 
+def munge_sleep(data):
+    pass
+    # data['Start'] = data.applymap(lambda r: r['bedtime_start'].time())
+    # data['End'] = data.applymap(lambda r: r['bedtime_end'].time())
+
 MUNGERS = {
     'weight': munge_weights,
     'calories': munge_calories,
-    'finances': munge_finances
+    'finances': munge_finances,
+    'sleep': munge_sleep
 }
 
 def normalize_column_name(unit_name):
@@ -94,7 +100,13 @@ def qschart(mainfile, file_type, columns, begin, end, match, outfile, **plot_par
 
     data = pd.read_csv(mainfile, parse_dates=['Date'])
 
+    # do this before trimming to 'begin' and 'end', as this may create
+    # the date column they need:
+    if file_type in MUNGERS:
+        MUNGERS[file_type](data)
+
     if begin:
+        # print("begin is of type", type(begin))
         data = data.loc[data['Date'] >= begin]
     if end:
         data = data.loc[data['Date'] <= end]
@@ -102,9 +114,6 @@ def qschart(mainfile, file_type, columns, begin, end, match, outfile, **plot_par
         pass                    # TODO: filter data
 
     data.set_index("Date")
-
-    if file_type in MUNGERS:
-        MUNGERS[file_type](data)
 
     fig, axs = plt.subplots(**plot_params) # the background colour comes in here
     # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html for more parameters

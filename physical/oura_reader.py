@@ -23,7 +23,20 @@ def oura_fetch(data, start, end):
         end = end.isoformat()
     client = oura.OuraClient(personal_access_token=decouple.config('OURA_PERSONAL_ACCESS_TOKEN'))
     for night in client.sleep_summary(start=start, end=end)['sleep']:
-        data[night['bedtime_end'][:10]] = {k: night.get(k) for k in COLUMNS}
+        waking = night['bedtime_end'][:10]
+        night['Date'] = waking
+        night['End'] = night['bedtime_end'][11:19]
+        night['Start'] = night['bedtime_start'][11:19]
+        for field in ['Latency',
+                      'Duration',
+                      'Awake',
+                      'Light',
+                      'Rem',
+                      'Restless',
+                      'Deep',
+                      'Total']:
+            night[field] = float(night[field.lower()]) / 3600.0
+        data[waking] = {k: night.get(k) for k in COLUMNS}
 
 def oura_read_existing(data, filename):
     with open(filename) as instream:
@@ -33,7 +46,7 @@ def oura_read_existing(data, filename):
 
 def oura_write(data, filename):
     with open(filename, 'w') as outstream:
-        writer = csv.DictWriter(outstream, COLUMNS)
+        writer = csv.DictWriter(outstream, ['Date'] + COLUMNS)
         writer.writeheader()
         for date in sorted(data.keys()):
             writer.writerow(data[date])

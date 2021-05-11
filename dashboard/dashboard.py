@@ -121,7 +121,6 @@ def dashboard_page_colours():
 def linked_image(image_name, label):
     """Return a collection of images wrapped in switcher,
     with each image linked to a larger version."""
-    # TODO: use thumb image, with small image revealed on hover, keeeping the large one linked
     return T.table(class_='switcher', id_=label)[
         T.tr(align="center")[T.td[[T.div(class_="choice", name=period)[T.a(href="%s-%s-large.png" % (image_name, period))[
             T.img(src="%s-%s-small.png" % (image_name, period))]] for period in ('all_time', 'past_year', 'past_quarter', 'past_month', 'past_week')]]],
@@ -139,11 +138,11 @@ def peak_flow_section():
     # TODO: get peak flow data
     return None
 
-def transactions_section(charts_dir):
+def transactions_section(file_locations):
     """Incorporate the file of recent spending in monitored categories
     that is produced by chart-categories.lisp."""
     # TODO: spending per category per day of month/week
-    spending_chart_file = os.path.join(charts_dir, "past-quarter.html")
+    spending_chart_file = os.path.join(file_locations['charts'], "past-quarter.html")
     return T.div[wrap_box(linked_image("by-class", "transactions"),
                           # I'd like to do this, but keeping the maroon colours
                           T.a(class_="plainlink", href="by-class.html")[
@@ -151,12 +150,12 @@ def transactions_section(charts_dir):
                           ]
     )]
 
-def timetable_section():
+def timetable_section(file_locations):
     # TODO: possibly add columns for weather data for the same times
     # TODO: add script to change the row class for the row containing the current time
     today = datetime.date.today()
     day_of_week = today.strftime("%A")
-    day_file = os.path.join(os.path.expandvars("$COMMON/timetables"), day_of_week + ".csv")
+    day_file = os.path.join(file_locations['timetables-dir'], day_of_week + ".csv")
     extras = []
     if os.path.isfile(day_file):
         # TODO: debug this merge, I don't think it's right yet
@@ -171,11 +170,12 @@ def timetable_section():
                                      if slot.link
                                      else slot.activity]]
           for slot in announce.get_day_announcer(
-                  os.path.expandvars("$COMMON/timetables/timetable.csv"),
+                  os.path.join(file_locations['timetables-dir'],
+                               file_locations['default-timetable']),
                   extra_files=extras).ordered()]]]]
 
-def birthdays_section():
-    people_by_id, _ = contacts_data.read_contacts(os.path.expandvars("$COMMON/org/contacts.csv"))
+def birthdays_section(file_locations):
+    people_by_id, _ = contacts_data.read_contacts(file_locations['contacts-file'])
     today = datetime.date.today()
     this_year = today.year
     return T.table(class_='birthdays')[
@@ -189,9 +189,9 @@ def birthdays_section():
                               if contacts_data.birthday_soon(person, this_year, today, within_days=31)],
                               key=lambda person: contacts_data.birthday(person, this_year))]]
 
-def keep_in_touch_section():
+def keep_in_touch_section(file_locations):
     """List people who I mean to keep in touch with but haven't for a while."""
-    people_by_id, _ = contacts_data.read_contacts(os.path.expandvars("$COMMON/org/contacts.csv"))
+    people_by_id, _ = contacts_data.read_contacts(file_locations['contacts-file'])
     today = datetime.date.today()
     this_year = today.year
     long_uncontacted = [person
@@ -284,37 +284,41 @@ def exercise_section():
 def sleep_section():
     return linked_image("sleep", "sleep")
 
+def blood_pressure_section():
+    return None
+
 def temperature_section():
     # TODO: make temperature chart
     return None
 
-def actions_section():
+def actions_section(file_locations):
     # TODO: use org-ql to produce a file
     return None
 
-def shopping_section():
+def shopping_section(file_locations):
     # TODO: use org-ql to produce a file
     return None
 
-def inventory_section():
+def inventory_section(file_locations):
     # TODO: use coimealta/inventory
     return None
 
-def travel_section():
+def travel_section(file_locations):
     # TODO: read travel.csv and a journeys file generated from Google
     return None
 
-def random_reflection():
-    reflections_dir = os.path.expandvars("$COMMON/texts/reflection")
+def random_reflection(reflections_dir):
     with open(random.choice(glob.glob(os.path.join(reflections_dir, "*.txt")))) as instream:
         return random.choice([line.strip() for line in instream if line != "\n"])
 
-def reflection_section():
+def reflection_section(file_locations):
+    reflections_dir = file_locations['reflections-dir']
     return T.div(class_="reflection")[
-        T.p[random_reflection()],
-        T.p[random_reflection()]]
+        T.p[random_reflection(reflections_dir)],
+        T.p[random_reflection(reflections_dir)]]
 
-def construct_dashboard_page(config, charts_dir, contacts_analysis):
+def construct_dashboard_page(config, file_locations, contacts_analysis):
+    charts_dir = file_locations['charts']
     page = SectionalPage()
     page.add_section("Weather", weather_section())
     page.add_section("Health", wrap_box(
@@ -324,27 +328,28 @@ def construct_dashboard_page(config, charts_dir, contacts_analysis):
         labelled_section("By day of week", calories_per_day_of_week()),
         labelled_section("Food groups", foods_section()),
         labelled_section("Exercise", exercise_section()),
+        labelled_section("Blood pressure", blood_pressure_section()),
         labelled_section("Peak flow", peak_flow_section()),
         labelled_section("Sleep", sleep_section()),
         labelled_section("Temperature", temperature_section())))
-    page.add_section("Spending", transactions_section(charts_dir))
+    page.add_section("Spending", transactions_section(file_locations))
     page.add_section("People", wrap_box(
-        labelled_section("Birthdays", birthdays_section()),
-        labelled_section("To contact", keep_in_touch_section()),
+        labelled_section("Birthdays", birthdays_section(file_locations)),
+        labelled_section("To contact", keep_in_touch_section(file_locations)),
         labelled_section("People in contacts file", contacts_section(contacts_analysis)),
         labelled_section("People groups", people_groups_section(contacts_analysis))))
     page.add_section("Food to use up in fridge", perishables_section())
     page.add_section("Agenda", wrap_box(
-        labelled_section("Actions", actions_section()),
-        labelled_section("Shopping", shopping_section())))
-    page.add_section("Travel", travel_section())
-    page.add_section("Inventory", inventory_section())
-    page.add_section("Texts for reflection", reflection_section())
-    return [T.body[
+        labelled_section("Actions", actions_section(file_locations)),
+        labelled_section("Shopping", shopping_section(file_locations))))
+    page.add_section("Travel", travel_section(file_locations))
+    page.add_section("Inventory", inventory_section(file_locations))
+    page.add_section("Texts for reflection", reflection_section(file_locations))
+    return [T.body(onload="start_timetable_updater()")[
         T.script(src="dashboard.js"),
         T.h1["My dashboard"],
         wrap_box(page.toc(),
-                 T.div(class_="timetable")[timetable_section()]),
+                 T.div(class_="timetable")[timetable_section(file_locations)]),
         page.sections()]]
 
 def page_text(page_contents, style_text, script_text):
@@ -368,11 +373,12 @@ def tagged(tag, text):
 def tagged_file_contents(tag, filename):
     return tagged(tag, file_contents(filename))
 
-def write_dashboard_page(config, charts_dir, contacts_analysis, details_background_color="gold", inline=True):
+def write_dashboard_page(config, file_locations, contacts_analysis, details_background_color="gold", inline=True):
+    charts_dir = file_locations['charts']
     with open(os.path.join(charts_dir, "index.html"), 'w') as page_stream:
         page_stream.write(
             page_text(
-                construct_dashboard_page(config, charts_dir, contacts_analysis),
+                construct_dashboard_page(config, file_locations, contacts_analysis),
                 (tagged_file_contents("style", os.path.join(source_dir, "dashboard.css"))
                  + utils.qsutils.table_support_css(details_background_color)) if inline else "",
                 tagged_file_contents("script", os.path.join(source_dir, "dashboard.js")) if inline else ""))

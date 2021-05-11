@@ -26,8 +26,7 @@ my_projects = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(_
 sys.path.append(os.path.join(my_projects, "coimealta/contacts"))
 import link_contacts # https://github.com/hillwithsmallfields/coimealta/blob/master/contacts/link_contacts.py
 
-CHART_SIZES = {'thumb': {'figsize': (3,2)},
-               'small': {'figsize': (5,4)},
+CHART_SIZES = {'small': {'figsize': (5,4)},
                'large': {'figsize': (11,8)}}
 
 def file_newer_than_file(a, b):
@@ -44,13 +43,16 @@ def latest_file_matching(template):
     print("looking for files matching", template, "and got", files)
     return files and sorted(files, key=os.path.getmtime)[-1]
 
-def update_finances(config, charts_dir, archive_dir, verbose):
+def update_finances(config, file_locations, verbose):
 
-    main_account = os.path.expandvars("$COMMON/finances/finances.csv")
-    finances_completions = os.path.expandvars("$COMMON/var/finances-completions.el")
-    bank_statement_template = os.path.expanduser("~/Downloads/Transaction*.csv")
-    merge_results_dir = os.path.expanduser("~/scratch/auto-merge-results")
-    merge_results_file = os.path.join(merge_results_dir, "merged-with-unmatched-all.csv")
+    charts_dir = file_locations['charts']
+    archive_dir = file_locations['archive']
+
+    main_account = file_locations['main-account']
+    finances_completions = file_locations['finances-completions']
+    bank_statement_template = file_locations['bank-statement-template']
+    merge_results_dir = file_locations['merge-results-dir']
+    merge_results_file = os.path.join(merge_results_dir, file_locations['merge-results-file'])
 
     latest_bank_statement = latest_file_matching(bank_statement_template)
 
@@ -77,16 +79,17 @@ def update_finances(config, charts_dir, archive_dir, verbose):
                                    config,
                                    verbose,
                                    {'input-file': main_account,
-                                    'statements-file': os.path.expandvars("$COMMON/finances/handelsbanken/handelsbanken-full.csv"),
-                                    'classifiers-file': "budgetting-classes.yaml",
-                                    'thresholds-file': "budgetting-thresholds.yaml"})
+                                    'statements-file': file_locations['accumulated-bank-statements-file'],
+                                    'classifiers-file': file_locations['budgeting-classes-file'],
+                                    'thresholds-file': file_locations['thresholds-file']})
 
     if file_newer_than_file(finances_completions, main_account):
         if verbose: print("updating finances completions")
         list_completions.list_completions()
 
-def update_finances_charts(config, charts_dir, begin_date, end_date, date_suffix, verbose):
+def update_finances_charts(config, file_locations, begin_date, end_date, date_suffix, verbose):
 
+    charts_dir = file_locations['charts']
     utils.qschart.qscharts(os.path.join(charts_dir, "by-class.csv"),
                            'finances',
                            dashboard.dashboard.CATEGORIES_OF_INTEREST,
@@ -94,13 +97,16 @@ def update_finances_charts(config, charts_dir, begin_date, end_date, date_suffix
                            os.path.join(charts_dir, "by-class-%s-%%s.png" % date_suffix),
                            CHART_SIZES)
 
-def update_physical(charts_dir, begin_date, end_date, date_suffix, archive_dir):
+def update_physical(file_locations, begin_date, end_date, date_suffix):
 
-    physical = os.path.expandvars("$COMMON/health/physical.csv")
-    weight = os.path.expandvars("$COMMON/health/weight.csv")
-    mfp_filename = os.path.expandvars("$COMMON/health/mfp-accum.csv")
+    charts_dir = file_locations['charts']
+    physical = file_locations['physical-filename']
+    weight = file_locations['weight-filename']
+    mfp_filename = file_locations['mfp-filename']
+    oura_filename = file_locations['oura-filename']
     # TODO: temperature, blood pressure, peak flow
     phys_scratch = "/tmp/physical-tmp.csv"
+    archive_dir = file_locations['archive']
 
     qsmerge.qsmerge(physical, [weight], None, phys_scratch)
 
@@ -118,35 +124,48 @@ def update_physical(charts_dir, begin_date, end_date, date_suffix, archive_dir):
         print("merge of physical data produced the wrong number of rows")
 
     utils.qschart.qscharts(mfp_filename,
-                           'calories',
-                           ['calories'],
+                           'calories', ['calories'],
                            begin_date, end_date, None,
                            os.path.join(charts_dir, "total_calories-%s-%%s.png" % date_suffix),
                            CHART_SIZES)
-    utils.qschart.qscharts(mfp_filename,
-                           'meals',
+    utils.qschart.qscharts(mfp_filename, 'meals',
                            ['breakfast', 'lunch', 'dinner', 'snacks'],
                            begin_date, end_date, None,
                            os.path.join(charts_dir, "meal_calories-%s-%%s.png" % date_suffix),
                            CHART_SIZES)
-    utils.qschart.qscharts(mfp_filename,
-                           'food_groups',
+    utils.qschart.qscharts(mfp_filename, 'food_groups',
                            ['carbohydrates', 'fat', 'protein', 'sugar'],
                            begin_date, end_date, None,
                            os.path.join(charts_dir, "origin_calories-%s-%%s.png" % date_suffix),
                            CHART_SIZES)
+    # utils.qschart.qscharts(oura_filename, 'sleep',
+    #                        ['Start', 'End', 'onset_latency', 'rem', 'deep'],
+    #                        begin_date, end_date, None,
+    #                        os.path.join(charts_dir, "sleep-%s-%%s.png" % date_suffix),
+    #                        CHART_SIZES)
+    # utils.qschart.qscharts(omron_filename, 'blood_pressure',
+    #                        ['Systolic', 'Diastolic', 'Heart rate'],
+    #                        begin_date, end_date, None,
+    #                        os.path.join(charts_dir, "blood-pressure-%s-%%s.png" % date_suffix),
+    #                        CHART_SIZES)
+    # utils.qschart.qscharts(garmin_filename, 'exercise',
+    #                        ['Cycling', 'Running'],
+    #                        begin_date, end_date, None,
+    #                        os.path.join(charts_dir, "exercise-%s-%%s.png" % date_suffix),
+    #                        CHART_SIZES))
 
-def update_startpage():
-    startpage = os.path.expanduser("~/private_html/startpage.html")
-    startpage_source = os.path.expanduser("~/common/org/startpage.yaml")
-    startpage_style = os.path.expanduser("~/common/org/startpage.css")
+def update_startpage(file_locations):
+    startpage = file_locations['startpage']
+    startpage_source = file_locations['startpage-source']
+    startpage_style = file_locations['startpage-style']
     if (os.path.getmtime(startpage_source) > os.path.getmtime(startpage)
         or os.path.getmtime(startpage_style) > os.path.getmtime(startpage)):
-        os.system("make_link_table.py --output %s --stylesheet %s %s"
-                  % (startpage, startpage_style, startpage_source))
+        os.system("%s --output %s --stylesheet %s %s"
+                  % (file_locations['start-page-generator'], startpage, startpage_style, startpage_source))
 
-def update_contacts(charts_dir, archive_dir):
-    contacts_file = os.path.expandvars("$COMMON/org/contacts.csv")
+def update_contacts(file_locations):
+    archive_dir = file_locations['archive']
+    contacts_file = file_locations['contacts-file']
     contacts_scratch = "/tmp/contacts_scratch.csv"
     contacts_analysis = link_contacts.link_contacts_main(contacts_file, True, False, contacts_scratch)
     with open(contacts_file) as confile:
@@ -174,10 +193,10 @@ def make_tarball(tarball, parent_directory, of_directory):
         print("backup command is", command)
         os.system(command)
 
-def update_backups():
-    common_backups = os.path.expanduser("~/common-backups")
-    daily_backup_template = "org-%s.tgz"
-    weekly_backup_template = "common-%s.tgz"
+def update_backups(file_locations):
+    common_backups = file_locations['common-backups']
+    daily_backup_template = file_locations['daily-backup-template']
+    weekly_backup_template = file_locations['weekly-backup-template']
     today = datetime.date.today()
     make_tarball(os.path.join(common_backups, daily_backup_template % today.isoformat()),
                  os.path.expandvars("$COMMON"),
@@ -187,11 +206,13 @@ def update_backups():
         make_tarball(os.path.join(common_backups, weekly_backup_template % today.isoformat()),
                      os.path.expandvars("$HOME"), "common")
     if today.day == 1:
-        backup_isos_directory = os.path.expanduser("~/isos/backups")
-        monthly_backup_name = os.path.join(backup_isos_directory, "backup-%s.iso" % today.isoformat())
+        backup_isos_directory = file_locations['backup_isos_directory']
+        monthly_backup_name = os.path.join(backup_isos_directory, file_locations['backup-iso-format'] % today.isoformat())
         if not os.path.isfile(monthly_backup_name):
             # make_tarball("/tmp/music.tgz", os.path.expandvars("$HOME"), "Music")
-            make_tarball("/tmp/github.tgz", os.path.expanduser("~/open-projects/github.com"), "hillwithsmallfields")
+            make_tarball("/tmp/github.tgz",
+                         file_locations['projects-dir'],
+                         file_locations['projects-user'])
             files_to_backup = [
                 latest_file_matching(os.path.join(common_backups, daily_backup_template % "*")),
                 latest_file_matching(os.path.join(common_backups, weekly_backup_template % "*")),
@@ -215,22 +236,24 @@ def update_backups():
             os.system("genisoimage -o %s %s" % (monthly_backup_name, " ".join(files_to_backup)))
             print("made backup in", monthly_backup_name)
 
-def updates(charts_dir,
+def updates(file_locations,
             begin_date, end_date,
             do_externals, verbose):
-    archive_dir = os.path.expanduser("~/archive")
-    configdir = os.path.expanduser("~/open-projects/github.com/hillwithsmallfields/qs/conf")
-    conversions_dir = os.path.expandvars("$COMMON/finances")
-    accounts_config = os.path.join(configdir, "accounts.yaml")
-    conversions_config = os.path.join(conversions_dir, "conversions.yaml")
+    charts_dir = file_locations['charts']
+    archive_dir = file_locations['archive']
+    configdir = file_locations['configdir']
+    conversions_dir = file_locations['conversions-dir']
+    accounts_config = os.path.join(configdir, file_locations['accounts-config'])
+    conversions_config = os.path.join(conversions_dir,
+                                      file_locations['conversions-config'])
 
     config = qsutils.load_config(verbose, None, None, accounts_config, conversions_config)
 
-    update_finances(config, charts_dir, archive_dir, verbose)
-    contacts_analysis = update_contacts(charts_dir, archive_dir)
+    update_finances(config, file_locations, verbose)
+    contacts_analysis = update_contacts(file_locations)
     update_travel(do_externals)
     if do_externals:
-        mfp_filename = os.path.expandvars("$COMMON/health/mfp-accum.csv")
+        mfp_filename = file_locations['mfp-filename']
         if ((datetime.datetime.fromtimestamp(os.path.getmtime(mfp_filename))
              + datetime.timedelta(hours=23, minutes=30))
             < datetime.datetime.now()):
@@ -239,6 +262,8 @@ def updates(charts_dir,
             print("Fetched data from myfitnesspal.com")
         else:
             print("myfitnesspal.com data fetched within the past day or so, so not doing again yet")
+        # TODO: fetch Omron data
+        # TODO: fetch Garmin data
 
     os.makedirs(charts_dir, exist_ok=True)
 
@@ -256,14 +281,12 @@ def updates(charts_dir,
                                if begin_date
                                else periods).items():
         begin = np.datetime64(datetime.datetime.combine(begin, datetime.time())) # .timestamp()
-        update_finances_charts(config, charts_dir, begin, end_date, date_suffix, verbose)
-        update_physical(charts_dir, begin, end_date, date_suffix, archive_dir)
-        # TODO: get oura.com data
-        # TODO: get garmin data
+        update_finances_charts(config, file_locations, begin, end_date, date_suffix, verbose)
+        update_physical(file_locations, begin, end_date, date_suffix)
 
-    dashboard.dashboard.write_dashboard_page(config, charts_dir, contacts_analysis, details_background_color=shading)
-    update_startpage()
-    update_backups()
+    dashboard.dashboard.write_dashboard_page(config, file_locations, contacts_analysis, details_background_color=shading)
+    update_startpage(file_locations)
+    update_backups(file_locations)
 
 def main():
     parser = qsutils.program_argparser()
@@ -277,7 +300,46 @@ def main():
                         help="""Don't pester external servers""")
     args = parser.parse_args()
 
-    updates(args.charts,
+    file_locations = {
+        'accounts-config': "accounts.yaml",
+        'accumulated-bank-statements-file': "$COMMON/finances/handelsbanken/handelsbanken-full.csv",
+        'archive': "~/archive",
+        'backup-iso-format': "backup-%s.iso",
+        'backup_isos_directory': "~/isos/backups",
+        'bank-statement-template': "~/Downloads/Transaction*.csv",
+        'budgeting-classes-file': "budgetting-classes.yaml",
+        'charts': args.charts,
+        'common-backups': "~/common-backups",
+        'configdir': "~/open-projects/github.com/hillwithsmallfields/qs/conf",
+        'contacts-file': "$COMMON/org/contacts.csv",
+        'conversions-config': "conversions.yaml",
+        'conversions-dir': "$COMMON/finances",
+        'daily-backup-template': "org-%s.tgz",
+        'default-timetable': "timetable.csv",
+        'finances-completions': "$COMMON/var/finances-completions.el",
+        'main-account': "$COMMON/finances/finances.csv",
+        'merge-results-dir': "~/scratch/auto-merge-results",
+        'merge-results-file': "merged-with-unmatched-all.csv",
+        'mfp-filename': "$COMMON/health/mfp-accum.csv",
+        'oura-filename': "$COMMON/health/sleep.csv",
+        'physical-filename': "$COMMON/health/physical.csv",
+        'projects-dir': "~/open-projects/github.com",
+        'projects-user': "hillwithsmallfields",
+        'reflections-dir': os.path.expandvars("$COMMON/texts/reflection"),
+        'start-page-generator': 'make_link_table.py',
+        'startpage': "~/private_html/startpage.html",
+        'startpage-source': "~/common/org/startpage.yaml",
+        'startpage-style': "~/common/org/startpage.css",
+        'thresholds-file': "budgetting-thresholds.yaml",
+        'timetables-dir': "$COMMON/timetables",
+        'weekly-backup-template': "common-%s.tgz",
+        'weight-filename': "$COMMON/health/weight.csv",
+    }
+
+    file_locations = {k: os.path.expanduser(os.path.expandvars(v))
+                      for k, v in file_locations.items()}
+
+    updates(file_locations,
             args.begin,
             args.end,
             not args.no_externals,
