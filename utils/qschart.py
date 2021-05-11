@@ -68,9 +68,15 @@ def munge_calories(data):
     pass
 
 def munge_sleep(data):
-    pass
-    # data['Start'] = data.applymap(lambda r: r['bedtime_start'].time())
-    # data['End'] = data.applymap(lambda r: r['bedtime_end'].time())
+    data['Latency'] = data['onset_latency'] / 3600.0
+    for field in ['Duration',
+                  'Awake',
+                  'Light',
+                  'Rem',
+                  'Restless',
+                  'Deep',
+                  'Total']:
+        data[field] = data[field.lower()] / 3600.0
 
 MUNGERS = {
     'weight': munge_weights,

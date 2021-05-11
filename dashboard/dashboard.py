@@ -152,7 +152,6 @@ def transactions_section(file_locations):
 
 def timetable_section(file_locations):
     # TODO: possibly add columns for weather data for the same times
-    # TODO: add script to change the row class for the row containing the current time
     today = datetime.date.today()
     day_of_week = today.strftime("%A")
     day_file = os.path.join(file_locations['timetables-dir'], day_of_week + ".csv")
@@ -347,7 +346,7 @@ def construct_dashboard_page(config, file_locations, contacts_analysis):
     page.add_section("Texts for reflection", reflection_section(file_locations))
     return [T.body(onload="start_timetable_updater()")[
         T.script(src="dashboard.js"),
-        T.h1["My dashboard"],
+        T.h1["Personal dashboard"],
         wrap_box(page.toc(),
                  T.div(class_="timetable")[timetable_section(file_locations)]),
         page.sections()]]
@@ -361,7 +360,7 @@ def page_text(page_contents, style_text, script_text):
                                         T.meta(rel='stylesheet',
                                                type_='text/css',
                                                href="dashboard.css"),
-                                        T.title["Dashboard"]]))
+                                        T.title["Personal dashboard"]]))
 
 def file_contents(filename):
     with open(filename) as instream:
@@ -384,7 +383,6 @@ def write_dashboard_page(config, file_locations, contacts_analysis, details_back
                 tagged_file_contents("script", os.path.join(source_dir, "dashboard.js")) if inline else ""))
     if not inline:
         for filename in ("dashboard.css",
-                         # TODO: put table_support_css into a file and add it here
                          "dashboard.js"):
             shutil.copy(os.path.join(source_dir, filename),
                         os.path.join(charts_dir, filename))

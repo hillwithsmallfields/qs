@@ -138,11 +138,15 @@ def update_physical(file_locations, begin_date, end_date, date_suffix):
                            begin_date, end_date, None,
                            os.path.join(charts_dir, "origin_calories-%s-%%s.png" % date_suffix),
                            CHART_SIZES)
-    # utils.qschart.qscharts(oura_filename, 'sleep',
-    #                        ['Start', 'End', 'onset_latency', 'rem', 'deep'],
-    #                        begin_date, end_date, None,
-    #                        os.path.join(charts_dir, "sleep-%s-%%s.png" % date_suffix),
-    #                        CHART_SIZES)
+    utils.qschart.qscharts(oura_filename, 'sleep',
+                           [
+                               # TODO: chart the start and end times
+                               # TODO: correlation between start time and various measures of sleep quality
+                               # 'Start', 'End',
+                               'Latency', 'Rem', 'Deep', 'Total'],
+                           begin_date, end_date, None,
+                           os.path.join(charts_dir, "sleep-%s-%%s.png" % date_suffix),
+                           CHART_SIZES)
     # utils.qschart.qscharts(omron_filename, 'blood_pressure',
     #                        ['Systolic', 'Diastolic', 'Heart rate'],
     #                        begin_date, end_date, None,
@@ -262,6 +266,7 @@ def updates(file_locations,
             print("Fetched data from myfitnesspal.com")
         else:
             print("myfitnesspal.com data fetched within the past day or so, so not doing again yet")
+        # TODO: fetch Oura data
         # TODO: fetch Omron data
         # TODO: fetch Garmin data
 

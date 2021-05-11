@@ -27,15 +27,6 @@ def oura_fetch(data, start, end):
         night['Date'] = waking
         night['End'] = night['bedtime_end'][11:19]
         night['Start'] = night['bedtime_start'][11:19]
-        for field in ['Latency',
-                      'Duration',
-                      'Awake',
-                      'Light',
-                      'Rem',
-                      'Restless',
-                      'Deep',
-                      'Total']:
-            night[field] = float(night[field.lower()]) / 3600.0
         data[waking] = {k: night.get(k) for k in COLUMNS}
 
 def oura_read_existing(data, filename):
