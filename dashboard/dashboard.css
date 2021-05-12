@@ -148,6 +148,14 @@ div[name="past_week"] {
     display: none;
 }
 
+.use_soon {
+    color: red;
+    font-weight:    bold;
+}
+
+.use_later {
+}
+
 /* Use with: */
 /*  <div class="flex-container"> */
 /*   <div>1</div> */

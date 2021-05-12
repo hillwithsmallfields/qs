@@ -243,9 +243,12 @@ def people_groups_section(contacts_analysis):
 def perishables_section():
     """List things to use up from the fridge, in order of expiry date."""
     items = perishables.get_perishables()
+    week_ahead = (datetime.datetime.now() + datetime.timedelta(days=7)).date()
     return (T.p["No items on record."]
             if len(items) == 0
-            else T.table[[T.tr[T.td[row['Best before'].isoformat()],
+            else T.table[[T.tr(class_="use_soon"
+                               if row['Best before'] < week_ahead
+                               else "use_later")[T.td[row['Best before'].isoformat()],
                                T.td[row['Product']],
                                T.td[str(row['Quantity'])]]
                           for row in items]])
