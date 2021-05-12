@@ -39,6 +39,8 @@ H1 {
     font-style:     normal;
     font-weight:    bold;
     padding:        4px;
+    padding-left:   8px;
+    padding-right:  8px;
     background:     #e0d0a0;
     color:          maroon;
     border-top:     2px solid maroon;
@@ -53,6 +55,8 @@ H2 {
     font-style:     normal;
     font-weight:    bold;
     padding:        4px;
+    padding-left:   8px;
+    padding-right:  8px;
     background:     #e0d0a0;
     color:          maroon;
     border-top:     2px solid maroon;
@@ -67,6 +71,24 @@ H3 {
     font-style:     normal;
     font-weight:    bold;
     padding:        4px;
+    padding-left:   8px;
+    padding-right:  8px;
+    background:     #e0d0a0;
+    color:          maroon;
+    border-top:     2px solid maroon;
+    border-bottom:  2px solid maroon;
+    border-left:    2px solid maroon;
+    border-right:   2px solid maroon;
+    border-radius:  8px;
+}
+
+H4 {
+    font-size:      small;
+    font-style:     normal;
+    font-weight:    bold;
+    padding:        4px;
+    padding-left:   8px;
+    padding-right:  8px;
     background:     #e0d0a0;
     color:          maroon;
     border-top:     2px solid maroon;
@@ -81,6 +103,11 @@ div.contacts_characteristics {
     height: 24em;
 }
 
+div.inventory_list {
+    overflow: scroll;
+    height: 24em;
+}
+
 .active {
     background-color: maroon;
     color:            #f0e0b0;
@@ -89,6 +116,16 @@ div.contacts_characteristics {
 .inactive {
     background-color: #f0e0b0;
     color:            maroon;
+}
+
+td.time_of_day {
+    padding-left:   4px;
+    padding-right:  4px;
+}
+
+td.activity {
+    padding-left:   4px;
+    padding-right:  4px;
 }
 
 div[name="all_time"] {

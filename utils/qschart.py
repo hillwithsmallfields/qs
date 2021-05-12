@@ -129,9 +129,11 @@ def qschart(mainfile, file_type, columns, begin, end, match, outfile, **plot_par
     # TODO: label every year; grid lines?
     # TODO: plot absolute values
     for column in columns:
-        data.loc[data[column_header(column)] != 0,
-                 ['Date', column_header(column)]].plot(ax=axs, x="Date", y=column_header(column))
-        plt.ylabel(column_label(column))
+        column_data = data.loc[data[column_header(column)] != 0,
+                               ['Date', column_header(column)]]
+        if not column_data.empty:
+            column_data.plot(ax=axs, x="Date", y=column_header(column))
+            plt.ylabel(column_label(column))
 
     plt.xlabel("Date")
     plt.grid(axis='both')

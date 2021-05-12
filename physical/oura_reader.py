@@ -37,7 +37,7 @@ def oura_read_existing(data, filename):
 
 def oura_write(data, filename):
     with open(filename, 'w') as outstream:
-        writer = csv.DictWriter(outstream, ['Date'] + COLUMNS)
+        writer = csv.DictWriter(outstream, ['Date', 'Start', 'End'] + COLUMNS)
         writer.writeheader()
         for date in sorted(data.keys()):
             writer.writerow(data[date])

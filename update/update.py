@@ -18,6 +18,7 @@ import dashboard.dashboard
 import financial.finlisp
 import list_completions
 import physical.mfp_reader
+import physical.oura_reader
 import utils.qschart
 import qsmerge
 import qsutils
@@ -43,39 +44,43 @@ def latest_file_matching(template):
     print("looking for files matching", template, "and got", files)
     return files and sorted(files, key=os.path.getmtime)[-1]
 
-def update_finances(config, file_locations, verbose):
+def last_update_at_least_about_a_day_ago(filename):
+    return ((datetime.datetime.fromtimestamp(os.path.getmtime(filename))
+             + datetime.timedelta(hours=23, minutes=30))
+            < datetime.datetime.now())
 
-    charts_dir = file_locations['charts']
-    archive_dir = file_locations['archive']
+def update_finances(file_locations, verbose):
+
+    config = qsutils.load_config(verbose, None, None,
+                                 os.path.join(file_locations['configdir'], file_locations['accounts-config']),
+                                 os.path.join(file_locations['conversions-dir'], file_locations['conversions-config']))
 
     main_account = file_locations['main-account']
-    finances_completions = file_locations['finances-completions']
-    bank_statement_template = file_locations['bank-statement-template']
     merge_results_dir = file_locations['merge-results-dir']
-    merge_results_file = os.path.join(merge_results_dir, file_locations['merge-results-file'])
 
-    latest_bank_statement = latest_file_matching(bank_statement_template)
+    latest_bank_statement = latest_file_matching(file_locations['bank-statement-template'])
 
     if latest_bank_statement and file_newer_than_file(latest_bank_statement, main_account):
-        print("Updating from latest bank statement", latest_bank_statement)
         if os.path.isdir(merge_results_dir):
-            for file in os.listdir(merge_results_dir):
-                os.remove(os.path.join(merge_results_dir, file))
+            for old_file in os.listdir(merge_results_dir):
+                os.remove(os.path.join(merge_results_dir, old_file))
         else:
             os.makedirs(merge_results_dir, exist_ok=True)
+        if verbose: print("Updating from latest bank statement", latest_bank_statement)
         financial.finlisp.finlisp_main([os.path.join(my_projects, "qs/financial", "merge-latest-statement.lisp")],
                              merge_results_dir,
                              config,
                              verbose,
                              {'incoming-statement': latest_bank_statement})
+        merge_results_file = os.path.join(merge_results_dir, file_locations['merge-results-file'])
         if os.path.isfile(merge_results_file):
-            backup(main_account, archive_dir, "finances-to-%s.csv")
+            backup(main_account, file_locations['archive'], "finances-to-%s.csv")
             shutil.copy(merge_results_file, main_account)
     else:
         print("Bank statement not newer than account file, so not updating")
 
     financial.finlisp.finlisp_main([os.path.join(my_projects, "qs/financial", "chart-categories.lisp")],
-                                   charts_dir,
+                                   file_locations['charts'],
                                    config,
                                    verbose,
                                    {'input-file': main_account,
@@ -83,11 +88,11 @@ def update_finances(config, file_locations, verbose):
                                     'classifiers-file': file_locations['budgeting-classes-file'],
                                     'thresholds-file': file_locations['thresholds-file']})
 
-    if file_newer_than_file(finances_completions, main_account):
+    if file_newer_than_file(main_account, file_locations['finances-completions']):
         if verbose: print("updating finances completions")
         list_completions.list_completions()
 
-def update_finances_charts(config, file_locations, begin_date, end_date, date_suffix, verbose):
+def update_finances_charts(file_locations, begin_date, end_date, date_suffix, verbose):
 
     charts_dir = file_locations['charts']
     utils.qschart.qscharts(os.path.join(charts_dir, "by-class.csv"),
@@ -97,20 +102,24 @@ def update_finances_charts(config, file_locations, begin_date, end_date, date_su
                            os.path.join(charts_dir, "by-class-%s-%%s.png" % date_suffix),
                            CHART_SIZES)
 
-def update_physical(file_locations, begin_date, end_date, date_suffix):
+def update_physical_charts(file_locations, begin_date, end_date, date_suffix):
 
     charts_dir = file_locations['charts']
     physical = file_locations['physical-filename']
-    weight = file_locations['weight-filename']
+    weight_file = file_locations['weight-filename']
     mfp_filename = file_locations['mfp-filename']
-    oura_filename = file_locations['oura-filename']
     # TODO: temperature, blood pressure, peak flow
     phys_scratch = "/tmp/physical-tmp.csv"
     archive_dir = file_locations['archive']
 
-    qsmerge.qsmerge(physical, [weight], None, phys_scratch)
+    physical_files = [weight_file
+                     # TODO: merge the other physical files
+                    ]
 
-    if utils.check_merged_row_dates.check_merged_row_dates(phys_scratch, physical, weight):
+    qsmerge.qsmerge(physical,
+                    physical_files, None, phys_scratch)
+
+    if utils.check_merged_row_dates.check_merged_row_dates(phys_scratch, physical, *physical_files):
         backup(physical, archive_dir, "physical-to-%s.csv")
         shutil.copy(phys_scratch, physical)
         for units in ('stone', 'kilogram', 'pound'):
@@ -138,7 +147,7 @@ def update_physical(file_locations, begin_date, end_date, date_suffix):
                            begin_date, end_date, None,
                            os.path.join(charts_dir, "origin_calories-%s-%%s.png" % date_suffix),
                            CHART_SIZES)
-    utils.qschart.qscharts(oura_filename, 'sleep',
+    utils.qschart.qscharts(file_locations['oura-filename'], 'sleep',
                            [
                                # TODO: chart the start and end times
                                # TODO: correlation between start time and various measures of sleep quality
@@ -168,7 +177,6 @@ def update_startpage(file_locations):
                   % (file_locations['start-page-generator'], startpage, startpage_style, startpage_source))
 
 def update_contacts(file_locations):
-    archive_dir = file_locations['archive']
     contacts_file = file_locations['contacts-file']
     contacts_scratch = "/tmp/contacts_scratch.csv"
     contacts_analysis = link_contacts.link_contacts_main(contacts_file, True, False, contacts_scratch)
@@ -177,17 +185,40 @@ def update_contacts(file_locations):
     with open(contacts_scratch) as conscratch:
         scratch_lines = len(conscratch.readlines())
     if original_lines == scratch_lines:
-        backup(contacts_file, archive_dir, "contacts-%s.csv")
+        backup(contacts_file, file_locations['archive'], "contacts-%s.csv")
         shutil.copy(contacts_scratch, contacts_file)
     else:
         print("wrong number of people after linking contacts, originally", original_lines, "but now", scratch_lines)
     return contacts_analysis
 
-def update_travel(do_externals):
+def fetch_mfp(file_locations, begin_date, end_date, verbose):
+    print("Fetching data from myfitnesspal.com")
+    physical.mfp_reader.update_mfp(file_locations['mfp-filename'], verbose)
+    print("Fetched data from myfitnesspal.com")
+
+def fetch_oura(file_locations, begin_date, end_date, verbose):
+    oura_filename = file_locations['oura-filename']
+    data = {}
+    physical.oura_reader.oura_read_existing(data, oura_filename)
+    if begin_date is None:
+        begin_date = qsutils.earliest_unfetched(data)
+    physical.oura_reader.oura_fetch(data, begin_date, end_date)
+    physical.oura_reader.oura_write(data, oura_filename)
+
+def fetch_omron(file_locations, begin_date, end_date, verbose):
+    omron_filename = file_locations['omron-filename']
+    # TODO: fetch from API
+
+def fetch_garmin(file_locations, begin_date, end_date, verbose):
+    garmin_filename = file_locations['garmin-filename']
+    # TODO: fetch from API
+
+def fetch_travel(file_locations, begin_date, end_date, verbose):
+    # TODO: fetch from Google
+    pass
+
+def update_travel():
     # TODO: write travel section of QS code
-    if do_externals:
-        # TODO: fetch from Google
-        pass
     # TODO: calculate distances
     pass
 
@@ -243,34 +274,27 @@ def update_backups(file_locations):
 def updates(file_locations,
             begin_date, end_date,
             do_externals, verbose):
-    charts_dir = file_locations['charts']
-    archive_dir = file_locations['archive']
-    configdir = file_locations['configdir']
-    conversions_dir = file_locations['conversions-dir']
-    accounts_config = os.path.join(configdir, file_locations['accounts-config'])
-    conversions_config = os.path.join(conversions_dir,
-                                      file_locations['conversions-config'])
 
-    config = qsutils.load_config(verbose, None, None, accounts_config, conversions_config)
+    os.makedirs(file_locations['charts'], exist_ok=True)
+    # if end_date is None:
+    #     end_date = qsutils.yesterday()
 
-    update_finances(config, file_locations, verbose)
-    contacts_analysis = update_contacts(file_locations)
-    update_travel(do_externals)
     if do_externals:
-        mfp_filename = file_locations['mfp-filename']
-        if ((datetime.datetime.fromtimestamp(os.path.getmtime(mfp_filename))
-             + datetime.timedelta(hours=23, minutes=30))
-            < datetime.datetime.now()):
-            print("Fetching data from myfitnesspal.com")
-            physical.mfp_reader.update_mfp(config, mfp_filename, verbose)
-            print("Fetched data from myfitnesspal.com")
-        else:
-            print("myfitnesspal.com data fetched within the past day or so, so not doing again yet")
-        # TODO: fetch Oura data
-        # TODO: fetch Omron data
-        # TODO: fetch Garmin data
+        for location_name, fetcher, archive_template in [
+                ('mfp-filename', fetch_mfp, "mfp-to-%s.csv"),
+                ('travel-filename', fetch_travel, "travel-to-%s.csv"),
+                ('oura-filename', fetch_oura, "oura-to-%s.csv"),
+                ('omron-filename', fetch_omron, "omron-to-%s.csv"),
+                ('garmin-filename', fetch_garmin, "garmin-to-%s.csv")
+                ]:
+            filename = file_locations[location_name]
+            if last_update_at_least_about_a_day_ago(filename):
+                backup(filename, file_locations['archive'], archive_template)
+                fetcher(file_locations, begin_date, end_date, verbose)
 
-    os.makedirs(charts_dir, exist_ok=True)
+    update_finances(file_locations, verbose)
+    contacts_analysis = update_contacts(file_locations)
+    update_travel()
 
     today = datetime.date.today()
     text_colour, background_colour, shading = dashboard.dashboard.dashboard_page_colours()
@@ -286,10 +310,12 @@ def updates(file_locations,
                                if begin_date
                                else periods).items():
         begin = np.datetime64(datetime.datetime.combine(begin, datetime.time())) # .timestamp()
-        update_finances_charts(config, file_locations, begin, end_date, date_suffix, verbose)
-        update_physical(file_locations, begin, end_date, date_suffix)
+        update_finances_charts(file_locations, begin, end_date, date_suffix, verbose)
+        update_physical_charts(file_locations, begin, end_date, date_suffix)
 
-    dashboard.dashboard.write_dashboard_page(config, file_locations, contacts_analysis, details_background_color=shading)
+    dashboard.dashboard.write_dashboard_page(file_locations,
+                                             contacts_analysis,
+                                             details_background_color=shading)
     update_startpage(file_locations)
     update_backups(file_locations)
 
@@ -312,6 +338,7 @@ def main():
         'backup-iso-format': "backup-%s.iso",
         'backup_isos_directory': "~/isos/backups",
         'bank-statement-template': "~/Downloads/Transaction*.csv",
+        'books-file': "$COMMON/org/books.csv",
         'budgeting-classes-file': "budgetting-classes.yaml",
         'charts': args.charts,
         'common-backups': "~/common-backups",
@@ -322,23 +349,30 @@ def main():
         'daily-backup-template': "org-%s.tgz",
         'default-timetable': "timetable.csv",
         'finances-completions': "$COMMON/var/finances-completions.el",
+        'garmin-filename': "$COMMON/health/garmin.csv",
+        'inventory-file': "$COMMON/org/inventory.csv",
         'main-account': "$COMMON/finances/finances.csv",
         'merge-results-dir': "~/scratch/auto-merge-results",
         'merge-results-file': "merged-with-unmatched-all.csv",
         'mfp-filename': "$COMMON/health/mfp-accum.csv",
+        'omron-filename': "$COMMON/health/blood-pressure.csv",
         'oura-filename': "$COMMON/health/sleep.csv",
         'physical-filename': "$COMMON/health/physical.csv",
+        'project-parts-file': "$COMMON/org/project-parts.csv",
         'projects-dir': "~/open-projects/github.com",
         'projects-user': "hillwithsmallfields",
         'reflections-dir': os.path.expandvars("$COMMON/texts/reflection"),
         'start-page-generator': 'make_link_table.py',
         'startpage': "~/private_html/startpage.html",
-        'startpage-source': "~/common/org/startpage.yaml",
-        'startpage-style': "~/common/org/startpage.css",
+        'startpage-source': "$COMMON/org/startpage.yaml",
+        'startpage-style': "$COMMON/org/startpage.css",
+        'stock-file': "$COMMON/org/stock.csv",
+        'storage-file': "$COMMON/org/storage.csv",
         'thresholds-file': "budgetting-thresholds.yaml",
         'timetables-dir': "$COMMON/timetables",
+        'travel-filename': "$COMMON/travel/travel.csv",
         'weekly-backup-template': "common-%s.tgz",
-        'weight-filename': "$COMMON/health/weight.csv",
+        'weight-filename': "$COMMON/health/weight.csv"
     }
 
     file_locations = {k: os.path.expanduser(os.path.expandvars(v))

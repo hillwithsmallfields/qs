@@ -299,6 +299,8 @@ def as_date(date_in):
                         else date_in)))
 
 def back_from(when, years_back, months_back, days_back):
+    if isinstance(when, str):
+        when = datetime.date.fromisoformat(when)
     if months_back and months_back >= 12:
         years_back = (years_back or 0) + months_back / 12
         months_back %= 12
@@ -313,7 +315,30 @@ def back_from(when, years_back, months_back, days_back):
         when = when - datetime.timedelta(days=days_back)
     return when # datetime.datetime.combine(when, datetime.time())
 
+def forward_from(when, years_forward, months_forward, days_forward):
+    if isinstance(when, str):
+        when = datetime.date.fromisoformat(when)
+    if months_forward and months_forward >= 12:
+        years_forward = (years_forward or 0) + months_forward / 12
+        months_forward %= 12
+    if years_forward:
+        when = when.replace(year=when.year + years_forward)
+    if months_forward:
+        if months_forward + when.month >= 12:
+            when = when.replace(year=when.year + 1, month=(when.month + months_forward) % 12)
+        else:
+            when = when.replace(month=when.month + months_forward)
+    if days_forward:
+        when = when + datetime.timedelta(days=days_forward)
+    return when # datetime.datetime.combine(when, datetime.time())
+
 later = datetime.timedelta(0, 1)
+
+def yesterday():
+    return back_from(datetime.date.today(), 0, 0, 1)
+
+def earliest_unfetched(data):
+    return forward_from(max(data.keys()), 0, 0, 1)
 
 def table_support_css(details_background_colour):
     with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "hover-details.css")) as css_stream:

@@ -29,6 +29,9 @@ from throw_out_your_templates_p3 import htmltags as T
 sys.path.append(os.path.join(my_projects, "coimealta/contacts"))
 import contacts_data            # https://github.com/hillwithsmallfields/coimealta/blob/master/contacts/contacts_data.py
 
+sys.path.append(os.path.join(my_projects, "coimealta/inventory"))
+import storage
+
 sys.path.append(os.path.join(my_projects, "noticeboard"))
 
 import announce                 # https://github.com/hillwithsmallfields/noticeboard/blob/master/announce.py
@@ -44,7 +47,7 @@ def make_remaining_cell(thresholds, spent_this_month, coi):
     available = float(thresholds.get(coi, 0))
     spent_string = spent_this_month.get(coi, "")
     spent = 0 if spent_string == "" else float(spent_string)
-    return T.td(class_="ok" if spent <= available else "overspent")[str(available + spent)]
+    return T.td(class_='ok' if spent <= available else "overspent")[str(available + spent)]
 
 def namify(x):
     return x.replace(' ', '_')
@@ -87,8 +90,8 @@ class SectionalPage(object):
                 T.ul[[T.li[T.a(href="#"+namify(section[0]))[section[0]]] for section in self._sections]]]
 
     def sections(self):
-        return [[T.div(class_="section")[T.h2[T.a(name=namify(section[0]))[section[0]]],
-                       T.div(class_="sectionbody")[section[1]]] for section in self._sections]]
+        return [[T.div(class_='section')[T.h2[T.a(name=namify(section[0]))[section[0]]],
+                       T.div(class_='sectionbody')[section[1]]] for section in self._sections]]
 
 def dashboard_page_colours():
     """Return the foreground and background colours, and a shading colour, specified in the stylesheet."""
@@ -122,7 +125,7 @@ def linked_image(image_name, label):
     """Return a collection of images wrapped in switcher,
     with each image linked to a larger version."""
     return T.table(class_='switcher', id_=label)[
-        T.tr(align="center")[T.td[[T.div(class_="choice", name=period)[T.a(href="%s-%s-large.png" % (image_name, period))[
+        T.tr(align="center")[T.td[[T.div(class_='choice', name=period)[T.a(href="%s-%s-large.png" % (image_name, period))[
             T.img(src="%s-%s-small.png" % (image_name, period))]] for period in ('all_time', 'past_year', 'past_quarter', 'past_month', 'past_week')]]],
         T.tr(align="center")[
             T.td[T.div[T.button(class_='inactive', name='all_time', onclick="select_version('%s', 'all_time')"%label)['all'],
@@ -145,7 +148,7 @@ def transactions_section(file_locations):
     spending_chart_file = os.path.join(file_locations['charts'], "past-quarter.html")
     return T.div[wrap_box(linked_image("by-class", "transactions"),
                           # I'd like to do this, but keeping the maroon colours
-                          T.a(class_="plainlink", href="by-class.html")[
+                          T.a(class_='plainlink', href="by-class.html")[
                               untemplate.safe_unicode(file_contents(spending_chart_file))
                           ]
     )]
@@ -162,10 +165,10 @@ def timetable_section(file_locations):
     # TODO: fetch from Google calendar
     return T.div[T.h2["Timetable for %s %s" % (day_of_week, today.isoformat())],
                  T.table(id_="timetable")[
-                     [[T.tr(class_="inactive",
+                     [[T.tr(class_='inactive',
                             name=slot.start.strftime("%H:%M"))[
-                                T.td[slot.start.strftime("%H:%M")],
-                                T.td[T.a(href=slot.link)[slot.activity]
+                                T.td(class_='time_of_day')[slot.start.strftime("%H:%M")],
+                                T.td(class_='activity')[T.a(href=slot.link)[slot.activity]
                                      if slot.link
                                      else slot.activity]]
           for slot in announce.get_day_announcer(
@@ -210,7 +213,7 @@ def counts_table(caption, group):
     pairs = [(name, len(members)) for name, members in group.items()]
     s = sorted(pairs, key=lambda p: p[1])
     r = reversed(s)
-    return T.div(class_="contacts_characteristics")[T.table[
+    return T.div(class_='contacts_characteristics')[T.table[
         T.caption[caption],
         [T.tr[T.td[name], T.td[str(members)]]
          for name, members in r]]]
@@ -298,9 +301,57 @@ def shopping_section(file_locations):
     # TODO: use org-ql to produce a file
     return None
 
+def items_table(items):
+    items_by_type = {}
+    for item in items.values():
+        key = "%s (%s)" % (item['Type'], item['Subtype'])
+        if key in items_by_type:
+            items_by_type[key].append(item)
+        else:
+            items_by_type[key] = [item]
+    return T.div(class_='inventory_list')[T.table[[T.tr[T.th[key], T.td[len(items_by_type[key])]]
+                                                   for key in sorted(items_by_type.keys(),
+                                                                     reverse=True,
+                                                                     key=lambda k: len(items_by_type[k]))]]]
+
 def inventory_section(file_locations):
-    # TODO: use coimealta/inventory
-    return None
+
+    locations = storage.read_locations(file_locations['storage-file'])
+    items = storage.read_inventory(file_locations['inventory-file'])
+    stock = storage.read_inventory(file_locations['stock-file'])
+    project_parts = storage.read_inventory(file_locations['project-parts-file'])
+    media = storage.read_books(file_locations['books-file'])
+
+    media_by_type = {}
+    for medium in media.values():
+        mediatype = medium['MediaType']
+        if mediatype in media_by_type:
+            media_by_type[mediatype].append(medium)
+        else:
+            media_by_type[mediatype] = [medium]
+
+    books_with_acquisition_date = sorted([book
+                                          for book in media_by_type['Book']
+                                          if book.get('Acquired', None) is not None],
+                                         key=lambda b: b['Acquired'])
+    latest_book = books_with_acquisition_date[-1]
+
+    _, volume, bookshelf_length, other_length, area = storage.calculate_capacities(locations)
+
+    return T.div(class_='inventory')[
+        T.div[wrap_box(T.div[T.h3["Media"],
+                             T.div(class_='inventory_list')[
+                                 T.dl[[T.div[T.dt[mtype],
+                                             T.dd[str(len(media_by_type[mtype]))]] for mtype in sorted(media_by_type)]],
+                                 T.p["Your most recent book acquisition was of ", latest_book['Title'],
+                                     " on ", latest_book['Acquired'], "."]]],
+                       T.div[T.h3["General possessions"], items_table(items)],
+                       T.div[T.h3["Project parts"], items_table(project_parts)],
+                       T.div[T.h3["Stock"], items_table(stock)],
+                       T.div[T.h3["Storage"],
+                             T.div(class_='inventory_list')[T.dl[T.dt["Container volume"], T.dd["%g litres" % volume],
+                                                                 T.dt["Bookshelf length"], T.dd["%g metres" % bookshelf_length],
+                                                                 T.dt["Other shelf length"], T.dd["%g metres" % other_length]]]])]]
 
 def travel_section(file_locations):
     # TODO: read travel.csv and a journeys file generated from Google
@@ -312,13 +363,14 @@ def random_reflection(reflections_dir):
 
 def reflection_section(file_locations):
     reflections_dir = file_locations['reflections-dir']
-    return T.div(class_="reflection")[
+    return T.div(class_='reflection')[
         T.p[random_reflection(reflections_dir)],
         T.p[random_reflection(reflections_dir)]]
 
-def construct_dashboard_page(config, file_locations, contacts_analysis):
+def construct_dashboard_page(file_locations, contacts_analysis):
     charts_dir = file_locations['charts']
     page = SectionalPage()
+    page.add_section("Food to use up in fridge", perishables_section())
     page.add_section("Weather", weather_section())
     page.add_section("Health", wrap_box(
         labelled_section("Weight", weight_section()),
@@ -337,7 +389,6 @@ def construct_dashboard_page(config, file_locations, contacts_analysis):
         labelled_section("To contact", keep_in_touch_section(file_locations)),
         labelled_section("People in contacts file", contacts_section(contacts_analysis)),
         labelled_section("People groups", people_groups_section(contacts_analysis))))
-    page.add_section("Food to use up in fridge", perishables_section())
     page.add_section("Agenda", wrap_box(
         labelled_section("Actions", actions_section(file_locations)),
         labelled_section("Shopping", shopping_section(file_locations))))
@@ -348,7 +399,7 @@ def construct_dashboard_page(config, file_locations, contacts_analysis):
         T.script(src="dashboard.js"),
         T.h1["Personal dashboard"],
         wrap_box(page.toc(),
-                 T.div(class_="timetable")[timetable_section(file_locations)]),
+                 T.div(class_='timetable')[timetable_section(file_locations)]),
         page.sections()]]
 
 def page_text(page_contents, style_text, script_text):
@@ -372,12 +423,12 @@ def tagged(tag, text):
 def tagged_file_contents(tag, filename):
     return tagged(tag, file_contents(filename))
 
-def write_dashboard_page(config, file_locations, contacts_analysis, details_background_color="gold", inline=True):
+def write_dashboard_page(file_locations, contacts_analysis, details_background_color="gold", inline=True):
     charts_dir = file_locations['charts']
     with open(os.path.join(charts_dir, "index.html"), 'w') as page_stream:
         page_stream.write(
             page_text(
-                construct_dashboard_page(config, file_locations, contacts_analysis),
+                construct_dashboard_page(file_locations, contacts_analysis),
                 (tagged_file_contents("style", os.path.join(source_dir, "dashboard.css"))
                  + utils.qsutils.table_support_css(details_background_color)) if inline else "",
                 tagged_file_contents("script", os.path.join(source_dir, "dashboard.js")) if inline else ""))
@@ -393,9 +444,9 @@ def main():
                         help="""Directory to write charts into.""")
     args = parser.parse_args()
 
-    configdir = os.path.expanduser("~/open-projects/github.com/hillwithsmallfields/qs/conf")
-    config = utils.qsutils.load_config(args.verbose, None, None, accounts_config, conversions_config)
-    write_dashboard_page(config, args.charts)
+    file_locations = {'charts', args.chart}
+
+    write_dashboard_page(file_locations)
 
 if __name__ == '__main__':
     main()

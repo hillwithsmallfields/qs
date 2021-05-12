@@ -105,23 +105,22 @@ def fetch_streak_upto(when,
                     break
         when = when - datetime.timedelta(days=1)
         if save_daily:
-            save_data(save_daily[0],
-                      save_daily[1], sheet,
-                      save_daily[2], accumulator)
+            save_data(save_daily[0], sheet,
+                      save_daily[1], accumulator)
         pause = random.randint(minpause, maxpause)
         if verbose:
             print("pausing", pause, "before fetching previous day")
         time.sleep(pause)
     return accumulator
 
-def save_data(configuration, sheet_filename, rows, json_filename=None, so_far=None):
+def save_data(sheet_filename, rows, json_filename=None, so_far=None):
     if json_filename:
         with open(json_filename, 'w') as outstream:
             json.dump({d.isoformat(): v
                        for d,v in so_far.items()},
                       outstream)
     if sheet_filename:
-        base_sheet.base_sheet(configuration, rows=rows).write_csv(sheet_filename)
+        base_sheet.base_sheet(None, rows=rows).write_csv(sheet_filename)
 
 def find_last_unfetched_date(dict_by_date):
     """Return the latest day before the first that appears as a key of a dict.
@@ -129,7 +128,7 @@ def find_last_unfetched_date(dict_by_date):
     not for updating since the last run."""
     return min(dict_by_date.keys()) - datetime.timedelta(days=1)
 
-def update_mfp(configuration, sheet, verbose):
+def update_mfp(sheet, verbose):
 
     with open(sheet) as instream:
         rows = {datetime.date.fromisoformat(row['Date']): row
@@ -149,7 +148,7 @@ def update_mfp(configuration, sheet, verbose):
     if verbose:
         print("finished fetching data from myfitnesspal.com")
 
-    save_data(configuration, sheet, rows)
+    save_data(sheet, rows)
 
 def main():
     parser = qsutils.program_argparser()
@@ -192,8 +191,6 @@ def main():
         print("No output specified!  Use --sheet or --json or both.")
         return 1
 
-    configuration = qsutils.program_load_config(args)
-
     so_far = {}
     if args.update and args.json:
         with open(args.json) as instream:
@@ -223,14 +220,14 @@ def main():
                       overlap=(args.overlap
                                if args.overlap > 0
                                else None),
-                      save_daily=((configuration, args.sheet, args.json)
+                      save_daily=((args.sheet, args.json)
                                   if args.save_daily
                                   else None),
                       verbose=args.verbose,
                       minpause=args.minpause,
                       maxpause=args.maxpause)
 
-    save_data(configuration, args.sheet, rows, args.json, so_far)
+    save_data(args.sheet, rows, args.json, so_far)
 
 if __name__ == "__main__":
     main()
