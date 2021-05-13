@@ -106,13 +106,11 @@ def update_physical_charts(file_locations, begin_date, end_date, date_suffix):
 
     charts_dir = file_locations['charts']
     physical = file_locations['physical-filename']
-    weight_file = file_locations['weight-filename']
     mfp_filename = file_locations['mfp-filename']
-    # TODO: temperature, blood pressure, peak flow
     phys_scratch = "/tmp/physical-tmp.csv"
     archive_dir = file_locations['archive']
 
-    physical_files = [weight_file
+    physical_files = [file_locations['weight-filename']
                      # TODO: merge the other physical files
                     ]
 
@@ -148,14 +146,25 @@ def update_physical_charts(file_locations, begin_date, end_date, date_suffix):
                            os.path.join(charts_dir, "origin_calories-%s-%%s.png" % date_suffix),
                            CHART_SIZES)
     utils.qschart.qscharts(file_locations['oura-filename'], 'sleep',
-                           [
-                               # TODO: chart the start and end times
-                               # TODO: correlation between start time and various measures of sleep quality
-                               # 'Start', 'End',
-                               'Latency', 'Rem', 'Deep', 'Total'],
+                           ['Latency', 'Rem', 'Deep', 'Total'],
                            begin_date, end_date, None,
-                           os.path.join(charts_dir, "sleep-%s-%%s.png" % date_suffix),
+                           os.path.join(charts_dir, "sleep-split-%s-%%s.png" % date_suffix),
                            CHART_SIZES)
+    utils.qschart.qscharts(file_locations['oura-filename'], 'sleep',
+                           ['Start', 'End'],
+                           begin_date, end_date, None,
+                           os.path.join(charts_dir, "sleep-times-%s-%%s.png" % date_suffix),
+                           CHART_SIZES)
+    # utils.qschart.qscharts(smart_one_filename, 'peak_flow',
+    #                        ['Peak flow'],
+    #                        begin_date, end_date, None,
+    #                        os.path.join(charts_dir, "peak-flow-%s-%%s.png" % date_suffix),
+    #                        CHART_SIZES)
+    # utils.qschart.qscharts(temperature_filename, 'temperature',
+    #                        ['Temperature'],
+    #                        begin_date, end_date, None,
+    #                        os.path.join(charts_dir, "temperature-%s-%%s.png" % date_suffix),
+    #                        CHART_SIZES)
     # utils.qschart.qscharts(omron_filename, 'blood_pressure',
     #                        ['Systolic', 'Diastolic', 'Heart rate'],
     #                        begin_date, end_date, None,
@@ -200,10 +209,14 @@ def fetch_oura(file_locations, begin_date, end_date, verbose):
     oura_filename = file_locations['oura-filename']
     data = {}
     physical.oura_reader.oura_read_existing(data, oura_filename)
+    existing_rows = len(data)
     if begin_date is None:
         begin_date = qsutils.earliest_unfetched(data)
     physical.oura_reader.oura_fetch(data, begin_date, end_date)
-    physical.oura_reader.oura_write(data, oura_filename)
+    if len(data) > existing_rows:
+        physical.oura_reader.oura_write(data, oura_filename)
+    elif len(data) < existing_rows:
+        print("Warning: sleep data has shrunk on being fetched --- not writing it")
 
 def fetch_omron(file_locations, begin_date, end_date, verbose):
     omron_filename = file_locations['omron-filename']
@@ -214,11 +227,12 @@ def fetch_garmin(file_locations, begin_date, end_date, verbose):
     # TODO: fetch from API
 
 def fetch_travel(file_locations, begin_date, end_date, verbose):
-    # TODO: fetch from Google
+    # TODO: fetch from Google, updating file_locations['travel-filename'] and file_locations['places-filename']
     pass
 
-def update_travel():
+def update_travel(file_locations):
     # TODO: write travel section of QS code
+    # travel_main(file_locations['travel-filename'], file_locations['places-filename'])
     # TODO: calculate distances
     pass
 
@@ -294,7 +308,7 @@ def updates(file_locations,
 
     update_finances(file_locations, verbose)
     contacts_analysis = update_contacts(file_locations)
-    update_travel()
+    update_travel(file_locations)
 
     today = datetime.date.today()
     text_colour, background_colour, shading = dashboard.dashboard.dashboard_page_colours()
@@ -332,47 +346,63 @@ def main():
     args = parser.parse_args()
 
     file_locations = {
+        # finance
         'accounts-config': "accounts.yaml",
         'accumulated-bank-statements-file': "$COMMON/finances/handelsbanken/handelsbanken-full.csv",
-        'archive': "~/archive",
-        'backup-iso-format': "backup-%s.iso",
-        'backup_isos_directory': "~/isos/backups",
         'bank-statement-template': "~/Downloads/Transaction*.csv",
-        'books-file': "$COMMON/org/books.csv",
         'budgeting-classes-file': "budgetting-classes.yaml",
-        'charts': args.charts,
-        'common-backups': "~/common-backups",
         'configdir': "~/open-projects/github.com/hillwithsmallfields/qs/conf",
-        'contacts-file': "$COMMON/org/contacts.csv",
         'conversions-config': "conversions.yaml",
         'conversions-dir': "$COMMON/finances",
-        'daily-backup-template': "org-%s.tgz",
-        'default-timetable': "timetable.csv",
         'finances-completions': "$COMMON/var/finances-completions.el",
-        'garmin-filename': "$COMMON/health/garmin.csv",
-        'inventory-file': "$COMMON/org/inventory.csv",
         'main-account': "$COMMON/finances/finances.csv",
         'merge-results-dir': "~/scratch/auto-merge-results",
         'merge-results-file': "merged-with-unmatched-all.csv",
+        'thresholds-file': "budgetting-thresholds.yaml",
+
+        # inventory
+        'books-file': "$COMMON/org/books.csv",
+        'inventory-file': "$COMMON/org/inventory.csv",
+        'project-parts-file': "$COMMON/org/project-parts.csv",
+        'stock-file': "$COMMON/org/stock.csv",
+        'storage-file': "$COMMON/org/storage.csv",
+
+        # physical
+        'garmin-filename': "$COMMON/health/garmin.csv",
         'mfp-filename': "$COMMON/health/mfp-accum.csv",
         'omron-filename': "$COMMON/health/blood-pressure.csv",
         'oura-filename': "$COMMON/health/sleep.csv",
         'physical-filename': "$COMMON/health/physical.csv",
-        'project-parts-file': "$COMMON/org/project-parts.csv",
-        'projects-dir': "~/open-projects/github.com",
-        'projects-user': "hillwithsmallfields",
-        'reflections-dir': os.path.expandvars("$COMMON/texts/reflection"),
+        'weight-filename': "$COMMON/health/weight.csv",
+
+        # backups and archives
+
+        'archive': "~/archive",
+        'backup-iso-format': "backup-%s.iso",
+        'backup_isos_directory': "~/isos/backups",
+        'common-backups': "~/common-backups",
+        'daily-backup-template': "org-%s.tgz",
+        'weekly-backup-template': "common-%s.tgz",
+
+        # start page
         'start-page-generator': 'make_link_table.py',
         'startpage': "~/private_html/startpage.html",
         'startpage-source': "$COMMON/org/startpage.yaml",
         'startpage-style': "$COMMON/org/startpage.css",
-        'stock-file': "$COMMON/org/stock.csv",
-        'storage-file': "$COMMON/org/storage.csv",
-        'thresholds-file': "budgetting-thresholds.yaml",
-        'timetables-dir': "$COMMON/timetables",
+
+        # travel
         'travel-filename': "$COMMON/travel/travel.csv",
-        'weekly-backup-template': "common-%s.tgz",
-        'weight-filename': "$COMMON/health/weight.csv"
+        'places-filename': "$COMMON/travel/places/places.csv",
+
+        # contacts
+        'contacts-file': "$COMMON/org/contacts.csv",
+
+        'charts': args.charts,
+        'default-timetable': "timetable.csv",
+        'projects-dir': "~/open-projects/github.com",
+        'projects-user': "hillwithsmallfields",
+        'reflections-dir': os.path.expandvars("$COMMON/texts/reflection"),
+        'timetables-dir': "$COMMON/timetables",
     }
 
     file_locations = {k: os.path.expanduser(os.path.expandvars(v))

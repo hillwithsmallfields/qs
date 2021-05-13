@@ -149,9 +149,7 @@ def transactions_section(file_locations):
     return T.div[wrap_box(linked_image("by-class", "transactions"),
                           # I'd like to do this, but keeping the maroon colours
                           T.a(class_='plainlink', href="by-class.html")[
-                              untemplate.safe_unicode(file_contents(spending_chart_file))
-                          ]
-    )]
+                              untemplate.safe_unicode(file_contents(spending_chart_file))])]
 
 def timetable_section(file_locations):
     # TODO: possibly add columns for weather data for the same times
@@ -286,8 +284,11 @@ def exercise_section():
     # TODO: fetch from MFP and Garmin
     return None
 
-def sleep_section():
-    return linked_image("sleep", "sleep")
+def sleep_split_section():
+    return linked_image("sleep-split", "sleep-split")
+
+def sleep_times_section():
+    return linked_image("sleep-times", "sleep-times")
 
 def blood_pressure_section():
     return None
@@ -373,7 +374,7 @@ def reflection_section(file_locations):
 def construct_dashboard_page(file_locations, contacts_analysis):
     charts_dir = file_locations['charts']
     page = SectionalPage()
-    page.add_section("Food to use up in fridge", perishables_section())
+    page.add_section("Perishable food to use up", perishables_section())
     page.add_section("Weather", weather_section())
     page.add_section("Health", wrap_box(
         labelled_section("Weight", weight_section()),
@@ -384,7 +385,8 @@ def construct_dashboard_page(file_locations, contacts_analysis):
         labelled_section("Exercise", exercise_section()),
         labelled_section("Blood pressure", blood_pressure_section()),
         labelled_section("Peak flow", peak_flow_section()),
-        labelled_section("Sleep", sleep_section()),
+        labelled_section("Sleep split", sleep_split_section()),
+        labelled_section("Sleep times", sleep_times_section()),
         labelled_section("Temperature", temperature_section())))
     page.add_section("Spending", transactions_section(file_locations))
     page.add_section("People", wrap_box(

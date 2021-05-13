@@ -4,6 +4,7 @@ BODY {
     /* TODO: which of these should it be? */
     background:       #f0e0b0; /* vellum */
     background-color: #f0e0b0; /* vellum */
+    scrollbar-color:  #e0d0a0 #f0e0b0;
 
     font-family:      sans-serif;
     font-size:        small;

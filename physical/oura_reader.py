@@ -25,8 +25,10 @@ def oura_fetch(data, start, end):
     for night in client.sleep_summary(start=start, end=end)['sleep']:
         waking = night['bedtime_end'][:10]
         night['Date'] = waking
-        night['End'] = night['bedtime_end'][11:19]
-        night['Start'] = night['bedtime_start'][11:19]
+        s = datetime.time.fromisoformat(night['bedtime_start'][11:19])
+        night['Start'] = s.hour + s.minute / 60.0
+        e = datetime.time.fromisoformat(night['bedtime_end'][11:19])
+        night['End'] = e.hour + e.minute / 60.0
         data[waking] = {k: night.get(k) for k in COLUMNS}
 
 def oura_read_existing(data, filename):
