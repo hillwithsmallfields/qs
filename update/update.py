@@ -160,11 +160,11 @@ def update_physical_charts(file_locations, begin_date, end_date, date_suffix):
     #                        begin_date, end_date, None,
     #                        os.path.join(charts_dir, "peak-flow-%s-%%s.png" % date_suffix),
     #                        CHART_SIZES)
-    # utils.qschart.qscharts(temperature_filename, 'temperature',
-    #                        ['Temperature'],
-    #                        begin_date, end_date, None,
-    #                        os.path.join(charts_dir, "temperature-%s-%%s.png" % date_suffix),
-    #                        CHART_SIZES)
+    utils.qschart.qscharts(file_locations['temperature-file'], 'temperature',
+                           ['Temperature'],
+                           begin_date, end_date, None,
+                           os.path.join(charts_dir, "temperature-%s-%%s.png" % date_suffix),
+                           CHART_SIZES)
     # utils.qschart.qscharts(omron_filename, 'blood_pressure',
     #                        ['Systolic', 'Diastolic', 'Heart rate'],
     #                        begin_date, end_date, None,
@@ -223,8 +223,27 @@ def fetch_omron(file_locations, begin_date, end_date, verbose):
     # TODO: fetch from API
 
 def fetch_garmin(file_locations, begin_date, end_date, verbose):
-    garmin_filename = file_locations['garmin-filename']
-    # TODO: fetch from API
+    garmin_incoming_filename = file_locations['garmin-incoming-filename']
+    if (os.path.isfile(garmin_incoming_filename)
+        and file_newer_than_file(garmin_incoming_filename, garmin_filename)):
+        garmin_filename = file_locations['garmin-filename']
+        data = {}
+        if os.path.isfile(garmin_filename):
+            with open(garmin_filename) as instream:
+                data = {row['Date']: row for row in csv.DictReader(instream)}
+        original_length = len(data)
+        with open(garmin_incoming_filename) as instream:
+            for row in csv.reader(instream):
+                header = row
+                break           # just get the first row
+        with open(garmin_incoming_filename) as instream:
+            data.update({row['Date']: row for row in csv.DictReader(instream)})
+    if len(data) > original_length:
+        with open(garmin_filename, 'w') as outstream:
+            writer = csv.DictWriter(outstream, header)
+            writer.writeheader()
+            for row in data:
+                writer.writerow(row)
 
 def fetch_travel(file_locations, begin_date, end_date, verbose):
     # TODO: fetch from Google, updating file_locations['travel-filename'] and file_locations['places-filename']
@@ -235,55 +254,6 @@ def update_travel(file_locations):
     # travel_main(file_locations['travel-filename'], file_locations['places-filename'])
     # TODO: calculate distances
     pass
-
-def make_tarball(tarball, parent_directory, of_directory):
-    if not os.path.isfile(tarball):
-        command = "tar cz -C %s %s > %s" % (parent_directory, of_directory, tarball)
-        print("backup command is", command)
-        os.system(command)
-
-def update_backups(file_locations):
-    common_backups = file_locations['common-backups']
-    daily_backup_template = file_locations['daily-backup-template']
-    weekly_backup_template = file_locations['weekly-backup-template']
-    today = datetime.date.today()
-    make_tarball(os.path.join(common_backups, daily_backup_template % today.isoformat()),
-                 os.path.expandvars("$COMMON"),
-                 "org")
-    weekly_backup_day = 2    # Wednesday, probably the least likely day to be on holiday and not using the computer
-    if today.weekday() == weekly_backup_day:
-        make_tarball(os.path.join(common_backups, weekly_backup_template % today.isoformat()),
-                     os.path.expandvars("$HOME"), "common")
-    if today.day == 1:
-        backup_isos_directory = file_locations['backup_isos_directory']
-        monthly_backup_name = os.path.join(backup_isos_directory, file_locations['backup-iso-format'] % today.isoformat())
-        if not os.path.isfile(monthly_backup_name):
-            # make_tarball("/tmp/music.tgz", os.path.expandvars("$HOME"), "Music")
-            make_tarball("/tmp/github.tgz",
-                         file_locations['projects-dir'],
-                         file_locations['projects-user'])
-            files_to_backup = [
-                latest_file_matching(os.path.join(common_backups, daily_backup_template % "*")),
-                latest_file_matching(os.path.join(common_backups, weekly_backup_template % "*")),
-                # too large for genisoimage:
-                # "/tmp/music.tgz",
-                "/tmp/github.tgz"]
-            # prepare a backup of my encrypted partition, if mounted
-            if os.path.isdir(os.path.expandvars("/mnt/crypted/$USER")):
-                os.system("backup-confidential")
-            # look for the output of https://github.com/hillwithsmallfields/JCGS-scripts/blob/master/backup-confidential
-            confidential_backup = latest_file_matching("/tmp/personal-*.tgz.gpg")
-            if confidential_backup:
-                files_to_backup.append(confidential_backup)
-                digest = confidential_backup.replace('gpg', 'sha256sum')
-                if os.path.isfile(digest):
-                    files_to_backup.append(digest)
-                sig = digest + ".sig"
-                if os.path.isfile(sig):
-                    files_to_backup.append(sig)
-            print("Time to take a monthly backup of", files_to_backup, "into", monthly_backup_name)
-            os.system("genisoimage -o %s %s" % (monthly_backup_name, " ".join(files_to_backup)))
-            print("made backup in", monthly_backup_name)
 
 def updates(file_locations,
             begin_date, end_date,
@@ -331,7 +301,6 @@ def updates(file_locations,
                                              contacts_analysis,
                                              details_background_color=shading)
     update_startpage(file_locations)
-    update_backups(file_locations)
 
 def main():
     parser = qsutils.program_argparser()
@@ -369,20 +338,13 @@ def main():
 
         # physical
         'garmin-filename': "$COMMON/health/garmin.csv",
+        'garmin-incoming-filename': "~/Downloads/Activities*.csv",
         'mfp-filename': "$COMMON/health/mfp-accum.csv",
         'omron-filename': "$COMMON/health/blood-pressure.csv",
         'oura-filename': "$COMMON/health/sleep.csv",
         'physical-filename': "$COMMON/health/physical.csv",
         'weight-filename': "$COMMON/health/weight.csv",
-
-        # backups and archives
-
-        'archive': "~/archive",
-        'backup-iso-format': "backup-%s.iso",
-        'backup_isos_directory': "~/isos/backups",
-        'common-backups': "~/common-backups",
-        'daily-backup-template': "org-%s.tgz",
-        'weekly-backup-template': "common-%s.tgz",
+        'temperature-file': "$COMMON/health/temperature.csv",
 
         # start page
         'start-page-generator': 'make_link_table.py',
