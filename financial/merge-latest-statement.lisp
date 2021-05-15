@@ -136,4 +136,5 @@
            "The adjustments data, merged with unmatched automatic entries.")
     (write (occupied-columns adjustments-merged-all) "adjustments-merged-all"
            "Adjustments and unmatched all"
-           "The adjustments data, merged with unmatched entries.")))
+           "The adjustments data, merged with unmatched entries.")
+    (list unmatched-automatic unmatched-non-automatic)))

@@ -294,8 +294,7 @@ def blood_pressure_section():
     return None
 
 def temperature_section():
-    # TODO: make temperature chart
-    return None
+    return linked_image("temperature", "temperature")
 
 def actions_section(file_locations):
     # TODO: use org-ql to produce a file
@@ -371,7 +370,9 @@ def reflection_section(file_locations):
         T.p[random_reflection(reflections_dir)],
         T.p[random_reflection(reflections_dir)]]
 
-def construct_dashboard_page(file_locations, contacts_analysis):
+def construct_dashboard_page(file_locations,
+                             contacts_analysis,
+                             finance_updates_analysis):
     charts_dir = file_locations['charts']
     page = SectionalPage()
     page.add_section("Perishable food to use up", perishables_section())
@@ -389,6 +390,7 @@ def construct_dashboard_page(file_locations, contacts_analysis):
         labelled_section("Sleep times", sleep_times_section()),
         labelled_section("Temperature", temperature_section())))
     page.add_section("Spending", transactions_section(file_locations))
+    page.add_section("Recent update debug", T.pre[finance_updates_analysis])
     page.add_section("People", wrap_box(
         labelled_section("Birthdays", birthdays_section(file_locations)),
         labelled_section("To contact", keep_in_touch_section(file_locations)),
@@ -428,12 +430,15 @@ def tagged(tag, text):
 def tagged_file_contents(tag, filename):
     return tagged(tag, file_contents(filename))
 
-def write_dashboard_page(file_locations, contacts_analysis, details_background_color="gold", inline=True):
+def write_dashboard_page(file_locations,
+                         contacts_analysis,
+                         finance_updates_analysis,
+                         details_background_color="gold", inline=True):
     charts_dir = file_locations['charts']
     with open(os.path.join(charts_dir, "index.html"), 'w') as page_stream:
         page_stream.write(
             page_text(
-                construct_dashboard_page(file_locations, contacts_analysis),
+                construct_dashboard_page(file_locations, contacts_analysis, finance_updates_analysis),
                 (tagged_file_contents("style", os.path.join(source_dir, "dashboard.css"))
                  + utils.qsutils.table_support_css(details_background_color)) if inline else "",
                 tagged_file_contents("script", os.path.join(source_dir, "dashboard.js")) if inline else ""))
@@ -443,6 +448,31 @@ def write_dashboard_page(file_locations, contacts_analysis, details_background_c
             shutil.copy(os.path.join(source_dir, filename),
                         os.path.join(charts_dir, filename))
 
+def make_dashboard_images(file_locations):
+    today = datetime.date.today()
+    text_colour, background_colour, shading = dashboard_page_colours()
+    for param_set in CHART_SIZES.values():
+        param_set['facecolor'] = background_colour
+
+    periods = {'all_time': datetime.date(year=1973, month=1, day=1),
+               'past_week': qsutils.back_from(today, None, None, 7),
+               'past_month': qsutils.back_from(today, None, 1, None),
+               'past_quarter': qsutils.back_from(today, None, 3, None),
+               'past_year': qsutils.back_from(today, 1, None, None)}
+    for date_suffix, begin in ({'custom': begin_date}
+                               if begin_date
+                               else periods).items():
+        begin = np.datetime64(datetime.datetime.combine(begin, datetime.time())) # .timestamp()
+        update_finances_charts(file_locations, begin, end_date, date_suffix, verbose)
+        update_physical_charts(file_locations, begin, end_date, date_suffix)
+
+def make_dashboard_page(file_locations, contacts_analysis, finance_updates_analysis):
+    make_dashboard_images(file_locations)
+    write_dashboard_page(file_locations,
+                         contacts_analysis,
+                         finance_updates_analysis,
+                         details_background_color=shading)
+
 def main():
     parser = utils.qsutils.program_argparser()
     parser.add_argument("--charts", default=os.path.expanduser("~/private_html/dashboard"),
@@ -451,7 +481,7 @@ def main():
 
     file_locations = {'charts', args.chart}
 
-    write_dashboard_page(file_locations)
+    make_dashboard_page(file_locations)
 
 if __name__ == '__main__':
     main()

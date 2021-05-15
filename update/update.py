@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
+import csv
 import datetime
 import glob
 import os
@@ -20,6 +21,7 @@ import list_completions
 import physical.mfp_reader
 import physical.oura_reader
 import utils.qschart
+import utils.trim_csv
 import qsmerge
 import qsutils
 
@@ -34,10 +36,11 @@ def file_newer_than_file(a, b):
     return os.path.getmtime(a) > os.path.getmtime(b)
 
 def backup(filename, archive_dir, template):
-    os.system("gzip --to-stdout %s > %s" % (
-        filename,
-        os.path.join(archive_dir,
-                     (template % datetime.datetime.now().isoformat()) + ".gz")))
+    if os.path.isfile(filename):
+        os.system("gzip --to-stdout %s > %s" % (
+            filename,
+            os.path.join(archive_dir,
+                         (template % datetime.datetime.now().isoformat()) + ".gz")))
 
 def latest_file_matching(template):
     files = glob.glob(template)
@@ -45,9 +48,10 @@ def latest_file_matching(template):
     return files and sorted(files, key=os.path.getmtime)[-1]
 
 def last_update_at_least_about_a_day_ago(filename):
-    return ((datetime.datetime.fromtimestamp(os.path.getmtime(filename))
-             + datetime.timedelta(hours=23, minutes=30))
-            < datetime.datetime.now())
+    return ((not os.path.isfile(filename))
+            or ((datetime.datetime.fromtimestamp(os.path.getmtime(filename))
+                 + datetime.timedelta(hours=23, minutes=30))
+                < datetime.datetime.now()))
 
 def update_finances(file_locations, verbose):
 
@@ -58,26 +62,27 @@ def update_finances(file_locations, verbose):
     main_account = file_locations['main-account']
     merge_results_dir = file_locations['merge-results-dir']
 
+    results = None
+
     latest_bank_statement = latest_file_matching(file_locations['bank-statement-template'])
 
     if latest_bank_statement and file_newer_than_file(latest_bank_statement, main_account):
-        if os.path.isdir(merge_results_dir):
-            for old_file in os.listdir(merge_results_dir):
-                os.remove(os.path.join(merge_results_dir, old_file))
-        else:
-            os.makedirs(merge_results_dir, exist_ok=True)
+        qsutils.ensure_directory_present_and_empty(merge_results_dir)
         if verbose: print("Updating from latest bank statement", latest_bank_statement)
-        financial.finlisp.finlisp_main([os.path.join(my_projects, "qs/financial", "merge-latest-statement.lisp")],
+        results = financial.finlisp.finlisp_main([os.path.join(my_projects, "qs/financial", "merge-latest-statement.lisp")],
                              merge_results_dir,
                              config,
                              verbose,
                              {'incoming-statement': latest_bank_statement})
+        print("got results", results, "from merge-latest-statement.lisp")
         merge_results_file = os.path.join(merge_results_dir, file_locations['merge-results-file'])
         if os.path.isfile(merge_results_file):
             backup(main_account, file_locations['archive'], "finances-to-%s.csv")
             shutil.copy(merge_results_file, main_account)
     else:
         print("Bank statement not newer than account file, so not updating")
+
+    print("calling charter on", main_account, "with merge results in", merge_results_dir)
 
     financial.finlisp.finlisp_main([os.path.join(my_projects, "qs/financial", "chart-categories.lisp")],
                                    file_locations['charts'],
@@ -91,6 +96,7 @@ def update_finances(file_locations, verbose):
     if file_newer_than_file(main_account, file_locations['finances-completions']):
         if verbose: print("updating finances completions")
         list_completions.list_completions()
+    return results
 
 def update_finances_charts(file_locations, begin_date, end_date, date_suffix, verbose):
 
@@ -160,21 +166,26 @@ def update_physical_charts(file_locations, begin_date, end_date, date_suffix):
     #                        begin_date, end_date, None,
     #                        os.path.join(charts_dir, "peak-flow-%s-%%s.png" % date_suffix),
     #                        CHART_SIZES)
-    utils.qschart.qscharts(file_locations['temperature-file'], 'temperature',
-                           ['Temperature'],
-                           begin_date, end_date, None,
-                           os.path.join(charts_dir, "temperature-%s-%%s.png" % date_suffix),
-                           CHART_SIZES)
-    # utils.qschart.qscharts(omron_filename, 'blood_pressure',
-    #                        ['Systolic', 'Diastolic', 'Heart rate'],
+    # utils.qschart.qscharts(file_locations['temperature-file'], 'temperature',
+    #                        ['Temperature'],
     #                        begin_date, end_date, None,
-    #                        os.path.join(charts_dir, "blood-pressure-%s-%%s.png" % date_suffix),
+    #                        os.path.join(charts_dir, "temperature-%s-%%s.png" % date_suffix),
     #                        CHART_SIZES)
-    # utils.qschart.qscharts(garmin_filename, 'exercise',
-    #                        ['Cycling', 'Running'],
-    #                        begin_date, end_date, None,
-    #                        os.path.join(charts_dir, "exercise-%s-%%s.png" % date_suffix),
-    #                        CHART_SIZES))
+    utils.qschart.qscharts(file_locations['omron-filename'], 'blood_pressure',
+                           ['systolic', 'diastolic', 'heart_rate'],
+                           begin_date, end_date, None,
+                           os.path.join(charts_dir, "blood-pressure-%s-%%s.png" % date_suffix),
+                           CHART_SIZES)
+    utils.qschart.qscharts(file_locations['cycling-filename'], 'cycling',
+                           ['Distance', 'Calories', 'Time'],
+                           begin_date, end_date, None,
+                           os.path.join(charts_dir, "cycling-%s-%%s.png" % date_suffix),
+                           CHART_SIZES)
+    utils.qschart.qscharts(file_locations['running-filename'], 'running',
+                           ['Distance', 'Calories', 'Time'],
+                           begin_date, end_date, None,
+                           os.path.join(charts_dir, "running-%s-%%s.png" % date_suffix),
+                           CHART_SIZES)
 
 def update_startpage(file_locations):
     startpage = file_locations['startpage']
@@ -200,10 +211,59 @@ def update_contacts(file_locations):
         print("wrong number of people after linking contacts, originally", original_lines, "but now", scratch_lines)
     return contacts_analysis
 
-def fetch_mfp(file_locations, begin_date, end_date, verbose):
-    print("Fetching data from myfitnesspal.com")
+def rename_columns(raw, column_renames):
+    return ({column_renames.get(key, key): value for key, value in raw.items()}
+            if isinstance(raw, dict)
+            else [column_renames.get(key, key) for key in raw])
+
+def transform_cells(row, transformations):
+    return {k: transformations.get(k, lambda a: a)(v)
+            for k, v in row.items()}
+
+def matches(row, match_key, match_value):
+    return (match_key is None
+            or row.get(match_key) == match_value)
+
+def merge_incoming_csv(file_locations, main_file_key, incoming_key,
+                       begin_date, end_date,
+                       match_key=None, match_value=None,
+                       column_renames={},
+                       transformations={}):
+    main_filename = file_locations[main_file_key]
+    incoming_filename = latest_file_matching(file_locations[incoming_key])
+    print("merging", incoming_filename, "into", main_filename, "with column_renames", column_renames, "and matches", match_key, match_value)
+    utils.trim_csv.trim_csv(incoming_filename)
+    if (os.path.isfile(incoming_filename)
+        and ((not os.path.isfile(main_filename))
+             or file_newer_than_file(incoming_filename, main_filename))):
+        data = {}
+        with open(incoming_filename) as instream:
+            for row in csv.reader(instream):
+                header = rename_columns(row, column_renames)
+                break           # just get the first row
+        with open(main_filename) as instream:
+            data = {row['Date']: row
+                    for row in csv.DictReader(instream)}
+        original_length = len(data)
+        with open(incoming_filename) as instream:
+            additional = {row['Date']: row
+                          for row in (transform_cells(rename_columns(raw, column_renames),
+                                                      transformations)
+                                      for raw in csv.DictReader(instream))
+                          if matches(row, match_key, match_value)}
+            data.update(additional)
+        if len(data) > original_length:
+            backup(main_filename, file_locations['archive'], "%s-to-%%s.csv" % os.path.splitext(os.path.basename(main_filename))[0])
+            with open(main_filename, 'w') as outstream:
+                writer = csv.DictWriter(outstream, header)
+                writer.writeheader()
+                for date in sorted(data.keys()):
+                    writer.writerow(data[date])
+
+def fetch_mfp(file_locations, _begin_date, _end_date, verbose):
+    if verbose: print("Fetching data from myfitnesspal.com (may take a little while)")
     physical.mfp_reader.update_mfp(file_locations['mfp-filename'], verbose)
-    print("Fetched data from myfitnesspal.com")
+    if verbose: print("Fetched data from myfitnesspal.com")
 
 def fetch_oura(file_locations, begin_date, end_date, verbose):
     oura_filename = file_locations['oura-filename']
@@ -212,38 +272,34 @@ def fetch_oura(file_locations, begin_date, end_date, verbose):
     existing_rows = len(data)
     if begin_date is None:
         begin_date = qsutils.earliest_unfetched(data)
+    if verbose: print("fetching data from oura")
     physical.oura_reader.oura_fetch(data, begin_date, end_date)
+    if verbose: print("fetched data from oura")
     if len(data) > existing_rows:
+        backup(oura_filename, file_locations['archive'], "oura-to-%s.csv")
         physical.oura_reader.oura_write(data, oura_filename)
     elif len(data) < existing_rows:
         print("Warning: sleep data has shrunk on being fetched --- not writing it")
 
-def fetch_omron(file_locations, begin_date, end_date, verbose):
-    omron_filename = file_locations['omron-filename']
-    # TODO: fetch from API
+def fetch_omron(file_locations, begin_date, end_date, _verbose):
+    merge_incoming_csv(file_locations,
+                       'omron-filename', 'omron-incoming-pattern',
+                       begin_date, end_date,
+                       column_renames={'Measurement Date': 'Date'})
 
-def fetch_garmin(file_locations, begin_date, end_date, verbose):
-    garmin_incoming_filename = file_locations['garmin-incoming-filename']
-    if (os.path.isfile(garmin_incoming_filename)
-        and file_newer_than_file(garmin_incoming_filename, garmin_filename)):
-        garmin_filename = file_locations['garmin-filename']
-        data = {}
-        if os.path.isfile(garmin_filename):
-            with open(garmin_filename) as instream:
-                data = {row['Date']: row for row in csv.DictReader(instream)}
-        original_length = len(data)
-        with open(garmin_incoming_filename) as instream:
-            for row in csv.reader(instream):
-                header = row
-                break           # just get the first row
-        with open(garmin_incoming_filename) as instream:
-            data.update({row['Date']: row for row in csv.DictReader(instream)})
-    if len(data) > original_length:
-        with open(garmin_filename, 'w') as outstream:
-            writer = csv.DictWriter(outstream, header)
-            writer.writeheader()
-            for row in data:
-                writer.writerow(row)
+def fetch_running(file_locations, begin_date, end_date, _verbose):
+    merge_incoming_csv(file_locations,
+                       'running-filename', 'garmin-incoming-pattern',
+                       begin_date, end_date,
+                       match_key='Activity Type', match_value='Running',
+                       transformations={'Time': qsutils.duration_string_to_minutes})
+
+def fetch_cycling(file_locations, begin_date, end_date, _verbose):
+    merge_incoming_csv(file_locations,
+                       'cycling-filename', 'garmin-incoming-pattern',
+                       begin_date, end_date,
+                       match_key='Activity Type', match_value='Cycling',
+                       transformations={'Time': qsutils.duration_string_to_minutes})
 
 def fetch_travel(file_locations, begin_date, end_date, verbose):
     # TODO: fetch from Google, updating file_locations['travel-filename'] and file_locations['places-filename']
@@ -269,38 +325,22 @@ def updates(file_locations,
                 ('travel-filename', fetch_travel, "travel-to-%s.csv"),
                 ('oura-filename', fetch_oura, "oura-to-%s.csv"),
                 ('omron-filename', fetch_omron, "omron-to-%s.csv"),
-                ('garmin-filename', fetch_garmin, "garmin-to-%s.csv")
+                ('cycling-filename', fetch_cycling, "cycling-to-%s.csv"),
+                ('running-filename', fetch_running, "running-to-%s.csv")
                 ]:
             filename = file_locations[location_name]
             if last_update_at_least_about_a_day_ago(filename):
+                if verbose: print("updating", filename)
                 backup(filename, file_locations['archive'], archive_template)
                 fetcher(file_locations, begin_date, end_date, verbose)
+            else:
+                if verbose: print("not updating", filename, "as it is recent")
 
-    update_finances(file_locations, verbose)
+    finance_updates_analysis = update_finances(file_locations, verbose)
     contacts_analysis = update_contacts(file_locations)
     update_travel(file_locations)
-
-    today = datetime.date.today()
-    text_colour, background_colour, shading = dashboard.dashboard.dashboard_page_colours()
-    for param_set in CHART_SIZES.values():
-        param_set['facecolor'] = background_colour
-
-    periods = {'all_time': datetime.date(year=1973, month=1, day=1),
-               'past_week': qsutils.back_from(today, None, None, 7),
-               'past_month': qsutils.back_from(today, None, 1, None),
-               'past_quarter': qsutils.back_from(today, None, 3, None),
-               'past_year': qsutils.back_from(today, 1, None, None)}
-    for date_suffix, begin in ({'custom': begin_date}
-                               if begin_date
-                               else periods).items():
-        begin = np.datetime64(datetime.datetime.combine(begin, datetime.time())) # .timestamp()
-        update_finances_charts(file_locations, begin, end_date, date_suffix, verbose)
-        update_physical_charts(file_locations, begin, end_date, date_suffix)
-
-    dashboard.dashboard.write_dashboard_page(file_locations,
-                                             contacts_analysis,
-                                             details_background_color=shading)
     update_startpage(file_locations)
+    dashboard.dashboard.make_dashboard_page(file_locations, contacts_analysis, finance_updates_analysis)
 
 def main():
     parser = qsutils.program_argparser()
@@ -337,10 +377,12 @@ def main():
         'storage-file': "$COMMON/org/storage.csv",
 
         # physical
-        'garmin-filename': "$COMMON/health/garmin.csv",
-        'garmin-incoming-filename': "~/Downloads/Activities*.csv",
+        'running-filename': "$COMMON/health/garmin-running.csv",
+        'cycling-filename': "$COMMON/health/garmin-cycling.csv",
+        'garmin-incoming-pattern': "~/Downloads/Activities*.csv",
         'mfp-filename': "$COMMON/health/mfp-accum.csv",
         'omron-filename': "$COMMON/health/blood-pressure.csv",
+        'omron-incoming-pattern': "~/Downloads/*BP-Logbook*.csv",
         'oura-filename': "$COMMON/health/sleep.csv",
         'physical-filename': "$COMMON/health/physical.csv",
         'weight-filename': "$COMMON/health/weight.csv",
@@ -359,6 +401,8 @@ def main():
         # contacts
         'contacts-file': "$COMMON/org/contacts.csv",
 
+        # general
+        'archive': "~/archive",
         'charts': args.charts,
         'default-timetable': "timetable.csv",
         'projects-dir': "~/open-projects/github.com",

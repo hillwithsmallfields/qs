@@ -177,7 +177,7 @@ class InvalidFunction(BaseException):
 
     def __init__(self, form):
         self.form = form
-        
+
 class EvalError(BaseException):
 
     def __init__(self, form):
@@ -260,3 +260,4 @@ def finlisp_load_file(context, filename):
         for sexp in sexps:
             result = finlisp_eval(context, sexp)
             print("==>", lisp_to_string(result))
+    return result

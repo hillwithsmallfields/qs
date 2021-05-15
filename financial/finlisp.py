@@ -34,6 +34,11 @@ def finlisp_format_string(_, fmt_string, *fmt_args):
 
 finlisp_evaluation.def_finlisp_fn('format', finlisp_format_string)
 
+def finlisp_list(_, *elements):
+    return elements
+
+finlisp_evaluation.def_finlisp_fn('list', finlisp_list)
+
 def finlisp_concat(_, *strings):
     return "".join(strings)
 
@@ -178,11 +183,12 @@ def finlisp_main(script_files, output_dir, config, verbose, bindings):
         initial_bindings.update(bindings)
 
     for filename in script_files:
-        finlisp_evaluation.finlisp_load_file({'config': config,
-                                              'project_source': os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
-                                              'bindings': [initial_bindings],
-                                              'eval-stack': []},
-                                             filename)
+        result = finlisp_evaluation.finlisp_load_file({'config': config,
+                                                       'project_source': os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
+                                                       'bindings': [initial_bindings],
+                                                       'eval-stack': []},
+                                                      filename)
+    return result
 
 if __name__ == "__main__":
     main()

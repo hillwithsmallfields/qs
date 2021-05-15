@@ -26,15 +26,18 @@ def places_main(places_file, update):
 
                 placelist = requests.get(url).json()
 
-                matching_places = [q for q in [(p['properties'], p['geometry']['coordinates']) for p in placelist['features']] if q[0].get('category') == 'place']
+                matching_places = [p
+                                   for p in placelist['features']
+                                   if p['properties'].get('category') == 'place']
 
                 if len(matching_places) == 1:
-                    description = matching_places[0][0]
-                    location = matching_places[0][1]
+                    matching_place = matching_places[0]
+                    properties = matching_place['properties']
+                    location = matching_place['geometry']['coordinates']
                     place['Longitude'] = location[0]
                     place['Latitude'] = location[1]
-                    if 'address' in description:
-                        address = description['address']
+                    if 'address' in properties:
+                        address = properties['address']
                         if 'county' in address:
                             place['County'] = address['county']
                         if 'country' in address:
@@ -42,13 +45,16 @@ def places_main(places_file, update):
                 elif len(matching_places) > 1:
                     print("Ambiguous data for", place)
                     for mp in matching_places:
-                        mp_descr = mp[0]
+                        mp_descr = mp['properties']
                         if 'address' in mp_descr:
                             print("  ", mp_descr['address'])
                         else:
                             print("  ", mp)
                 else:
-                    print("No data for", place)
+                    print("No data for", place, "but placelist is:")
+                    for p in placelist['features']:
+                        pp = p['properties']
+                        print("  ", pp['category'], pp['display_name'])
 
         with open("/tmp/places.csv",
                 # os.path.expandvars(places_file),

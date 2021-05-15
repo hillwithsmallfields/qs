@@ -81,6 +81,10 @@ def same_year(a, b):
 def within_days(a, b, days):
     return abs(a - b).days <= days
 
+def duration_string_to_minutes(durstring):
+    parts = durstring.split(':')
+    return int(parts[0]) * 60 + int(parts[1]) + float(parts[2]) / 60
+
 def resolve_filename(filename, directory=None):
     """Try to get an absolute form of a filename, using a suggested directory."""
     filename = os.path.expandvars(filename)
@@ -339,6 +343,13 @@ def yesterday():
 
 def earliest_unfetched(data):
     return forward_from(max(data.keys()), 0, 0, 1)
+
+def ensure_directory_present_and_empty(directory):
+    if os.path.isdir(directory):
+        for old_file in os.listdir(directory):
+            os.remove(os.path.join(directory, old_file))
+    else:
+        os.makedirs(directory, exist_ok=True)
 
 def table_support_css(details_background_colour):
     with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "hover-details.css")) as css_stream:

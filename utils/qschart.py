@@ -23,6 +23,9 @@ POSSIBLE_COLUMN_NAMES = {'stones': 'stone',
 COLUMN_LABELS = {'stone': "Stone",
                  'kilogram': "Kg",
                  'pound': "Pounds",
+                 'systolic': "Systolic",
+                 'diastolic': "Diastolic",
+                 'heart_rate': "Heart rate",
                  'calories': "Calories",
                  'breakfast': "Breakfast calories",
                  'lunch': "Lunch calories",
@@ -41,6 +44,9 @@ def column_label(column):
 COLUMN_HEADERS = {'stone': 'St total',
                   'pound': 'Lbs total',
                   'kilogram': 'Kg',
+                  'systolic': 'SYS',
+                  'diastolic': 'DIA',
+                  'heart_rate': 'Pulse',
                   'calories': 'calories',
                   'breakfast': 'breakfast_cals',
                   'lunch': 'lunch_cals',
@@ -104,6 +110,8 @@ def qscharts(mainfile, file_type,
 
 def qschart(mainfile, file_type, columns, begin, end, match, outfile, **plot_params):
 
+    # TODO: rolling averages, as in http://jonathansoma.com/lede/foundations-2018/pandas/rolling-averages-in-pandas/
+
     data = pd.read_csv(mainfile, parse_dates=['Date'])
 
     # do this before trimming to 'begin' and 'end', as this may create
@@ -131,6 +139,7 @@ def qschart(mainfile, file_type, columns, begin, end, match, outfile, **plot_par
     for column in columns:
         column_data = data.loc[data[column_header(column)] != 0,
                                ['Date', column_header(column)]]
+        print("empty is", column_data.empty, "length is", len(column_data), column_data)
         if not column_data.empty:
             column_data.plot(ax=axs, x="Date", y=column_header(column))
             plt.ylabel(column_label(column))
