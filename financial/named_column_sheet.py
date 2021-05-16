@@ -109,6 +109,7 @@ class named_column_sheet(base_sheet.base_sheet):
     def write_csv(self, filename, suppress_timestamp=False, show_averages=False):
         """Write a named-column sheet to a CSV file."""
         full_filename = os.path.expanduser(os.path.expandvars(filename))
+        # print("named_column_sheet.write_csv", filename, "suppress_timestamp", suppress_timestamp, self)
         qsutils.ensure_directory_for_file(full_filename)
         with open(full_filename, 'w') as outfile:
             writer = csv.writer(outfile)

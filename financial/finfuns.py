@@ -630,17 +630,19 @@ def write_all_columns(context, value, filename):
     return value
 
 def write_csv(context, value, filename):
+    # print("write_csv", filename, value)
     if value:
         value.write_csv(qsutils.resolve_filename(
             filename,
-            finlisp_evaluation.finlisp_var_value(context,
-                                                 'output-dir')),
-                        suppress_timestamp=False)
+            finlisp_evaluation.finlisp_var_value(
+                context,
+                'output-dir')))
     else:
         print("Nothing to write to", filename)
     return value
 
-def write_csv_with_averages(context, value, filename, suppress_timestamp=False):
+def write_csv_with_averages(context, value,
+                            filename, suppress_timestamp=False):
     if value:
         value.write_csv(qsutils.resolve_filename(
             filename,

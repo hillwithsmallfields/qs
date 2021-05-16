@@ -71,7 +71,9 @@
     (print "fallen through the gaps:" (- (length latest) handled-count))
 
     (write-csv unmatched-automatic "unmatched-auto.csv")
+    ;; (write-table unmatched-automatic "unmatched-auto.html")
     (write-csv unmatched-non-automatic "unmatched-non-auto.csv")
+    ;; (write-table unmatched-non-automatic "unmatched-non-auto.html")
 
     (write-csv ambiguously-matched-auto "ambiguously-matched-auto.csv")
     (write-csv ambiguously-matched-non-auto "ambiguously-matched-non-auto.csv")
@@ -106,7 +108,7 @@
     (write merged-with-ua "merged-with-unmatched-automatic"
            "Merged with all unmatched automatic entries"
            "The original file, merged with the unmatched automatic entries from the incoming file.")
-    (write merged-with-unmatched-all "merged-with-unmatched-all"
+   (write merged-with-unmatched-all "merged-with-unmatched-all"
            "Merged with all unmatched entries"
            "The original file, merged with all unmatched entries from the incoming file.")
     ;; (write-csv tracked "tracked.csv")

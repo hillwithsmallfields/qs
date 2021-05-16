@@ -3,13 +3,13 @@
 import cssutils
 import csv
 import datetime
-import decouple
 import glob
 import os
-import pyowm
 import random
 import shutil
 import sys
+
+import numpy as np
 
 source_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -266,18 +266,6 @@ def foods_section():
 
 def weather_section():
     # https://pyowm.readthedocs.io/en/latest/v3/code-recipes.html
-    owm = pyowm.owm.OWM(decouple.config('OWM_API_KEY'))
-    reg = owm.city_id_registry()
-    list_of_locations = reg.locations_for('cambridge', country='GB')
-    cambridge = list_of_locations[0]
-    mgr = owm.weather_manager()
-    one_call = mgr.one_call(lat=cambridge.lat, lon=cambridge.lon)
-    three_h_forecast = mgr.forecast_at_place('Cambridge,GB', '3h').forecast
-    print("three_h_forecast is", three_h_forecast)
-    temp = one_call.forecast_daily[0].temperature('celsius').get('feels_like_morn', None)
-    # TODO: pick out the data I want
-    print("temp is", temp)
-    print("one_call is", one_call)
     return None
 
 def exercise_section():
@@ -371,8 +359,7 @@ def reflection_section(file_locations):
         T.p[random_reflection(reflections_dir)]]
 
 def construct_dashboard_page(file_locations,
-                             contacts_analysis,
-                             finance_updates_analysis):
+                             contacts_analysis):
     charts_dir = file_locations['charts']
     page = SectionalPage()
     page.add_section("Perishable food to use up", perishables_section())
@@ -390,7 +377,7 @@ def construct_dashboard_page(file_locations,
         labelled_section("Sleep times", sleep_times_section()),
         labelled_section("Temperature", temperature_section())))
     page.add_section("Spending", transactions_section(file_locations))
-    page.add_section("Recent update debug", T.pre[finance_updates_analysis])
+    page.add_section("Spending updates", T.p["Spending updates to be shown here."])
     page.add_section("People", wrap_box(
         labelled_section("Birthdays", birthdays_section(file_locations)),
         labelled_section("To contact", keep_in_touch_section(file_locations)),
@@ -430,15 +417,88 @@ def tagged(tag, text):
 def tagged_file_contents(tag, filename):
     return tagged(tag, file_contents(filename))
 
+def update_finances_charts(file_locations, chart_sizes, begin_date, end_date, date_suffix, verbose):
+
+    charts_dir = file_locations['charts']
+    utils.qschart.qscharts(os.path.join(charts_dir, "by-class.csv"),
+                           'finances',
+                           CATEGORIES_OF_INTEREST,
+                           begin_date, end_date, None,
+                           os.path.join(charts_dir, "by-class-%s-%%s.png" % date_suffix),
+                           chart_sizes)
+
+def update_physical_charts(file_locations, chart_sizes, begin_date, end_date, date_suffix):
+
+    charts_dir = file_locations['charts']
+    physical = file_locations['physical-filename']
+    mfp_filename = file_locations['mfp-filename']
+
+    for units in ('stone', 'kilogram', 'pound'):
+        utils.qschart.qscharts(physical,
+                               'weight',
+                               [units],
+                               begin_date, end_date, None,
+                               os.path.join(charts_dir, "weight-%s-%s-%%s.png" % (units, date_suffix)),
+                               chart_sizes)
+    utils.qschart.qscharts(mfp_filename,
+                           'calories', ['calories'],
+                           begin_date, end_date, None,
+                           os.path.join(charts_dir, "total_calories-%s-%%s.png" % date_suffix),
+                           chart_sizes)
+    utils.qschart.qscharts(mfp_filename, 'meals',
+                           ['breakfast', 'lunch', 'dinner', 'snacks'],
+                           begin_date, end_date, None,
+                           os.path.join(charts_dir, "meal_calories-%s-%%s.png" % date_suffix),
+                           chart_sizes)
+    utils.qschart.qscharts(mfp_filename, 'food_groups',
+                           ['carbohydrates', 'fat', 'protein', 'sugar'],
+                           begin_date, end_date, None,
+                           os.path.join(charts_dir, "origin_calories-%s-%%s.png" % date_suffix),
+                           chart_sizes)
+    utils.qschart.qscharts(file_locations['oura-filename'], 'sleep',
+                           ['Latency', 'Rem', 'Deep', 'Total'],
+                           begin_date, end_date, None,
+                           os.path.join(charts_dir, "sleep-split-%s-%%s.png" % date_suffix),
+                           chart_sizes)
+    utils.qschart.qscharts(file_locations['oura-filename'], 'sleep',
+                           ['Start', 'End'],
+                           begin_date, end_date, None,
+                           os.path.join(charts_dir, "sleep-times-%s-%%s.png" % date_suffix),
+                           chart_sizes)
+    # utils.qschart.qscharts(smart_one_filename, 'peak_flow',
+    #                        ['Peak flow'],
+    #                        begin_date, end_date, None,
+    #                        os.path.join(charts_dir, "peak-flow-%s-%%s.png" % date_suffix),
+    #                        chart_sizes)
+    # utils.qschart.qscharts(file_locations['temperature-file'], 'temperature',
+    #                        ['Temperature'],
+    #                        begin_date, end_date, None,
+    #                        os.path.join(charts_dir, "temperature-%s-%%s.png" % date_suffix),
+    #                        chart_sizes)
+    utils.qschart.qscharts(file_locations['omron-filename'], 'blood_pressure',
+                           ['systolic', 'diastolic', 'heart_rate'],
+                           begin_date, end_date, None,
+                           os.path.join(charts_dir, "blood-pressure-%s-%%s.png" % date_suffix),
+                           chart_sizes)
+    utils.qschart.qscharts(file_locations['cycling-filename'], 'cycling',
+                           ['Distance', 'Calories', 'Time'],
+                           begin_date, end_date, None,
+                           os.path.join(charts_dir, "cycling-%s-%%s.png" % date_suffix),
+                           chart_sizes)
+    utils.qschart.qscharts(file_locations['running-filename'], 'running',
+                           ['Distance', 'Calories', 'Time'],
+                           begin_date, end_date, None,
+                           os.path.join(charts_dir, "running-%s-%%s.png" % date_suffix),
+                           chart_sizes)
+
 def write_dashboard_page(file_locations,
                          contacts_analysis,
-                         finance_updates_analysis,
                          details_background_color="gold", inline=True):
     charts_dir = file_locations['charts']
     with open(os.path.join(charts_dir, "index.html"), 'w') as page_stream:
         page_stream.write(
             page_text(
-                construct_dashboard_page(file_locations, contacts_analysis, finance_updates_analysis),
+                construct_dashboard_page(file_locations, contacts_analysis),
                 (tagged_file_contents("style", os.path.join(source_dir, "dashboard.css"))
                  + utils.qsutils.table_support_css(details_background_color)) if inline else "",
                 tagged_file_contents("script", os.path.join(source_dir, "dashboard.js")) if inline else ""))
@@ -448,29 +508,38 @@ def write_dashboard_page(file_locations,
             shutil.copy(os.path.join(source_dir, filename),
                         os.path.join(charts_dir, filename))
 
-def make_dashboard_images(file_locations):
+def make_dashboard_images(file_locations, chart_sizes,
+                          background_colour,
+                          begin_date=None, end_date=None,
+                          verbose=False):
     today = datetime.date.today()
-    text_colour, background_colour, shading = dashboard_page_colours()
-    for param_set in CHART_SIZES.values():
+    for param_set in chart_sizes.values():
         param_set['facecolor'] = background_colour
 
     periods = {'all_time': datetime.date(year=1973, month=1, day=1),
-               'past_week': qsutils.back_from(today, None, None, 7),
-               'past_month': qsutils.back_from(today, None, 1, None),
-               'past_quarter': qsutils.back_from(today, None, 3, None),
-               'past_year': qsutils.back_from(today, 1, None, None)}
+               'past_week': utils.qsutils.back_from(today, None, None, 7),
+               'past_month': utils.qsutils.back_from(today, None, 1, None),
+               'past_quarter': utils.qsutils.back_from(today, None, 3, None),
+               'past_year': utils.qsutils.back_from(today, 1, None, None)}
     for date_suffix, begin in ({'custom': begin_date}
                                if begin_date
                                else periods).items():
         begin = np.datetime64(datetime.datetime.combine(begin, datetime.time())) # .timestamp()
-        update_finances_charts(file_locations, begin, end_date, date_suffix, verbose)
-        update_physical_charts(file_locations, begin, end_date, date_suffix)
+        update_finances_charts(file_locations, chart_sizes, begin, end_date, date_suffix, verbose)
+        update_physical_charts(file_locations, chart_sizes, begin, end_date, date_suffix)
 
-def make_dashboard_page(file_locations, contacts_analysis, finance_updates_analysis):
-    make_dashboard_images(file_locations)
+def make_dashboard_page(file_locations,
+                        contacts_analysis,
+                        chart_sizes,
+                        begin_date=None, end_date=None,
+                        verbose=False):
+    text_colour, background_colour, shading = dashboard_page_colours()
+    make_dashboard_images(file_locations, chart_sizes,
+                          background_colour,
+                          begin_date, end_date,
+                          verbose)
     write_dashboard_page(file_locations,
                          contacts_analysis,
-                         finance_updates_analysis,
                          details_background_color=shading)
 
 def main():

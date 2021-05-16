@@ -85,6 +85,10 @@ def duration_string_to_minutes(durstring):
     parts = durstring.split(':')
     return int(parts[0]) * 60 + int(parts[1]) + float(parts[2]) / 60
 
+def string_to_number(number_string):
+    "Convert a string to a number, even if it has commas for the thousands separator."
+    return float(number_string.replace(',', ''))
+
 def resolve_filename(filename, directory=None):
     """Try to get an absolute form of a filename, using a suggested directory."""
     filename = os.path.expandvars(filename)

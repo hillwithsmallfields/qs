@@ -105,6 +105,7 @@ def qscharts(mainfile, file_type,
              outfile_template,
              # background_colour,
              plot_param_sets):
+    # print("charting", mainfile)
     for name_suffix, params in plot_param_sets.items():
         qschart(mainfile, file_type, columns, begin, end, match, outfile_template % name_suffix, **params)
 
@@ -139,7 +140,7 @@ def qschart(mainfile, file_type, columns, begin, end, match, outfile, **plot_par
     for column in columns:
         column_data = data.loc[data[column_header(column)] != 0,
                                ['Date', column_header(column)]]
-        print("empty is", column_data.empty, "length is", len(column_data), column_data)
+        # print("empty is", column_data.empty, "length is", len(column_data), column_data)
         if not column_data.empty:
             column_data.plot(ax=axs, x="Date", y=column_header(column))
             plt.ylabel(column_label(column))

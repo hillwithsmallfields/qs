@@ -196,10 +196,12 @@ class canonical_sheet(base_sheet.base_sheet):
     def add_sheets(self, *others):
         """Combine several sheets, starting with this one.
         The original sheets are not affected."""
+        print("adding to sheet", self, "these sheets:", others)
         result = canonical_sheet(self.config)
         result.add_sheet(self)
         for other in others:
             result.add_sheet(other)
+        print("result of adding sheets is", result)
         return result
 
     def replace_matching_rows(self, other, match_columns):
@@ -218,7 +220,7 @@ class canonical_sheet(base_sheet.base_sheet):
         result.rows = {timestamp: replacers.get(tuple((row[col] for col in match_columns)), row)
                        for timestamp, row in self.rows.items()}
         return result
-    
+
     def subtract_cells(self, other):
         """Return the cell-by-cell subtraction of another sheet from this one."""
         result = canonical_sheet(self.config)
@@ -572,10 +574,11 @@ class canonical_sheet(base_sheet.base_sheet):
         """Return a sheet like this but with only the columns that are in use."""
         return named_column_sheet.named_column_sheet.occupied_columns(self)
 
-    def write_csv(self, filename, suppress_timestamp=False):
+    def write_csv(self, filename, suppress_timestamp=True):
         """Write a canonical spreadsheet to a file.
         Any columns not in the canonical format are ignored."""
         full_filename = os.path.expanduser(os.path.expandvars(filename))
+        # print("writing canonical csv", full_filename, "from", self)
         qsutils.ensure_directory_for_file(full_filename)
         column_sequence = (canonical_sheet.canonical_column_sequence_no_timestamp
                            if suppress_timestamp

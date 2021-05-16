@@ -3,14 +3,14 @@
 import argparse
 import csv
 import datetime
+import decouple
 import glob
 import os
+import pyowm
 import re
 import shutil
 import sys
 import yaml
-
-import numpy as np
 
 # other parts of this project group:
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
@@ -62,19 +62,16 @@ def update_finances(file_locations, verbose):
     main_account = file_locations['main-account']
     merge_results_dir = file_locations['merge-results-dir']
 
-    results = None
-
     latest_bank_statement = latest_file_matching(file_locations['bank-statement-template'])
 
     if latest_bank_statement and file_newer_than_file(latest_bank_statement, main_account):
         qsutils.ensure_directory_present_and_empty(merge_results_dir)
         if verbose: print("Updating from latest bank statement", latest_bank_statement)
-        results = financial.finlisp.finlisp_main([os.path.join(my_projects, "qs/financial", "merge-latest-statement.lisp")],
-                             merge_results_dir,
-                             config,
-                             verbose,
-                             {'incoming-statement': latest_bank_statement})
-        print("got results", results, "from merge-latest-statement.lisp")
+        financial.finlisp.finlisp_main([os.path.join(my_projects, "qs/financial", "merge-latest-statement.lisp")],
+                                       merge_results_dir,
+                                       config,
+                                       verbose,
+                                       {'incoming-statement': latest_bank_statement})
         merge_results_file = os.path.join(merge_results_dir, file_locations['merge-results-file'])
         if os.path.isfile(merge_results_file):
             backup(main_account, file_locations['archive'], "finances-to-%s.csv")
@@ -96,20 +93,8 @@ def update_finances(file_locations, verbose):
     if file_newer_than_file(main_account, file_locations['finances-completions']):
         if verbose: print("updating finances completions")
         list_completions.list_completions()
-    return results
 
-def update_finances_charts(file_locations, begin_date, end_date, date_suffix, verbose):
-
-    charts_dir = file_locations['charts']
-    utils.qschart.qscharts(os.path.join(charts_dir, "by-class.csv"),
-                           'finances',
-                           dashboard.dashboard.CATEGORIES_OF_INTEREST,
-                           begin_date, end_date, None,
-                           os.path.join(charts_dir, "by-class-%s-%%s.png" % date_suffix),
-                           CHART_SIZES)
-
-def update_physical_charts(file_locations, begin_date, end_date, date_suffix):
-
+def update_physical(file_locations, begin_date, end_date):
     charts_dir = file_locations['charts']
     physical = file_locations['physical-filename']
     mfp_filename = file_locations['mfp-filename']
@@ -126,66 +111,8 @@ def update_physical_charts(file_locations, begin_date, end_date, date_suffix):
     if utils.check_merged_row_dates.check_merged_row_dates(phys_scratch, physical, *physical_files):
         backup(physical, archive_dir, "physical-to-%s.csv")
         shutil.copy(phys_scratch, physical)
-        for units in ('stone', 'kilogram', 'pound'):
-            utils.qschart.qscharts(physical,
-                                   'weight',
-                                   [units],
-                                   begin_date, end_date, None,
-                                   os.path.join(charts_dir, "weight-%s-%s-%%s.png" % (units, date_suffix)),
-                                   CHART_SIZES)
     else:
         print("merge of physical data produced the wrong number of rows")
-
-    utils.qschart.qscharts(mfp_filename,
-                           'calories', ['calories'],
-                           begin_date, end_date, None,
-                           os.path.join(charts_dir, "total_calories-%s-%%s.png" % date_suffix),
-                           CHART_SIZES)
-    utils.qschart.qscharts(mfp_filename, 'meals',
-                           ['breakfast', 'lunch', 'dinner', 'snacks'],
-                           begin_date, end_date, None,
-                           os.path.join(charts_dir, "meal_calories-%s-%%s.png" % date_suffix),
-                           CHART_SIZES)
-    utils.qschart.qscharts(mfp_filename, 'food_groups',
-                           ['carbohydrates', 'fat', 'protein', 'sugar'],
-                           begin_date, end_date, None,
-                           os.path.join(charts_dir, "origin_calories-%s-%%s.png" % date_suffix),
-                           CHART_SIZES)
-    utils.qschart.qscharts(file_locations['oura-filename'], 'sleep',
-                           ['Latency', 'Rem', 'Deep', 'Total'],
-                           begin_date, end_date, None,
-                           os.path.join(charts_dir, "sleep-split-%s-%%s.png" % date_suffix),
-                           CHART_SIZES)
-    utils.qschart.qscharts(file_locations['oura-filename'], 'sleep',
-                           ['Start', 'End'],
-                           begin_date, end_date, None,
-                           os.path.join(charts_dir, "sleep-times-%s-%%s.png" % date_suffix),
-                           CHART_SIZES)
-    # utils.qschart.qscharts(smart_one_filename, 'peak_flow',
-    #                        ['Peak flow'],
-    #                        begin_date, end_date, None,
-    #                        os.path.join(charts_dir, "peak-flow-%s-%%s.png" % date_suffix),
-    #                        CHART_SIZES)
-    # utils.qschart.qscharts(file_locations['temperature-file'], 'temperature',
-    #                        ['Temperature'],
-    #                        begin_date, end_date, None,
-    #                        os.path.join(charts_dir, "temperature-%s-%%s.png" % date_suffix),
-    #                        CHART_SIZES)
-    utils.qschart.qscharts(file_locations['omron-filename'], 'blood_pressure',
-                           ['systolic', 'diastolic', 'heart_rate'],
-                           begin_date, end_date, None,
-                           os.path.join(charts_dir, "blood-pressure-%s-%%s.png" % date_suffix),
-                           CHART_SIZES)
-    utils.qschart.qscharts(file_locations['cycling-filename'], 'cycling',
-                           ['Distance', 'Calories', 'Time'],
-                           begin_date, end_date, None,
-                           os.path.join(charts_dir, "cycling-%s-%%s.png" % date_suffix),
-                           CHART_SIZES)
-    utils.qschart.qscharts(file_locations['running-filename'], 'running',
-                           ['Distance', 'Calories', 'Time'],
-                           begin_date, end_date, None,
-                           os.path.join(charts_dir, "running-%s-%%s.png" % date_suffix),
-                           CHART_SIZES)
 
 def update_startpage(file_locations):
     startpage = file_locations['startpage']
@@ -260,6 +187,20 @@ def merge_incoming_csv(file_locations, main_file_key, incoming_key,
                 for date in sorted(data.keys()):
                     writer.writerow(data[date])
 
+def fetch_weather(file_locations, _begin_date, _end_date, verbose):
+    owm = pyowm.owm.OWM(decouple.config('OWM_API_KEY'))
+    reg = owm.city_id_registry()
+    list_of_locations = reg.locations_for('cambridge', country='GB')
+    cambridge = list_of_locations[0]
+    mgr = owm.weather_manager()
+    one_call = mgr.one_call(lat=cambridge.lat, lon=cambridge.lon)
+    three_h_forecast = mgr.forecast_at_place('Cambridge,GB', '3h').forecast
+    print("three_h_forecast is", three_h_forecast)
+    temp = one_call.forecast_daily[0].temperature('celsius').get('feels_like_morn', None)
+    # TODO: pick out the data I want
+    print("temp is", temp)
+    print("one_call is", one_call)
+
 def fetch_mfp(file_locations, _begin_date, _end_date, verbose):
     if verbose: print("Fetching data from myfitnesspal.com (may take a little while)")
     physical.mfp_reader.update_mfp(file_locations['mfp-filename'], verbose)
@@ -292,14 +233,16 @@ def fetch_running(file_locations, begin_date, end_date, _verbose):
                        'running-filename', 'garmin-incoming-pattern',
                        begin_date, end_date,
                        match_key='Activity Type', match_value='Running',
-                       transformations={'Time': qsutils.duration_string_to_minutes})
+                       transformations={'Time': qsutils.duration_string_to_minutes,
+                                        'Calories': qsutils.string_to_number})
 
 def fetch_cycling(file_locations, begin_date, end_date, _verbose):
     merge_incoming_csv(file_locations,
                        'cycling-filename', 'garmin-incoming-pattern',
                        begin_date, end_date,
                        match_key='Activity Type', match_value='Cycling',
-                       transformations={'Time': qsutils.duration_string_to_minutes})
+                       transformations={'Time': qsutils.duration_string_to_minutes,
+                                        'Calories': qsutils.string_to_number})
 
 def fetch_travel(file_locations, begin_date, end_date, verbose):
     # TODO: fetch from Google, updating file_locations['travel-filename'] and file_locations['places-filename']
@@ -321,6 +264,7 @@ def updates(file_locations,
 
     if do_externals:
         for location_name, fetcher, archive_template in [
+                ('weather_filename', fetch_weather, "weather-to-%s.csv"),
                 ('mfp-filename', fetch_mfp, "mfp-to-%s.csv"),
                 ('travel-filename', fetch_travel, "travel-to-%s.csv"),
                 ('oura-filename', fetch_oura, "oura-to-%s.csv"),
@@ -336,11 +280,14 @@ def updates(file_locations,
             else:
                 if verbose: print("not updating", filename, "as it is recent")
 
-    finance_updates_analysis = update_finances(file_locations, verbose)
+    update_finances(file_locations, verbose)
+    update_physical(file_locations, begin_date, end_date)
     contacts_analysis = update_contacts(file_locations)
     update_travel(file_locations)
     update_startpage(file_locations)
-    dashboard.dashboard.make_dashboard_page(file_locations, contacts_analysis, finance_updates_analysis)
+    dashboard.dashboard.make_dashboard_page(file_locations,
+                                            contacts_analysis,
+                                            CHART_SIZES)
 
 def main():
     parser = qsutils.program_argparser()
@@ -400,6 +347,9 @@ def main():
 
         # contacts
         'contacts-file': "$COMMON/org/contacts.csv",
+
+        # weather
+        'weather_filename': "$COMMON/org/weather.csv",
 
         # general
         'archive': "~/archive",
