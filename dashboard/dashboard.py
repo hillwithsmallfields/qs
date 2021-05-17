@@ -277,9 +277,11 @@ def weather_section():
     # https://pyowm.readthedocs.io/en/latest/v3/code-recipes.html
     return None
 
-def exercise_section():
-    # TODO: fetch from MFP and Garmin
-    return None
+def running_section():
+    return linked_image("running", "running")
+
+def cycling_section():
+    return linked_image("cycling", "cycling")
 
 def sleep_split_section():
     return linked_image("sleep-split", "sleep-split")
@@ -288,7 +290,7 @@ def sleep_times_section():
     return linked_image("sleep-times", "sleep-times")
 
 def blood_pressure_section():
-    return None
+    return linked_image("blood-pressure", "blood-pressure")
 
 def temperature_section():
     return linked_image("temperature", "temperature")
@@ -379,7 +381,8 @@ def construct_dashboard_page(file_locations,
         labelled_section("Meals", meals_section()),
         labelled_section("By day of week", calories_per_day_of_week()),
         labelled_section("Food groups", foods_section()),
-        labelled_section("Exercise", exercise_section()),
+        labelled_section("Running", running_section()),
+        labelled_section("Cycling", cycling_section()),
         labelled_section("Blood pressure", blood_pressure_section()),
         labelled_section("Peak flow", peak_flow_section()),
         labelled_section("Sleep split", sleep_split_section()),
