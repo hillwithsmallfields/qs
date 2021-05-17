@@ -74,6 +74,8 @@ functions = ['account_to_sheet',
              'count_month_transactions',
              'count_year_categories',
              'count_year_transactions',
+             'eval_python',
+             'exec_python',
              'fgrep',
              'filter_sheet',
              'find_amount',
@@ -363,6 +365,12 @@ def count_year_categories(context, sheet):
 
 def count_year_transactions(context, sheet):
     return filter_dates.count_by_dates(sheet, qsutils.granularity_year)
+
+def eval_python(context, command):
+    return eval(command)
+
+def exec_python(context, command):
+    exec(command)
 
 def filter_sheet(context, input_sheet, column, pattern):
     return input_sheet.filter_sheet(column, pattern)
