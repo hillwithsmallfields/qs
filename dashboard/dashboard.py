@@ -145,11 +145,19 @@ def transactions_section(file_locations):
     """Incorporate the file of recent spending in monitored categories
     that is produced by chart-categories.lisp."""
     # TODO: spending per category per day of month/week
+
     spending_chart_file = os.path.join(file_locations['charts'], "past-quarter.html")
-    return T.div[wrap_box(linked_image("by-class", "transactions"),
-                          # I'd like to do this, but keeping the maroon colours
-                          T.a(class_='plainlink', href="by-class.html")[
-                              untemplate.safe_unicode(file_contents(spending_chart_file))])]
+    return T.div[wrap_box(
+        linked_image("by-class", "transactions"),
+        T.div[T.h3["Spending by category"],
+              T.a(class_='plainlink', href="by-class.html")[
+                  untemplate.safe_unicode(file_contents(spending_chart_file))]],
+        T.div[T.h3["Unmatched automatic transactions"],
+              untemplate.safe_unicode(file_contents(os.path.join(file_locations['merge-results-dir'],
+                                                                 "unmatched-auto.html")))],
+        T.div[T.h3["Unmatched non-automatic transactions"],
+              untemplate.safe_unicode(file_contents(os.path.join(file_locations['merge-results-dir'],
+                                                                 "unmatched-non-auto.html")))])]
 
 def timetable_section(file_locations):
     # TODO: possibly add columns for weather data for the same times
@@ -160,7 +168,7 @@ def timetable_section(file_locations):
     if os.path.isfile(day_file):
         # TODO: debug this merge, I don't think it's right yet
         extras.append(day_file)
-    # TODO: fetch from Google calendar
+    # TODO: fetch from Google calendar (in update.py) and merge that in here
     return T.div[T.h2["Timetable for %s %s" % (day_of_week, today.isoformat())],
                  T.table(id_="timetable")[
                      [[T.tr(class_='inactive',
@@ -244,12 +252,13 @@ def perishables_section():
     week_ahead = (datetime.datetime.now() + datetime.timedelta(days=7)).date()
     return (T.p["No items on record."]
             if len(items) == 0
-            else T.table[[T.tr(class_="use_soon"
+            else T.table[[T.tr[T.th["Use by"], T.th["Item"], T.th["Quantity"]]],
+                         [[T.tr(class_="use_soon"
                                if row['Best before'] < week_ahead
                                else "use_later")[T.td[row['Best before'].isoformat()],
                                T.td[row['Product']],
                                T.td[str(row['Quantity'])]]
-                          for row in items]])
+                           for row in items]]])
 
 def calories_section():
     return linked_image("total_calories", "total_calories")
@@ -377,7 +386,6 @@ def construct_dashboard_page(file_locations,
         labelled_section("Sleep times", sleep_times_section()),
         labelled_section("Temperature", temperature_section())))
     page.add_section("Spending", transactions_section(file_locations))
-    page.add_section("Spending updates", T.p["Spending updates to be shown here."])
     page.add_section("People", wrap_box(
         labelled_section("Birthdays", birthdays_section(file_locations)),
         labelled_section("To contact", keep_in_touch_section(file_locations)),
