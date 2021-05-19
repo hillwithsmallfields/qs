@@ -192,14 +192,22 @@ def fetch_weather(file_locations, _begin_date, _end_date, verbose):
     reg = owm.city_id_registry()
     list_of_locations = reg.locations_for('cambridge', country='GB')
     cambridge = list_of_locations[0]
-    mgr = owm.weather_manager()
-    one_call = mgr.one_call(lat=cambridge.lat, lon=cambridge.lon)
-    three_h_forecast = mgr.forecast_at_place('Cambridge,GB', '3h').forecast
-    print("three_h_forecast is", three_h_forecast)
-    temp = one_call.forecast_daily[0].temperature('celsius').get('feels_like_morn', None)
-    # TODO: pick out the data I want
-    print("temp is", temp)
-    print("one_call is", one_call)
+    forecast = [{
+        'time': datetime.datetime.fromtimestamp(h.ref_time).isoformat(),
+        'status': h.detailed_status,
+        'precipitation': h.precipitation_probability,
+        'temperature': h.temp['temp'],
+        'uvi': h.uvi,
+        'wind': h.wnd['speed']
+    } for h in owm.weather_manager().one_call(
+        lat=cambridge.lat, lon=cambridge.lon,
+        units='metric').forecast_hourly]
+    print("forecast is", forecast)
+    with open(file_locations['weather-filename'], 'w') as outstream:
+        writer = csv.DictWriter(outstream, ['time', 'status', 'precipitation', 'temperature', 'uvi', 'wind'])
+        writer.writeheader()
+        for hour in forecast:
+            writer.writerow(hour)
 
 def fetch_mfp(file_locations, _begin_date, _end_date, verbose):
     if verbose: print("Fetching data from myfitnesspal.com (may take a little while)")
@@ -264,7 +272,7 @@ def updates(file_locations,
 
     if do_externals:
         for location_name, fetcher, archive_template in [
-                ('weather_filename', fetch_weather, "weather-to-%s.csv"),
+                ('weather-filename', fetch_weather, "weather-to-%s.csv"),
                 ('mfp-filename', fetch_mfp, "mfp-to-%s.csv"),
                 ('travel-filename', fetch_travel, "travel-to-%s.csv"),
                 ('oura-filename', fetch_oura, "oura-to-%s.csv"),
@@ -349,7 +357,7 @@ def main():
         'contacts-file': "$COMMON/org/contacts.csv",
 
         # weather
-        'weather_filename': "$COMMON/org/weather.csv",
+        'weather-filename': "$COMMON/var/weather.csv",
 
         # general
         'archive': "~/archive",
