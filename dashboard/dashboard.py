@@ -134,6 +134,19 @@ def linked_image(image_name, label):
                        T.button(class_='inactive', name='past_month', onclick="select_version('%s', 'past_month')"%label)['month'],
                        T.button(class_='inactive', name='past_week', onclick="select_version('%s', 'past_week')"%label)['week']]]]]
 
+def recent_transactions_table(filename, days_back):
+    start_date = utils.qsutils.back_from(datetime.date.today(), None, None, 7)
+    with open(filename) as instream:
+        return T.table(class_='financial')[
+            T.tr[T.th["Date"],T.th["Amount"],T.th["Payee"],T.th["Category"],T.th["Item"]],
+            [[T.tr[T.th[transaction['date']],
+                   T.td[transaction['amount']],
+                   T.td[transaction['payee']],
+                   T.td[transaction['category']],
+                   T.td[transaction['item']]]
+              for transaction in csv.DictReader(instream)
+              if datetime.date.fromisoformat(transaction['date']) >= start_date]]]
+
 def weight_section():
     return linked_image("weight-stone", "weight")
 
@@ -149,6 +162,8 @@ def transactions_section(file_locations):
     spending_chart_file = os.path.join(file_locations['charts'], "past-quarter.html")
     return T.div[wrap_box(
         linked_image("by-class", "transactions"),
+        T.div[T.h3["Recent transactions"],
+              recent_transactions_table(file_locations['main-account'], 7)],
         T.div[T.h3["Spending by category"],
               T.a(class_='plainlink', href="by-class.html")[
                   untemplate.safe_unicode(file_contents(spending_chart_file))]],
@@ -214,6 +229,9 @@ def keep_in_touch_section(file_locations):
                                                        person.get('Primary email', ""))]]
          for person in sorted(long_uncontacted,
                               key=lambda person: contacts_data.last_contacted(person))]]
+
+def prayer_list_section(file_locations):
+    return None
 
 def counts_table(caption, group):
     pairs = [(name, len(members)) for name, members in group.items()]
@@ -392,6 +410,7 @@ def construct_dashboard_page(file_locations,
     page.add_section("People", wrap_box(
         labelled_section("Birthdays", birthdays_section(file_locations)),
         labelled_section("To contact", keep_in_touch_section(file_locations)),
+        labelled_section("Prayer list", prayer_list_section(file_locations)),
         labelled_section("People in contacts file", contacts_section(contacts_analysis)),
         labelled_section("People groups", people_groups_section(contacts_analysis))))
     page.add_section("Agenda", wrap_box(
@@ -444,6 +463,7 @@ def update_physical_charts(file_locations, chart_sizes, begin_date, end_date, da
     physical = file_locations['physical-filename']
     mfp_filename = file_locations['mfp-filename']
 
+    # TODO: rolling averages
     for units in ('stone', 'kilogram', 'pound'):
         utils.qschart.qscharts(physical,
                                'weight',
@@ -471,11 +491,16 @@ def update_physical_charts(file_locations, chart_sizes, begin_date, end_date, da
                            begin_date, end_date, None,
                            os.path.join(charts_dir, "sleep-split-%s-%%s.png" % date_suffix),
                            chart_sizes)
+    sleep_chart_params = {suffix: chart.copy() for suffix, chart in chart_sizes.items()}
+    for scp in sleep_chart_params.values():
+        scp['subplot_kw'] = {'ylim': (0, 24.0)}
     utils.qschart.qscharts(file_locations['oura-filename'], 'sleep',
                            ['Start', 'End'],
                            begin_date, end_date, None,
                            os.path.join(charts_dir, "sleep-times-%s-%%s.png" % date_suffix),
-                           chart_sizes)
+                           sleep_chart_params
+                           # TODO: plt.ylim(0, 24) in the charting code
+    )
     # utils.qschart.qscharts(smart_one_filename, 'peak_flow',
     #                        ['Peak flow'],
     #                        begin_date, end_date, None,

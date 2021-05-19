@@ -662,7 +662,8 @@ def write_csv_with_averages(context, value,
         print("Nothing to write to", filename)
     return value
 
-def write_table(context, sheet, filename,
+def write_table(context, sheet,
+                style, filename,
                 colnames,
                 thresholds,
                 details=False,
@@ -675,7 +676,7 @@ def write_table(context, sheet, filename,
     qsutils.ensure_directory_for_file(full_filename)
     with open(full_filename, 'w') as outstream:
         sheet.write_html_table(outstream,
-                               css_class="summarytable",
+                               css_class=style,
                                hover_details=details,
                                col_extra_data=thresholds,
                                with_time=with_time,

@@ -149,6 +149,15 @@ div[name="past_week"] {
     display: none;
 }
 
+table.bordered_table {
+    border: 1px solid black;
+}
+
+table.financial {
+    border: 1px solid black;
+    border-spacing: 1em 0px;
+}
+
 .use_soon {
     color: red;
     font-weight:    bold;

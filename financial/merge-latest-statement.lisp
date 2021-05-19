@@ -72,10 +72,10 @@
 
     (let ((show-columns '("payee" "amount")))
       (write-csv unmatched-automatic "unmatched-auto.csv")
-      (write-table unmatched-automatic "unmatched-auto.html"
+      (write-table unmatched-automatic "financial" "unmatched-auto.html"
                    show-columns nil)
       (write-csv unmatched-non-automatic "unmatched-non-auto.csv")
-      (write-table unmatched-non-automatic "unmatched-non-auto.html"
+      (write-table unmatched-non-automatic "financial" "unmatched-non-auto.html"
                    show-columns nil))
 
     (write-csv ambiguously-matched-auto "ambiguously-matched-auto.csv")

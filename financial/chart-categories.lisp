@@ -47,7 +47,7 @@
   (write-csv by-class-this-year "by-class-this-year.csv")
   (write-html (check "pre-rendering" by-class) "by-class.html"
               "Categorised monthly summary" thresholds t t)
-  (write-table by-class-past-three-months "past-quarter.html"
+  (write-table by-class-past-three-months "summarytable" "past-quarter.html"
                '("Eating in" "Eating out" "Projects" "Hobbies" "Travel")
                thresholds)
   (write-csv balance "balance.csv")
