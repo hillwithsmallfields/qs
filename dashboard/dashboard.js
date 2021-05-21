@@ -20,10 +20,10 @@ function select_version(container_id, choice) {
     }
 }
 
-function highlight_timetable() {
+function highlight_timetable(name) {
     var date = new Date();
     var timestring = date.toTimeString().substring(0,5)
-    var timeslots = document.getElementById("timetable").getElementsByTagName('tr');
+    var timeslots = document.getElementById(name).getElementsByTagName('tr');
     for (let i=0; i<timeslots.length-1; i++) {
         if ((timeslots[i].getAttribute('name') <= timestring) &&
             (timeslots[i+1].getAttribute('name') > timestring)){
@@ -34,9 +34,25 @@ function highlight_timetable() {
     }
 }
 
-function start_timetable_updater() {
-    highlight_timetable();
+function refresh_page() {
+    document.location.reload()
+}
+
+function highlight_activity_timetable() {
+    highlight_timetable("timetable");
+}
+
+function highlight_weather_timetable() {
+    highlight_timetable("weather");
+}
+
+function init_dashboard() {
+    select_version('timetable_switcher', 'today')
+    select_version('weather_switcher', 'today')
+    highlight_activity_timetable();
+    highlight_weather_timetable()
     // TODO: perhaps it should schedule itself at the appropriate time for the next slot
-    setInterval(highlight_timetable , 15000);
+    setInterval(highlight_activity_timetable , 15000);
+    setInterval(highlight_weather_timetable , 15000);
 }
 
