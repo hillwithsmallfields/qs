@@ -121,9 +121,26 @@ def dashboard_page_colours():
 
     return foreground, background, shading
 
+def switchable_panel(switcher_id, panels, labels, order, initial):
+    """Return a group of panels, only one of which is displayed at a time.
+    panels is a dictionary binding keys to the panel contents,
+    and labels is a dictionary binding the same keys to button labels.
+    order is the order of the keys in the button row,
+    and initial is the button to be selected initially."""
+    return T.table(class_='switcher', id_=switcher_id)[
+        T.tr(align="center")[T.td[[T.div(class_='choice', name=choice)[panels[choice]]
+                                   for choice in order]]],
+        T.tr(align="center")[
+            T.td[[[T.button(class_=('active'
+                                    if choice == initial
+                                    else 'inactive'),
+                            name=choice, onclick="select_version('%s', '%s')"%(switcher_id, choice))[labels[choice]]]
+                  for choice in order]]]]
+
 def linked_image(image_name, label):
     """Return a collection of images wrapped in switcher,
     with each image linked to a larger version."""
+    # TODO: use switchable_panel for this
     return T.table(class_='switcher', id_=label)[
         T.tr(align="center")[T.td[[T.div(class_='choice', name=period)[T.a(href="%s-%s-large.png" % (image_name, period))[
             T.img(src="%s-%s-small.png" % (image_name, period))]] for period in ('all_time', 'past_year', 'past_quarter', 'past_month', 'past_week')]]],
@@ -175,27 +192,105 @@ def transactions_section(file_locations):
                                                                  "unmatched-non-auto.html")))])]
 
 def timetable_section(file_locations):
+    day_after_tomorrow = utils.qsutils.forward_from(datetime.date.today(), None, None, 2)
+    day_after_tomorrow_name = day_after_tomorrow.strftime("%A")
+    return T.div(class_='timetable')[
+        T.h2["Timetable"],
+        switchable_panel(
+            'timetable_switcher',
+            {'today': one_day_timetable_section(file_locations, with_form=True),
+             'tomorrow': one_day_timetable_section(file_locations,
+                                                   day=utils.qsutils.forward_from(datetime.date.today(),
+                                                                                  None, None, 1)),
+             day_after_tomorrow_name: one_day_timetable_section(file_locations, day=day_after_tomorrow)},
+            {'today': "Today",
+             'tomorrow': "Tomorrow",
+             day_after_tomorrow_name: day_after_tomorrow_name},
+            ['today', 'tomorrow', day_after_tomorrow_name],
+            'today')]
+
+def one_day_timetable_section(file_locations, day=None, with_form=False):
     # TODO: possibly add columns for weather data for the same times
-    today = datetime.date.today()
-    day_of_week = today.strftime("%A")
+    if day is None:
+        day = datetime.date.today()
+    day_of_week = day.strftime("%A")
     day_file = os.path.join(file_locations['timetables-dir'], day_of_week + ".csv")
     extras = []
     if os.path.isfile(day_file):
-        # TODO: debug this merge, I don't think it's right yet
         extras.append(day_file)
+    with open(file_locations['weather-filename']) as weatherstream:
+        weather = {row['time']: row for row in csv.DictReader(weatherstream)}
+    # TODO: look up times in the weather
     # TODO: fetch from Google calendar (in update.py) and merge that in here
-    return T.div[T.h2["Timetable for %s %s" % (day_of_week, today.isoformat())],
-                 T.table(id_="timetable")[
-                     [[T.tr(class_='inactive',
-                            name=slot.start.strftime("%H:%M"))[
-                                T.td(class_='time_of_day')[slot.start.strftime("%H:%M")],
-                                T.td(class_='activity')[T.a(href=slot.link)[slot.activity]
-                                     if slot.link
-                                     else slot.activity]]
+    table = T.table(id_="timetable")[
+        T.caption["%s %s" % (day_of_week, day.isoformat())],
+        [[T.tr(class_='inactive',
+               name=slot.start.strftime("%H:%M"))[
+                   T.td(class_='time_of_day')[slot.start.strftime("%H:%M")],
+                   T.td(class_='activity')[T.a(href=slot.link)[slot.activity]
+                                           if slot.link
+                                           else slot.activity],
+                   (T.td[T.input(type='checkbox',
+                                 name=slot.activity, id_=slot.activity,
+                                 class_='activity_logger')[""]]) if with_form else []]
           for slot in announce.get_day_announcer(
                   os.path.join(file_locations['timetables-dir'],
                                file_locations['default-timetable']),
-                  extra_files=extras).ordered()]]]]
+                  extra_files=extras).ordered()]]]
+    return T.form(action='log_done_timeslots')[
+        table,
+        T.input(type='submit',
+                method='post',
+                class_='activity_logger',
+                value="Log activities")] if with_form else table
+
+def weather_section(file_locations):
+    day_after_tomorrow = utils.qsutils.forward_from(datetime.date.today(), None, None, 2)
+    day_after_tomorrow_name = day_after_tomorrow.strftime("%A")
+    return T.div(class_='weather')[
+        T.h2["Weather"],
+        switchable_panel('weather_switcher',
+                         {'today': one_day_weather_section(file_locations),
+                          'tomorrow': one_day_weather_section(
+                              file_locations,
+                              utils.qsutils.forward_from(datetime.date.today(),
+                                                         None, None, 1)),
+                          # day_after_tomorrow_name: one_day_weather_section(
+                          #     file_locations,
+                          #     day_after_tomorrow)
+                         },
+                         {'today': "Today",
+                          'tomorrow': "Tomorrow",
+                          # day_after_tomorrow_name: day_after_tomorrow_name
+                         },
+                         ['today', 'tomorrow',
+                          # day_after_tomorrow_name
+                         ],
+                         'today')]
+
+def one_day_weather_section(file_locations, day=None):
+    # https://pyowm.readthedocs.io/en/latest/v3/code-recipes.html
+    if day is None:
+        day = datetime.date.today()
+    day_of_week = day.strftime("%A")
+    daystring = day.isoformat()
+    with open(file_locations['weather-filename']) as weatherstream:
+        return T.table[
+            T.caption["%s %s" % (day_of_week, daystring)],
+            T.tr[T.th["Time"],
+                 T.th["Temperature"],
+                 T.th["Precipitation"],
+                 T.th["Wind"],
+                 T.th["Weather"]],
+            [[T.tr(class_='inactive',
+                   name=hour['time'][11:16])[
+                       T.td[hour['time'][11:19]],
+                       T.td[str(round(float(hour['temperature']), 1))],
+                       T.td[hour['precipitation']],
+                       T.td[str(round(float(hour['wind'])))],
+                       T.td[hour['status']]]]
+                        for hour in csv.DictReader(weatherstream)
+                        if hour['time'].startswith(daystring)]]
 
 def birthdays_section(file_locations):
     people_by_id, _ = contacts_data.read_contacts(file_locations['contacts-file'])
@@ -273,6 +368,7 @@ def perishables_section():
             else T.table[[T.tr[T.th["Use by"], T.th["Item"], T.th["Quantity"]]],
                          [[T.tr(class_="use_soon"
                                if row['Best before'] < week_ahead
+                                # TODO: convert near days to names
                                else "use_later")[T.td[row['Best before'].isoformat()],
                                T.td[row['Product']],
                                T.td[str(row['Quantity'])]]
@@ -291,10 +387,6 @@ def calories_per_day_of_week():
 def foods_section():
     return linked_image("origin_calories", "origins")
 
-def weather_section():
-    # https://pyowm.readthedocs.io/en/latest/v3/code-recipes.html
-    return None
-
 def running_section():
     return linked_image("running", "running")
 
@@ -306,6 +398,9 @@ def sleep_split_section():
 
 def sleep_times_section():
     return linked_image("sleep-times", "sleep-times")
+
+def sleep_correlation_section():
+    return None
 
 def blood_pressure_section():
     return linked_image("blood-pressure", "blood-pressure")
@@ -324,15 +419,19 @@ def shopping_section(file_locations):
 def items_table(items):
     items_by_type = {}
     for item in items.values():
-        key = "%s (%s)" % (item['Type'], item['Subtype'])
+        key = "%s (%s)" % (item['Type'], item.get('Subtype', '?'))
         if key in items_by_type:
             items_by_type[key].append(item)
         else:
             items_by_type[key] = [item]
-    return T.div(class_='inventory_list')[T.table[[T.tr[T.th[key], T.td[len(items_by_type[key])]]
-                                                   for key in sorted(items_by_type.keys(),
-                                                                     reverse=True,
-                                                                     key=lambda k: len(items_by_type[k]))]]]
+    return T.div(class_='inventory_list')[
+        T.table[[T.tr[T.td[T.span(class_='overview')[key,
+                                                     T.div(class_='details')[T.ul[[[T.li[x['Item']]]
+                                                                                   for x in items_by_type[key]]]]]],
+                      T.td[len(items_by_type[key])]]
+                 for key in sorted(items_by_type.keys(),
+                                   reverse=True,
+                                   key=lambda k: len(items_by_type[k]))]]]
 
 def inventory_section(file_locations):
 
@@ -391,8 +490,6 @@ def construct_dashboard_page(file_locations,
                              contacts_analysis):
     charts_dir = file_locations['charts']
     page = SectionalPage()
-    page.add_section("Perishable food to use up", perishables_section())
-    page.add_section("Weather", weather_section())
     page.add_section("Health", wrap_box(
         labelled_section("Weight", weight_section()),
         labelled_section("Calories", calories_section()),
@@ -405,6 +502,7 @@ def construct_dashboard_page(file_locations,
         labelled_section("Peak flow", peak_flow_section()),
         labelled_section("Sleep split", sleep_split_section()),
         labelled_section("Sleep times", sleep_times_section()),
+        labelled_section("Sleep correlation", sleep_correlation_section()),
         labelled_section("Temperature", temperature_section())))
     page.add_section("Spending", transactions_section(file_locations))
     page.add_section("People", wrap_box(
@@ -419,11 +517,14 @@ def construct_dashboard_page(file_locations,
     page.add_section("Travel", travel_section(file_locations))
     page.add_section("Inventory", inventory_section(file_locations))
     page.add_section("Texts for reflection", reflection_section(file_locations))
-    return [T.body(onload="start_timetable_updater()")[
+    return [T.body(onload="init_dashboard()")[
         T.script(src="dashboard.js"),
         T.h1["Personal dashboard"],
-        wrap_box(page.toc(),
-                 T.div(class_='timetable')[timetable_section(file_locations)]),
+        wrap_box(T.div[page.toc(),
+                       T.h2["Perishable food to use up"],
+                       perishables_section()],
+                 timetable_section(file_locations),
+                 weather_section(file_locations)),
         page.sections()]]
 
 def page_text(page_contents, style_text, script_text):
