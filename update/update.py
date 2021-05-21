@@ -193,7 +193,7 @@ def fetch_weather(file_locations, _begin_date, _end_date, verbose):
     list_of_locations = reg.locations_for('cambridge', country='GB')
     cambridge = list_of_locations[0]
     forecast = [{
-        'time': datetime.datetime.fromtimestamp(h.ref_time).isoformat(),
+        'time': datetime.datetime.fromtimestamp(h.ref_time).isoformat()[:16],
         'status': h.detailed_status,
         'precipitation': h.precipitation_probability,
         'temperature': h.temp['temp'],
