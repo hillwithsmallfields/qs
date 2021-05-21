@@ -138,18 +138,17 @@ def switchable_panel(switcher_id, panels, labels, order, initial):
                   for choice in order]]]]
 
 def linked_image(image_name, label):
-    """Return a collection of images wrapped in switcher,
-    with each image linked to a larger version."""
-    # TODO: use switchable_panel for this
-    return T.table(class_='switcher', id_=label)[
-        T.tr(align="center")[T.td[[T.div(class_='choice', name=period)[T.a(href="%s-%s-large.png" % (image_name, period))[
-            T.img(src="%s-%s-small.png" % (image_name, period))]] for period in ('all_time', 'past_year', 'past_quarter', 'past_month', 'past_week')]]],
-        T.tr(align="center")[
-            T.td[T.div[T.button(class_='inactive', name='all_time', onclick="select_version('%s', 'all_time')"%label)['all'],
-                       T.button(class_='inactive', name='past_year', onclick="select_version('%s', 'past_year')"%label)['year'],
-                       T.button(class_='active', name='past_quarter', onclick="select_version('%s', 'past_quarter')"%label)['quarter'],
-                       T.button(class_='inactive', name='past_month', onclick="select_version('%s', 'past_month')"%label)['month'],
-                       T.button(class_='inactive', name='past_week', onclick="select_version('%s', 'past_week')"%label)['week']]]]]
+    periods = ('all_time', 'past_year', 'past_quarter', 'past_month', 'past_week')
+    return switchable_panel(label,
+                            {period: [
+                                T.div(class_='choice', name=period)[
+                                    T.a(href="%s-%s-large.png" % (image_name, period))[
+                                        T.img(src="%s-%s-small.png" % (image_name, period))]]
+                                ]
+                             for period in periods},
+                            {period: period.capitalize().replace('_', ' ') for period in periods},
+                            periods,
+                            'past_quarter')
 
 def recent_transactions_table(filename, days_back):
     start_date = utils.qsutils.back_from(datetime.date.today(), None, None, 7)
@@ -554,7 +553,7 @@ def update_finances_charts(file_locations, chart_sizes, begin_date, end_date, da
     utils.qschart.qscharts(os.path.join(charts_dir, "by-class.csv"),
                            'finances',
                            CATEGORIES_OF_INTEREST,
-                           begin_date, end_date, None,
+                           begin_date, end_date, None, False,
                            os.path.join(charts_dir, "by-class-%s-%%s.png" % date_suffix),
                            chart_sizes)
 
@@ -564,32 +563,34 @@ def update_physical_charts(file_locations, chart_sizes, begin_date, end_date, da
     physical = file_locations['physical-filename']
     mfp_filename = file_locations['mfp-filename']
 
+    split_by_DoW = False
+
     # TODO: rolling averages
     for units in ('stone', 'kilogram', 'pound'):
         utils.qschart.qscharts(physical,
                                'weight',
                                [units],
-                               begin_date, end_date, None,
+                               begin_date, end_date, None, split_by_DoW,
                                os.path.join(charts_dir, "weight-%s-%s-%%s.png" % (units, date_suffix)),
                                chart_sizes)
     utils.qschart.qscharts(mfp_filename,
                            'calories', ['calories'],
-                           begin_date, end_date, None,
+                           begin_date, end_date, None, split_by_DoW,
                            os.path.join(charts_dir, "total_calories-%s-%%s.png" % date_suffix),
                            chart_sizes)
     utils.qschart.qscharts(mfp_filename, 'meals',
                            ['breakfast', 'lunch', 'dinner', 'snacks'],
-                           begin_date, end_date, None,
+                           begin_date, end_date, None, False,
                            os.path.join(charts_dir, "meal_calories-%s-%%s.png" % date_suffix),
                            chart_sizes)
     utils.qschart.qscharts(mfp_filename, 'food_groups',
                            ['carbohydrates', 'fat', 'protein', 'sugar'],
-                           begin_date, end_date, None,
+                           begin_date, end_date, None, False,
                            os.path.join(charts_dir, "origin_calories-%s-%%s.png" % date_suffix),
                            chart_sizes)
     utils.qschart.qscharts(file_locations['oura-filename'], 'sleep',
                            ['Latency', 'Rem', 'Deep', 'Total'],
-                           begin_date, end_date, None,
+                           begin_date, end_date, None, split_by_DoW,
                            os.path.join(charts_dir, "sleep-split-%s-%%s.png" % date_suffix),
                            chart_sizes)
     sleep_chart_params = {suffix: chart.copy() for suffix, chart in chart_sizes.items()}
@@ -597,7 +598,7 @@ def update_physical_charts(file_locations, chart_sizes, begin_date, end_date, da
         scp['subplot_kw'] = {'ylim': (0, 24.0)}
     utils.qschart.qscharts(file_locations['oura-filename'], 'sleep',
                            ['Start', 'End'],
-                           begin_date, end_date, None,
+                           begin_date, end_date, None, split_by_DoW,
                            os.path.join(charts_dir, "sleep-times-%s-%%s.png" % date_suffix),
                            sleep_chart_params
                            # TODO: plt.ylim(0, 24) in the charting code
@@ -614,17 +615,17 @@ def update_physical_charts(file_locations, chart_sizes, begin_date, end_date, da
     #                        chart_sizes)
     utils.qschart.qscharts(file_locations['omron-filename'], 'blood_pressure',
                            ['systolic', 'diastolic', 'heart_rate'],
-                           begin_date, end_date, None,
+                           begin_date, end_date, None, split_by_DoW,
                            os.path.join(charts_dir, "blood-pressure-%s-%%s.png" % date_suffix),
                            chart_sizes)
     utils.qschart.qscharts(file_locations['cycling-filename'], 'cycling',
                            ['Distance', 'Calories', 'Time'],
-                           begin_date, end_date, None,
+                           begin_date, end_date, None, False,
                            os.path.join(charts_dir, "cycling-%s-%%s.png" % date_suffix),
                            chart_sizes)
     utils.qschart.qscharts(file_locations['running-filename'], 'running',
                            ['Distance', 'Calories', 'Time'],
-                           begin_date, end_date, None,
+                           begin_date, end_date, None, False,
                            os.path.join(charts_dir, "running-%s-%%s.png" % date_suffix),
                            chart_sizes)
 

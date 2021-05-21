@@ -101,17 +101,28 @@ def parsetime(timestr):
     return datetime.datetime.strptime(timestr, "%Y-%m-%d") if isinstance(timestr, str) else timestr
 
 def qscharts(mainfile, file_type,
-             columns, begin, end, match,
+             columns, begin, end, match, by_day_of_week,
              outfile_template,
              # background_colour,
              plot_param_sets):
     # print("charting", mainfile)
     for name_suffix, params in plot_param_sets.items():
-        qschart(mainfile, file_type, columns, begin, end, match, outfile_template % name_suffix, **params)
+        qschart(mainfile, file_type, columns, begin, end, match, by_day_of_week, outfile_template % name_suffix, **params)
 
-def qschart(mainfile, file_type, columns, begin, end, match, outfile, **plot_params):
+def plot_column_set(axs, data, columns, prefix):
+    for column in columns:
+        column_data = data.loc[data[column_header(column)] != 0,
+                               ['Date', column_header(column)]]
+        if not column_data.empty:
+            column_data.plot(ax=axs, x="Date", y=column_header(column))
+            # TODO: it's not including the prefix (which I'm using for the day of the week)
+            plt.ylabel(prefix + column_label(column))
+
+def qschart(mainfile, file_type, columns, begin, end, match, by_day_of_week, outfile, **plot_params):
 
     # TODO: rolling averages, as in http://jonathansoma.com/lede/foundations-2018/pandas/rolling-averages-in-pandas/
+    # TODO: filter by day of week
+    # TODO: check timestamps of mainfile and outfile
 
     data = pd.read_csv(mainfile, parse_dates=['Date'])
 
@@ -121,7 +132,7 @@ def qschart(mainfile, file_type, columns, begin, end, match, outfile, **plot_par
         MUNGERS[file_type](data)
 
     if begin:
-        # print("begin is of type", type(begin))
+        # print("begin is of type", type(begin), "and value", begin)
         data = data.loc[data['Date'] >= begin]
     if end:
         data = data.loc[data['Date'] <= end]
@@ -137,13 +148,12 @@ def qschart(mainfile, file_type, columns, begin, end, match, outfile, **plot_par
 
     # TODO: label every year; grid lines?
     # TODO: plot absolute values
-    for column in columns:
-        column_data = data.loc[data[column_header(column)] != 0,
-                               ['Date', column_header(column)]]
-        # print("empty is", column_data.empty, "length is", len(column_data), column_data)
-        if not column_data.empty:
-            column_data.plot(ax=axs, x="Date", y=column_header(column))
-            plt.ylabel(column_label(column))
+
+    plot_column_set(axs, data, columns, "All " if by_day_of_week else "")
+
+    if by_day_of_week:
+        for dow in range(7):
+            plot_column_set(axs, data[data['Date'].dt.dayofweek == dow], columns, "Day_%d_" % dow)
 
     plt.xlabel("Date")
     plt.grid(axis='both')
