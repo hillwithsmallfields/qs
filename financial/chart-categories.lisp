@@ -1,4 +1,5 @@
 (let* ((raw (read-canonical input-file))
+       (verbose nil)                 ; TODO: pass in from command line
        (monthly (check "making monthly"
                        (by-month (fgrep raw "GBP" "currency")
                                  nil nil)))
@@ -29,11 +30,13 @@
        
        (with-last-of-month (join-by-months by-class monthly-balance))
        )
-  (print "parentage table is" parentage-table)
-  (print "classifiers are:" classifiers)
-  (print "thresholds are:" thresholds)
-  (print "unclassified categories are" unclassified)
-  ;; (print "automatic categories are" automatic-categories)
+  (when verbose
+    (print "parentage table is" parentage-table)
+    (print "classifiers are:" classifiers)
+    (print "thresholds are:" thresholds)
+    (print "unclassified categories are" unclassified)
+    ;; (print "automatic categories are" automatic-categories)
+    )
   (write-html raw "raw.html" "Raw data" nil t t)
   (write-csv raw "canonical.csv")
   (write-csv monthly "monthly.csv")

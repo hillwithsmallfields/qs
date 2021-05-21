@@ -6,6 +6,7 @@
               explanation))
 
 (let* ((main (read-canonical "~/common/finances/finances.csv"))
+       (verbose nil)                 ; TODO: pass in from command line
        (summarised (by-day main t t))
        (latest (read-canonical incoming-statement))
 
@@ -17,8 +18,9 @@
 
        (ambiguously-matched-auto (blank-sheet))
        (ambiguously-matched-non-auto (blank-sheet)))
-  (print "Number of original entries:" (length main))
-  (print "Number of summarised entries:" (length summarised))
+  (when verbose
+    (print "Number of original entries:" (length main))
+    (print "Number of summarised entries:" (length summarised)))
   (for-each-row latest this-row nil
                 (let* ((amount (get this-row "amount"))
                        (direct-matches (find-amount main amount (get this-row "timestamp") 7))
@@ -60,15 +62,16 @@
                            (length ambiguously-matched-non-auto)
                            (length unambiguously-matched-auto)
                            (length unambiguously-matched-non-auto))))
-    (print "incoming transactions:" (length latest))
-    (print "unmatched automatic transactions:" (length unmatched-automatic))
-    (print "unmatched non-automatic transactions:" (length unmatched-non-automatic))
-    (print "ambiguously matched automatic transactions:" (length ambiguously-matched-auto))
-    (print "ambiguously matched non-automatic transactions:" (length ambiguously-matched-non-auto))
-    (print "unambiguously matched automatic transactions:" (length unambiguously-matched-auto))
-    (print "unambiguously matched non-automatic transactions:" (length unambiguously-matched-non-auto))
-    (print "total transactions handled:" handled-count)
-    (print "fallen through the gaps:" (- (length latest) handled-count))
+    (when verbose
+      (print "incoming transactions:" (length latest))
+      (print "unmatched automatic transactions:" (length unmatched-automatic))
+      (print "unmatched non-automatic transactions:" (length unmatched-non-automatic))
+      (print "ambiguously matched automatic transactions:" (length ambiguously-matched-auto))
+      (print "ambiguously matched non-automatic transactions:" (length ambiguously-matched-non-auto))
+      (print "unambiguously matched automatic transactions:" (length unambiguously-matched-auto))
+      (print "unambiguously matched non-automatic transactions:" (length unambiguously-matched-non-auto))
+      (print "total transactions handled:" handled-count)
+      (print "fallen through the gaps:" (- (length latest) handled-count)))
 
     (let ((show-columns '("payee" "amount")))
       (write-csv unmatched-automatic "unmatched-auto.csv")
@@ -101,12 +104,13 @@
          (adjustments-main (adjustments-by-month main latest "Handelsbanken current account"))
          (adjustments-merged-ua (adjustments-by-month merged-with-ua latest "Handelsbanken current account"))
          (adjustments-merged-all (adjustments-by-month merged-with-unmatched-all latest "Handelsbanken current account")))
-    (print "main:" (length main))
-    (print "unmatched automatic:" (length unmatched-automatic))
-    (print "merged with unmatched automatic:" (length merged-with-ua))
-    (print "differences against main:" (length differences-main) "average" (column-average-absolute differences-main "discrepancy"))
-    (print "differences against merged ua:" (length differences-merged-ua) "average" (column-average-absolute differences-merged-ua "discrepancy"))
-    (print "differences against merged all:" (length differences-merged-all) (column-average-absolute differences-merged-all "discrepancy"))
+    (when verbose
+      (print "main:" (length main))
+      (print "unmatched automatic:" (length unmatched-automatic))
+      (print "merged with unmatched automatic:" (length merged-with-ua))
+      (print "differences against main:" (length differences-main) "average" (column-average-absolute differences-main "discrepancy"))
+      (print "differences against merged ua:" (length differences-merged-ua) "average" (column-average-absolute differences-merged-ua "discrepancy"))
+      (print "differences against merged all:" (length differences-merged-all) (column-average-absolute differences-merged-all "discrepancy")))
     (write-csv main "main.csv")
     (write merged-with-ua "merged-with-unmatched-automatic"
            "Merged with all unmatched automatic entries"
