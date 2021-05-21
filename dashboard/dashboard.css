@@ -149,6 +149,11 @@ div[name="past_week"] {
     display: none;
 }
 
+.activity_logger {
+    background:     #e0d0a0;
+    color:          maroon;
+}
+
 table.bordered_table {
     border: 1px solid black;
 }
@@ -176,4 +181,15 @@ table.financial {
 .flex-container {
     display: flex;
     flex-wrap: wrap;
+}
+
+.overview:hover .details {
+  visibility: visible;
+}
+
+.details {
+  visibility: hidden;
+  background-color: yellow;
+  z-index: 1;
+  position: absolute;
 }
