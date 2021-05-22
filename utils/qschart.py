@@ -103,22 +103,25 @@ def parsetime(timestr):
 def qscharts(mainfile, file_type,
              columns, begin, end, match, by_day_of_week,
              outfile_template,
-             # background_colour,
-             plot_param_sets):
+             plot_param_sets,
+             bar=False):
     # print("charting", mainfile)
     for name_suffix, params in plot_param_sets.items():
-        qschart(mainfile, file_type, columns, begin, end, match, by_day_of_week, outfile_template % name_suffix, **params)
+        qschart(mainfile, file_type, columns, begin, end, match, by_day_of_week, outfile_template % name_suffix, params, bar=bar)
 
-def plot_column_set(axs, data, columns, prefix):
+def plot_column_set(axs, data, columns, prefix, bar=False):
     for column in columns:
         column_data = data.loc[data[column_header(column)] != 0,
                                ['Date', column_header(column)]]
         if not column_data.empty:
-            column_data.plot(ax=axs, x="Date", y=column_header(column))
+            if bar:
+                column_data.plot.bar(ax=axs, x="Date", y=column_header(column))
+            else:
+                column_data.plot(ax=axs, x="Date", y=column_header(column))
             # TODO: it's not including the prefix (which I'm using for the day of the week)
             plt.ylabel(prefix + column_label(column))
 
-def qschart(mainfile, file_type, columns, begin, end, match, by_day_of_week, outfile, **plot_params):
+def qschart(mainfile, file_type, columns, begin, end, match, by_day_of_week, outfile, plot_params, bar=False):
 
     # TODO: rolling averages, as in http://jonathansoma.com/lede/foundations-2018/pandas/rolling-averages-in-pandas/
     # TODO: filter by day of week
@@ -149,11 +152,17 @@ def qschart(mainfile, file_type, columns, begin, end, match, by_day_of_week, out
     # TODO: label every year; grid lines?
     # TODO: plot absolute values
 
-    plot_column_set(axs, data, columns, "All " if by_day_of_week else "")
+    plot_column_set(axs, data, columns,
+                    "All " if by_day_of_week else "",
+                    bar=bar)
 
     if by_day_of_week:
         for dow in range(7):
-            plot_column_set(axs, data[data['Date'].dt.dayofweek == dow], columns, "Day_%d_" % dow)
+            plot_column_set(axs,
+                            data[data['Date'].dt.dayofweek == dow],
+                            columns,
+                            "Day_%d_" % dow,
+                            bar=bar)
 
     plt.xlabel("Date")
     plt.grid(axis='both')

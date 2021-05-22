@@ -622,12 +622,14 @@ def update_physical_charts(file_locations, chart_sizes, begin_date, end_date, da
                            ['Distance', 'Calories', 'Time'],
                            begin_date, end_date, None, False,
                            os.path.join(charts_dir, "cycling-%s-%%s.png" % date_suffix),
-                           chart_sizes)
+                           chart_sizes,
+                           bar=True)
     utils.qschart.qscharts(file_locations['running-filename'], 'running',
                            ['Distance', 'Calories', 'Time'],
                            begin_date, end_date, None, False,
                            os.path.join(charts_dir, "running-%s-%%s.png" % date_suffix),
-                           chart_sizes)
+                           chart_sizes,
+                           bar=True)
 
 def write_dashboard_page(file_locations,
                          contacts_analysis,

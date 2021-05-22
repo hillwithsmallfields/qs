@@ -202,7 +202,6 @@ def fetch_weather(file_locations, _begin_date, _end_date, verbose):
     } for h in owm.weather_manager().one_call(
         lat=cambridge.lat, lon=cambridge.lon,
         units='metric').forecast_hourly]
-    print("forecast is", forecast)
     with open(file_locations['weather-filename'], 'w') as outstream:
         writer = csv.DictWriter(outstream, ['time', 'status', 'precipitation', 'temperature', 'uvi', 'wind'])
         writer.writeheader()
