@@ -35,9 +35,15 @@ import storage
 sys.path.append(os.path.join(my_projects, "noticeboard"))
 
 import announce                 # https://github.com/hillwithsmallfields/noticeboard/blob/master/announce.py
+import lifehacking_config       # https://github.com/hillwithsmallfields/noticeboard/blob/master/lifehacking_config.py
 
 sys.path.append(os.path.join(my_projects, "coimealta/inventory"))
 import perishables              # https://github.com/hillwithsmallfields/coimealta/blob/master/inventory/perishables.py
+
+CONFIGURATION = {}
+
+def CONF(*keys):
+    return lifehacking_config.lookup(CONFIGURATION, *keys)
 
 CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
 
@@ -170,54 +176,53 @@ def peak_flow_section():
     # TODO: get peak flow data
     return None
 
-def transactions_section(file_locations):
+def transactions_section():
     """Incorporate the file of recent spending in monitored categories
     that is produced by chart-categories.lisp."""
     # TODO: spending per category per day of month/week
 
-    spending_chart_file = os.path.join(file_locations['charts'], "past-quarter.html")
+    spending_chart_file = os.path.join(CONF('general', 'charts'), "past-quarter.html")
     return T.div[wrap_box(
         linked_image("by-class", "transactions"),
         T.div[T.h3["Recent transactions"],
-              recent_transactions_table(file_locations['main-account'], 7)],
+              recent_transactions_table(CONF('finance', 'main-account'), 7)],
         T.div[T.h3["Spending by category"],
               T.a(class_='plainlink', href="by-class.html")[
                   untemplate.safe_unicode(file_contents(spending_chart_file))]],
         T.div[T.h3["Unmatched automatic transactions"],
-              untemplate.safe_unicode(file_contents(os.path.join(file_locations['merge-results-dir'],
+              untemplate.safe_unicode(file_contents(os.path.join(CONF('finance', 'merge-results-dir'),
                                                                  "unmatched-auto.html")))],
         T.div[T.h3["Unmatched non-automatic transactions"],
-              untemplate.safe_unicode(file_contents(os.path.join(file_locations['merge-results-dir'],
+              untemplate.safe_unicode(file_contents(os.path.join(CONF('finance', 'merge-results-dir'),
                                                                  "unmatched-non-auto.html")))])]
 
-def timetable_section(file_locations):
+def timetable_section():
     day_after_tomorrow = utils.qsutils.forward_from(datetime.date.today(), None, None, 2)
     day_after_tomorrow_name = day_after_tomorrow.strftime("%A")
     return T.div(class_='timetable')[
         T.h2["Timetable"],
         switchable_panel(
             'timetable_switcher',
-            {'today': one_day_timetable_section(file_locations, with_form=True),
-             'tomorrow': one_day_timetable_section(file_locations,
-                                                   day=utils.qsutils.forward_from(datetime.date.today(),
+            {'today': one_day_timetable_section(with_form=True),
+             'tomorrow': one_day_timetable_section(day=utils.qsutils.forward_from(datetime.date.today(),
                                                                                   None, None, 1)),
-             day_after_tomorrow_name: one_day_timetable_section(file_locations, day=day_after_tomorrow)},
+             day_after_tomorrow_name: one_day_timetable_section(day=day_after_tomorrow)},
             {'today': "Today",
              'tomorrow': "Tomorrow",
              day_after_tomorrow_name: day_after_tomorrow_name},
             ['today', 'tomorrow', day_after_tomorrow_name],
             'today')]
 
-def one_day_timetable_section(file_locations, day=None, with_form=False):
+def one_day_timetable_section(day=None, with_form=False):
     # TODO: possibly add columns for weather data for the same times
     if day is None:
         day = datetime.date.today()
     day_of_week = day.strftime("%A")
-    day_file = os.path.join(file_locations['timetables-dir'], day_of_week + ".csv")
+    day_file = os.path.join(CONF('timetables', 'timetables-dir'), day_of_week + ".csv")
     extras = []
     if os.path.isfile(day_file):
         extras.append(day_file)
-    with open(file_locations['weather-filename']) as weatherstream:
+    with open(CONF('weather', 'weather-filename')) as weatherstream:
         weather = {row['time']: row for row in csv.DictReader(weatherstream)}
     # TODO: look up times in the weather
     # TODO: fetch from Google calendar (in update.py) and merge that in here
@@ -233,8 +238,8 @@ def one_day_timetable_section(file_locations, day=None, with_form=False):
                                  name=slot.activity, id_=slot.activity,
                                  class_='activity_logger')[""]]) if with_form else []]
           for slot in announce.get_day_announcer(
-                  os.path.join(file_locations['timetables-dir'],
-                               file_locations['default-timetable']),
+                  os.path.join(CONF('timetables', 'timetables-dir'),
+                               CONF('timetables', 'default-timetable')),
                   extra_files=extras).ordered()]]]
     return T.form(action='log_done_timeslots')[
         table,
@@ -243,19 +248,17 @@ def one_day_timetable_section(file_locations, day=None, with_form=False):
                 class_='activity_logger',
                 value="Log activities")] if with_form else table
 
-def weather_section(file_locations):
+def weather_section():
     day_after_tomorrow = utils.qsutils.forward_from(datetime.date.today(), None, None, 2)
     day_after_tomorrow_name = day_after_tomorrow.strftime("%A")
     return T.div(class_='weather')[
         T.h2["Weather"],
         switchable_panel('weather_switcher',
-                         {'today': one_day_weather_section(file_locations),
+                         {'today': one_day_weather_section(),
                           'tomorrow': one_day_weather_section(
-                              file_locations,
                               utils.qsutils.forward_from(datetime.date.today(),
                                                          None, None, 1)),
                           # day_after_tomorrow_name: one_day_weather_section(
-                          #     file_locations,
                           #     day_after_tomorrow)
                          },
                          {'today': "Today",
@@ -267,13 +270,13 @@ def weather_section(file_locations):
                          ],
                          'today')]
 
-def one_day_weather_section(file_locations, day=None):
+def one_day_weather_section(day=None):
     # https://pyowm.readthedocs.io/en/latest/v3/code-recipes.html
     if day is None:
         day = datetime.date.today()
     day_of_week = day.strftime("%A")
     daystring = day.isoformat()
-    with open(file_locations['weather-filename']) as weatherstream:
+    with open(CONF('weather', 'weather-filename')) as weatherstream:
         return T.table[
             T.caption["%s %s" % (day_of_week, daystring)],
             T.tr[T.th["Time"],
@@ -291,8 +294,8 @@ def one_day_weather_section(file_locations, day=None):
                         for hour in csv.DictReader(weatherstream)
                         if hour['time'].startswith(daystring)]]
 
-def birthdays_section(file_locations):
-    people_by_id, _ = contacts_data.read_contacts(file_locations['contacts-file'])
+def birthdays_section():
+    people_by_id, _ = contacts_data.read_contacts(CONF('contacts', 'contacts-file'))
     today = datetime.date.today()
     this_year = today.year
     return T.table(class_='birthdays')[
@@ -306,9 +309,9 @@ def birthdays_section(file_locations):
                               if contacts_data.birthday_soon(person, this_year, today, within_days=31)],
                               key=lambda person: contacts_data.birthday(person, this_year))]]
 
-def keep_in_touch_section(file_locations):
+def keep_in_touch_section():
     """List people who I mean to keep in touch with but haven't for a while."""
-    people_by_id, _ = contacts_data.read_contacts(file_locations['contacts-file'])
+    people_by_id, _ = contacts_data.read_contacts(CONF('contacts', 'contacts-file'))
     today = datetime.date.today()
     this_year = today.year
     long_uncontacted = [person
@@ -324,7 +327,7 @@ def keep_in_touch_section(file_locations):
          for person in sorted(long_uncontacted,
                               key=lambda person: contacts_data.last_contacted(person))]]
 
-def prayer_list_section(file_locations):
+def prayer_list_section():
     return None
 
 def counts_table(caption, group):
@@ -337,6 +340,8 @@ def counts_table(caption, group):
          for name, members in r]]]
 
 def contacts_section(contacts_analysis):
+    if contacts_analysis is None:
+        return None
     n_people = contacts_analysis['n_people']
     return T.dl[
         T.dt["Number of people"], T.dd[str(n_people)],
@@ -351,6 +356,8 @@ def contacts_section(contacts_analysis):
                                      round(100*contacts_analysis['doctored']/n_people))]]
 
 def people_groups_section(contacts_analysis):
+    if contacts_analysis is None:
+        return None
     return row(counts_table("By nationality",
                             contacts_analysis['by_nationality']),
                counts_table("By title",
@@ -407,11 +414,11 @@ def blood_pressure_section():
 def temperature_section():
     return linked_image("temperature", "temperature")
 
-def actions_section(file_locations):
+def actions_section():
     # TODO: use org-ql to produce a file
     return None
 
-def shopping_section(file_locations):
+def shopping_section():
     # TODO: use org-ql to produce a file
     return None
 
@@ -432,13 +439,13 @@ def items_table(items):
                                    reverse=True,
                                    key=lambda k: len(items_by_type[k]))]]]
 
-def inventory_section(file_locations):
+def inventory_section():
 
-    locations = storage.read_locations(file_locations['storage-file'])
-    items = storage.read_inventory(file_locations['inventory-file'])
-    stock = storage.read_inventory(file_locations['stock-file'])
-    project_parts = storage.read_inventory(file_locations['project-parts-file'])
-    media = storage.read_books(file_locations['books-file'])
+    locations = storage.read_locations(CONF('inventory', 'storage-file'))
+    items = storage.read_inventory(CONF('inventory', 'inventory-file'))
+    stock = storage.read_inventory(CONF('inventory', 'stock-file'))
+    project_parts = storage.read_inventory(CONF('inventory', 'project-parts-file'))
+    media = storage.read_books(CONF('inventory', 'books-file'))
 
     media_by_type = {}
     for medium in media.values():
@@ -471,7 +478,7 @@ def inventory_section(file_locations):
                                                                  T.dt["Bookshelf length"], T.dd["%g metres" % bookshelf_length],
                                                                  T.dt["Other shelf length"], T.dd["%g metres" % other_length]]]])]]
 
-def travel_section(file_locations):
+def travel_section():
     # TODO: read travel.csv and a journeys file generated from Google
     return None
 
@@ -479,15 +486,14 @@ def random_reflection(reflections_dir):
     with open(random.choice(glob.glob(os.path.join(reflections_dir, "*.txt")))) as instream:
         return random.choice([line.strip() for line in instream if line != "\n"])
 
-def reflection_section(file_locations):
-    reflections_dir = file_locations['reflections-dir']
+def reflection_section():
+    reflections_dir = CONF('general', 'reflections-dir')
     return T.div(class_='reflection')[
         T.p[random_reflection(reflections_dir)],
         T.p[random_reflection(reflections_dir)]]
 
-def construct_dashboard_page(file_locations,
-                             contacts_analysis):
-    charts_dir = file_locations['charts']
+def construct_dashboard_page(contacts_analysis):
+    charts_dir = CONF('general', 'charts')
     page = SectionalPage()
     page.add_section("Health", wrap_box(
         labelled_section("Weight", weight_section()),
@@ -503,27 +509,27 @@ def construct_dashboard_page(file_locations,
         labelled_section("Sleep times", sleep_times_section()),
         labelled_section("Sleep correlation", sleep_correlation_section()),
         labelled_section("Temperature", temperature_section())))
-    page.add_section("Spending", transactions_section(file_locations))
+    page.add_section("Spending", transactions_section())
     page.add_section("People", wrap_box(
-        labelled_section("Birthdays", birthdays_section(file_locations)),
-        labelled_section("To contact", keep_in_touch_section(file_locations)),
-        labelled_section("Prayer list", prayer_list_section(file_locations)),
+        labelled_section("Birthdays", birthdays_section()),
+        labelled_section("To contact", keep_in_touch_section()),
+        labelled_section("Prayer list", prayer_list_section()),
         labelled_section("People in contacts file", contacts_section(contacts_analysis)),
         labelled_section("People groups", people_groups_section(contacts_analysis))))
     page.add_section("Agenda", wrap_box(
-        labelled_section("Actions", actions_section(file_locations)),
-        labelled_section("Shopping", shopping_section(file_locations))))
-    page.add_section("Travel", travel_section(file_locations))
-    page.add_section("Inventory", inventory_section(file_locations))
-    page.add_section("Texts for reflection", reflection_section(file_locations))
+        labelled_section("Actions", actions_section()),
+        labelled_section("Shopping", shopping_section())))
+    page.add_section("Travel", travel_section())
+    page.add_section("Inventory", inventory_section())
+    page.add_section("Texts for reflection", reflection_section())
     return [T.body(onload="init_dashboard()")[
         T.script(src="dashboard.js"),
         T.h1["Personal dashboard"],
         wrap_box(T.div[page.toc(),
                        T.h2["Perishable food to use up"],
                        perishables_section()],
-                 timetable_section(file_locations),
-                 weather_section(file_locations)),
+                 timetable_section(),
+                 weather_section()),
         page.sections()]]
 
 def page_text(page_contents, style_text, script_text):
@@ -547,9 +553,9 @@ def tagged(tag, text):
 def tagged_file_contents(tag, filename):
     return tagged(tag, file_contents(filename))
 
-def update_finances_charts(file_locations, chart_sizes, begin_date, end_date, date_suffix, verbose):
+def update_finances_charts(chart_sizes, begin_date, end_date, date_suffix, verbose):
 
-    charts_dir = file_locations['charts']
+    charts_dir = CONF('general', 'charts')
     utils.qschart.qscharts(os.path.join(charts_dir, "by-class.csv"),
                            'finances',
                            CATEGORIES_OF_INTEREST,
@@ -557,11 +563,11 @@ def update_finances_charts(file_locations, chart_sizes, begin_date, end_date, da
                            os.path.join(charts_dir, "by-class-%s-%%s.png" % date_suffix),
                            chart_sizes)
 
-def update_physical_charts(file_locations, chart_sizes, begin_date, end_date, date_suffix):
+def update_physical_charts(chart_sizes, begin_date, end_date, date_suffix):
 
-    charts_dir = file_locations['charts']
-    physical = file_locations['physical-filename']
-    mfp_filename = file_locations['mfp-filename']
+    charts_dir = CONF('general', 'charts')
+    physical = CONF('physical', 'physical-filename')
+    mfp_filename = CONF('physical', 'mfp-filename')
 
     split_by_DoW = False
 
@@ -588,7 +594,7 @@ def update_physical_charts(file_locations, chart_sizes, begin_date, end_date, da
                            begin_date, end_date, None, False,
                            os.path.join(charts_dir, "origin_calories-%s-%%s.png" % date_suffix),
                            chart_sizes)
-    utils.qschart.qscharts(file_locations['oura-filename'], 'sleep',
+    utils.qschart.qscharts(CONF('physical', 'oura-filename'), 'sleep',
                            ['Latency', 'Rem', 'Deep', 'Total'],
                            begin_date, end_date, None, split_by_DoW,
                            os.path.join(charts_dir, "sleep-split-%s-%%s.png" % date_suffix),
@@ -596,7 +602,7 @@ def update_physical_charts(file_locations, chart_sizes, begin_date, end_date, da
     sleep_chart_params = {suffix: chart.copy() for suffix, chart in chart_sizes.items()}
     for scp in sleep_chart_params.values():
         scp['subplot_kw'] = {'ylim': (0, 24.0)}
-    utils.qschart.qscharts(file_locations['oura-filename'], 'sleep',
+    utils.qschart.qscharts(CONF('physical', 'oura-filename'), 'sleep',
                            ['Start', 'End'],
                            begin_date, end_date, None, split_by_DoW,
                            os.path.join(charts_dir, "sleep-times-%s-%%s.png" % date_suffix),
@@ -608,37 +614,36 @@ def update_physical_charts(file_locations, chart_sizes, begin_date, end_date, da
     #                        begin_date, end_date, None,
     #                        os.path.join(charts_dir, "peak-flow-%s-%%s.png" % date_suffix),
     #                        chart_sizes)
-    # utils.qschart.qscharts(file_locations['temperature-file'], 'temperature',
+    # utils.qschart.qscharts(CONF('physical', 'temperature-file'), 'temperature',
     #                        ['Temperature'],
     #                        begin_date, end_date, None,
     #                        os.path.join(charts_dir, "temperature-%s-%%s.png" % date_suffix),
     #                        chart_sizes)
-    utils.qschart.qscharts(file_locations['omron-filename'], 'blood_pressure',
+    utils.qschart.qscharts(CONF('physical', 'omron-filename'), 'blood_pressure',
                            ['systolic', 'diastolic', 'heart_rate'],
                            begin_date, end_date, None, split_by_DoW,
                            os.path.join(charts_dir, "blood-pressure-%s-%%s.png" % date_suffix),
                            chart_sizes)
-    utils.qschart.qscharts(file_locations['cycling-filename'], 'cycling',
+    utils.qschart.qscharts(CONF('physical', 'cycling-filename'), 'cycling',
                            ['Distance', 'Calories', 'Time'],
                            begin_date, end_date, None, False,
                            os.path.join(charts_dir, "cycling-%s-%%s.png" % date_suffix),
                            chart_sizes,
                            bar=True)
-    utils.qschart.qscharts(file_locations['running-filename'], 'running',
+    utils.qschart.qscharts(CONF('physical', 'running-filename'), 'running',
                            ['Distance', 'Calories', 'Time'],
                            begin_date, end_date, None, False,
                            os.path.join(charts_dir, "running-%s-%%s.png" % date_suffix),
                            chart_sizes,
                            bar=True)
 
-def write_dashboard_page(file_locations,
-                         contacts_analysis,
+def write_dashboard_page(contacts_analysis,
                          details_background_color="gold", inline=True):
-    charts_dir = file_locations['charts']
+    charts_dir = CONF('general', 'charts')
     with open(os.path.join(charts_dir, "index.html"), 'w') as page_stream:
         page_stream.write(
             page_text(
-                construct_dashboard_page(file_locations, contacts_analysis),
+                construct_dashboard_page(contacts_analysis),
                 (tagged_file_contents("style", os.path.join(source_dir, "dashboard.css"))
                  + utils.qsutils.table_support_css(details_background_color)) if inline else "",
                 tagged_file_contents("script", os.path.join(source_dir, "dashboard.js")) if inline else ""))
@@ -648,7 +653,7 @@ def write_dashboard_page(file_locations,
             shutil.copy(os.path.join(source_dir, filename),
                         os.path.join(charts_dir, filename))
 
-def make_dashboard_images(file_locations, chart_sizes,
+def make_dashboard_images(chart_sizes,
                           background_colour,
                           begin_date=None, end_date=None,
                           verbose=False):
@@ -665,21 +670,28 @@ def make_dashboard_images(file_locations, chart_sizes,
                                if begin_date
                                else periods).items():
         begin = np.datetime64(datetime.datetime.combine(begin, datetime.time())) # .timestamp()
-        update_finances_charts(file_locations, chart_sizes, begin, end_date, date_suffix, verbose)
-        update_physical_charts(file_locations, chart_sizes, begin, end_date, date_suffix)
+        update_finances_charts(chart_sizes, begin, end_date, date_suffix, verbose)
+        update_physical_charts(chart_sizes, begin, end_date, date_suffix)
 
-def make_dashboard_page(file_locations,
-                        contacts_analysis,
-                        chart_sizes,
+def make_dashboard_page(chart_dir=None,
+                        contacts_analysis=None,
+                        chart_sizes={'small': {'figsize': (5,4)},
+                                     'large': {'figsize': (11,8)}},
                         begin_date=None, end_date=None,
                         verbose=False):
+
+    global CONFIGURATION
+    CONFIGURATION = lifehacking_config.load_config()
+
+    if chart_dir:
+        CONFIGURATION['general']['charts'] = chart_dir
+
     text_colour, background_colour, shading = dashboard_page_colours()
-    make_dashboard_images(file_locations, chart_sizes,
+    make_dashboard_images(chart_sizes,
                           background_colour,
                           begin_date, end_date,
                           verbose)
-    write_dashboard_page(file_locations,
-                         contacts_analysis,
+    write_dashboard_page(contacts_analysis,
                          details_background_color=shading)
 
 def main():
@@ -688,9 +700,7 @@ def main():
                         help="""Directory to write charts into.""")
     args = parser.parse_args()
 
-    file_locations = {'charts', args.chart}
-
-    make_dashboard_page(file_locations)
+    make_dashboard_page(chart_dir=args.chart)
 
 if __name__ == '__main__':
     main()

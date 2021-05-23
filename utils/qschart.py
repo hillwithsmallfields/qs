@@ -115,6 +115,8 @@ def plot_column_set(axs, data, columns, prefix, bar=False):
                                ['Date', column_header(column)]]
         if not column_data.empty:
             if bar:
+                # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.plot.bar.html
+                # for how to set the colour
                 column_data.plot.bar(ax=axs, x="Date", y=column_header(column))
             else:
                 column_data.plot(ax=axs, x="Date", y=column_header(column))

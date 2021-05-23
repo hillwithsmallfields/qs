@@ -29,6 +29,15 @@ my_projects = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(_
 sys.path.append(os.path.join(my_projects, "coimealta/contacts"))
 import link_contacts # https://github.com/hillwithsmallfields/coimealta/blob/master/contacts/link_contacts.py
 
+sys.path.append(os.path.join(my_projects, "noticeboard"))
+
+import lifehacking_config       # https://github.com/hillwithsmallfields/noticeboard/blob/master/lifehacking_config.py
+
+CONFIGURATION = {}
+
+def CONF(*keys):
+    return lifehacking_config.lookup(CONFIGURATION, *keys)
+
 CHART_SIZES = {'small': {'figsize': (5,4)},
                'large': {'figsize': (11,8)}}
 
@@ -53,16 +62,16 @@ def last_update_at_least_about_a_day_ago(filename):
                  + datetime.timedelta(hours=23, minutes=30))
                 < datetime.datetime.now()))
 
-def update_finances(file_locations, verbose):
+def update_finances(verbose):
 
     config = qsutils.load_config(verbose, None, None,
-                                 os.path.join(file_locations['configdir'], file_locations['accounts-config']),
-                                 os.path.join(file_locations['conversions-dir'], file_locations['conversions-config']))
+                                 os.path.join(CONF('finance', 'configdir'), CONF('finance', 'accounts-config')),
+                                 os.path.join(CONF('finance', 'conversions-dir'), CONF('finance', 'conversions-config')))
 
-    main_account = file_locations['main-account']
-    merge_results_dir = file_locations['merge-results-dir']
+    main_account = CONF('finance', 'main-account')
+    merge_results_dir = CONF('finance', 'merge-results-dir')
 
-    latest_bank_statement = latest_file_matching(file_locations['bank-statement-template'])
+    latest_bank_statement = latest_file_matching(CONF('finance', 'bank-statement-template'))
 
     if latest_bank_statement and file_newer_than_file(latest_bank_statement, main_account):
         qsutils.ensure_directory_present_and_empty(merge_results_dir)
@@ -72,9 +81,9 @@ def update_finances(file_locations, verbose):
                                        config,
                                        verbose,
                                        {'incoming-statement': latest_bank_statement})
-        merge_results_file = os.path.join(merge_results_dir, file_locations['merge-results-file'])
+        merge_results_file = os.path.join(merge_results_dir, CONF('finance', 'merge-results-file'))
         if os.path.isfile(merge_results_file):
-            backup(main_account, file_locations['archive'], "finances-to-%s.csv")
+            backup(main_account, CONF('backups', 'archive'), "finances-to-%s.csv")
             shutil.copy(merge_results_file, main_account)
     else:
         print("Bank statement not newer than account file, so not updating")
@@ -82,26 +91,26 @@ def update_finances(file_locations, verbose):
     print("calling charter on", main_account, "with merge results in", merge_results_dir)
 
     financial.finlisp.finlisp_main([os.path.join(my_projects, "qs/financial", "chart-categories.lisp")],
-                                   file_locations['charts'],
+                                   CONF('general', 'charts'),
                                    config,
                                    verbose,
                                    {'input-file': main_account,
-                                    'statements-file': file_locations['accumulated-bank-statements-file'],
-                                    'classifiers-file': file_locations['budgeting-classes-file'],
-                                    'thresholds-file': file_locations['thresholds-file']})
+                                    'statements-file': CONF('finance', 'accumulated-bank-statements-file'),
+                                    'classifiers-file': CONF('finance', 'budgeting-classes-file'),
+                                    'thresholds-file': CONF('finance', 'thresholds-file')})
 
-    if file_newer_than_file(main_account, file_locations['finances-completions']):
+    if file_newer_than_file(main_account, CONF('finance', 'finances-completions')):
         if verbose: print("updating finances completions")
         list_completions.list_completions()
 
-def update_physical(file_locations, begin_date, end_date):
-    charts_dir = file_locations['charts']
-    physical = file_locations['physical-filename']
-    mfp_filename = file_locations['mfp-filename']
+def update_physical(begin_date, end_date):
+    charts_dir = CONF('general', 'charts')
+    physical = CONF('physical', 'physical-filename')
+    mfp_filename = CONF('physical', 'mfp-filename')
     phys_scratch = "/tmp/physical-tmp.csv"
-    archive_dir = file_locations['archive']
+    archive_dir = CONF('backups', 'archive')
 
-    physical_files = [file_locations['weight-filename']
+    physical_files = [CONF('physical', 'weight-filename')
                      # TODO: merge the other physical files
                     ]
 
@@ -114,17 +123,17 @@ def update_physical(file_locations, begin_date, end_date):
     else:
         print("merge of physical data produced the wrong number of rows")
 
-def update_startpage(file_locations):
-    startpage = file_locations['startpage']
-    startpage_source = file_locations['startpage-source']
-    startpage_style = file_locations['startpage-style']
+def update_startpage():
+    startpage = CONF('start-page', 'startpage')
+    startpage_source = CONF('start-page', 'startpage-source')
+    startpage_style = CONF('start-page', 'startpage-style')
     if (os.path.getmtime(startpage_source) > os.path.getmtime(startpage)
         or os.path.getmtime(startpage_style) > os.path.getmtime(startpage)):
         os.system("%s --output %s --stylesheet %s %s"
-                  % (file_locations['start-page-generator'], startpage, startpage_style, startpage_source))
+                  % (CONF('start-page', 'start-page-generator'), startpage, startpage_style, startpage_source))
 
-def update_contacts(file_locations):
-    contacts_file = file_locations['contacts-file']
+def update_contacts():
+    contacts_file = CONF('contacts', 'contacts-file')
     contacts_scratch = "/tmp/contacts_scratch.csv"
     contacts_analysis = link_contacts.link_contacts_main(contacts_file, True, False, contacts_scratch)
     with open(contacts_file) as confile:
@@ -132,7 +141,7 @@ def update_contacts(file_locations):
     with open(contacts_scratch) as conscratch:
         scratch_lines = len(conscratch.readlines())
     if original_lines == scratch_lines:
-        backup(contacts_file, file_locations['archive'], "contacts-%s.csv")
+        backup(contacts_file, CONF('backups', 'archive'), "contacts-%s.csv")
         shutil.copy(contacts_scratch, contacts_file)
     else:
         print("wrong number of people after linking contacts, originally", original_lines, "but now", scratch_lines)
@@ -151,13 +160,13 @@ def matches(row, match_key, match_value):
     return (match_key is None
             or row.get(match_key) == match_value)
 
-def merge_incoming_csv(file_locations, main_file_key, incoming_key,
+def merge_incoming_csv(main_file_key, incoming_key,
                        begin_date, end_date,
                        match_key=None, match_value=None,
                        column_renames={},
                        transformations={}):
-    main_filename = file_locations[main_file_key]
-    incoming_filename = latest_file_matching(file_locations[incoming_key])
+    main_filename = CONF('physical', main_file_key)
+    incoming_filename = latest_file_matching(CONF('physical', incoming_key))
     print("merging", incoming_filename, "into", main_filename, "with column_renames", column_renames, "and matches", match_key, match_value)
     utils.trim_csv.trim_csv(incoming_filename)
     if (os.path.isfile(incoming_filename)
@@ -180,14 +189,14 @@ def merge_incoming_csv(file_locations, main_file_key, incoming_key,
                           if matches(row, match_key, match_value)}
             data.update(additional)
         if len(data) > original_length:
-            backup(main_filename, file_locations['archive'], "%s-to-%%s.csv" % os.path.splitext(os.path.basename(main_filename))[0])
+            backup(main_filename, CONF('backups', 'archive'), "%s-to-%%s.csv" % os.path.splitext(os.path.basename(main_filename))[0])
             with open(main_filename, 'w') as outstream:
                 writer = csv.DictWriter(outstream, header)
                 writer.writeheader()
                 for date in sorted(data.keys()):
                     writer.writerow(data[date])
 
-def fetch_weather(file_locations, _begin_date, _end_date, verbose):
+def fetch_weather(_begin_date, _end_date, verbose):
     owm = pyowm.owm.OWM(decouple.config('OWM_API_KEY'))
     reg = owm.city_id_registry()
     list_of_locations = reg.locations_for('cambridge', country='GB')
@@ -202,19 +211,19 @@ def fetch_weather(file_locations, _begin_date, _end_date, verbose):
     } for h in owm.weather_manager().one_call(
         lat=cambridge.lat, lon=cambridge.lon,
         units='metric').forecast_hourly]
-    with open(file_locations['weather-filename'], 'w') as outstream:
+    with open(CONF('weather', 'weather-filename'), 'w') as outstream:
         writer = csv.DictWriter(outstream, ['time', 'status', 'precipitation', 'temperature', 'uvi', 'wind'])
         writer.writeheader()
         for hour in forecast:
             writer.writerow(hour)
 
-def fetch_mfp(file_locations, _begin_date, _end_date, verbose):
+def fetch_mfp(_begin_date, _end_date, verbose):
     if verbose: print("Fetching data from myfitnesspal.com (may take a little while)")
-    physical.mfp_reader.update_mfp(file_locations['mfp-filename'], verbose)
+    physical.mfp_reader.update_mfp(CONF('physical', 'mfp-filename'), verbose)
     if verbose: print("Fetched data from myfitnesspal.com")
 
-def fetch_oura(file_locations, begin_date, end_date, verbose):
-    oura_filename = file_locations['oura-filename']
+def fetch_oura(begin_date, end_date, verbose):
+    oura_filename = CONF('physical', 'oura-filename')
     data = {}
     physical.oura_reader.oura_read_existing(data, oura_filename)
     existing_rows = len(data)
@@ -224,77 +233,77 @@ def fetch_oura(file_locations, begin_date, end_date, verbose):
     physical.oura_reader.oura_fetch(data, begin_date, end_date)
     if verbose: print("fetched data from oura")
     if len(data) > existing_rows:
-        backup(oura_filename, file_locations['archive'], "oura-to-%s.csv")
+        backup(oura_filename, CONF('backups', 'archive'), "oura-to-%s.csv")
         physical.oura_reader.oura_write(data, oura_filename)
     elif len(data) < existing_rows:
         print("Warning: sleep data has shrunk on being fetched --- not writing it")
 
-def fetch_omron(file_locations, begin_date, end_date, _verbose):
-    merge_incoming_csv(file_locations,
-                       'omron-filename', 'omron-incoming-pattern',
+def fetch_omron(begin_date, end_date, _verbose):
+    merge_incoming_csv('omron-filename', 'omron-incoming-pattern',
                        begin_date, end_date,
                        column_renames={'Measurement Date': 'Date'})
 
-def fetch_running(file_locations, begin_date, end_date, _verbose):
-    merge_incoming_csv(file_locations,
-                       'running-filename', 'garmin-incoming-pattern',
+def fetch_running(begin_date, end_date, _verbose):
+    merge_incoming_csv('running-filename', 'garmin-incoming-pattern',
                        begin_date, end_date,
                        match_key='Activity Type', match_value='Running',
                        transformations={'Time': qsutils.duration_string_to_minutes,
                                         'Calories': qsutils.string_to_number})
 
-def fetch_cycling(file_locations, begin_date, end_date, _verbose):
-    merge_incoming_csv(file_locations,
-                       'cycling-filename', 'garmin-incoming-pattern',
+def fetch_cycling(begin_date, end_date, _verbose):
+    merge_incoming_csv('cycling-filename', 'garmin-incoming-pattern',
                        begin_date, end_date,
                        match_key='Activity Type', match_value='Cycling',
                        transformations={'Time': qsutils.duration_string_to_minutes,
                                         'Calories': qsutils.string_to_number})
 
-def fetch_travel(file_locations, begin_date, end_date, verbose):
-    # TODO: fetch from Google, updating file_locations['travel-filename'] and file_locations['places-filename']
+def fetch_travel(begin_date, end_date, verbose):
+    # TODO: fetch from Google, updating CONF('travel', 'travel-filename') and CONF('travel', 'places-filename')
     pass
 
-def update_travel(file_locations):
+def update_travel():
     # TODO: write travel section of QS code
-    # travel_main(file_locations['travel-filename'], file_locations['places-filename'])
+    # travel_main(CONF('travel', 'travel-filename'), CONF('travel', 'places-filename'))
     # TODO: calculate distances
     pass
 
-def updates(file_locations,
-            begin_date, end_date,
+def updates(begin_date, end_date,
             do_externals, verbose):
 
-    os.makedirs(file_locations['charts'], exist_ok=True)
+    global CONFIGURATION
+    CONFIGURATION = lifehacking_config.load_config()
+    print("CONFIGURATION is", CONFIGURATION)
+
+    print("CONF('general', 'charts') is", CONF('general', 'charts'))
+    os.makedirs(CONF('general', 'charts'), exist_ok=True)
     # if end_date is None:
     #     end_date = qsutils.yesterday()
 
     if do_externals:
         for location_name, fetcher, archive_template in [
-                ('weather-filename', fetch_weather, "weather-to-%s.csv"),
-                ('mfp-filename', fetch_mfp, "mfp-to-%s.csv"),
-                ('travel-filename', fetch_travel, "travel-to-%s.csv"),
-                ('oura-filename', fetch_oura, "oura-to-%s.csv"),
-                ('omron-filename', fetch_omron, "omron-to-%s.csv"),
-                ('cycling-filename', fetch_cycling, "cycling-to-%s.csv"),
-                ('running-filename', fetch_running, "running-to-%s.csv")
+                (('weather', 'weather-filename'), fetch_weather, "weather-to-%s.csv"),
+                (('physical', 'mfp-filename'), fetch_mfp, "mfp-to-%s.csv"),
+                (('travel', 'travel-filename'), fetch_travel, "travel-to-%s.csv"),
+                (('physical', 'oura-filename'), fetch_oura, "oura-to-%s.csv"),
+                (('physical', 'omron-filename'), fetch_omron, "omron-to-%s.csv"),
+                (('physical', 'cycling-filename'), fetch_cycling, "cycling-to-%s.csv"),
+                (('physical', 'running-filename'), fetch_running, "running-to-%s.csv")
                 ]:
-            filename = file_locations[location_name]
+            filename = CONF(*location_name)
             if last_update_at_least_about_a_day_ago(filename):
                 if verbose: print("updating", filename)
-                backup(filename, file_locations['archive'], archive_template)
-                fetcher(file_locations, begin_date, end_date, verbose)
+                backup(filename, CONF('backups', 'archive'), archive_template)
+                fetcher(begin_date, end_date, verbose)
             else:
                 if verbose: print("not updating", filename, "as it is recent")
 
-    update_finances(file_locations, verbose)
-    update_physical(file_locations, begin_date, end_date)
-    contacts_analysis = update_contacts(file_locations)
-    update_travel(file_locations)
-    update_startpage(file_locations)
-    dashboard.dashboard.make_dashboard_page(file_locations,
-                                            contacts_analysis,
-                                            CHART_SIZES)
+    update_finances(verbose)
+    update_physical(begin_date, end_date)
+    contacts_analysis = update_contacts()
+    update_travel()
+    update_startpage()
+    dashboard.dashboard.make_dashboard_page(contacts_analysis=contacts_analysis,
+                                            chart_sizes=CHART_SIZES)
 
 def main():
     parser = qsutils.program_argparser()
@@ -308,71 +317,7 @@ def main():
                         help="""Don't pester external servers""")
     args = parser.parse_args()
 
-    file_locations = {
-        # finance
-        'accounts-config': "accounts.yaml",
-        'accumulated-bank-statements-file': "$COMMON/finances/handelsbanken/handelsbanken-full.csv",
-        'bank-statement-template': "~/Downloads/Transaction*.csv",
-        'budgeting-classes-file': "budgetting-classes.yaml",
-        'configdir': "~/open-projects/github.com/hillwithsmallfields/qs/conf",
-        'conversions-config': "conversions.yaml",
-        'conversions-dir': "$COMMON/finances",
-        'finances-completions': "$COMMON/var/finances-completions.el",
-        'main-account': "$COMMON/finances/finances.csv",
-        'merge-results-dir': "~/scratch/auto-merge-results",
-        'merge-results-file': "merged-with-unmatched-all.csv",
-        'thresholds-file': "budgetting-thresholds.yaml",
-
-        # inventory
-        'books-file': "$COMMON/org/books.csv",
-        'inventory-file': "$COMMON/org/inventory.csv",
-        'project-parts-file': "$COMMON/org/project-parts.csv",
-        'stock-file': "$COMMON/org/stock.csv",
-        'storage-file': "$COMMON/org/storage.csv",
-
-        # physical
-        'running-filename': "$COMMON/health/garmin-running.csv",
-        'cycling-filename': "$COMMON/health/garmin-cycling.csv",
-        'garmin-incoming-pattern': "~/Downloads/Activities*.csv",
-        'mfp-filename': "$COMMON/health/mfp-accum.csv",
-        'omron-filename': "$COMMON/health/blood-pressure.csv",
-        'omron-incoming-pattern': "~/Downloads/*BP-Logbook*.csv",
-        'oura-filename': "$COMMON/health/sleep.csv",
-        'physical-filename': "$COMMON/health/physical.csv",
-        'weight-filename': "$COMMON/health/weight.csv",
-        'temperature-file': "$COMMON/health/temperature.csv",
-
-        # start page
-        'start-page-generator': 'make_link_table.py',
-        'startpage': "~/private_html/startpage.html",
-        'startpage-source': "$COMMON/org/startpage.yaml",
-        'startpage-style': "$COMMON/org/startpage.css",
-
-        # travel
-        'travel-filename': "$COMMON/travel/travel.csv",
-        'places-filename': "$COMMON/travel/places/places.csv",
-
-        # contacts
-        'contacts-file': "$COMMON/org/contacts.csv",
-
-        # weather
-        'weather-filename': "$COMMON/var/weather.csv",
-
-        # general
-        'archive': "~/archive",
-        'charts': args.charts,
-        'default-timetable': "timetable.csv",
-        'projects-dir': "~/open-projects/github.com",
-        'projects-user': "hillwithsmallfields",
-        'reflections-dir': os.path.expandvars("$COMMON/texts/reflection"),
-        'timetables-dir': "$COMMON/timetables",
-    }
-
-    file_locations = {k: os.path.expanduser(os.path.expandvars(v))
-                      for k, v in file_locations.items()}
-
-    updates(file_locations,
-            args.begin,
+    updates(args.begin,
             args.end,
             not args.no_externals,
             args.verbose)
