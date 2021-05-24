@@ -5,6 +5,7 @@ import csv
 import datetime
 import decouple
 import glob
+import json
 import os
 import pyowm
 import re
@@ -20,7 +21,6 @@ import financial.finlisp
 import list_completions
 import physical.mfp_reader
 import physical.oura_reader
-import utils.qschart
 import utils.trim_csv
 import qsmerge
 import qsutils
@@ -199,20 +199,30 @@ def merge_incoming_csv(main_file_key, incoming_key,
 def fetch_weather(_begin_date, _end_date, verbose):
     owm = pyowm.owm.OWM(decouple.config('OWM_API_KEY'))
     reg = owm.city_id_registry()
-    list_of_locations = reg.locations_for('cambridge', country='GB')
-    cambridge = list_of_locations[0]
+    city = CONF('weather', 'weather-city')
+    country = CONF('weather', 'weather-country')
+    loc_name = "%s,%s" % (city, country)
+    list_of_locations = reg.locations_for(city, country)
+    place = list_of_locations[0]
+    weather_manager = owm.weather_manager()
+    observation = weather_manager.weather_at_place(loc_name)
+    with open(CONF('weather', 'sunlight-times-file'), 'w') as outstream:
+        json.dump({'sunrise': datetime.datetime.fromtimestamp(observation.weather.sunrise_time()).time().isoformat(timespec='minutes'),
+                   'sunset': datetime.datetime.fromtimestamp(observation.weather.sunset_time()).time().isoformat(timespec='minutes')},
+                  outstream)
+    weather = weather_manager.one_call(lat=place.lat, lon=place.lon,units='metric')
     forecast = [{
         'time': datetime.datetime.fromtimestamp(h.ref_time).isoformat()[:16],
         'status': h.detailed_status,
         'precipitation': h.precipitation_probability,
         'temperature': h.temp['temp'],
         'uvi': h.uvi,
-        'wind': h.wnd['speed']
-    } for h in owm.weather_manager().one_call(
-        lat=cambridge.lat, lon=cambridge.lon,
-        units='metric').forecast_hourly]
+        'wind-speed': h.wnd['speed'],
+        'wind-direction': h.wnd['deg']
+    } for h in weather.forecast_hourly]
+
     with open(CONF('weather', 'weather-filename'), 'w') as outstream:
-        writer = csv.DictWriter(outstream, ['time', 'status', 'precipitation', 'temperature', 'uvi', 'wind'])
+        writer = csv.DictWriter(outstream, ['time', 'status', 'precipitation', 'temperature', 'uvi', 'wind-speed', 'wind-direction'])
         writer.writeheader()
         for hour in forecast:
             writer.writerow(hour)

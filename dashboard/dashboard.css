@@ -149,6 +149,10 @@ div[name="past_week"] {
     display: none;
 }
 
+td.weather {
+    text-align: center;
+}
+
 .activity_logger {
     background:     #e0d0a0;
     color:          maroon;

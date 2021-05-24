@@ -11,8 +11,8 @@ import re
 import pandas as pd
 import matplotlib.pyplot as plt
 
-import file_types
-import qsutils
+import utils.file_types
+import utils.qsutils
 
 POSSIBLE_COLUMN_NAMES = {'stones': 'stone',
                          'pounds': 'pound',

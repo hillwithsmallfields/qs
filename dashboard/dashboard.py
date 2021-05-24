@@ -4,6 +4,7 @@ import cssutils
 import csv
 import datetime
 import glob
+import json
 import os
 import random
 import shutil
@@ -17,6 +18,7 @@ source_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.dirname(source_dir))
 import financial.classify       # https://github.com/hillwithsmallfields/qs/blob/master/financial/classify.py
 import utils.qsutils            # https://github.com/hillwithsmallfields/qs/blob/master/utils/qsutils.py
+import utils.qschart
 
 # This corresponds to https://github.com/hillwithsmallfields
 my_projects = os.path.dirname(os.path.dirname(source_dir))
@@ -251,6 +253,8 @@ def one_day_timetable_section(day=None, with_form=False):
 def weather_section():
     day_after_tomorrow = utils.qsutils.forward_from(datetime.date.today(), None, None, 2)
     day_after_tomorrow_name = day_after_tomorrow.strftime("%A")
+    with open(CONF('weather', 'sunlight-times-file')) as sunlight_stream:
+        sunlight_times = json.load(sunlight_stream)
     return T.div(class_='weather')[
         T.h2["Weather"],
         switchable_panel('weather_switcher',
@@ -268,7 +272,15 @@ def weather_section():
                          ['today', 'tomorrow',
                           # day_after_tomorrow_name
                          ],
-                         'today')]
+                         'today'),
+        T.h3["Daylight times"],
+        T.dl[T.dt["Sunrise:"], T.dd[sunlight_times['sunrise']],
+        T.dt["Sunset:"], T.dd[sunlight_times['sunset']]]]
+
+COMPASS_POINTS = ('N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW')
+
+def compass_point_name(deg):
+    return COMPASS_POINTS[int((int(deg) + (180 / len(COMPASS_POINTS))) // (360 / len(COMPASS_POINTS))) % len(COMPASS_POINTS)]
 
 def one_day_weather_section(day=None):
     # https://pyowm.readthedocs.io/en/latest/v3/code-recipes.html
@@ -286,11 +298,13 @@ def one_day_weather_section(day=None):
                  T.th["Weather"]],
             [[T.tr(class_='inactive',
                    name=hour['time'][11:16])[
-                       T.td[hour['time'][11:19]],
-                       T.td[str(round(float(hour['temperature']), 1))],
-                       T.td[hour['precipitation']],
-                       T.td[str(round(float(hour['wind'])))],
-                       T.td[hour['status']]]]
+                       T.td(class_='weather weather_time')[hour['time'][11:19]],
+                       T.td(class_='weather weather_temp')[str(round(float(hour['temperature']), 1))],
+                       T.td(class_='weather weather_prec')[hour['precipitation']],
+                       T.td(class_='weather weather_wind')[str(round(float(hour['wind-speed'])))
+                            + " "
+                            + compass_point_name(hour['wind-direction'])],
+                       T.td(class_='weather weather_status')[hour['status']]]]
                         for hour in csv.DictReader(weatherstream)
                         if hour['time'].startswith(daystring)]]
 
@@ -562,6 +576,13 @@ def update_finances_charts(chart_sizes, begin_date, end_date, date_suffix, verbo
                            begin_date, end_date, None, False,
                            os.path.join(charts_dir, "by-class-%s-%%s.png" % date_suffix),
                            chart_sizes)
+    # TODO: split main file into running balances for each account (tracking as needed), take the end of each month for each account, and put them all in a file to display here (and get that shown in the resulting page)
+    # utils.qschart.qscharts(CONF('finance', 'account-balances'), 'finances',
+    #                        [CONF('finance', 'main-current-account'),
+    #                         CONF('finance', 'main-savings-account')],
+    #                        begin, end, None, False,
+    #                        os.path.join(charts_dir, "balances-%s-%%s.png" % date_suffix),
+    #                        chart_sizes)
 
 def update_physical_charts(chart_sizes, begin_date, end_date, date_suffix):
 

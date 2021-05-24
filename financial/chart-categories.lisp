@@ -22,13 +22,13 @@
        (by-level-2 (by-hierarchy monthly 2 parentage-table))
        (by-proportions (proportions by-category))
 
-       (balance (select-columns
-                 (read statements-file)
-                 '("Date" "Balance")))
+       (balance-from-statements (select-columns
+                                 (read statements-file)
+                                 '("Date" "Balance")))
 
-       (monthly-balance (last-of-month balance))
+       (monthly-balance-from-statements (last-of-month balance-from-statements))
        
-       (with-last-of-month (join-by-months by-class monthly-balance))
+       (with-last-of-month (join-by-months by-class monthly-balance-from-statements))
        )
   (when verbose
     (print "parentage table is" parentage-table)
@@ -53,8 +53,8 @@
   (write-table by-class-past-three-months "summarytable" "past-quarter.html"
                '("Eating in" "Eating out" "Projects" "Hobbies" "Travel")
                thresholds)
-  (write-csv balance "balance.csv")
-  (write-csv monthly-balance "monthly-balance.csv")
+  (write-csv balance-from-statements "balance.csv")
+  (write-csv monthly-balance-from-statements "monthly-balance.csv")
   (write-csv with-last-of-month "with-last-of-month.csv")
   (write-html with-last-of-month "with-last-of-month.html"
               "Categorised monthly summary" thresholds t t)
