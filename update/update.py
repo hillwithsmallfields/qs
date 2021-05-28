@@ -98,7 +98,8 @@ def update_finances(verbose):
                                    {'input-file': main_account,
                                     'statements-file': CONF('finance', 'accumulated-bank-statements-file'),
                                     'classifiers-file': CONF('finance', 'budgeting-classes-file'),
-                                    'thresholds-file': CONF('finance', 'thresholds-file')})
+                                    'thresholds-file': CONF('finance', 'thresholds-file'),
+                                    'verbose': verbose})
 
     if file_newer_than_file(main_account, CONF('finance', 'finances-completions')):
         if verbose: print("updating finances completions")

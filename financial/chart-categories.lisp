@@ -1,5 +1,4 @@
 (let* ((raw (read-canonical input-file))
-       (verbose nil)                 ; TODO: pass in from command line
        (monthly (check "making monthly"
                        (by-month (fgrep raw "GBP" "currency")
                                  nil nil)))
