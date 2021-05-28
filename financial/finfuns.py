@@ -22,6 +22,10 @@ import parentage
 import qsutils
 import tracked_sheet
 
+# Functions for doing things with spreadsheets, mostly for financial
+# transactions.  Aimed at calling from the Lisp DSL defined in
+# finlisp.py and finlisp_evaluation.py in this directory.
+
 class ConfigRequired(BaseException):
     pass
 
@@ -43,6 +47,7 @@ class UnsupportedOperation(BaseException):
         self.problematic_type = type(value)
         self.function_name = function_name
 
+# The DSL will define all these as Lisp functions.
 functions = ['account_to_sheet',
              'add_row',
              'add_sheet',
@@ -134,12 +139,15 @@ def convert_to_Python(command):
 # The functions
 
 def copy_sheet(context, sheet):
+    """Copy a spreadsheet."""
     return copy.copy(sheet)     # todo: use this as a base for filtering sheets to first / last transactions of each time period
 
 def account_to_sheet(context, base_account):
+    """Convert an 'account' object to a spreadsheet."""
     return account_sheet.account_sheet(base_account.config, base_account)
 
 def add_row(context, sheet, row):
+    """Add a row to a spreadsheet."""
     sheet.add_row(row)
     return sheet
 
@@ -151,6 +159,8 @@ def add_sheet(context, base_account, sheet, flags=None, trace_sheet_name=None):
         return base_account.add_sheet(sheet)
 
 def add_sheets(context, *sheets):
+    """Combine multiple sheets, adding the subsequent ones into the first
+    one."""
     return sheets[0].add_sheets(*sheets[1:])
 
 def adjustments_by_day(context, mainsheet, statements, account_name):

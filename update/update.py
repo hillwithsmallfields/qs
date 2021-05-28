@@ -80,7 +80,8 @@ def update_finances(verbose):
                                        merge_results_dir,
                                        config,
                                        verbose,
-                                       {'incoming-statement': latest_bank_statement})
+                                       {'incoming-statement': latest_bank_statement,
+                                        'verbose': verbose})
         merge_results_file = os.path.join(merge_results_dir, CONF('finance', 'merge-results-file'))
         if os.path.isfile(merge_results_file):
             backup(main_account, CONF('backups', 'archive'), "finances-to-%s.csv")
