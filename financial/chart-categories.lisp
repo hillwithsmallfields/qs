@@ -1,3 +1,6 @@
+;; Program to prepare CSV files for making charts, and some HTML files
+;; for incorporating in my personal dashboard page.
+
 (let* ((raw (read-canonical input-file))
        (monthly (check "making monthly"
                        (by-month (fgrep raw "GBP" "currency")

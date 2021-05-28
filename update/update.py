@@ -64,6 +64,9 @@ def last_update_at_least_about_a_day_ago(filename):
 
 def update_finances(verbose):
 
+    """Merge new transactions from my bank statement (if I've saved a new bank statement file) and prepare CSV
+    files for making into charts, and HTML for incorporating into the dashboard page."""
+
     config = qsutils.load_config(verbose, None, None,
                                  os.path.join(CONF('finance', 'configdir'), CONF('finance', 'accounts-config')),
                                  os.path.join(CONF('finance', 'conversions-dir'), CONF('finance', 'conversions-config')))
@@ -106,6 +109,9 @@ def update_finances(verbose):
         list_completions.list_completions()
 
 def update_physical(begin_date, end_date):
+
+    """Merge incoming health-related data from various files, into one central file."""
+
     charts_dir = CONF('general', 'charts')
     physical = CONF('physical', 'physical-filename')
     mfp_filename = CONF('physical', 'mfp-filename')
@@ -126,6 +132,9 @@ def update_physical(begin_date, end_date):
         print("merge of physical data produced the wrong number of rows")
 
 def update_startpage():
+
+    """Update my personal start page, for which the master is a YAML file."""
+
     startpage = CONF('start-page', 'startpage')
     startpage_source = CONF('start-page', 'startpage-source')
     startpage_style = CONF('start-page', 'startpage-style')
@@ -135,6 +144,10 @@ def update_startpage():
                   % (CONF('start-page', 'start-page-generator'), startpage, startpage_style, startpage_source))
 
 def update_contacts():
+
+    """Preen my contacts file.  This checks for links between contacts, and does some analysis, which it returns
+    as the result."""
+
     contacts_file = CONF('contacts', 'contacts-file')
     contacts_scratch = "/tmp/contacts_scratch.csv"
     contacts_analysis = link_contacts.link_contacts_main(contacts_file, True, False, contacts_scratch)
@@ -167,6 +180,12 @@ def merge_incoming_csv(main_file_key, incoming_key,
                        match_key=None, match_value=None,
                        column_renames={},
                        transformations={}):
+
+    """Merge a CSV of new (typically daily) readings into a long-term history, by date.  The incoming data may
+    overlap with the data already in the file, in which case the new data takes precedence; it won't make
+    duplicate rows.  Columns may be renamed between the two files, and the data may transformed, according
+    to the argument dictionaries 'column_renames' and 'transformations'."""
+
     main_filename = CONF('physical', main_file_key)
     incoming_filename = latest_file_matching(CONF('physical', incoming_key))
     print("merging", incoming_filename, "into", main_filename, "with column_renames", column_renames, "and matches", match_key, match_value)
@@ -199,6 +218,10 @@ def merge_incoming_csv(main_file_key, incoming_key,
                     writer.writerow(data[date])
 
 def fetch_weather(_begin_date, _end_date, verbose):
+
+    """Fetch the short-term forecast from openweathermap, saving hourly extracts from it into a CSV file, and
+    the sunrise and sunset data into a JSON fileq."""
+
     owm = pyowm.owm.OWM(decouple.config('OWM_API_KEY'))
     reg = owm.city_id_registry()
     city = CONF('weather', 'weather-city')
@@ -230,11 +253,17 @@ def fetch_weather(_begin_date, _end_date, verbose):
             writer.writerow(hour)
 
 def fetch_mfp(_begin_date, _end_date, verbose):
+
+    """Fetch recent data from MyFitnessPal.com."""
+
     if verbose: print("Fetching data from myfitnesspal.com (may take a little while)")
     physical.mfp_reader.update_mfp(CONF('physical', 'mfp-filename'), verbose)
     if verbose: print("Fetched data from myfitnesspal.com")
 
 def fetch_oura(begin_date, end_date, verbose):
+
+    """Update my Oura records by fetching updates from Oura's cloud system."""
+
     oura_filename = CONF('physical', 'oura-filename')
     data = {}
     physical.oura_reader.oura_read_existing(data, oura_filename)
@@ -251,11 +280,21 @@ def fetch_oura(begin_date, end_date, verbose):
         print("Warning: sleep data has shrunk on being fetched --- not writing it")
 
 def fetch_omron(begin_date, end_date, _verbose):
+
+    """Extract data from a manually saved Omron file.
+
+    Automatic fetcher or scraper possibly to come."""
+
     merge_incoming_csv('omron-filename', 'omron-incoming-pattern',
                        begin_date, end_date,
                        column_renames={'Measurement Date': 'Date'})
 
 def fetch_running(begin_date, end_date, _verbose):
+
+    """Extract running records from the latest saved Garmin data.  Garmin don't provide API access to
+    individuals, so for now I'm saving the file manually from their web page --- automatic button pushed
+    possibly to follow."""
+
     merge_incoming_csv('running-filename', 'garmin-incoming-pattern',
                        begin_date, end_date,
                        match_key='Activity Type', match_value='Running',
@@ -263,6 +302,11 @@ def fetch_running(begin_date, end_date, _verbose):
                                         'Calories': qsutils.string_to_number})
 
 def fetch_cycling(begin_date, end_date, _verbose):
+
+    """Extract cycling records from the latest saved Garmin data.  Garmin don't provide API access to
+    individuals, so for now I'm saving the file manually from their web page --- automatic button pushed
+    possibly to follow."""
+
     merge_incoming_csv('cycling-filename', 'garmin-incoming-pattern',
                        begin_date, end_date,
                        match_key='Activity Type', match_value='Cycling',
@@ -281,6 +325,12 @@ def update_travel():
 
 def updates(begin_date, end_date,
             do_externals, verbose):
+
+    """Update my Quantified Self record files, which are generally CSV files with a row for each day.  This also
+    prepares some files for making charts.  Finally, it calls the dashboard code, which uses matplotlib to
+    make the charts, as well as generating the HTML they are embedded in.
+
+    The argument do_externals says whether to contact any external data sources."""
 
     global CONFIGURATION
     CONFIGURATION = lifehacking_config.load_config()

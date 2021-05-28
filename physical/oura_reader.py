@@ -17,6 +17,10 @@ COLUMNS = ['bedtime_start', 'bedtime_end', 'onset_latency', 'duration',
            'hypnogram_5min']
 
 def oura_fetch(data, start, end):
+
+    """Fetch Oura records between specified dates, adding entries to the
+    supplied dictionary."""
+
     if isinstance(start, datetime.date):
         start = start.isoformat()
     if isinstance(end, datetime.date):
@@ -32,12 +36,19 @@ def oura_fetch(data, start, end):
         data[waking] = {k: night.get(k) for k in COLUMNS}
 
 def oura_read_existing(data, filename):
+
+    """Load my long-term Oura records from file, ready to merge the latest
+    records into."""
+
     with open(filename) as instream:
         for row in csv.DictReader(instream):
             data[row['bedtime_end'][:10]] = row
     return row
 
 def oura_write(data, filename):
+
+    """Write the combined old and new Oura records to a file."""
+
     with open(filename, 'w') as outstream:
         writer = csv.DictWriter(outstream, ['Date', 'Start', 'End'] + COLUMNS)
         writer.writeheader()
