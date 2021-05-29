@@ -428,13 +428,17 @@ def blood_pressure_section():
 def temperature_section():
     return linked_image("temperature", "temperature")
 
-def actions_section():
+def actions_section(from_org_mode):
     # TODO: use org-ql to produce a file
     return None
 
-def shopping_section():
+def org_ql_list(items):
+    return [T.ul[[T.li[item['title']] for item in items]]]
+
+def shopping_section(from_org_mode):
     # TODO: use org-ql to produce a file
-    return None
+    return [T.h3["Supermarket"],
+            org_ql_list(from_org_mode["Supermarket"])]
 
 def items_table(items):
     items_by_type = {}
@@ -509,6 +513,8 @@ def reflection_section():
 def construct_dashboard_page(contacts_analysis):
     charts_dir = CONF('general', 'charts')
     page = SectionalPage()
+    with open(os.path.expandvars("$COMMON/var/views.json")) as org_ql_stream:
+        from_org_mode = json.load(org_ql_stream)
     page.add_section("Health", wrap_box(
         labelled_section("Weight", weight_section()),
         labelled_section("Calories", calories_section()),
@@ -531,8 +537,8 @@ def construct_dashboard_page(contacts_analysis):
         labelled_section("People in contacts file", contacts_section(contacts_analysis)),
         labelled_section("People groups", people_groups_section(contacts_analysis))))
     page.add_section("Agenda", wrap_box(
-        labelled_section("Actions", actions_section()),
-        labelled_section("Shopping", shopping_section())))
+        labelled_section("Actions", actions_section(from_org_mode)),
+        labelled_section("Shopping", shopping_section((from_org_mode)))))
     page.add_section("Travel", travel_section())
     page.add_section("Inventory", inventory_section())
     page.add_section("Texts for reflection", reflection_section())

@@ -162,6 +162,10 @@ def update_contacts():
         print("wrong number of people after linking contacts, originally", original_lines, "but now", scratch_lines)
     return contacts_analysis
 
+def update_agenda():
+    os.system("emacs -q --script " +
+              os.path.expandvars("$MY_ELISP/special-setups/dashboard/dashboard-emacs-query.el"))
+
 def rename_columns(raw, column_renames):
     return ({column_renames.get(key, key): value for key, value in raw.items()}
             if isinstance(raw, dict)
@@ -220,7 +224,7 @@ def merge_incoming_csv(main_file_key, incoming_key,
 def fetch_weather(_begin_date, _end_date, verbose):
 
     """Fetch the short-term forecast from openweathermap, saving hourly extracts from it into a CSV file, and
-    the sunrise and sunset data into a JSON fileq."""
+    the sunrise and sunset data into a JSON file."""
 
     owm = pyowm.owm.OWM(decouple.config('OWM_API_KEY'))
     reg = owm.city_id_registry()
@@ -362,6 +366,7 @@ def updates(begin_date, end_date,
     update_finances(verbose)
     update_physical(begin_date, end_date)
     contacts_analysis = update_contacts()
+    update_agenda()
     update_travel()
     update_startpage()
     dashboard.dashboard.make_dashboard_page(contacts_analysis=contacts_analysis,

@@ -2,6 +2,7 @@
 # Common routines for my QS programs
 
 import argparse
+import calendar
 import csv
 import datetime
 import functools
@@ -315,10 +316,16 @@ def back_from(when, years_back, months_back, days_back):
     if years_back:
         when = when.replace(year=when.year - years_back)
     if months_back:
+        target_month = (when.month - months_back) if (when.month > months_back) else ((when.month + 12) - months_back)
+        target_year = when.year if months_back <= when.month else (when.year - 1)
+        max_day = calendar.monthrange(target_year, target_month)[1]
         if months_back >= when.month:
-            when = when.replace(year=when.year - 1, month=12 + when.month - months_back)
+            when = when.replace(year=when.year - 1,
+                                month=12 + when.month - months_back,
+                                day=min(when.day, max_day))
         else:
-            when = when.replace(month=when.month - months_back)
+            when = when.replace(month=when.month - months_back,
+                                day=min(when.day, max_day))
     if days_back:
         when = when - datetime.timedelta(days=days_back)
     return when # datetime.datetime.combine(when, datetime.time())
