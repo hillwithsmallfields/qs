@@ -428,17 +428,23 @@ def blood_pressure_section():
 def temperature_section():
     return linked_image("temperature", "temperature")
 
+def top_items(items):
+    return sorted(items, key=lambda item: item['position-in-file'])[:12]
+
 def actions_section(from_org_mode):
-    # TODO: use org-ql to produce a file
-    return None
+    return wrap_box([T.h3["Mending"],
+                     org_ql_list(top_items(from_org_mode["Mending"]))],
+                    [T.h3["Physical making"],
+                     org_ql_list(top_items(from_org_mode["Physical making"]))],
+                    [T.h3["Programming"],
+                     org_ql_list(top_items(from_org_mode["Programming"]))])
 
 def org_ql_list(items):
     return [T.ul[[T.li[item['title']] for item in items]]]
 
 def shopping_section(from_org_mode):
-    # TODO: use org-ql to produce a file
-    return [T.h3["Supermarket"],
-            org_ql_list(from_org_mode["Supermarket"])]
+    return wrap_box([T.h3["Supermarket"],
+                     org_ql_list(from_org_mode["Supermarket"])])
 
 def items_table(items):
     items_by_type = {}
