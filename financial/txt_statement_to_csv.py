@@ -6,10 +6,11 @@ import datetime
 import glob
 import re
 
-dated_line = re.compile("^([0-9][0-9][A-Z][A-Z][A-Z][0-9][0-9])  +(.+)")
+dated_line = re.compile("^([0-9][0-9][A-Z][A-Z][A-Z][0-9][0-9])  +\*?(.+)")
+details_line = re.compile("^(.+) +([0-9,]+\.[0-9][0-9])$")
 splitter = re.compile("  +")
 bump = datetime.timedelta(seconds=60)
-trailer_patterns = [re.compile(tp) for tp in ("Please refer any enquiries", "NO ACCOUNT MOVEMENT SINCE", "Your deposit is eligible")]
+# trailer_patterns = [re.compile(tp) for tp in ("Please refer any enquiries", "NO ACCOUNT MOVEMENT SINCE", "Your deposit is eligible")]
 numeric = re.compile("[-0-9,.]+")
 
 def is_trailer(line):
@@ -40,15 +41,14 @@ def main():
                 if matched:
                     line_date = datetime.datetime.strptime(matched.group(1), "%d%b%y")
                     raw_parts = splitter.split(matched.group(2))
-                    line_parts = {line.index(part)+len(part): part for part in raw_parts[1:]}
-                    entry = [line_date, raw_parts[0], line_parts]
+                    line_parts = {line.index(part)+len(part): fnumber(part) for part in raw_parts[1:]}
+                    entry = [line_date, raw_parts[0].capitalize(), line_parts]
                 elif entry:
-                    if not is_trailer(line):
-                        entry += splitter.split(line)
-                if entry:
-                    print("storing", entry)
+                    matched = details_line.match(line)
+                    if matched:
+                        entry += [matched.group(1).strip(), fnumber(matched.group(2))]
                     if line_date in transactions and transactions[line_date] == entry:
-                        print("looks like a duplicate")
+                        print("looks like a possible duplicate, file:", infile, "line:", line)
                         entry = None
                         continue
                     while line_date in transactions:
@@ -59,18 +59,21 @@ def main():
     for when in sorted(transactions.keys()):
         what = transactions[when]
         columns |= set(what[2].keys())
-    for column in sorted(columns):
-        print("column", column, "is used")
+    # for column in sorted(columns):
+    #     print("column", column, "is used")
     with open(args.output, 'w') as outstream:
         writer = csv.DictWriter(outstream, ('Date', 'Description', 'Amount', 'Balance'))
         writer.writeheader()
         for when in sorted(transactions.keys()):
             what = transactions[when]
             parts = what[2]
+            description = what[1]
+            if len(what) >= 4:
+                description += "; " + what[3]
             writer.writerow({'Date': when.isoformat(),
-                             'Description': what[1],
-                             'Amount': fnumber(parts.get(75, 0)) - fnumber(parts.get(53, 0)),
-                             'Balance': fnumber(parts.get(98, ''))})
+                             'Description': description,
+                             'Amount': parts.get(75, 0) - parts.get(53, 0),
+                             'Balance': parts.get(98, what[4] if len(what) >= 5 else '')})
 
 if __name__ == '__main__':
     main()
