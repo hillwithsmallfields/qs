@@ -121,7 +121,8 @@
   ;; the automatic unmatched transactions only, and one for all unmatched transactions.
   (let* ((merged-with-ua (add-sheets main unmatched-automatic))
          (merged-with-unmatched-all (add-sheets merged-with-ua unmatched-non-automatic))
-         ;; (tracked (track merged-with-ua "amount" "balance"))
+         (tracked-with-ua (track merged-with-ua "amount" "balance"))
+         (tracked-with-all (track merged-with-unmatched-all "amount" "balance"))
 
          ;; Now look for how much our balances are getting out compared with the balances from the bank
          ;; statements:
@@ -154,7 +155,8 @@
    (write merged-with-unmatched-all "merged-with-unmatched-all"
            "Merged with all unmatched entries"
            "The original file, merged with all unmatched entries from the incoming file.")
-    ;; (write-csv tracked "tracked.csv")
+    (write-csv tracked-with-ua "tracked-with-ua.csv")
+    (write-csv tracked-with-all "tracked-with-all.csv")
     (write differences-main "differences-main"
            "Discrepancies on original data"
            "Discrepancies on original data")

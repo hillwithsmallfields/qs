@@ -466,6 +466,7 @@ class canonical_sheet(base_sheet.base_sheet):
                     for sub in summaries[summarykey].transactions:
                         print("cspe sub       ", itemized_amount.row_descr(sub))
         unique_number = 0
+        debug = False
         for timestamp, summaries in accumulators.items():
             for sumkey in summaries:
                 summary = summaries[sumkey]
@@ -479,7 +480,7 @@ class canonical_sheet(base_sheet.base_sheet):
                     'category': (";".join([item['category'] for item in summary.transactions])
                                  if combine_categories
                                  else summary.transactions[0]['category']),
-                    'combicount': len(summary.transactions),
+                    'combicount': ";".join([itemized_amount.compact_row_string(item) for item in summary.transactions]) if debug else len(summary.transactions),
                     'item': (";".join([item['item'] for item in summary.transactions])
                                  if combine_categories
                                  else summary.transactions[0]['item']),

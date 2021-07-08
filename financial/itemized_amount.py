@@ -18,6 +18,14 @@ LARGE_DEBIT = -250
 def date_in_year(date):
     return date.strftime("%m:%d") if isinstance(date, datetime.date) else date[-5:]
 
+def date_in_full(date):
+    return date.isoformat() if isinstance(date, datetime.date) else date
+
+FULL_TS_IN_COMPACT = True
+
+def date_for_compact(date):
+    return date_in_full(date) if FULL_TS_IN_COMPACT else date_in_year(date)
+
 def row_summary(row):
     amount = row['amount']
     if isinstance(amount, itemized_amount):
@@ -34,14 +42,18 @@ def row_descr(row):
             + " " + str(row['amount']) \
             + " to " + (row.get('payee') or "unknown payee") \
             + " in " + row.get('category', "unknown category") \
-            + ((" for " + row['item']) if 'item' in row and row['item'] != "" else "") \
+            + ((" for " + row['item'])
+               if ('item' in row
+                   and row['item'] is not None
+                   and row['item'] != "")
+               else "") \
             + ">"
 
 def diagnostic_amount_string(am):
     return repr(am) if isinstance(am, itemized_amount) else "fl %.2f" % am
 
 def compact_row_string(item):
-    return "%s %s%s %s: %s" % (date_in_year(item['date']),
+    return "%s %s%s %s: %s" % (date_for_compact(item['date']),
                                item['category'],
                                (" (%s)" % item['item']) if 'item' in item and item['item'] != "" else "",
                                item['payee'],
@@ -70,13 +82,16 @@ def tooltip_string(item, with_time=False):
                      item.get('item', ""))))
 
 def as_number(x):
-    return (0
-            if not x
-            else (x.as_number()
-                  if isinstance(x, itemized_amount)
-                  else (x['amount']
-                        if isinstance(x, dict)
-                        else x)))
+    try:
+        return (0
+                if not x
+                else (x.as_number()
+                      if isinstance(x, itemized_amount)
+                      else (x['amount']
+                            if isinstance(x, dict)
+                            else x)))
+    except Exception as e:
+        print("Could not get a number from", x, "because of", e)
 
 class DuplicateItem(Exception):
 
@@ -96,11 +111,13 @@ class itemized_amount:
 
     def __init__(self, transaction=None):
         self.amount = as_number(transaction)
-        self.transactions = ([transaction]
+        self.transactions = ([transaction.copy()]
                              if isinstance(transaction, dict)
                              else (transaction.copy()
                                    if isinstance(transaction, list)
-                                   else []))
+                                   else (transaction.transactions
+                                         if isinstance(transaction, itemized_amount)
+                                         else [])))
 
     def as_number(self):
         return self.amount if isinstance(self.amount, numbers.Number) else self.amount.as_number()
@@ -143,6 +160,12 @@ class itemized_amount:
         a = itemized_amount(self.transactions)
         a.amount = abs(self.as_number())
         return a
+
+    def copy(self):
+        # print("copying", repr(self))
+        result = itemized_amount(self)
+        # print("resulting in", repr(result))
+        return result
 
     def normalize(self):
         amount = self.amount

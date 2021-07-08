@@ -47,6 +47,9 @@ CONFIGURATION = {}
 def CONF(*keys):
     return lifehacking_config.lookup(CONFIGURATION, *keys)
 
+def FILECONF(*keys):
+    return os.path.expanduser(os.path.expandvars(CONF(*keys)))
+
 CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
 
 def make_remaining_cell(thresholds, spent_this_month, coi):
@@ -159,17 +162,18 @@ def linked_image(image_name, label):
                             'past_quarter')
 
 def recent_transactions_table(filename, days_back):
-    start_date = utils.qsutils.back_from(datetime.date.today(), None, None, 7)
+    start_date = utils.qsutils.back_from(datetime.date.today(), None, None, days_back)
     with open(filename) as instream:
-        return T.table(class_='financial')[
-            T.tr[T.th["Date"],T.th["Amount"],T.th["Payee"],T.th["Category"],T.th["Item"]],
-            [[T.tr[T.th[transaction['date']],
-                   T.td[transaction['amount']],
-                   T.td[transaction['payee']],
-                   T.td[transaction['category']],
-                   T.td[transaction['item']]]
-              for transaction in csv.DictReader(instream)
-              if datetime.date.fromisoformat(transaction['date']) >= start_date]]]
+        return T.div(class_='transactions_list')[
+            T.table(class_='financial')[
+                T.tr[T.th["Date"],T.th["Amount"],T.th["Payee"],T.th["Category"],T.th["Item"]],
+                [[T.tr[T.th[transaction['date']],
+                       T.td[transaction['amount']],
+                       T.td[transaction['payee']],
+                       T.td[transaction['category']],
+                       T.td[transaction['item']]]
+                  for transaction in csv.DictReader(instream)
+                  if datetime.date.fromisoformat(transaction['date']) >= start_date]]]]
 
 def weight_section():
     return linked_image("weight-stone", "weight")
@@ -183,19 +187,25 @@ def transactions_section():
     that is produced by chart-categories.lisp."""
     # TODO: spending per category per day of month/week
 
-    spending_chart_file = os.path.join(CONF('general', 'charts'), "past-quarter.html")
+    spending_chart_file = os.path.join(FILECONF('general', 'charts'), "past-quarter.html")
     return T.div[wrap_box(
         linked_image("by-class", "transactions"),
         T.div[T.h3["Recent transactions"],
-              recent_transactions_table(CONF('finance', 'main-account'), 7)],
+              recent_transactions_table(FILECONF('finance', 'main-account'), 14)],
         T.div[T.h3["Spending by category"],
               T.a(class_='plainlink', href="by-class.html")[
                   untemplate.safe_unicode(file_contents(spending_chart_file))]],
+        T.div[T.h3["Automatic Spending by day of month"],
+              untemplate.safe_unicode(file_contents(os.path.join(FILECONF('finance', 'merge-results-dir'),
+                                                                 "auto-by-day-of-month.html")))],
+        T.div[T.h3["Spending by day of week"],
+              untemplate.safe_unicode(file_contents(os.path.join(FILECONF('finance', 'merge-results-dir'),
+                                                                 "by-day-of-week.html")))],
         T.div[T.h3["Unmatched automatic transactions"],
-              untemplate.safe_unicode(file_contents(os.path.join(CONF('finance', 'merge-results-dir'),
+              untemplate.safe_unicode(file_contents(os.path.join(FILECONF('finance', 'merge-results-dir'),
                                                                  "unmatched-auto.html")))],
         T.div[T.h3["Unmatched non-automatic transactions"],
-              untemplate.safe_unicode(file_contents(os.path.join(CONF('finance', 'merge-results-dir'),
+              untemplate.safe_unicode(file_contents(os.path.join(FILECONF('finance', 'merge-results-dir'),
                                                                  "unmatched-non-auto.html")))])]
 
 def timetable_section():
@@ -220,11 +230,11 @@ def one_day_timetable_section(day=None, with_form=False):
     if day is None:
         day = datetime.date.today()
     day_of_week = day.strftime("%A")
-    day_file = os.path.join(CONF('timetables', 'timetables-dir'), day_of_week + ".csv")
+    day_file = os.path.join(FILECONF('timetables', 'timetables-dir'), day_of_week + ".csv")
     extras = []
     if os.path.isfile(day_file):
         extras.append(day_file)
-    with open(CONF('weather', 'weather-filename')) as weatherstream:
+    with open(FILECONF('weather', 'weather-filename')) as weatherstream:
         weather = {row['time']: row for row in csv.DictReader(weatherstream)}
     # TODO: look up times in the weather
     # TODO: fetch from Google calendar (in update.py) and merge that in here
@@ -240,7 +250,7 @@ def one_day_timetable_section(day=None, with_form=False):
                                  name=slot.activity, id_=slot.activity,
                                  class_='activity_logger')[""]]) if with_form else []]
           for slot in announce.get_day_announcer(
-                  os.path.join(CONF('timetables', 'timetables-dir'),
+                  os.path.join(FILECONF('timetables', 'timetables-dir'),
                                CONF('timetables', 'default-timetable')),
                   extra_files=extras).ordered()]]]
     return T.form(action='log_done_timeslots')[
@@ -288,7 +298,7 @@ def one_day_weather_section(day=None):
         day = datetime.date.today()
     day_of_week = day.strftime("%A")
     daystring = day.isoformat()
-    with open(CONF('weather', 'weather-filename')) as weatherstream:
+    with open(FILECONF('weather', 'weather-filename')) as weatherstream:
         return T.table[
             T.caption["%s %s" % (day_of_week, daystring)],
             T.tr[T.th["Time"],
@@ -309,7 +319,7 @@ def one_day_weather_section(day=None):
                         if hour['time'].startswith(daystring)]]
 
 def birthdays_section():
-    people_by_id, _ = contacts_data.read_contacts(CONF('contacts', 'contacts-file'))
+    people_by_id, _ = contacts_data.read_contacts(FILECONF('contacts', 'contacts-file'))
     today = datetime.date.today()
     this_year = today.year
     return T.table(class_='birthdays')[
@@ -325,7 +335,7 @@ def birthdays_section():
 
 def keep_in_touch_section():
     """List people who I mean to keep in touch with but haven't for a while."""
-    people_by_id, _ = contacts_data.read_contacts(CONF('contacts', 'contacts-file'))
+    people_by_id, _ = contacts_data.read_contacts(FILECONF('contacts', 'contacts-file'))
     today = datetime.date.today()
     this_year = today.year
     long_uncontacted = [person
@@ -465,11 +475,11 @@ def items_table(items):
 
 def inventory_section():
 
-    locations = storage.read_locations(CONF('inventory', 'storage-file'))
-    items = storage.read_inventory(CONF('inventory', 'inventory-file'))
-    stock = storage.read_inventory(CONF('inventory', 'stock-file'))
-    project_parts = storage.read_inventory(CONF('inventory', 'project-parts-file'))
-    media = storage.read_books(CONF('inventory', 'books-file'))
+    locations = storage.read_locations(FILECONF('inventory', 'storage-file'))
+    items = storage.read_inventory(FILECONF('inventory', 'inventory-file'))
+    stock = storage.read_inventory(FILECONF('inventory', 'stock-file'))
+    project_parts = storage.read_inventory(FILECONF('inventory', 'project-parts-file'))
+    media = storage.read_books(FILECONF('inventory', 'books-file'))
 
     media_by_type = {}
     for medium in media.values():
@@ -511,15 +521,15 @@ def random_reflection(reflections_dir):
         return random.choice([line.strip() for line in instream if line != "\n"])
 
 def reflection_section():
-    reflections_dir = CONF('general', 'reflections-dir')
+    reflections_dir = FILECONF('general', 'reflections-dir')
     return T.div(class_='reflection')[
         T.p[random_reflection(reflections_dir)],
         T.p[random_reflection(reflections_dir)]]
 
 def construct_dashboard_page(contacts_analysis):
-    charts_dir = CONF('general', 'charts')
+    charts_dir = FILECONF('general', 'charts')
     page = SectionalPage()
-    with open(os.path.expandvars("$COMMON/var/views.json")) as org_ql_stream:
+    with open(FILECONF('dashboard', 'views')) as org_ql_stream:
         from_org_mode = json.load(org_ql_stream)
     page.add_section("Health", wrap_box(
         labelled_section("Weight", weight_section()),
@@ -570,8 +580,10 @@ def page_text(page_contents, style_text, script_text):
                                         T.title["Personal dashboard"]]))
 
 def file_contents(filename):
-    with open(filename) as instream:
-        return instream.read()
+    if os.path.isfile(filename):
+        with open(filename) as instream:
+            return instream.read()
+    return "File %s not found" % filename
 
 def tagged(tag, text):
     return "<" + tag + ">" + text + "</" + tag + ">"
@@ -581,7 +593,7 @@ def tagged_file_contents(tag, filename):
 
 def update_finances_charts(chart_sizes, begin_date, end_date, date_suffix, verbose):
 
-    charts_dir = CONF('general', 'charts')
+    charts_dir = FILECONF('general', 'charts')
     utils.qschart.qscharts(os.path.join(charts_dir, "by-class.csv"),
                            'finances',
                            CATEGORIES_OF_INTEREST,
@@ -589,18 +601,18 @@ def update_finances_charts(chart_sizes, begin_date, end_date, date_suffix, verbo
                            os.path.join(charts_dir, "by-class-%s-%%s.png" % date_suffix),
                            chart_sizes)
     # TODO: split main file into running balances for each account (tracking as needed), take the end of each month for each account, and put them all in a file to display here (and get that shown in the resulting page)
-    # utils.qschart.qscharts(CONF('finance', 'account-balances'), 'finances',
-    #                        [CONF('finance', 'main-current-account'),
-    #                         CONF('finance', 'main-savings-account')],
+    # utils.qschart.qscharts(FILECONF('finance', 'account-balances'), 'finances',
+    #                        [FILECONF('finance', 'main-current-account'),
+    #                         FILECONF('finance', 'main-savings-account')],
     #                        begin, end, None, False,
     #                        os.path.join(charts_dir, "balances-%s-%%s.png" % date_suffix),
     #                        chart_sizes)
 
 def update_physical_charts(chart_sizes, begin_date, end_date, date_suffix):
 
-    charts_dir = CONF('general', 'charts')
-    physical = CONF('physical', 'physical-filename')
-    mfp_filename = CONF('physical', 'mfp-filename')
+    charts_dir = FILECONF('general', 'charts')
+    physical = FILECONF('physical', 'physical-filename')
+    mfp_filename = FILECONF('physical', 'mfp-filename')
 
     split_by_DoW = False
 
@@ -627,7 +639,7 @@ def update_physical_charts(chart_sizes, begin_date, end_date, date_suffix):
                            begin_date, end_date, None, False,
                            os.path.join(charts_dir, "origin_calories-%s-%%s.png" % date_suffix),
                            chart_sizes)
-    utils.qschart.qscharts(CONF('physical', 'oura-filename'), 'sleep',
+    utils.qschart.qscharts(FILECONF('physical', 'oura-filename'), 'sleep',
                            ['Latency', 'Rem', 'Deep', 'Total'],
                            begin_date, end_date, None, split_by_DoW,
                            os.path.join(charts_dir, "sleep-split-%s-%%s.png" % date_suffix),
@@ -635,7 +647,7 @@ def update_physical_charts(chart_sizes, begin_date, end_date, date_suffix):
     sleep_chart_params = {suffix: chart.copy() for suffix, chart in chart_sizes.items()}
     for scp in sleep_chart_params.values():
         scp['subplot_kw'] = {'ylim': (0, 24.0)}
-    utils.qschart.qscharts(CONF('physical', 'oura-filename'), 'sleep',
+    utils.qschart.qscharts(FILECONF('physical', 'oura-filename'), 'sleep',
                            ['Start', 'End'],
                            begin_date, end_date, None, split_by_DoW,
                            os.path.join(charts_dir, "sleep-times-%s-%%s.png" % date_suffix),
@@ -647,23 +659,23 @@ def update_physical_charts(chart_sizes, begin_date, end_date, date_suffix):
     #                        begin_date, end_date, None,
     #                        os.path.join(charts_dir, "peak-flow-%s-%%s.png" % date_suffix),
     #                        chart_sizes)
-    # utils.qschart.qscharts(CONF('physical', 'temperature-file'), 'temperature',
+    # utils.qschart.qscharts(FILECONF('physical', 'temperature-file'), 'temperature',
     #                        ['Temperature'],
     #                        begin_date, end_date, None,
     #                        os.path.join(charts_dir, "temperature-%s-%%s.png" % date_suffix),
     #                        chart_sizes)
-    utils.qschart.qscharts(CONF('physical', 'omron-filename'), 'blood_pressure',
+    utils.qschart.qscharts(FILECONF('physical', 'omron-filename'), 'blood_pressure',
                            ['systolic', 'diastolic', 'heart_rate'],
                            begin_date, end_date, None, split_by_DoW,
                            os.path.join(charts_dir, "blood-pressure-%s-%%s.png" % date_suffix),
                            chart_sizes)
-    utils.qschart.qscharts(CONF('physical', 'cycling-filename'), 'cycling',
+    utils.qschart.qscharts(FILECONF('physical', 'cycling-filename'), 'cycling',
                            ['Distance', 'Calories', 'Time'],
                            begin_date, end_date, None, False,
                            os.path.join(charts_dir, "cycling-%s-%%s.png" % date_suffix),
                            chart_sizes,
                            bar=True)
-    utils.qschart.qscharts(CONF('physical', 'running-filename'), 'running',
+    utils.qschart.qscharts(FILECONF('physical', 'running-filename'), 'running',
                            ['Distance', 'Calories', 'Time'],
                            begin_date, end_date, None, False,
                            os.path.join(charts_dir, "running-%s-%%s.png" % date_suffix),
@@ -672,7 +684,7 @@ def update_physical_charts(chart_sizes, begin_date, end_date, date_suffix):
 
 def write_dashboard_page(contacts_analysis,
                          details_background_color="gold", inline=True):
-    charts_dir = CONF('general', 'charts')
+    charts_dir = FILECONF('general', 'charts')
     with open(os.path.join(charts_dir, "index.html"), 'w') as page_stream:
         page_stream.write(
             page_text(

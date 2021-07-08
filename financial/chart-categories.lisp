@@ -18,8 +18,8 @@
        (by-class-past-three-months (past-months by-class 3))
        (by-class-this-year (this-year by-class))
        
-       (automatics (by-classification monthly parentage-table automatic-categories t nil)) ; damages by-class
-       (by-level-0 (by-hierarchy monthly 0 parentage-table)) ; causes problems
+       (automatics (by-classification monthly parentage-table automatic-categories t nil)) ; damages by-class?
+       (by-level-0 (by-hierarchy monthly 0 parentage-table)) ; causes problems?
        (by-level-1 (by-hierarchy monthly 1 parentage-table))
        (by-level-2 (by-hierarchy monthly 2 parentage-table))
        (by-proportions (proportions by-category))
@@ -39,6 +39,8 @@
     (print "unclassified categories are" unclassified)
     ;; (print "automatic categories are" automatic-categories)
     )
+  ;; (sample monthly "Monthly" 12)
+  (sample by-class "By class" 12)
   (write-html raw "raw.html" "Raw data" nil t t)
   (write-csv raw "canonical.csv")
   (write-csv monthly "monthly.csv")
@@ -60,8 +62,12 @@
   (write-csv with-last-of-month "with-last-of-month.csv")
   (write-html with-last-of-month "with-last-of-month.html"
               "Categorised monthly summary" thresholds t t)
-  ;; (write-csv automatics "automatics.csv")
+  (write-csv automatics "automatics.csv")
+  (write-html automatics "automatics.html" "Automatics" thresholds t t)
   ;; (write-csv by-level-0 "by-level-0.csv")
   ;; (write-csv by-level-1 "by-level-1.csv")
   ;; (write-csv by-level-2 "by-level-2.csv")
-  (write-csv by-proportions "by-proportions.csv"))
+  (write-csv by-proportions "by-proportions.csv")
+  ;; (write-html (by-day-of-month (past-months automatics 3)) "auto-by-day-of-month.html")
+  ;; (write-html (by-day-of-week (past-months raw 3)) "by-day-of-week.html")
+  )

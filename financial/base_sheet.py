@@ -37,6 +37,16 @@ class base_sheet:
     def __len__(self):
         return len(self.rows)
 
+    def sample(self, stream, label, sample_count=3):
+        """Print a sample of this sheet to a stream."""
+        stream.write(label + " --- sample of " + str(type(self)) + ":\n")
+        stream.write("columns are [" + ", ".join(self.column_names_list()) + "]\n")
+        for row_key in sorted(self.rows.keys())[::len(self.rows)//sample_count]:
+            stream.write("  " + repr(row_key) + ":\n")
+            row = self.rows[row_key]
+            for col_key in sorted(row.keys()):
+                stream.write("    " + repr(col_key) + ": " + repr(row[col_key]) + "\n")
+
     def earliest(self):
         """Return the date of the earliest row in the sheet."""
         return min(self.rows.keys())

@@ -38,6 +38,9 @@ CONFIGURATION = {}
 def CONF(*keys):
     return lifehacking_config.lookup(CONFIGURATION, *keys)
 
+def FILECONF(*keys):
+    return os.path.expanduser(os.path.expandvars(CONF(*keys)))
+
 CHART_SIZES = {'small': {'figsize': (5,4)},
                'large': {'figsize': (11,8)}}
 
@@ -46,6 +49,7 @@ def file_newer_than_file(a, b):
 
 def backup(filename, archive_dir, template):
     if os.path.isfile(filename):
+        print("backup", filename, archive_dir, template)
         os.system("gzip --to-stdout %s > %s" % (
             filename,
             os.path.join(archive_dir,
@@ -68,13 +72,13 @@ def update_finances(verbose):
     files for making into charts, and HTML for incorporating into the dashboard page."""
 
     config = qsutils.load_config(verbose, None, None,
-                                 os.path.join(CONF('finance', 'configdir'), CONF('finance', 'accounts-config')),
-                                 os.path.join(CONF('finance', 'conversions-dir'), CONF('finance', 'conversions-config')))
+                                 os.path.join(FILECONF('finance', 'configdir'), CONF('finance', 'accounts-config')),
+                                 os.path.join(FILECONF('finance', 'conversions-dir'), CONF('finance', 'conversions-config')))
 
-    main_account = CONF('finance', 'main-account')
-    merge_results_dir = CONF('finance', 'merge-results-dir')
+    main_account = FILECONF('finance', 'main-account')
+    merge_results_dir = FILECONF('finance', 'merge-results-dir')
 
-    latest_bank_statement = latest_file_matching(CONF('finance', 'bank-statement-template'))
+    latest_bank_statement = latest_file_matching(FILECONF('finance', 'bank-statement-template'))
 
     if latest_bank_statement and file_newer_than_file(latest_bank_statement, main_account):
         qsutils.ensure_directory_present_and_empty(merge_results_dir)
@@ -87,24 +91,25 @@ def update_finances(verbose):
                                         'verbose': verbose})
         merge_results_file = os.path.join(merge_results_dir, CONF('finance', 'merge-results-file'))
         if os.path.isfile(merge_results_file):
-            backup(main_account, CONF('backups', 'archive'), "finances-to-%s.csv")
+            backup(main_account, FILECONF('backups', 'archive'), "finances-to-%s.csv")
             shutil.copy(merge_results_file, main_account)
+            if verbose: print("Merged bank statement into account file")
     else:
         print("Bank statement not newer than account file, so not updating")
 
     print("calling charter on", main_account, "with merge results in", merge_results_dir)
 
     financial.finlisp.finlisp_main([os.path.join(my_projects, "qs/financial", "chart-categories.lisp")],
-                                   CONF('general', 'charts'),
+                                   FILECONF('general', 'charts'),
                                    config,
                                    verbose,
                                    {'input-file': main_account,
-                                    'statements-file': CONF('finance', 'accumulated-bank-statements-file'),
+                                    'statements-file': FILECONF('finance', 'accumulated-bank-statements-file'),
                                     'classifiers-file': CONF('finance', 'budgeting-classes-file'),
                                     'thresholds-file': CONF('finance', 'thresholds-file'),
                                     'verbose': verbose})
 
-    if file_newer_than_file(main_account, CONF('finance', 'finances-completions')):
+    if file_newer_than_file(main_account, FILECONF('finance', 'finances-completions')):
         if verbose: print("updating finances completions")
         list_completions.list_completions()
 
@@ -112,13 +117,13 @@ def update_physical(begin_date, end_date):
 
     """Merge incoming health-related data from various files, into one central file."""
 
-    charts_dir = CONF('general', 'charts')
-    physical = CONF('physical', 'physical-filename')
-    mfp_filename = CONF('physical', 'mfp-filename')
+    charts_dir = FILECONF('general', 'charts')
+    physical = FILECONF('physical', 'physical-filename')
+    mfp_filename = FILECONF('physical', 'mfp-filename')
     phys_scratch = "/tmp/physical-tmp.csv"
-    archive_dir = CONF('backups', 'archive')
+    archive_dir = FILECONF('backups', 'archive')
 
-    physical_files = [CONF('physical', 'weight-filename')
+    physical_files = [FILECONF('physical', 'weight-filename')
                      # TODO: merge the other physical files
                     ]
 
@@ -135,20 +140,21 @@ def update_startpage():
 
     """Update my personal start page, for which the master is a YAML file."""
 
-    startpage = CONF('start-page', 'startpage')
-    startpage_source = CONF('start-page', 'startpage-source')
-    startpage_style = CONF('start-page', 'startpage-style')
-    if (os.path.getmtime(startpage_source) > os.path.getmtime(startpage)
+    startpage = FILECONF('start-page', 'startpage')
+    startpage_source = FILECONF('start-page', 'startpage-source')
+    startpage_style = FILECONF('start-page', 'startpage-style')
+    if ((not os.path.isfile(startpage))
+        or os.path.getmtime(startpage_source) > os.path.getmtime(startpage)
         or os.path.getmtime(startpage_style) > os.path.getmtime(startpage)):
         os.system("%s --output %s --stylesheet %s %s"
-                  % (CONF('start-page', 'start-page-generator'), startpage, startpage_style, startpage_source))
+                  % (FILECONF('start-page', 'start-page-generator'), startpage, startpage_style, startpage_source))
 
 def update_contacts():
 
     """Preen my contacts file.  This checks for links between contacts, and does some analysis, which it returns
     as the result."""
 
-    contacts_file = CONF('contacts', 'contacts-file')
+    contacts_file = FILECONF('contacts', 'contacts-file')
     contacts_scratch = "/tmp/contacts_scratch.csv"
     contacts_analysis = link_contacts.link_contacts_main(contacts_file, True, False, contacts_scratch)
     with open(contacts_file) as confile:
@@ -156,7 +162,7 @@ def update_contacts():
     with open(contacts_scratch) as conscratch:
         scratch_lines = len(conscratch.readlines())
     if original_lines == scratch_lines:
-        backup(contacts_file, CONF('backups', 'archive'), "contacts-%s.csv")
+        backup(contacts_file, FILECONF('backups', 'archive'), "contacts-%s.csv")
         shutil.copy(contacts_scratch, contacts_file)
     else:
         print("wrong number of people after linking contacts, originally", original_lines, "but now", scratch_lines)
@@ -190,36 +196,37 @@ def merge_incoming_csv(main_file_key, incoming_key,
     duplicate rows.  Columns may be renamed between the two files, and the data may transformed, according
     to the argument dictionaries 'column_renames' and 'transformations'."""
 
-    main_filename = CONF('physical', main_file_key)
-    incoming_filename = latest_file_matching(CONF('physical', incoming_key))
-    print("merging", incoming_filename, "into", main_filename, "with column_renames", column_renames, "and matches", match_key, match_value)
-    utils.trim_csv.trim_csv(incoming_filename)
-    if (os.path.isfile(incoming_filename)
-        and ((not os.path.isfile(main_filename))
-             or file_newer_than_file(incoming_filename, main_filename))):
-        data = {}
-        with open(incoming_filename) as instream:
-            for row in csv.reader(instream):
-                header = rename_columns(row, column_renames)
-                break           # just get the first row
-        with open(main_filename) as instream:
-            data = {row['Date']: row
-                    for row in csv.DictReader(instream)}
-        original_length = len(data)
-        with open(incoming_filename) as instream:
-            additional = {row['Date']: row
-                          for row in (transform_cells(rename_columns(raw, column_renames),
-                                                      transformations)
-                                      for raw in csv.DictReader(instream))
-                          if matches(row, match_key, match_value)}
-            data.update(additional)
-        if len(data) > original_length:
-            backup(main_filename, CONF('backups', 'archive'), "%s-to-%%s.csv" % os.path.splitext(os.path.basename(main_filename))[0])
-            with open(main_filename, 'w') as outstream:
-                writer = csv.DictWriter(outstream, header)
-                writer.writeheader()
-                for date in sorted(data.keys()):
-                    writer.writerow(data[date])
+    main_filename = FILECONF('physical', main_file_key)
+    incoming_filename = latest_file_matching(FILECONF('physical', incoming_key))
+    if incoming_filename:
+        print("merging", incoming_filename, "into", main_filename, "with column_renames", column_renames, "and matches", match_key, match_value)
+        utils.trim_csv.trim_csv(incoming_filename)
+        if (os.path.isfile(incoming_filename)
+            and ((not os.path.isfile(main_filename))
+                 or file_newer_than_file(incoming_filename, main_filename))):
+            data = {}
+            with open(incoming_filename) as instream:
+                for row in csv.reader(instream):
+                    header = rename_columns(row, column_renames)
+                    break           # just get the first row
+            with open(main_filename) as instream:
+                data = {row['Date']: row
+                        for row in csv.DictReader(instream)}
+            original_length = len(data)
+            with open(incoming_filename) as instream:
+                additional = {row['Date']: row
+                              for row in (transform_cells(rename_columns(raw, column_renames),
+                                                          transformations)
+                                          for raw in csv.DictReader(instream))
+                              if matches(row, match_key, match_value)}
+                data.update(additional)
+            if len(data) > original_length:
+                backup(main_filename, FILECONF('backups', 'archive'), "%s-to-%%s.csv" % os.path.splitext(os.path.basename(main_filename))[0])
+                with open(main_filename, 'w') as outstream:
+                    writer = csv.DictWriter(outstream, header)
+                    writer.writeheader()
+                    for date in sorted(data.keys()):
+                        writer.writerow(data[date])
 
 def fetch_weather(_begin_date, _end_date, verbose):
 
@@ -228,14 +235,14 @@ def fetch_weather(_begin_date, _end_date, verbose):
 
     owm = pyowm.owm.OWM(decouple.config('OWM_API_KEY'))
     reg = owm.city_id_registry()
-    city = CONF('weather', 'weather-city')
-    country = CONF('weather', 'weather-country')
+    city = FILECONF('weather', 'weather-city')
+    country = FILECONF('weather', 'weather-country')
     loc_name = "%s,%s" % (city, country)
     list_of_locations = reg.locations_for(city, country)
     place = list_of_locations[0]
     weather_manager = owm.weather_manager()
     observation = weather_manager.weather_at_place(loc_name)
-    with open(CONF('weather', 'sunlight-times-file'), 'w') as outstream:
+    with open(FILECONF('weather', 'sunlight-times-file'), 'w') as outstream:
         json.dump({'sunrise': datetime.datetime.fromtimestamp(observation.weather.sunrise_time()).time().isoformat(timespec='minutes'),
                    'sunset': datetime.datetime.fromtimestamp(observation.weather.sunset_time()).time().isoformat(timespec='minutes')},
                   outstream)
@@ -250,7 +257,7 @@ def fetch_weather(_begin_date, _end_date, verbose):
         'wind-direction': h.wnd['deg']
     } for h in weather.forecast_hourly]
 
-    with open(CONF('weather', 'weather-filename'), 'w') as outstream:
+    with open(FILECONF('weather', 'weather-filename'), 'w') as outstream:
         writer = csv.DictWriter(outstream, ['time', 'status', 'precipitation', 'temperature', 'uvi', 'wind-speed', 'wind-direction'])
         writer.writeheader()
         for hour in forecast:
@@ -261,14 +268,14 @@ def fetch_mfp(_begin_date, _end_date, verbose):
     """Fetch recent data from MyFitnessPal.com."""
 
     if verbose: print("Fetching data from myfitnesspal.com (may take a little while)")
-    physical.mfp_reader.update_mfp(CONF('physical', 'mfp-filename'), verbose)
+    physical.mfp_reader.update_mfp(FILECONF('physical', 'mfp-filename'), verbose)
     if verbose: print("Fetched data from myfitnesspal.com")
 
 def fetch_oura(begin_date, end_date, verbose):
 
     """Update my Oura records by fetching updates from Oura's cloud system."""
 
-    oura_filename = CONF('physical', 'oura-filename')
+    oura_filename = FILECONF('physical', 'oura-filename')
     data = {}
     physical.oura_reader.oura_read_existing(data, oura_filename)
     existing_rows = len(data)
@@ -278,7 +285,7 @@ def fetch_oura(begin_date, end_date, verbose):
     physical.oura_reader.oura_fetch(data, begin_date, end_date)
     if verbose: print("fetched data from oura")
     if len(data) > existing_rows:
-        backup(oura_filename, CONF('backups', 'archive'), "oura-to-%s.csv")
+        backup(oura_filename, FILECONF('backups', 'archive'), "oura-to-%s.csv")
         physical.oura_reader.oura_write(data, oura_filename)
     elif len(data) < existing_rows:
         print("Warning: sleep data has shrunk on being fetched --- not writing it")
@@ -318,17 +325,19 @@ def fetch_cycling(begin_date, end_date, _verbose):
                                         'Calories': qsutils.string_to_number})
 
 def fetch_travel(begin_date, end_date, verbose):
-    # TODO: fetch from Google, updating CONF('travel', 'travel-filename') and CONF('travel', 'places-filename')
+    # TODO: fetch from Google, updating FILECONF('travel', 'travel-filename') and FILECONF('travel', 'places-filename')
     pass
 
 def update_travel():
     # TODO: write travel section of QS code
-    # travel_main(CONF('travel', 'travel-filename'), CONF('travel', 'places-filename'))
+    # travel_main(FILECONF('travel', 'travel-filename'), FILECONF('travel', 'places-filename'))
     # TODO: calculate distances
     pass
 
 def updates(begin_date, end_date,
-            do_externals, verbose):
+            do_externals,
+            verbose=False,
+            testing=False):
 
     """Update my Quantified Self record files, which are generally CSV files with a row for each day.  This also
     prepares some files for making charts.  Finally, it calls the dashboard code, which uses matplotlib to
@@ -340,8 +349,8 @@ def updates(begin_date, end_date,
     CONFIGURATION = lifehacking_config.load_config()
     print("CONFIGURATION is", CONFIGURATION)
 
-    print("CONF('general', 'charts') is", CONF('general', 'charts'))
-    os.makedirs(CONF('general', 'charts'), exist_ok=True)
+    print("FILECONF('general', 'charts') is", FILECONF('general', 'charts'))
+    os.makedirs(FILECONF('general', 'charts'), exist_ok=True)
     # if end_date is None:
     #     end_date = qsutils.yesterday()
 
@@ -355,10 +364,10 @@ def updates(begin_date, end_date,
                 (('physical', 'cycling-filename'), fetch_cycling, "cycling-to-%s.csv"),
                 (('physical', 'running-filename'), fetch_running, "running-to-%s.csv")
                 ]:
-            filename = CONF(*location_name)
+            filename = FILECONF(*location_name)
             if last_update_at_least_about_a_day_ago(filename):
                 if verbose: print("updating", filename)
-                backup(filename, CONF('backups', 'archive'), archive_template)
+                backup(filename, FILECONF('backups', 'archive'), archive_template)
                 fetcher(begin_date, end_date, verbose)
             else:
                 if verbose: print("not updating", filename, "as it is recent")
@@ -382,12 +391,15 @@ def main():
                         help="""Latest date to chart.""")
     parser.add_argument("--no-externals", action='store_true',
                         help="""Don't pester external servers""")
+    parser.add_argument("--testing", action='store_true',
+                        help="""Use an alternate directory which can be reset.""")
     args = parser.parse_args()
 
     updates(args.begin,
             args.end,
             not args.no_externals,
-            args.verbose)
+            verbose=args.verbose,
+            testing=args.testing)
 
 if __name__ == '__main__':
     main()

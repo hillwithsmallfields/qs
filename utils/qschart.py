@@ -111,7 +111,11 @@ def qscharts(mainfile, file_type,
 
 def plot_column_set(axs, data, columns, prefix, bar=False):
     for column in columns:
-        column_data = data.loc[data[column_header(column)] != 0,
+        col_header = column_header(column)
+        if col_header not in data:
+            print("Column", col_header, "not present")
+            continue
+        column_data = data.loc[data[col_header] != 0,
                                ['Date', column_header(column)]]
         if not column_data.empty:
             if bar:

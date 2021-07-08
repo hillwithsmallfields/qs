@@ -214,6 +214,14 @@ as in the Financisto app."
                          ",")
               "\n"))))
 
+(defun finances-multi-enter ()
+  "Read multiple entries."
+  (interactive)
+  (let ((first t))
+    (while (or first (y-or-n-p "Another? "))
+      (call-interactively 'finances-enter)
+      (setq first nil))))
+
 (defun finances-read-transfer ()
   "Read the values needed to record a fund transfer."
   (finances-read-completions)

@@ -5,12 +5,15 @@ import csv
 import datetime
 import os
 import re
+import sys
+import traceback
 
 import account
 import account_sheet
 import base_sheet
 import canonical_sheet
 import categoriser
+import split_sheet
 import classify
 import diff_sheet
 import filter_dates
@@ -61,6 +64,8 @@ functions = ['account_to_sheet',
              'blank_sheet',
              'by_classification',
              'by_day',
+             'by_day_of_month',
+             'by_day_of_week',
              'by_hierarchy',
              'by_month',
              'by_parent',
@@ -109,6 +114,7 @@ functions = ['account_to_sheet',
              'remove_columns',
              'rename_column',
              'replace_matching_rows',
+             'sample',
              'select_columns',
              'setq',
              'sheet',
@@ -186,23 +192,50 @@ def blank_sheet(context):
 
 def classify_helper(row, parentage_table, classifiers, collect_unknowns, keep_unknowns):
     category = row['category']
-    result = classify.classify(category,
-                               parentage_table.get(category),
-                               classifiers,
-                               collect_unknowns=collect_unknowns,
-                               pass_unknowns=keep_unknowns)
-    return result
+    return classify.classify(category,
+                             parentage_table.get(category),
+                             classifiers,
+                             collect_unknowns=collect_unknowns,
+                             pass_unknowns=keep_unknowns)
 
 def by_classification(context, original, parentage_table, classifiers, collect_unknowns, keep_unknowns):
+    print("in by_classification")
     return categorised_by_key_fn(context, original,
                                  lambda row: classify_helper(row, parentage_table, classifiers, collect_unknowns, keep_unknowns),
-                                 label="by_classification")
+                                 label="by_classification",
+                                 verbose=True)
 
 def by_day(context, original, combine_categories, combined_only):
     return original.combine_same_period_entries(qsutils.granularity_day,
                                                 combine_categories,
                                                 combined_only,
                                                 comment="Daily summary")
+
+# def by_day_of_month(context, original):
+#     return split_sheet.split_sheet(original, lambda row: datetime.datetime.day(row['date']))
+
+# def by_day_of_week(context, original):
+#     return split_sheet.split_sheet(original, lambda row: datetime.datetime.weekday(row['date']))
+
+def getdayofmonth(row):
+    try:
+        return datetime.datetime.day(row['date'])
+    except KeyError:
+        print("could not find date in", row)
+        return None
+
+def getdayofweek(row):
+    try:
+        return datetime.datetime.weekday(row['date'])
+    except KeyError:
+        print("could not find date in", row)
+        return None
+
+def by_day_of_month(context, original):
+    return split_sheet.split_sheet(original, getdayofmonth)
+
+def by_day_of_week(context, original):
+    return split_sheet.split_sheet(original, getdayofweek)
 
 def row_parent(row, parentage_table):
     ancestry = parentage_table.get(row['category'])
@@ -247,34 +280,54 @@ def categorised(context, original):
     return categorised_by_key_fn(context, original, lambda row: row['category'],
                                  label="categorised")
 
-def categorised_by_key_fn(context, incoming_data, key_fn, label=""):
+def categorised_by_key_fn(context, incoming_data, key_fn, label="", verbose=False):
     """For each date occurring in the incoming data,
     use a key function to categorise the rows on that date,
     and collect an itemized amount for each such category.
     Really meant for use on periodic summaries."""
     categories = set()
     by_date = {}
+    # print("")
+    # print("calling categorised_by_key_fn", key_fn)
+    # print("=============================")
+    # print("")
+    # traceback.print_stack(limit=2)
     for timestamp, row in incoming_data.rows.items():
+        # print("  incoming timestamp", timestamp, "row", row)
         on_day = timestamp.date()
         if on_day not in by_date:
             by_date[on_day] = {}
         day_accumulator = by_date[on_day]
         category = key_fn(row)
-        original_amount = itemized_amount.as_number(row['amount'])
-        row = row.copy()
-        row['amount'] = original_amount
+        # original_amount = itemized_amount.as_number(row['amount'])
+        original_amount = row['amount']
+        amount = row['amount'].copy()
+        # if verbose:
+        #     print("original_amount", repr(original_amount), "from", repr(row['amount']), "of type", type(row['amount']))
+        # row = row.copy()
+        # row['amount'] = original_amount
         categories.add(category or "unknown")
-        amount = itemized_amount.itemized_amount(row)
+        # amount = itemized_amount.itemized_amount(row)
+        # if verbose:
+        #     print("made amount", repr(amount), "from row", row)
         if category in day_accumulator:
             day_accumulator[category] += amount
         else:
             day_accumulator[category] = amount
-    # print("ended categorised_by_key_fn")
-    # print("bykey prepared rows:", label)
-    # for k, v in by_date.items():
-    #     print("bykey date    ", k)
-    #     for catk, catv in v.items():
-    #         print("bykey cat      ", catk, repr(catv), ["(%f:%s)" % (item.get('amount', "unknown amount").amount, item.get('payee', "unknown payee")) for item in catv.transactions])
+
+    # at this point, the incorrect dates are present:
+    # if verbose:
+    #     print("bykey prepared rows:", label)
+    #     for k, v in by_date.items():
+    #         print("  bykey date    ", k)
+    #         for catk, catv in v.items():
+    #             print("    bykey cat      ", catk, repr(catv),
+    #                   [repr(item) for item in catv.transactions])
+    #     print("")
+    #     print("ended categorised_by_key_fn", key_fn)
+    #     print("---------------------------")
+    #     print("")
+    print("categorised_by_key_fn making named_column_sheet using categories", categories)
     return named_column_sheet.named_column_sheet(incoming_data.config,
                                                  sorted(categories),
                                                  rows=by_date)
@@ -567,6 +620,10 @@ def rename_column(context, sheet, oldname, newname):
 def replace_matching_rows(context, sheet, other, match_columns):
     return sheet.replace_matching_rows(other, match_columns)
 
+def sample(context, value, label, sample_count):
+    """Output enough of a value to show what is going on in it."""
+    value.sample(sys.stdout, label, sample_count=sample_count)
+
 def select_columns_row(timestamp, row, output_rows, colnames):
     try:
         output_rows[timestamp] = {colname: row[colname] for colname in colnames}
@@ -611,7 +668,7 @@ def sheet(context, subject):
 def show(context, value, filename):
     """Output any of the types we handle, for debugging."""
     with open(qsutils.resolve_filename(filename), 'w') as output:
-        output.write(str(value))
+        output.write(repr(value))
 
 def subtract_cells(context, sheet, subtrahend):
     """Return a sheet with the cells of the second subtracted from the cells of the first."""
