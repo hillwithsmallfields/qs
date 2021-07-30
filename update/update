@@ -1,0 +1,10 @@
+#!/bin/bash
+
+export ARCHIVE=$HOME/archive
+export DOWNLOADS=$HOME/Downloads
+export ISOS=$HOME/isos
+export PRIVATEHTML=$HOME/private_html
+export SCRATCH=$HOME/scratch
+export COMMONBACKUPS=$HOME/common-backups
+
+./update.py

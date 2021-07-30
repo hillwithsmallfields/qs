@@ -17,7 +17,6 @@ def read_thresholds_file(thresholds_file):
         return yaml.safe_load(instream.read())['Thresholds']
 
 def read_thresholds(config, thresholds_file):
-    print("in read_thresholds, config['config_dirs'] is", config['config_dirs'])
     if os.path.isabs(thresholds_file):
         return read_thresholds_file(thresholds_file)
     else:

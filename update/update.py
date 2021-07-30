@@ -347,9 +347,7 @@ def updates(begin_date, end_date,
 
     global CONFIGURATION
     CONFIGURATION = lifehacking_config.load_config()
-    print("CONFIGURATION is", CONFIGURATION)
 
-    print("FILECONF('general', 'charts') is", FILECONF('general', 'charts'))
     os.makedirs(FILECONF('general', 'charts'), exist_ok=True)
     # if end_date is None:
     #     end_date = qsutils.yesterday()

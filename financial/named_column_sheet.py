@@ -13,8 +13,8 @@ class named_column_sheet(base_sheet.base_sheet):
 
     def __init__(self, config, column_names, rows={}):
         super().__init__(config)
-        if rows:
-            print("making named_column_sheet with columns", column_names, "and sample row", rows[sorted(rows.keys())[len(rows)//2]])
+        # if rows:
+        #     print("making named_column_sheet with columns", column_names, "and sample row", rows[sorted(rows.keys())[len(rows)//2]])
         self.column_names = column_names
         self.rows = rows
 
@@ -104,9 +104,7 @@ class named_column_sheet(base_sheet.base_sheet):
         totals = {}
         for row in self.rows.values():
             for name, value in row.items():
-                print(".", end="")
                 totals[name] = value + totals.get(name, 0)
-            print(":")
         count = len(self.rows)
         return {name: value/count for name, value in totals.items()}
 

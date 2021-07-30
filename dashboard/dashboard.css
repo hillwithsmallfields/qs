@@ -180,6 +180,10 @@ table.financial {
 .use_later {
 }
 
+td.days_left {
+    padding-left: 2em;
+}
+
 /* Use with: */
 /*  <div class="flex-container"> */
 /*   <div>1</div> */

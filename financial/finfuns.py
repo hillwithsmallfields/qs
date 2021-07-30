@@ -199,7 +199,6 @@ def classify_helper(row, parentage_table, classifiers, collect_unknowns, keep_un
                              pass_unknowns=keep_unknowns)
 
 def by_classification(context, original, parentage_table, classifiers, collect_unknowns, keep_unknowns):
-    print("in by_classification")
     return categorised_by_key_fn(context, original,
                                  lambda row: classify_helper(row, parentage_table, classifiers, collect_unknowns, keep_unknowns),
                                  label="by_classification",
@@ -327,7 +326,7 @@ def categorised_by_key_fn(context, incoming_data, key_fn, label="", verbose=Fals
     #     print("ended categorised_by_key_fn", key_fn)
     #     print("---------------------------")
     #     print("")
-    print("categorised_by_key_fn making named_column_sheet using categories", categories)
+    # print("categorised_by_key_fn making named_column_sheet using categories", categories)
     return named_column_sheet.named_column_sheet(incoming_data.config,
                                                  sorted(categories),
                                                  rows=by_date)

@@ -5,6 +5,8 @@ import csv
 import os
 import re
 
+import sys
+
 import account
 import base_sheet
 import csv_sheet
@@ -56,6 +58,7 @@ class canonical_sheet(base_sheet.base_sheet):
         'original_amount',
         'original_currency',
         'balance',
+        'statement',
         'payee',
         'category',
         'project',
@@ -475,15 +478,16 @@ class canonical_sheet(base_sheet.base_sheet):
                 adjusted_datetime = result.unused_timestamp_from(timestamp)
                 desc = ", ".join([itemized_amount.row_descr(x) for x in summary.transactions])
                 # print("making row at", adjusted_datetime, "from", summary, "which is", desc)
+                # print("summary.transactions is", summary.transactions)
                 result.rows[adjusted_datetime] = {
                     'amount': summary,
                     'category': (";".join([item['category'] for item in summary.transactions])
                                  if combine_categories
                                  else summary.transactions[0]['category']),
                     'combicount': ";".join([itemized_amount.compact_row_string(item) for item in summary.transactions]) if debug else len(summary.transactions),
-                    'item': (";".join([item['item'] for item in summary.transactions])
-                                 if combine_categories
-                                 else summary.transactions[0]['item']),
+                    'item': (";".join([(item.get('item') or "") for item in summary.transactions])
+                               if combine_categories
+                               else (summary.transactions[0].get('item') or "")),
                     'timestamp': adjusted_datetime,
                     'account': sumkey[0],
                     'payee': sumkey[1],

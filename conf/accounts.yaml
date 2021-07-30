@@ -1,6 +1,21 @@
 formats:
   handelsbanken:
-    # column-sequence: ["Date", None, "Details", None, "Money out", None, "Money in", None, "Balance"]
+    column-sequence: ['Account','Value Date','Narrative','Dr Amount','Cr Amount','Balance']
+    columns:
+      account: Account
+      date:    Value Date
+      # date:    Date
+      payee:   Narrative
+      # payee:   Details
+      credits: Cr Amount
+      # credits: Money in
+      debits:  Dr Amount
+      # debits:  Money out
+      balance: Balance
+    currency:  GBP
+    name:      HB current statement
+    currency_conversion: "^([A-Za-z ]+) +[0-9][0-9][0-9][0-9] ([A-Z][A-Z][A-Z]) ([0-9.]+).+"
+  handelsbanken-old:
     column-sequence: ["Date", "Details", "Money out", "Money in", "Balance"]
     columns:
       date:    Date

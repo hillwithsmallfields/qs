@@ -2,9 +2,8 @@
 ;; for incorporating in my personal dashboard page.
 
 (let* ((raw (read-canonical input-file))
-       (monthly (check "making monthly"
-                       (by-month (fgrep raw "GBP" "currency")
-                                 nil nil)))
+       (monthly (by-month (fgrep raw "GBP" "currency")
+                          nil nil))
        (parentage-table (read-parentage-table "cats.yaml"))
        (classifiers (read-classifier classifiers-file))
        (thresholds (read-thresholds thresholds-file))
@@ -13,7 +12,7 @@
        (by-category (categorised monthly))
        (by-parentage (by-parent monthly parentage-table))
 
-       (by-class (check "classified" (by-classification monthly parentage-table classifiers t nil)))
+       (by-class (by-classification monthly parentage-table classifiers t nil))
        (by-class-this-month (this-month by-class))
        (by-class-past-three-months (past-months by-class 3))
        (by-class-this-year (this-year by-class))
@@ -40,7 +39,7 @@
     ;; (print "automatic categories are" automatic-categories)
     )
   ;; (sample monthly "Monthly" 12)
-  (sample by-class "By class" 12)
+  ;; (sample by-class "By class" 12)
   (write-html raw "raw.html" "Raw data" nil t t)
   (write-csv raw "canonical.csv")
   (write-csv monthly "monthly.csv")
@@ -52,7 +51,7 @@
   (write-csv by-class-this-month "by-class-this-month.csv")
   (write-csv by-class-past-three-months "by-class-past-three-months.csv")
   (write-csv by-class-this-year "by-class-this-year.csv")
-  (write-html (check "pre-rendering" by-class) "by-class.html"
+  (write-html by-class "by-class.html"
               "Categorised monthly summary" thresholds t t)
   (write-table by-class-past-three-months "summarytable" "past-quarter.html"
                '("Eating in" "Eating out" "Projects" "Hobbies" "Travel")
