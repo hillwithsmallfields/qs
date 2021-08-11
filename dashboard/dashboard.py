@@ -465,7 +465,15 @@ def shopping_section(from_org_mode):
 def parcels_section():
     with open(FILECONF('dashboard', 'parcels')) as parcels_stream:
         parcels = json.load(parcels_stream)['expected']
-    return [T.dl[[[T.dt[parcel[0]], T.dd[parcel[1]]] for parcel in parcels]]]
+    dates = {}
+    for parcel in parcels:
+        if parcel[0] not in dates:
+            dates[parcel[0]] = []
+        dates[parcel[0]].append(parcel[1])
+    return [T.dl[[[T.dt[date],
+                   T.dd[T.ul[[[T.li[parcel]
+                               for parcel in sorted(dates[date])]]]]]
+                  for date in sorted(dates)]]]
 
 def items_table(items):
     items_by_type = {}
