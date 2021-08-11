@@ -462,6 +462,11 @@ def shopping_section(from_org_mode):
     return wrap_box([T.h3["Supermarket"],
                      org_ql_list(from_org_mode["Supermarket"])])
 
+def parcels_section():
+    with open(FILECONF('dashboard', 'parcels')) as parcels_stream:
+        parcels = json.load(parcels_stream)['expected']
+    return [T.dl[[[T.dt[parcel[0]], T.dd[parcel[1]]] for parcel in parcels]]]
+
 def items_table(items):
     items_by_type = {}
     for item in items.values():
@@ -569,7 +574,9 @@ def construct_dashboard_page(contacts_analysis):
         T.h1["Personal dashboard"],
         wrap_box(T.div[page.toc(),
                        T.h2["Perishable food to use up"],
-                       perishables_section()],
+                       perishables_section(),
+                       T.h2["Parcels expected"],
+                       parcels_section()],
                  timetable_section(),
                  weather_section()),
         page.sections()]]
