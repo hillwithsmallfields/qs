@@ -4,6 +4,7 @@ import csv
 import json
 import numbers
 import os
+import sys                      # for debugging
 
 import base_sheet
 import canonical_sheet
@@ -102,9 +103,16 @@ class named_column_sheet(base_sheet.base_sheet):
 
     def averages(self):
         totals = {}
+        print("averaging", len(self.rows), "rows")
+        i = len(self.rows)
         for row in self.rows.values():
+            i -= 1
+            sys.stderr.write("%d: " % i)
             for name, value in row.items():
+                sys.stderr.write("%s," % name)
                 totals[name] = value + totals.get(name, 0)
+            sys.stderr.write("\n")
+            sys.stderr.flush()
         count = len(self.rows)
         return {name: value/count for name, value in totals.items()}
 

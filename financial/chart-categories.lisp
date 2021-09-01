@@ -2,7 +2,9 @@
 ;; for incorporating in my personal dashboard page.
 
 (let* ((raw (read-canonical input-file))
-       (monthly (by-month (fgrep raw "GBP" "currency")
+       (sterling (fgrep raw "GBP" "currency"))
+       (sterling-by-day (by-day-of-month sterling))
+       (monthly (by-month sterling
                           nil nil))
        (parentage-table (read-parentage-table "cats.yaml"))
        (classifiers (read-classifier classifiers-file))
@@ -56,6 +58,8 @@
   (write-table by-class-past-three-months "summarytable" "past-quarter.html"
                '("Eating in" "Eating out" "Projects" "Hobbies" "Travel")
                thresholds)
+  (write-html by-class-this-month "by-class-this-month.html"
+              "Categorised monthly summary (last month only)" thresholds t t)
   (write-csv balance-from-statements "balance.csv")
   (write-csv monthly-balance-from-statements "monthly-balance.csv")
   (write-csv with-last-of-month "with-last-of-month.csv")
@@ -67,6 +71,14 @@
   ;; (write-csv by-level-1 "by-level-1.csv")
   ;; (write-csv by-level-2 "by-level-2.csv")
   (write-csv by-proportions "by-proportions.csv")
+  ;; (write-csv (past-months automatics 3) "past-3-months.csv")
+  ;; this is the wrong data to be getting it from, it has already been clumped to the first of each month:
   ;; (write-html (by-day-of-month (past-months automatics 3)) "auto-by-day-of-month.html")
   ;; (write-html (by-day-of-week (past-months raw 3)) "by-day-of-week.html")
+
+  ;; experimental:
+  (write-csv sterling "sterling.csv")
+  (sample sterling-by-day "sterling by day" 12)
+  (write-csv sterling-by-day "by-day-of-month.csv")
+  (write-csv (row-totals sterling-by-day) "by-day-of-month-totals.csv")
   )

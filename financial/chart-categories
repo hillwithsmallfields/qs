@@ -1,10 +1,19 @@
 #!/bin/bash
 
-TRANSACTIONSFILE=${1-$COMMON/finances/finances.csv}
+# TRANSACTIONSFILE=${1-$COMMON/finances/finances.csv}
+TRANSACTIONSFILE=${1-$COMMON/finances/finances-sample.csv}
+
 STATEMENTSFILE=$COMMON/finances/handelsbanken/handelsbanken-full.csv
 # CLASSIFIERSFILE=default-classes.yaml
 CLASSIFIERSFILE=budgetting-classes.yaml
 THRESHOLDSFILE=budgetting-thresholds.yaml
+
+# PROGRAM=chart-categories.lisp
+PROGRAM=day-of-month.lisp
+
+RESULTS=results
+mkdir -p $RESULTS
+rm -f $RESULTS/*
 
 echo Categorising transactions
 
@@ -17,12 +26,12 @@ echo done setup
     --config $CONFIGDIR/accounts.yaml \
     --config $CONVDIR/conversions.yaml \
     --verbose \
-    --output-dir "results" \
+    --output-dir $RESULTS \
     --bind input-file $TRANSACTIONSFILE \
     --bind statements-file $STATEMENTSFILE \
     --bind classifiers-file $CLASSIFIERSFILE \
     --bind thresholds-file $THRESHOLDSFILE \
-    chart-categories.lisp
+    $PROGRAM
 
 echo done classifications
 

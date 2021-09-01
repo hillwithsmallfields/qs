@@ -49,11 +49,13 @@ class base_sheet:
 
     def earliest(self):
         """Return the date of the earliest row in the sheet."""
-        return min(self.rows.keys())
+        dates = self.rows.keys()
+        return min(dates) if dates else None
 
     def latest(self):
         """Return the date of the latest row in the sheet."""
-        return max(self.rows.keys())
+        dates = self.rows.keys()
+        return max(dates) if dates else None
 
     def timestamp_from(self, base_date, base_time=None):
         """Return a timestamp at the given date and time."""
@@ -253,31 +255,33 @@ class base_sheet:
             stream.write('  </tr>\n')
             start = self.earliest()
             end = self.latest()
-            months = max(1, end.month - start.month + (end.year - start.year) * 12)
+            if start and end:
+                months = max(1, end.month - start.month + (end.year - start.year) * 12)
 
-            stream.write('    <th>Monthly minima</th>\n')
-            for colname in colnames:
-                if isinstance(column_minima[colname], itemized_amount.itemized_amount):
-                    stream.write('    %s\n' % column_minima[colname].html_cell(
-                        colname.replace(' ', '_'),
-                        "Max: %s" % (colname)))
-                else:
-                    stream.write('  <td></td>\n')
-            stream.write('  </tr>\n')
+                stream.write('    <th>Monthly minima</th>\n')
+                for colname in colnames:
+                    if isinstance(column_minima[colname], itemized_amount.itemized_amount):
+                        stream.write('    %s\n' % column_minima[colname].html_cell(
+                            colname.replace(' ', '_'),
+                            "Max: %s" % (colname)))
+                    else:
+                        stream.write('  <td></td>\n')
+                stream.write('  </tr>\n')
 
-            stream.write('    <th>Monthly averages</th>\n')
-            for colname in colnames:
-                stream.write('    <th>%s</th>\n' % qsutils.tidy_for_output(column_totals[colname] / months))
-            stream.write('  </tr>\n')
+                stream.write('    <th>Monthly averages</th>\n')
+                for colname in colnames:
+                    stream.write('    <th>%s</th>\n' % qsutils.tidy_for_output(column_totals[colname] / months))
+                stream.write('  </tr>\n')
 
-            stream.write('    <th>Monthly maxima</th>\n')
-            for colname in colnames:
-                if isinstance(column_maxima[colname], itemized_amount.itemized_amount):
-                    stream.write('    %s\n' % column_maxima[colname].html_cell(
-                        colname.replace(' ', '_'),
-                        "Max: %s" % (colname)))
-                else:
-                    stream.write('  <td></td>\n')
-            stream.write('  </tr>\n')
-
+                stream.write('    <th>Monthly maxima</th>\n')
+                for colname in colnames:
+                    if isinstance(column_maxima[colname], itemized_amount.itemized_amount):
+                        stream.write('    %s\n' % column_maxima[colname].html_cell(
+                            colname.replace(' ', '_'),
+                            "Max: %s" % (colname)))
+                    else:
+                        stream.write('  <td></td>\n')
+                stream.write('  </tr>\n')
+            else:
+                stream.write('  <tr><th>No data for this period</th></tr>\n')
         stream.write('</table>\n')

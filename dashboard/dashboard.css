@@ -109,6 +109,11 @@ div.inventory_list {
     height: 24em;
 }
 
+div.agenda_list {
+    overflow: scroll;
+    height: 24em;
+}
+
 div.transactions_list {
     overflow: scroll;
     height: 24em;

@@ -38,6 +38,9 @@ def find_conversion(conversions, payee_name):
             return value
     return None
 
+def row_repr(row):
+    return "{" + ", ".join(["%s: %s" % (k, v) for k, v in row.items()])  + "}"
+
 class canonical_sheet(base_sheet.base_sheet):
     """A financial data-only spreadsheet with a standard set of column names.
 
@@ -176,6 +179,9 @@ class canonical_sheet(base_sheet.base_sheet):
         return ("<canonical spreadsheet with "
                 + str(len(self.rows)) + " rows>")
 
+    def __repr__(self):
+        return ("<canonical spreadsheet containing (" +
+                "; ".join(["%s: %s" % (ts, row_repr(self.rows[ts])) for ts in sorted(self.rows.keys())]) + ")>")
     # def __enter__(self):
     #     # TODO: read file, keep filename
     #     pass

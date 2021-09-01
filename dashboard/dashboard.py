@@ -456,11 +456,14 @@ def actions_section(from_org_mode):
                      org_ql_list(top_items(from_org_mode["Programming"]))])
 
 def org_ql_list(items):
-    return [T.ul[[T.li[item['title']] for item in items]]]
+    # TODO: make this scrollable
+    return T.div(class_='agenda_list')[T.ul[[T.li[item['title']] for item in items]]]
 
 def shopping_section(from_org_mode):
     return wrap_box([T.h3["Supermarket"],
-                     org_ql_list(from_org_mode["Supermarket"])])
+                     org_ql_list(from_org_mode["Supermarket"])],
+                    [T.h3["Online"],
+                     org_ql_list(from_org_mode["Online"])])
 
 def parcels_section():
     with open(FILECONF('dashboard', 'parcels')) as parcels_stream:
@@ -520,9 +523,7 @@ def inventory_section():
         T.div[wrap_box(T.div[T.h3["Media"],
                              T.div(class_='inventory_list')[
                                  T.dl[[T.div[T.dt[mtype],
-                                             T.dd[str(len(media_by_type[mtype]))]] for mtype in sorted(media_by_type)]],
-                                 T.p["Your most recent book acquisition was of ", latest_book['Title'],
-                                     " on ", latest_book['Acquired'], "."]]],
+                                             T.dd[str(len(media_by_type[mtype]))]] for mtype in sorted(media_by_type)]]]],
                        T.div[T.h3["General possessions"], items_table(items)],
                        T.div[T.h3["Project parts"], items_table(project_parts)],
                        T.div[T.h3["Stock"], items_table(stock)],

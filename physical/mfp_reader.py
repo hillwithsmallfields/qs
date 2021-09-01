@@ -90,8 +90,8 @@ def fetch_streak_upto(when,
                     print("accumulating spreadsheet data")
                 row = {mealname+'_cals': meal_calories(day_data, i)
                        for i, mealname in enumerate(meal_keys)}
-                row['cardio_minutes'] = sum([exercise['nutrition_information']['minutes'] for exercise in cardio])
-                row['cardio_calories'] = sum([exercise['nutrition_information']['calories burned'] for exercise in cardio])
+                row['cardio_minutes'] = sum([exercise['nutrition_information']['minutes'] or 0.0 for exercise in cardio])
+                row['cardio_calories'] = sum([exercise['nutrition_information']['calories burned'] or 0.0 for exercise in cardio])
                 row.update(day_data.totals)
                 row['Date'] = when
                 if verbose:

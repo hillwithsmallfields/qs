@@ -114,6 +114,7 @@ functions = ['account_to_sheet',
              'remove_columns',
              'rename_column',
              'replace_matching_rows',
+             'row_totals',
              'sample',
              'select_columns',
              'setq',
@@ -210,31 +211,25 @@ def by_day(context, original, combine_categories, combined_only):
                                                 combined_only,
                                                 comment="Daily summary")
 
-# def by_day_of_month(context, original):
-#     return split_sheet.split_sheet(original, lambda row: datetime.datetime.day(row['date']))
-
-# def by_day_of_week(context, original):
-#     return split_sheet.split_sheet(original, lambda row: datetime.datetime.weekday(row['date']))
-
 def getdayofmonth(row):
     try:
-        return datetime.datetime.day(row['date'])
+        return row['date'].day
     except KeyError:
         print("could not find date in", row)
         return None
 
 def getdayofweek(row):
     try:
-        return datetime.datetime.weekday(row['date'])
+        return row['date'].weekday()
     except KeyError:
         print("could not find date in", row)
         return None
 
 def by_day_of_month(context, original):
-    return split_sheet.split_sheet(original, getdayofmonth)
+    return split_sheet.split_sheet(original, getdayofmonth, 'day of month', 'amount')
 
 def by_day_of_week(context, original):
-    return split_sheet.split_sheet(original, getdayofweek)
+    return split_sheet.split_sheet(original, getdayofweek, 'day of week', 'amount')
 
 def row_parent(row, parentage_table):
     ancestry = parentage_table.get(row['category'])
@@ -618,6 +613,18 @@ def rename_column(context, sheet, oldname, newname):
 
 def replace_matching_rows(context, sheet, other, match_columns):
     return sheet.replace_matching_rows(other, match_columns)
+
+def row_totals(context, sheet):
+    t_sheet = copy.copy(sheet)
+    t_sheet.columns = [t_sheet.columns[0], 'total']
+    t_sheet.rows = {
+        rk: {'total': sum((cell
+                           for cell in rv.values()
+                           if (isinstance(cell, int)
+                               or isinstance(cell, float)
+                               or isinstance(cell, itemized_amount.itemized_amount))))}
+        for rk, rv in sheet.rows.items()}
+    return t_sheet
 
 def sample(context, value, label, sample_count):
     """Output enough of a value to show what is going on in it."""
