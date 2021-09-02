@@ -208,6 +208,7 @@ as in the Financisto app."
                                account (format-currency amount currency) currency
                                (format-currency original-amount original-currency) original-currency
                                balance
+                               0.0        ; statement
                                payee
                                category project
                                note)
