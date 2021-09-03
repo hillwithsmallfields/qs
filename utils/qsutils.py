@@ -88,7 +88,10 @@ def duration_string_to_minutes(durstring):
 
 def string_to_number(number_string):
     "Convert a string to a number, even if it has commas for the thousands separator."
-    return float(number_string.replace(',', ''))
+    try:
+        return float(number_string.replace(',', ''))
+    except ValueError:
+        return 0.0
 
 def resolve_filename(filename, directory=None):
     """Try to get an absolute form of a filename, using a suggested directory."""

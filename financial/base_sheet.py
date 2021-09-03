@@ -238,7 +238,7 @@ class base_sheet:
                     if abs(cell_value) > abs(itemized_amount.as_number(column_maxima[colname])):
                         column_maxima[colname] = cell_data
                     if cell_value != 0 and abs(cell_value) < abs(itemized_amount.as_number(column_minima[colname])):
-                        column_minima[colname] = abs(cell_data)
+                        column_minima[colname] = cell_data
                 else:
                     stream.write('    <td class="%s"><span class="overview">%s' % (colname.replace(' ', '_'), qsutils.tidy_for_output(cell_data)))
                     if hover_details:

@@ -177,9 +177,13 @@ table.financial {
     border-spacing: 1em 0px;
 }
 
-.use_soon {
+.out_of_date {
     color: red;
     font-weight:    bold;
+}
+
+.use_soon {
+    color: red;
 }
 
 .use_later {

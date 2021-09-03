@@ -107,7 +107,10 @@ def qscharts(mainfile, file_type,
              bar=False):
     # print("charting", mainfile)
     for name_suffix, params in plot_param_sets.items():
-        qschart(mainfile, file_type, columns, begin, end, match, by_day_of_week, outfile_template % name_suffix, params, bar=bar)
+        if not qschart(mainfile, file_type,
+                       columns, begin, end, match, by_day_of_week,
+                       outfile_template % name_suffix, params, bar=bar):
+            print("TODO: output instructions for fetching missing data")
 
 def plot_column_set(axs, data, columns, prefix, bar=False):
     for column in columns:
@@ -148,6 +151,9 @@ def qschart(mainfile, file_type, columns, begin, end, match, by_day_of_week, out
     if match:
         pass                    # TODO: filter data
 
+    if data.empty:
+        return False
+
     data.set_index("Date")
 
     fig, axs = plt.subplots(**plot_params) # the background colour comes in here
@@ -175,6 +181,7 @@ def qschart(mainfile, file_type, columns, begin, end, match, by_day_of_week, out
 
     fig.savefig(outfile,
                 facecolor=fig.get_facecolor())
+    return True
 
 def main():
     parser = argparse.ArgumentParser()

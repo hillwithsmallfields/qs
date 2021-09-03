@@ -148,13 +148,17 @@ def switchable_panel(switcher_id, panels, labels, order, initial):
                             name=choice, onclick="select_version('%s', '%s')"%(switcher_id, choice))[labels[choice]]]
                   for choice in order]]]]
 
-def linked_image(image_name, label):
+def linked_image(image_name, label, fallback=None):
+    charts_dir = FILECONF('general', 'charts')
+    os.path.join(charts_dir)
     periods = ('all_time', 'past_year', 'past_quarter', 'past_month', 'past_week')
     return switchable_panel(label,
                             {period: [
                                 T.div(class_='choice', name=period)[
-                                    T.a(href="%s-%s-large.png" % (image_name, period))[
-                                        T.img(src="%s-%s-small.png" % (image_name, period))]]
+                                    (T.a(href="%s-%s-large.png" % (image_name, period))[
+                                        T.img(src="%s-%s-small.png" % (image_name, period))]
+                                     if os.path.isfile(os.path.join(charts_dir, "%s-%s-small.png" % (image_name, period))) # TODO: this isn't right, is it looking in the right directory?
+                                     else fallback or T.p["Data needs fetching"])]
                                 ]
                              for period in periods},
                             {period: period.capitalize().replace('_', ' ') for period in periods},
@@ -164,16 +168,18 @@ def linked_image(image_name, label):
 def recent_transactions_table(filename, days_back):
     start_date = utils.qsutils.back_from(datetime.date.today(), None, None, days_back)
     with open(filename) as instream:
-        return T.div(class_='transactions_list')[
-            T.table(class_='financial')[
-                T.tr[T.th["Date"],T.th["Amount"],T.th["Payee"],T.th["Category"],T.th["Item"]],
-                [[T.tr[T.th[transaction['date']],
-                       T.td[transaction['amount']],
-                       T.td[transaction['payee']],
-                       T.td[transaction['category']],
-                       T.td[transaction['item']]]
-                  for transaction in csv.DictReader(instream)
-                  if datetime.date.fromisoformat(transaction['date']) >= start_date]]]]
+        recent_transactions = [transaction
+                           for transaction in csv.DictReader(instream)
+                           if datetime.date.fromisoformat(transaction['date']) >= start_date]
+    return T.div(class_='transactions_list')[
+        T.table(class_='financial')[
+            T.tr[T.th["Date"],T.th["Amount"],T.th["Payee"],T.th["Category"],T.th["Item"]],
+            [[T.tr[T.th[transaction['date']],
+                   T.td[transaction['amount']],
+                   T.td[transaction['payee']],
+                   T.td[transaction['category']],
+                   T.td[transaction['item']]]
+                  for transaction in reversed(recent_transactions)]]]]
 
 def weight_section():
     return linked_image("weight-stone", "weight")
@@ -389,6 +395,8 @@ def people_groups_section(contacts_analysis):
                counts_table("By place met",
                             contacts_analysis['by_place_met']))
 
+DAYNAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
 def perishables_section():
     """List things to use up from the fridge, in order of expiry date."""
     items = perishables.get_perishables()
@@ -397,18 +405,23 @@ def perishables_section():
     week_ahead = (now + datetime.timedelta(days=7)).date()
     return (T.p["No items on record."]
             if len(items) == 0
-            else T.table[[T.tr[T.th["Use by"],
-                               T.th["Days left"],
-                               T.th["Item"],
-                               T.th["Quantity"]]],
-                         [[T.tr(class_="use_soon"
-                               if row['Best before'] < week_ahead
-                                # TODO: convert near days to names
-                               else "use_later")[T.td[row['Best before'].isoformat()],
+            else T.table[
+                    [T.tr[T.th(colspan="2")["Use by"],
+                          T.th["Days left"],
+                          T.th["Item"],
+                          T.th["Quantity"]]],
+                    [[T.tr(class_=("out_of_date"
+                                   if row['Best before'] < today
+                                   else ("use_soon"
+                                         if row['Best before'] < week_ahead
+                                         # TODO: convert near days to names
+                                         else "use_later")))[
+                                                 T.td[row['Best before'].isoformat()],
+                                                 T.td[DAYNAMES[row['Best before'].weekday()]],
                                                  T.td(class_="days_left")[(row['Best before'] - today).days],
                                                  T.td[row['Product']],
                                                  T.td[str(row['Quantity'])]]
-                           for row in items]]])
+                      for row in items]]])
 
 def calories_section():
     return linked_image("total_calories", "total_calories")
@@ -424,10 +437,16 @@ def foods_section():
     return linked_image("origin_calories", "origins")
 
 def running_section():
-    return linked_image("running", "running")
+    return linked_image("running", "running",
+                        fallback=T.p["Fetch data from ",
+                                     T.a(href=FILECONF('physical', 'garmin-manual-fetching-page'))["Garmin page"],
+                                     " using the Export CSV button"])
 
 def cycling_section():
-    return linked_image("cycling", "cycling")
+    return linked_image("cycling", "cycling",
+                        fallback=T.p["Fetch data from ",
+                                     T.a(href=FILECONF('physical', 'garmin-manual-fetching-page'))["Garmin page"],
+                                     " using the Export CSV button"])
 
 def sleep_split_section():
     return linked_image("sleep-split", "sleep-split")
@@ -439,7 +458,8 @@ def sleep_correlation_section():
     return None
 
 def blood_pressure_section():
-    return linked_image("blood-pressure", "blood-pressure")
+    return linked_image("blood-pressure", "blood-pressure",
+                        fallback=T.p["Tap the 'Blood pressure' section of the app display, then use the menu to mail the file to yourself."])
 
 def temperature_section():
     return linked_image("temperature", "temperature")
@@ -470,10 +490,11 @@ def parcels_section():
         parcels = json.load(parcels_stream)['expected']
     dates = {}
     for parcel in parcels:
-        if parcel[0] not in dates:
-            dates[parcel[0]] = []
-        dates[parcel[0]].append(parcel[1])
-    return [T.dl[[[T.dt[date],
+        date = datetime.date.fromisoformat(parcel[0])
+        if date not in dates:
+            dates[date] = []
+        dates[date].append(parcel[1])
+    return [T.dl[[[T.dt[date.isoformat() + " " + DAYNAMES[date.weekday()]],
                    T.dd[T.ul[[[T.li[parcel]
                                for parcel in sorted(dates[date])]]]]]
                   for date in sorted(dates)]]]

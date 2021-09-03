@@ -307,7 +307,7 @@ def fetch_omron(begin_date, end_date, _verbose):
 def fetch_running(begin_date, end_date, _verbose):
 
     """Extract running records from the latest saved Garmin data.  Garmin don't provide API access to
-    individuals, so for now I'm saving the file manually from their web page --- automatic button pushed
+    individuals, so for now I'm saving the file manually from their web page --- automatic button pusher
     possibly to follow."""
 
     merge_incoming_csv('running-filename', 'garmin-incoming-pattern',
@@ -319,7 +319,7 @@ def fetch_running(begin_date, end_date, _verbose):
 def fetch_cycling(begin_date, end_date, _verbose):
 
     """Extract cycling records from the latest saved Garmin data.  Garmin don't provide API access to
-    individuals, so for now I'm saving the file manually from their web page --- automatic button pushed
+    individuals, so for now I'm saving the file manually from their web page --- automatic button pusher
     possibly to follow."""
 
     merge_incoming_csv('cycling-filename', 'garmin-incoming-pattern',
@@ -365,6 +365,7 @@ def updates(begin_date, end_date,
                 (('physical', 'omron-filename'), fetch_omron, "omron-to-%s.csv"),
                 (('physical', 'cycling-filename'), fetch_cycling, "cycling-to-%s.csv"),
                 (('physical', 'running-filename'), fetch_running, "running-to-%s.csv")
+                # TODO: add elliptical trainer, planks
                 ]:
             filename = FILECONF(*location_name)
             if last_update_at_least_about_a_day_ago(filename):
