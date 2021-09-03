@@ -27,8 +27,10 @@ def date_for_compact(date):
     return date_in_full(date) if FULL_TS_IN_COMPACT else date_in_year(date)
 
 def row_summary(row):
+    # if 'amount' not in row:
+    #     print("Row", row, "is missing an amount")
     amount = row['amount']
-    if isinstance(amount, itemized_amount):
+    while isinstance(amount, itemized_amount):
         amount = amount.amount
     return tuple((row.get('date'), row.get('time'),
                   row.get('payee', "unknown payee"),
@@ -203,11 +205,9 @@ class itemized_amount:
     def html_cell(self, css_class, title, extra_data=None, with_time=False):
         """Return the text of an HTML cell describing this itemized amount.
         It includes an item list that may be styled as a tooltip by CSS."""
-        dups = self.count_duplicates()
-        dupstring = (' <span class="duplicated">{%d}</span>' % dups) if dups else ''
         return ('<td class="%s">' % css_class
                 + '<span class="overview%s">%s' % (self.magnitude_class(title, extra_data), str(self))
-                + ' <span class="ic">[%d%s]</span>\n' % (len(self.transactions), dupstring)
+                + ' <span class="ic">[%d]</span>\n' % (len(self.transactions))
                 + '      <div class="details">\n        <table border>\n'
                 + ('''          <tr><th colspan="5" class="dethead">%s (%s in %d items)</th></tr>\n'''
                           % (title, str(self), len(self.transactions)))

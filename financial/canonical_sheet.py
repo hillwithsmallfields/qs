@@ -430,9 +430,10 @@ class canonical_sheet(base_sheet.base_sheet):
                                     period,
                                     combine_categories=True,
                                     combined_only=False,
-                                    comment=None):
+                                    comment=None,
+                                    verbose=False):
         """Produce a sheet based on this one, with just one entry per payee
-        per period (day, by default).
+        per period (day, by default) in each account.
 
         `period' is a function which should return the starting
         datetime.datetime of the period containing the date it is
@@ -449,8 +450,7 @@ class canonical_sheet(base_sheet.base_sheet):
         result.rows = {}
         accumulators = {}       # maps dates to maps of payee to combined transactions
         # print("combine_same_period_entries", period, "combine_categories", combine_categories, "combined_only", combined_only)
-        for timestamp in self.rows.keys():
-            row = self.rows[timestamp]
+        for timestamp, row in self.rows.items():
             row_date = period(timestamp)
             if row_date not in accumulators:
                 accumulators[row_date] = {}
@@ -466,7 +466,7 @@ class canonical_sheet(base_sheet.base_sheet):
                 this_period_by_payee[payee_key] += row
             else:
                 this_period_by_payee[payee_key] = itemized_amount.itemized_amount(row)
-        if False:
+        if verbose:
             for timestamp in sorted(accumulators.keys()):
                 summaries = accumulators[timestamp]
                 print("cspe date ", timestamp)
@@ -482,18 +482,19 @@ class canonical_sheet(base_sheet.base_sheet):
                 if len(summary.transactions) == 1 and combined_only:
                     continue
                 adjusted_datetime = result.unused_timestamp_from(timestamp)
-                desc = ", ".join([itemized_amount.row_descr(x) for x in summary.transactions])
-                # print("making row at", adjusted_datetime, "from", summary, "which is", desc)
-                # print("summary.transactions is", summary.transactions)
+                if verbose:
+                    desc = ", ".join(summary.transactions.keys())
+                    print("making row at", adjusted_datetime, "from", summary, "which is", desc)
+                    print("summary.transactions is", summary.transactions)
                 result.rows[adjusted_datetime] = {
                     'amount': summary,
                     'category': (";".join([item['category'] for item in summary.transactions])
                                  if combine_categories
-                                 else summary.transactions[0]['category']),
+                                 else list(summary.transactions.values())[0]['category']),
                     'combicount': ";".join([itemized_amount.compact_row_string(item) for item in summary.transactions]) if debug else len(summary.transactions),
                     'item': (";".join([(item.get('item') or "") for item in summary.transactions])
                                if combine_categories
-                               else (summary.transactions[0].get('item') or "")),
+                               else (list(summary.transactions.values())[0].get('item') or "")),
                     'timestamp': adjusted_datetime,
                     'account': sumkey[0],
                     'payee': sumkey[1],
@@ -501,7 +502,7 @@ class canonical_sheet(base_sheet.base_sheet):
                     'date': adjusted_datetime.date().isoformat(),
                     'time': adjusted_datetime.time().isoformat()}
                 unique_number += 1
-        if False:
+        if verbose:
             print("results:")
             for timestamp in sorted(result.rows):
                 # print("cspe res  ", timestamp, result.rows[timestamp], itemized_amount.row_descr(result.rows[timestamp]))

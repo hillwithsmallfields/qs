@@ -78,7 +78,7 @@
 
   ;; experimental:
   (write-csv sterling "sterling.csv")
-  (sample sterling-by-day "sterling by day" 12)
+  ;; (sample sterling-by-day "sterling by day" 12)
   (write-csv sterling-by-day "by-day-of-month.csv")
   (write-csv (row-totals sterling-by-day) "by-day-of-month-totals.csv")
   )

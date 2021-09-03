@@ -8,8 +8,8 @@ STATEMENTSFILE=$COMMON/finances/handelsbanken/handelsbanken-full.csv
 CLASSIFIERSFILE=budgetting-classes.yaml
 THRESHOLDSFILE=budgetting-thresholds.yaml
 
-# PROGRAM=chart-categories.lisp
-PROGRAM=day-of-month.lisp
+PROGRAM=chart-categories.lisp
+# PROGRAM=day-of-month.lisp
 
 RESULTS=results
 mkdir -p $RESULTS
