@@ -213,9 +213,10 @@ def merge_incoming_csv(main_file_key, incoming_key,
                 for row in csv.reader(instream):
                     header = rename_columns(row, column_renames)
                     break           # just get the first row
-            with open(main_filename) as instream:
-                data = {row['Date']: row
-                        for row in csv.DictReader(instream)}
+            if os.path.isfile(main_filename):
+                with open(main_filename) as instream:
+                    data = {row['Date']: row
+                            for row in csv.DictReader(instream)}
             original_length = len(data)
             with open(incoming_filename) as instream:
                 additional = {row['Date']: row
@@ -231,6 +232,10 @@ def merge_incoming_csv(main_file_key, incoming_key,
                     writer.writeheader()
                     for date in sorted(data.keys()):
                         writer.writerow(data[date])
+        else:
+            print("Latest incoming file", incoming_filename, "older than main file", main_filename)
+    else:
+        print("could not find an incoming file matching", FILECONF('physical', incoming_key), "for", incoming_key, "to merge into", main_filename)
 
 def fetch_weather(_begin_date, _end_date, verbose):
 
@@ -294,21 +299,32 @@ def fetch_oura(begin_date, end_date, verbose):
     elif len(data) < existing_rows:
         print("Warning: sleep data has shrunk on being fetched --- not writing it")
 
-def fetch_omron(begin_date, end_date, _verbose):
+def fetch_omron(begin_date, end_date, verbose):
 
     """Extract data from a manually saved Omron file.
 
     Automatic fetcher or scraper possibly to come."""
 
+    if verbose: print("Updating blood pressure data")
+
     merge_incoming_csv('omron-filename', 'omron-incoming-pattern',
                        begin_date, end_date,
-                       column_renames={'Measurement Date': 'Date'})
+                       column_renames={'Measurement Date': 'Date',
+                                       'Time Zone': 'Timezone',
+                                       'SYS(mmHg)': 'SYS',
+                                       'DIA(mmHg)': 'DIA',
+                                       'Pulse(bpm)': 'Pulse',
+                                       'Device': 'Device Model Name'},
+                       transformations={'Irregular heartbeat detected': qsutils.string_to_bool,
+                                        'Body Movement': qsutils.string_to_bool})
 
-def fetch_running(begin_date, end_date, _verbose):
+def fetch_running(begin_date, end_date, verbose):
 
     """Extract running records from the latest saved Garmin data.  Garmin don't provide API access to
     individuals, so for now I'm saving the file manually from their web page --- automatic button pusher
     possibly to follow."""
+
+    if verbose: print("updating running data")
 
     merge_incoming_csv('running-filename', 'garmin-incoming-pattern',
                        begin_date, end_date,
@@ -316,11 +332,13 @@ def fetch_running(begin_date, end_date, _verbose):
                        transformations={'Time': qsutils.duration_string_to_minutes,
                                         'Calories': qsutils.string_to_number})
 
-def fetch_cycling(begin_date, end_date, _verbose):
+def fetch_cycling(begin_date, end_date, verbose):
 
     """Extract cycling records from the latest saved Garmin data.  Garmin don't provide API access to
     individuals, so for now I'm saving the file manually from their web page --- automatic button pusher
     possibly to follow."""
+
+    if verbose: print("updating cycling data")
 
     merge_incoming_csv('cycling-filename', 'garmin-incoming-pattern',
                        begin_date, end_date,
@@ -330,6 +348,9 @@ def fetch_cycling(begin_date, end_date, _verbose):
 
 def fetch_travel(begin_date, end_date, verbose):
     # TODO: fetch from Google, updating FILECONF('travel', 'travel-filename') and FILECONF('travel', 'places-filename')
+
+    if verbose: print("fetching travel data")
+
     pass
 
 def update_travel():
@@ -341,7 +362,8 @@ def update_travel():
 def updates(begin_date, end_date,
             do_externals,
             verbose=False,
-            testing=False):
+            testing=False,
+            force=False):
 
     """Update my Quantified Self record files, which are generally CSV files with a row for each day.  This also
     prepares some files for making charts.  Finally, it calls the dashboard code, which uses matplotlib to
@@ -357,6 +379,7 @@ def updates(begin_date, end_date,
     #     end_date = qsutils.yesterday()
 
     if do_externals:
+        if verbose: print("Fetching external data")
         for location_name, fetcher, archive_template in [
                 (('weather', 'weather-filename'), fetch_weather, "weather-to-%s.csv"),
                 (('physical', 'mfp-filename'), fetch_mfp, "mfp-to-%s.csv"),
@@ -368,7 +391,7 @@ def updates(begin_date, end_date,
                 # TODO: add elliptical trainer, planks
                 ]:
             filename = FILECONF(*location_name)
-            if last_update_at_least_about_a_day_ago(filename):
+            if force or last_update_at_least_about_a_day_ago(filename):
                 if verbose: print("updating", filename)
                 backup(filename, FILECONF('backups', 'archive'), archive_template)
                 fetcher(begin_date, end_date, verbose)
@@ -394,6 +417,9 @@ def main():
                         help="""Latest date to chart.""")
     parser.add_argument("--no-externals", action='store_true',
                         help="""Don't pester external servers""")
+    parser.add_argument("--force", action='store_true',
+                        help="""Do the updates even if the files have been updated
+                        within the last day.""")
     parser.add_argument("--testing", action='store_true',
                         help="""Use an alternate directory which can be reset.""")
     args = parser.parse_args()
@@ -402,6 +428,7 @@ def main():
             args.end,
             not args.no_externals,
             verbose=args.verbose,
+            force=args.force,
             testing=args.testing)
 
 if __name__ == '__main__':

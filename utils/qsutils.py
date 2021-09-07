@@ -136,9 +136,9 @@ def rec_update(basedict, u):
     return basedict
 
 def string_to_bool(string):
-    if string in ['yes', 'Yes', 'YES', 'true', 'true', 'TRUE', '1', True, 1]:
+    if string in ['yes', 'Yes', 'YES', 'true', 'true', 'TRUE', '1', True, 1, 'Detected']:
         return True
-    if string in ['no', 'no', 'NO', 'false', 'false', 'FALSE', '0', '', None, False, 0]:
+    if string in ['no', 'no', 'NO', 'false', 'false', 'FALSE', '0', '', None, False, 0, 'Not Detected']:
         return False
     print("Value", string, "not understood as boolean, treating as False")
     return False
@@ -314,7 +314,7 @@ def back_from(when, years_back, months_back, days_back):
     if isinstance(when, str):
         when = datetime.date.fromisoformat(when)
     if months_back and months_back >= 12:
-        years_back = (years_back or 0) + months_back / 12
+        years_back = (years_back or 0) + months_back // 12
         months_back %= 12
     if years_back:
         when = when.replace(year=when.year - years_back)
