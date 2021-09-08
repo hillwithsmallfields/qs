@@ -741,7 +741,8 @@ def write_table(context, sheet,
                 thresholds,
                 details=False,
                 with_time=False,
-                details_background_colour="yellow"):
+                details_background_colour="yellow",
+                summarize=False):
     full_filename = qsutils.resolve_filename(
         filename,
         finlisp_evaluation.finlisp_var_value(context,
@@ -754,7 +755,7 @@ def write_table(context, sheet,
                                col_extra_data=thresholds,
                                with_time=with_time,
                                colnames=colnames,
-                               summarize=False)
+                               summarize=summarize)
 
 def write_html(context, sheet, filename, title,
                thresholds=None, details=False,

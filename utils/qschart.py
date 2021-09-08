@@ -110,7 +110,7 @@ def qscharts(mainfile, file_type,
         if not qschart(mainfile, file_type,
                        columns, begin, end, match, by_day_of_week,
                        outfile_template % name_suffix, params, bar=bar):
-            print("TODO: output instructions for fetching missing data")
+            print("TODO: output instructions for fetching missing data for", mainfile, file_type, name_suffix)
 
 def plot_column_set(axs, data, columns, prefix, bar=False):
     for column in columns:
