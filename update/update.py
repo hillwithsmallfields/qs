@@ -316,7 +316,8 @@ def fetch_omron(begin_date, end_date, verbose):
                                        'Pulse(bpm)': 'Pulse',
                                        'Device': 'Device Model Name'},
                        transformations={'Irregular heartbeat detected': qsutils.string_to_bool,
-                                        'Body Movement': qsutils.string_to_bool})
+                                        'Body Movement': qsutils.string_to_bool,
+                                        'Date': qsutils.normalize_date})
 
 def fetch_running(begin_date, end_date, verbose):
 
