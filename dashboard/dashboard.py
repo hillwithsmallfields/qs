@@ -193,7 +193,8 @@ def transactions_section():
     that is produced by chart-categories.lisp."""
     # TODO: spending per category per day of month/week
 
-    spending_chart_file = os.path.join(FILECONF('general', 'charts'), "past-quarter.html")
+    spending_chart_file = os.path.join(FILECONF('general', 'charts'),
+                                       "past-year.html")
     return T.div[wrap_box(
         linked_image("by-class", "transactions"),
         T.div[T.h3["Recent transactions"],

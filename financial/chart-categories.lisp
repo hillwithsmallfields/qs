@@ -14,9 +14,10 @@
        (by-category (categorised monthly))
        (by-parentage (by-parent monthly parentage-table))
 
-       (by-class (by-classification monthly parentage-table classifiers t nil))
+       (by-class (by-classification monthly parentage-table classifiers t nil)) ; TODO: this is putting everything from Amazon under "books"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! and also everything from 6MBCS as groceries, I think
        (by-class-this-month (this-month by-class))
        (by-class-past-three-months (past-months by-class 3))
+       (by-class-past-year (past-months by-class 12))
        (by-class-this-year (this-year by-class))
        
        (automatics (by-classification monthly parentage-table automatic-categories t nil)) ; damages by-class?
@@ -52,9 +53,17 @@
   (write-csv by-class "by-class.csv")
   (write-csv by-class-this-month "by-class-this-month.csv")
   (write-csv by-class-past-three-months "by-class-past-three-months.csv")
+  (write-csv by-class-past-year "by-class-past-year.csv")
   (write-csv by-class-this-year "by-class-this-year.csv")
   (write-html by-class "by-class.html"
               "Categorised monthly summary" thresholds t t)
+  (write-table by-class-past-year "summarytable" "past-year.html"
+               '("Eating in" "Eating out" "Projects" "Hobbies" "Travel")
+               thresholds
+               nil
+               nil
+               nil
+               t)
   (write-table by-class-past-three-months "summarytable" "past-quarter.html"
                '("Eating in" "Eating out" "Projects" "Hobbies" "Travel")
                thresholds)
