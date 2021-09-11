@@ -5,10 +5,12 @@ import csv
 import datetime
 import decouple
 import glob
+import io
 import json
 import os
 import pyowm
 import re
+import requests
 import shutil
 import sys
 import yaml
@@ -175,6 +177,18 @@ def update_agenda():
     * $COMMON/var/parcels-expected.json"""
     os.system("emacs -q --script " +
               os.path.expandvars("$MY_ELISP/special-setups/dashboard/dashboard-emacs-query.el"))
+
+COVID_UK_URL = "https://api.coronavirus.data.gov.uk/v2/data?areaType=nation&areaCode=E92000001&metric=newAdmissions&metric=newCasesByPublishDate&metric=newCasesLFDOnlyBySpecimenDate&metric=newDeaths60DaysByPublishDate&metric=newVaccinesGivenByPublishDate&format=csv"
+
+def update_covid():
+    """Fetch the UK Covid-19 data."""
+    covid = {row['date']: row
+             for row in csv.DictReader(
+                     io.StringIO(
+                         requests.get(
+                             COVID_UK_URL).text))}
+    # TODO: write to file
+    # TODO: include in charts
 
 def rename_columns(raw, column_renames):
     return ({column_renames.get(key, key): value for key, value in raw.items()}

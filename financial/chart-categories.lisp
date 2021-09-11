@@ -14,7 +14,7 @@
        (by-category (categorised monthly))
        (by-parentage (by-parent monthly parentage-table))
 
-       (by-class (by-classification monthly parentage-table classifiers t nil)) ; TODO: this is putting everything from Amazon under "books"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! and also everything from 6MBCS as groceries, I think
+       (by-class (by-classification monthly parentage-table classifiers t nil))
        (by-class-this-month (this-month by-class))
        (by-class-past-three-months (past-months by-class 3))
        (by-class-past-year (past-months by-class 12))

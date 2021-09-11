@@ -324,7 +324,10 @@ class canonical_sheet(base_sheet.base_sheet):
         for canonical_outcol in ['balance', 'category',
                                  'payee', 'project', 'item', 'message']:
             # does the canonically named column have a default output value?
-            if conversion and canonical_outcol in conversion:
+            if (conversion
+                and canonical_outcol in conversion
+                and (not out_row.get(canonical_outcol)
+                     or out_row[canonical_outcol] == "")):
                 out_row[canonical_outcol] = conversion[canonical_outcol]
             # otherwise, can we copy it from an input cell?
             elif canonical_outcol in in_columns:
