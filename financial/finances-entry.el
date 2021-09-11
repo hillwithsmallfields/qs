@@ -96,8 +96,9 @@ With optional FORCE, do it even if it seems unnecessary."
                                          collection
                                          :test 'string=))))))
 
-(defun finances-read-entry ()
-  "Read the details of a transaction."
+(defun finances-read-entry (&optional given-payee item given-category)
+  "Read the details of a transaction.
+Optional argument GIVEN-PAYEE, ITEM, and GIVEN-CATEGORY are the payee, item, and category, if pre-specified."
   (finances-read-completions)
   (let* ((completion-ignore-case t)
          (date (format-time-string "%F"))
@@ -123,15 +124,18 @@ With optional FORCE, do it even if it seems unnecessary."
                              (read (read-from-minibuffer
                                     (format "Amount in %s: "
                                             account-default-currency)))))
-         (payee (completing-read "Payee:"
-                                 payee-completions))
+         (payee (or given-payee
+                    (completing-read "Payee:"
+                                     payee-completions)))
          (payee-categories (finances-categories-for-payee payee))
-         (category-0 (if (cdr payee-categories)
-                         (completing-read (format "Category (already used for %s): "
-                                                  payee)
-                                          payee-categories
-                                          nil t)
-                       ""))
+         (category-0 (cond (given-category
+                            given-category)
+                           ((cdr payee-categories)
+                            (completing-read (format "Category (already used for %s): "
+                                                     payee)
+                                             payee-categories
+                                             nil t))
+                           (t "")))
          (category (if (string= category-0 "")
                        (completing-read "Category (free choice): "
                                         category-completions
@@ -139,7 +143,7 @@ With optional FORCE, do it even if it seems unnecessary."
                      category-0))
          (project (completing-read "Project: "
                                    project-completions))
-         (note (read-from-minibuffer "Note: ")))
+         (note (read-from-minibuffer "Note: " item)))
     ;; (pushnew payee payee-completions :test 'string=)
     (unless (assoc payee payee-completions)
       (push (list payee category)
@@ -184,6 +188,11 @@ With optional FORCE, do it even if it seems unnecessary."
 (defvar finances-transactions-file "$COMMON/finances/finances.csv"
   "The file holding the transactions.")
 
+(defun finances-enter-from-shopping-list (payee item category)
+  "Add a finances entry from PAYEE for ITEM in CATEGORY."
+  (save-excursion
+    (apply 'finances-enter (finances-read-entry payee item category))))
+
 (defun finances-enter (date time
                             account amount currency
                             original-amount original-currency
@@ -213,7 +222,8 @@ as in the Financisto app."
                                category project
                                note)
                          ",")
-              "\n"))))
+              "\n")))
+  (cons payee amount))
 
 (defun finances-multi-enter ()
   "Read multiple entries."
