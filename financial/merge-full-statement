@@ -1,0 +1,3 @@
+#!/bin/bash
+
+./merge-latest-statement $COMMON/finances/handelsbanken/handelsbanken-full.csv

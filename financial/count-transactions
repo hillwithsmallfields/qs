@@ -1,0 +1,11 @@
+#!/bin/bash
+
+source setupfintest
+
+./finlisp.py \
+    --no-default-config \
+    --config $CONFIGDIR/accounts.yaml \
+    --config $CONVDIR/conversions.yaml \
+    --verbose \
+    --output-dir "results" \
+    count-transactions.lisp
