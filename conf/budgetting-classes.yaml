@@ -1,0 +1,79 @@
+Income:
+  - Expenses
+  - Repayment
+  - Salary
+  - Buyouts
+House:
+  - Council tax
+  - Electricity bill
+  - Garden
+  - Heating fuel
+  - House cleaning
+  - Household items
+  - Rent
+  - Security
+  - Water bill
+Services:
+  - Assurance services
+  - Bank charges
+  - Communications
+  - Financial services
+  - Haircut
+  - Insurance
+  - Postage
+  - Utilities
+  - Android apps
+  - Online services
+  - Printing
+  - Fees
+  - Permits
+Memberships:
+  - Memberships
+Eating in:
+  - Alcoholic drink stock
+  - Fair trade groceries and sundries
+  - Groceries and sundry supplies
+Eating out:
+  - Alcoholic drinks
+  - Coffee
+  - Fizzy drinks
+  - Fruit juice
+  - Hot chocolate
+  - Prepared meals
+  - Snacks
+  - Water
+Hobbies:
+  - Hobbies
+  - Homebrew supplies
+  - Stationery
+Projects:
+  - Projects  
+Leisure:
+  - Time away
+  - Leisure
+Travel:
+  - Accommodation
+  - Car fuel
+  - Car hire
+  - Car maintenance
+  - Cycling
+  - Hire or borrowed car fuel
+  - Marmalade fuel
+  - Marmalade maintenance
+  - Parking
+  - Post hold
+  - Public transport
+  - Toilet
+  - Tolls
+  - Travel accessories
+  - Vehicle tracking
+Giving:
+  - Charitable donation
+  - Gifts
+Health:
+  - Health and fitness
+  - Swimming
+Clothes:
+  - Clothes
+Adjustment:
+  - adjustment
