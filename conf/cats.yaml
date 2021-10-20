@@ -1,0 +1,152 @@
+Charitable donation:
+  Aid charities: {}
+  Charity auction: {}
+  Food for beggars: {}
+  Medical charities: {}
+  Politeness: {}
+  Religious charities: {}
+  Secular charities: {}
+  Street beggar: {}
+  Tips: {}
+Clothes:
+  Alterations: {}
+  Alternative / historical: {}
+  Exercise clothing: {}
+  Garment hacking: {}
+  Other wearables: {}
+  Outdoor wear: {}
+  Shoes and boots: {}
+Computing:
+  Android apps: {}
+  Online services: {}
+Courses:
+  Swimming: {}
+Food and sundries:
+  Alcoholic drink stock: {}
+  Drinks:
+    Alcoholic drinks: {}
+    Cold drinks:
+      Fruit juice: {}
+    Fizzy drinks: {}
+    Hot drinks:
+      Coffee: {}
+      Hot chocolate: {}
+    Water: {}
+  Fair trade groceries and sundries: {}
+  Groceries and sundry supplies: {}
+  Homebrew supplies: {}
+  Library fine: {}
+  Postage: {}
+  Prepared meals:
+    Breakfast: {}
+    For others: {}
+    For sharing:
+      Round: {}
+    Lunch: {}
+    Supper: {}
+  Printing: {}
+  Snacks:
+    Fruit snacks: {}
+    Healthy snacks: {}
+    Savoury snacks: {}
+    Sweet snacks:
+      Biscuits: {}
+      Cake or pastry: {}
+      Chocolate: {}
+      Ice cream: {}
+      Sweets: {}
+  Stationery: {}
+Gifts:
+  Colleague after-holiday gifts: {}
+  Family gifts:
+    Family Christmas presents: {}
+  Girlfriend gifts: {}
+  Host gifts: {}
+Health and fitness:
+  Cough sweets etc: {}
+  Exercise: {}
+  Medical: {}
+Hobbies:
+  Books: {}
+  Brewing: {}
+  Music: {}
+  Outdoor activities: {}
+  Projects:
+    Car projects: {}
+    Electronic projects: {}
+    Household projects: {}
+    Marmalade projects:
+      Marmalade materials: {}
+      Marmalade parts: {}
+      Marmalade project labour and services: {}
+    Project labour: {}
+    Project materials: {}
+  Stationery and drawing materials: {}
+  Storage: {}
+  Tool consumables: {}
+  Tools: {}
+Household:
+  Electricity bill: {}
+  Garden: {}
+  Heating fuel: {}
+  House cleaning: {}
+  Household items: {}
+  Security: {}
+  Water bill: {}
+Incoming:
+  Adjustment up: {}
+  Buyouts: {}
+  Discount: {}
+  Expenses: {}
+  Repayment: {}
+  Salary: {}
+Leisure:
+  Ball: {}
+  Concert: {}
+  DVD: {}
+  Film: {}
+  Museum, gallery etc: {}
+  Nostalgia: {}
+Lost:
+  Kept by vending machine: {}
+  Short changed: {}
+Routine costs:
+  Bank charges: {}
+  Communications:
+    Internet registration and hosting: {}
+    Mobile phone bill: {}
+    Telephone bill: {}
+  Financial services: {}
+  Government:
+    Council tax: {}
+    Customs: {}
+  Haircut: {}
+  Insurance: {}
+  Memberships: {}
+  Rent: {}
+  Utilities: {}
+Time away:
+  Events: {}
+  Retreats: {}
+Travel:
+  Accommodation:
+    Camping: {}
+  Car fuel: {}
+  Car hire: {}
+  Car maintenance: {}
+  Cycling: {}
+  Fees: {}
+  Hire or borrowed car fuel: {}
+  Marmalade fuel: {}
+  Marmalade maintenance: {}
+  Parking: {}
+  Permits: {}
+  Post hold: {}
+  Public transport:
+    Flights: {}
+    Taxi: {}
+    Train tickets: {}
+  Toilet: {}
+  Tolls: {}
+  Travel accessories: {}
+  Vehicle tracking: {}
