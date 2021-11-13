@@ -59,7 +59,6 @@ def backup(filename, archive_dir, template):
 
 def latest_file_matching(template):
     files = glob.glob(template)
-    print("looking for files matching", template, "and got", files)
     return files and sorted(files, key=os.path.getmtime)[-1]
 
 def last_update_at_least_about_a_day_ago(filename):
