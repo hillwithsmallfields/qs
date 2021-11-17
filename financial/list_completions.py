@@ -6,8 +6,8 @@ import os.path
 
 default_columns = ['account', 'currency', 'category', 'project']
 
-def list_completions(input_file=os.path.expandvars("$COMMON/finances/finances.csv"),
-                     output_file=os.path.expandvars("$COMMON/var/finances-completions.el"),
+def list_completions(input_file=os.path.expandvars("$SYNCED/finances/finances.csv"),
+                     output_file=os.path.expandvars("$SYNCED/var/finances-completions.el"),
                      columns=default_columns):
     with open(input_file ) as instream:
         rows = [row for row in csv.DictReader(instream)]

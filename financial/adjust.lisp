@@ -1,5 +1,5 @@
-(let* ((main (read-canonical "$COMMON/finances/finances.csv"))
-       (statement (read-canonical "$COMMON/finances/handelsbanken/handelsbanken-full.csv"))
+(let* ((main (read-canonical "$SYNCED/finances/finances.csv"))
+       (statement (read-canonical "$SYNCED/finances/handelsbanken/handelsbanken-full.csv"))
        (adjustments-main (adjustments-by-month main statement "Handelsbanken current account"))
        (merged (replace-matching-rows main adjustments-main '("date" "category"))))
   (write-csv adjustments-main "/tmp/adjustments.csv")

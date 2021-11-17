@@ -17,9 +17,9 @@ def travel_main(journeys, places):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--journeys", "-j",
-                        default="$COMMON/travel/travel.csv")
+                        default="$SYNCED/travel/travel.csv")
     parser.add_argument("--places", "-p",
-                        default="$COMMON/travel/places/places.csv")
+                        default="$SYNCED/travel/places/places.csv")
     args = parser.parse_args()
 
     travel_main(args.journeys, args.places)

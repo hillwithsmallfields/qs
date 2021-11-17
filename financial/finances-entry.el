@@ -52,7 +52,7 @@
 (defvar finances-completions-last-read nil
   "When the finances completions were last read.")
 
-(defvar finances-completions-file "$SYNC/var/finances-completions.el"
+(defvar finances-completions-file "$SYNCED/var/finances-completions.el"
   "The file to use for completions.")
 
 (defun finances-read-completions (&optional force)
@@ -185,7 +185,7 @@ Optional argument GIVEN-PAYEE, ITEM, and GIVEN-CATEGORY are the payee, item, and
             "%.2f")
           amount))
 
-(defvar finances-transactions-file "$SYNC/finances/finances.csv"
+(defvar finances-transactions-file "$SYNCED/finances/finances.csv"
   "The file holding the transactions.")
 
 (defun finances-enter-from-shopping-list (payee item category)

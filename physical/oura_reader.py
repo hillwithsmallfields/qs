@@ -80,7 +80,7 @@ def main():
                                     help="""The file to update with the fetched data.""")
     args = parser.parse_args()
     if (not args.update) and (not args.output):
-        args.update = os.path.expandvars("$COMMON/health/oura.csv")
+        args.update = os.path.expandvars("$SYNCED/health/oura.csv")
     start = None
     end = None
     data = {}

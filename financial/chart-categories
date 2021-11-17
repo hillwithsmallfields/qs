@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # TRANSACTIONSFILE=${1-$COMMON/finances/finances.csv}
-TRANSACTIONSFILE=${1-$COMMON/finances/finances-sample.csv}
+TRANSACTIONSFILE=${1-$SYNCED/finances/finances-sample.csv}
 
-STATEMENTSFILE=$COMMON/finances/handelsbanken/handelsbanken-full.csv
+STATEMENTSFILE=$SYNCED/finances/handelsbanken/handelsbanken-full.csv
 # CLASSIFIERSFILE=default-classes.yaml
 CLASSIFIERSFILE=budgetting-classes.yaml
 THRESHOLDSFILE=budgetting-thresholds.yaml

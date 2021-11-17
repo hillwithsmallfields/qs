@@ -172,8 +172,8 @@ def update_contacts():
 def update_agenda():
     """Also updates the parcels expected list.
     Files written:
-    * $COMMON/var/views.json
-    * $COMMON/var/parcels-expected.json"""
+    * $SYNCED/var/views.json
+    * $SYNCED/var/parcels-expected.json"""
     os.system("emacs -q --script " +
               os.path.expandvars("$MY_ELISP/special-setups/dashboard/dashboard-emacs-query.el"))
 

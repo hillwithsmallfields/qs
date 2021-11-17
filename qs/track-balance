@@ -4,8 +4,8 @@ source setupfinvars
 
 OUTDIR=track-results
 
-STATEMENT=$COMMON/finances/handelsbanken/handelsbanken-full.csv
-TRANSACTIONSFILE=${1-$COMMON/finances/finances.csv}
+STATEMENT=$SYNCED/finances/handelsbanken/handelsbanken-full.csv
+TRANSACTIONSFILE=${1-$SYNCED/finances/finances.csv}
 
 mkdir -p $OUTDIR
 rm -rf $OUTDIR/*

@@ -23,7 +23,7 @@ def main():
     args = parser.parse_args()
     config = qsutils.program_load_config(args, quiet=True)
     categories = read_category_table(args.category_parentage
-                                     or os.path.expandvars("$COMMON/finances/categories.csv"))
+                                     or os.path.expandvars("$SYNCED/finances/categories.csv"))
     print("reading", args.filename)
     sheet = canonical_sheet.canonical_sheet(config,
                                             input_sheet=args.filename,

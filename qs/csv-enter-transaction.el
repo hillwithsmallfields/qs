@@ -1,6 +1,6 @@
 ;;; csv-enter-transaction.el --- Enter a transaction into my transactions CSV file  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2020  John Sturdy
+;; Copyright (C) 2020, 2021  John Sturdy
 
 ;; Author: John Sturdy <jsturdy@ccsl.com>
 ;; Keywords: convenience
@@ -31,7 +31,7 @@
   (interactive)
   )
 
-(defvar transactions-filename (substitute-in-file-name "$COMMON/finances/finances.csv")
+(defvar transactions-filename (substitute-in-file-name "$SYNCED/finances/finances.csv")
   "The file holding my transactions record."
 
 (defun transaction-add-to-file (amount payee account item category)
