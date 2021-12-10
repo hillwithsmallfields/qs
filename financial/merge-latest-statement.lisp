@@ -19,7 +19,7 @@
 ;; multiple manual entries in the main transaction file, but there'll be only one entry in the bank
 ;; statement.
 
-(let* ((main (read-canonical "~/common/finances/finances.csv"))
+(let* ((main (read-canonical "~/Sync/finances/finances.csv"))
        ;; In case I have bought several things in different categories, in the same payment, group together
        ;; all the transactions for the same payee on the same day:
        (summarised (by-day main t t))

@@ -1,9 +1,9 @@
 # -*- shell-script -*- mode please emacs
 
-ORIGINALS=$HOME/common/qs/qs-samples
-SCRATCH=$HOME/common/qs/qs-scratch
+ORIGINALS=$HOME/Sync/qs/qs-samples
+SCRATCH=$HOME/Sync/qs/qs-scratch
 CONFIGDIR=$HOME/open-projects/github.com/hillwithsmallfields/qs/conf
-CONVDIR=$HOME/common/finances
+CONVDIR=$HOME/Sync/finances
 QS=$HOME/open-projects/github.com/hillwithsmallfields/qs
 mkdir -p $SCRATCH
 rm -rf $SCRATCH/*

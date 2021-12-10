@@ -19,8 +19,8 @@
 (foo 1)
 (foo (+ 3 4))
 
-(let ((financisto (read-canonical "~/common/qs/qs-scratch/financisto-full.csv"))
-      (handelsbanken (read-canonical "~/common/qs/qs-scratch/handelsbanken-full.csv")))
+(let ((financisto (read-canonical "~/Sync/qs/qs-scratch/financisto-full.csv"))
+      (handelsbanken (read-canonical "~/Sync/qs/qs-scratch/handelsbanken-full.csv")))
   (print "writing financisto-as-csv.csv with headers" (headers financisto))
   (write-csv financisto "/tmp/fintest/financisto-as-csv.csv")
 

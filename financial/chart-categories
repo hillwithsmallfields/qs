@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# TRANSACTIONSFILE=${1-$COMMON/finances/finances.csv}
+# TRANSACTIONSFILE=${1-$SYNCED/finances/finances.csv}
 TRANSACTIONSFILE=${1-$SYNCED/finances/finances-sample.csv}
 
 STATEMENTSFILE=$SYNCED/finances/handelsbanken/handelsbanken-full.csv

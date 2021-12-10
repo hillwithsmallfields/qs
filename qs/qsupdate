@@ -3,7 +3,7 @@
 QS=~/open-projects/qs/qs
 CONFIGDIR=$OPEN_PROJECTS/qs/conf
 CONVDIR=$FINANCES
-SCRATCH=~/common/scratch/qs
+SCRATCH=~/Sync/scratch/qs
 IMPORTDATE=$(date --iso-8601)
 
 HANDELSBANKENFILE=$FINANCES/handelsbanken/handelsbanken.csv

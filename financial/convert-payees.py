@@ -5,11 +5,11 @@ import yaml
 import os
 
 def main():
-    with open(os.path.expanduser("~/common/finances/to-convert.csv")) as payees_in:
+    with open(os.path.expanduser("~/Sync/finances/to-convert.csv")) as payees_in:
         payees = {x['Statement']: x for x in csv.DictReader(payees_in)}
     with open (os.path.expanduser("~/open-projects/github.com/hillwithsmallfields/qs/qs/cats.csv")) as cats_in:
         categories = {x['category']: x for x in csv.DictReader(cats_in)}
-    with open(os.path.expanduser("~/common/finances/conversions.yaml")) as conv_in:
+    with open(os.path.expanduser("~/Sync/finances/conversions.yaml")) as conv_in:
         formats = yaml.safe_load(conv_in)
         print("keys of formats are", [k for k in formats.keys()])
         conversions = formats['formats']['handelsbanken']['conversions']
@@ -38,8 +38,8 @@ def main():
             conversions[as_statement] = {'payee': as_app,
                       'category': category,
                       'parent': parent or ""}
-    with open(os.path.expanduser("~/common/finances/conversions-new.yaml"), 'w') as output_stream:
+    with open(os.path.expanduser("~/Sync/finances/conversions-new.yaml"), 'w') as output_stream:
         yaml.dump(formats, output_stream)
-            
+
 if __name__ == "__main__":
     main()

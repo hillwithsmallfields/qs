@@ -1,6 +1,6 @@
 (let* ((period (getenv "PERIOD" "full"))
        (output-dir (format "/tmp/finrun-%s" period))
-       (financisto-basic (read-canonical "~/common/finances/finances.csv"))
+       (financisto-basic (read-canonical "~/Sync/finances/finances.csv"))
        (financisto-hb-as-account (account "Handelsbanken current account" financisto-basic))
        (financisto-monthly (by-month financisto-hb-as-account))
        (financisto-hb-monthly (account-to-sheet financisto-monthly))

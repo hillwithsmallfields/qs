@@ -67,7 +67,7 @@ def places_main(places_file, update):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--places", "-p",
-                        default="$COMMON/travel/places/places.csv")
+                        default="$SYNCED/travel/places/places.csv")
     parser.add_argument("--update", "-u",
                         action='store_true')
     args = parser.parse_args()

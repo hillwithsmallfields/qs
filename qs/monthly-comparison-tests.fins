@@ -1,9 +1,9 @@
 config:
   files:
     - ~/open-projects/github.com/hillwithsmallfields/qs/conf/accounts.yaml
-    - ~/common/finances/conversions.yaml
+    - ~/Sync/finances/conversions.yaml
 inputs:
-  directory: ~/common/qs/qs-scratch
+  directory: ~/Sync/qs/qs-scratch
   files:
     financisto-$SELECTION.csv:      app %s
     handelsbanken-$SELECTION.csv:   statement for %s

@@ -1,11 +1,11 @@
 (let* ((period (getenv "PERIOD" "full"))
        (output-dir (format "/tmp/finrun-%s" period))
        (statement-basic (read-canonical
-                         (format "~/common/qs/qs-scratch/handelsbanken-%s.csv"
+                         (format "~/Sync/qs/qs-scratch/handelsbanken-%s.csv"
                                  period)))
        (handelsbanken-as-account (account "HB current statement" statement-basic))
        (financisto-basic (read-canonical
-                          (format "~/common/qs/qs-scratch/financisto-%s.csv"
+                          (format "~/Sync/qs/qs-scratch/financisto-%s.csv"
                                   period)))
        (financisto-as-account (account "Handelsbanken current account" financisto-basic))
        (financisto-monthly (account-to-sheet (by-month financisto-as-account)))
