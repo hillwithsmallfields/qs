@@ -47,8 +47,9 @@
     (print "Number of summarised entries:" (length summarised)))
   (for-each-row latest this-row nil
                 (let* ((amount (get this-row "amount"))
-                       (direct-matches (find-amount main amount (get this-row "timestamp") 7))
-                       (summarised-matches (find-amount summarised amount (get this-row "timestamp") 7))
+                       (timestamp (get this-row "timestamp"))
+                       (direct-matches (find-amount main amount timestamp 7))
+                       (summarised-matches (find-amount summarised amount timestamp 7))
                        (matches (append direct-matches summarised-matches))
                        (payee (get this-row "payee"))
                        (automatic (flagged-as "handelsbanken" payee "automatic")))

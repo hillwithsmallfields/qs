@@ -91,14 +91,14 @@ def tooltip_string(item, with_time=False):
     return (('''          <tr><td class="detdate">%s %s</td><td class="detamt">%s</td><td class="detpay">%s</td><td class="detcat">%s</td><td class="detitem">%s</td></tr>'''
              % (item.get('date', "date?"),
                 item.get('time', "time?"),
-                qsutils.tidy_for_output(item.get('amount', "amount?")),
+                qsutils.qsutils.tidy_for_output(item.get('amount', "amount?")),
                 item.get('payee', "payee?"),
                 item.get('category', "?"),
                 item.get('item', "")))
             if with_time
             else ('''          <tr><td class="detdate">%s</td><td class="detamt">%s</td><td class="detpay">%s</td><td class="detcat">%s</td><td class="detitem">%s</td></tr>'''
                   % (item.get('date', "date?"),
-                     qsutils.tidy_for_output(item.get('amount', "amount?")),
+                     qsutils.qsutils.tidy_for_output(item.get('amount', "amount?")),
                      item.get('payee', "payee?"),
                      item.get('category', "?"),
                      item.get('item', ""))))

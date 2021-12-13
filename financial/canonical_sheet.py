@@ -205,7 +205,7 @@ class canonical_sheet(base_sheet.base_sheet):
     def add_sheets(self, *others):
         """Combine several sheets, starting with this one.
         The original sheets are not affected."""
-        print("adding to sheet", self, "these sheets:", others)
+        # print("adding to sheet", self, "these sheets:", others)
         result = canonical_sheet(self.config)
         result.add_sheet(self)
         for other in others:
@@ -418,10 +418,8 @@ class canonical_sheet(base_sheet.base_sheet):
 
     def find_amount(self, amount, timestamp, within_days, payee_hint=None):
         """Find entries with a given amount, around a given time."""
-        print("find_amount", amount, type(amount), set([type(row['amount']) for row in self.rows.values()]))
         possibilities = [row for row in self.rows.values()
-                         # TODO: convert row['amount'] to number before doing abs() on it
-                        if (abs(row['amount']) == abs(amount)
+                        if (abs(itemized_amount.as_number(row['amount'])) == abs(amount)
                              and qsutils.qsutils.within_days(row['timestamp'], timestamp, within_days))]
         if payee_hint:
             filtered = [row

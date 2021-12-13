@@ -125,14 +125,14 @@ class base_sheet:
         The column list is generated from the row contents,
         with the columns in the order they are first seen."""
         full_filename = os.path.expanduser(os.path.expandvars(filename))
-        qsutils.ensure_directory_for_file(full_filename)
+        qsutils.qsutils.ensure_directory_for_file(full_filename)
         with open(full_filename, 'w') as outfile:
             colseq = self.column_names_list()
             writer = csv.DictWriter(outfile, colseq)
             writer.writeheader()
             for timestamp in sorted(self.rows.keys()):
                 row = self.rows[timestamp]
-                writer.writerow({sk: qsutils.tidy_for_output(row.get(sk, "")) for sk in colseq})
+                writer.writerow({sk: qsutils.qsutils.tidy_for_output(row.get(sk, "")) for sk in colseq})
 
     def write_csv(self, filename, suppress_timestamp=False):
         """Write a spreadsheet.
@@ -240,7 +240,7 @@ class base_sheet:
                     if cell_value != 0 and abs(cell_value) < abs(itemized_amount.as_number(column_minima[colname])):
                         column_minima[colname] = cell_data
                 else:
-                    stream.write('    <td class="%s"><span class="overview">%s' % (colname.replace(' ', '_'), qsutils.tidy_for_output(cell_data)))
+                    stream.write('    <td class="%s"><span class="overview">%s' % (colname.replace(' ', '_'), qsutils.qsutils.tidy_for_output(cell_data)))
                     if hover_details:
                         stream.write('<span class="details">Details were not provided</span>')
                     stream.write('</span></td>\n')
@@ -251,7 +251,7 @@ class base_sheet:
             write_extra_data(stream, col_extra_data, "Threshold", colnames)
             stream.write('    <th>Totals</th>\n')
             for colname in colnames:
-                stream.write('    <th>%s</th>\n' % qsutils.tidy_for_output(column_totals[colname]))
+                stream.write('    <th>%s</th>\n' % qsutils.qsutils.tidy_for_output(column_totals[colname]))
             stream.write('  </tr>\n')
             start = self.earliest()
             end = self.latest()
@@ -270,7 +270,7 @@ class base_sheet:
 
                 stream.write('    <th>Monthly averages</th>\n')
                 for colname in colnames:
-                    stream.write('    <th>%s</th>\n' % qsutils.tidy_for_output(column_totals[colname] / months))
+                    stream.write('    <th>%s</th>\n' % qsutils.qsutils.tidy_for_output(column_totals[colname] / months))
                 stream.write('  </tr>\n')
 
                 stream.write('    <th>Monthly maxima</th>\n')

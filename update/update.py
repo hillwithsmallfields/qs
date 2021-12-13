@@ -128,10 +128,10 @@ def update_physical(begin_date, end_date):
                      # TODO: merge the other physical files
                     ]
 
-    qsmerge.qsmerge(physical,
-                    physical_files, None, phys_scratch)
+    qsutils.qsmerge.qsmerge(physical,
+                            physical_files, None, phys_scratch)
 
-    if qsutils.qsutils.check_merged_row_dates.check_merged_row_dates(phys_scratch, physical, *physical_files):
+    if qsutils.check_merged_row_dates.check_merged_row_dates(phys_scratch, physical, *physical_files):
         backup(physical, archive_dir, "physical-to-%s.csv")
         shutil.copy(phys_scratch, physical)
     else:

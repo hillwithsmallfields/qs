@@ -259,5 +259,5 @@ def finlisp_load_file(context, filename):
         _, sexps = parser.parse_sexp(0)
         for sexp in sexps:
             result = finlisp_eval(context, sexp)
-            print("==>", lisp_to_string(result))
+            print("==>", lisp_to_string(result)[:256])
     return result

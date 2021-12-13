@@ -43,10 +43,10 @@ class tracked_sheet(canonical_sheet.canonical_sheet):
                        else self.colseq + [output_column])
         app_data = {'input_column': input_column,
                     'output_column': output_column}
-        qsutils.process_rows(app_data,
-                             None,
-                             self.rows,
-                             tracking_setup, tracking_do_row, tracking_tidyup)
+        qsutils.qsutils.process_rows(app_data,
+                                     None,
+                                     self.rows,
+                                     tracking_setup, tracking_do_row, tracking_tidyup)
 
 # tests
 
@@ -54,12 +54,12 @@ import argparse
 
 def main():
     """Tests for this module."""
-    parser = qsutils.program_argparser()
+    parser = qsutils.qsutils.program_argparser()
     parser.add_argument("input_files", nargs='*')
     parser.add_argument("--tracking-column",
                         default="balance")
     args = parser.parse_args()
-    config = qsutils.program_load_config(args)
+    config = qsutils.qsutils.program_load_config(args)
     for filename in args.input_files:
         for all_rows in (False, True):
             print("reading and converting", filename)

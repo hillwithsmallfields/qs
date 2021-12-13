@@ -26,9 +26,9 @@ class named_column_sheet(base_sheet.base_sheet):
         """Return the cell-by-cell subtraction of another sheet from this one."""
         column_names = self.column_names_list()
         result = named_column_sheet(self.config, column_names)
-        result.rows = {date: qsutils.subtracted_row(row,
-                                            other.rows.get(date, {}),
-                                            column_names)
+        result.rows = {date: qsutils.qsutils.subtracted_row(row,
+                                                            other.rows.get(date, {}),
+                                                            column_names)
                        for date, row in self.rows.items()}
         return result
 
@@ -45,7 +45,7 @@ class named_column_sheet(base_sheet.base_sheet):
     def abs_threshold(self, threshold):
         """Return a sheet like this but with any entries smaller than a given threshold omitted."""
         result = named_column_sheet(self.config, self.column_names_list())
-        result.rows = {date: qsutils.thresholded_row(row, threshold)
+        result.rows = {date: qsutils.qsutils.thresholded_row(row, threshold)
                        for date, row in self.rows.items()}
         return result
 
@@ -63,9 +63,9 @@ class named_column_sheet(base_sheet.base_sheet):
         """Return a sheet like this but with only the rows in a given date range.
         False values for either end of the range mean no limit in that direction."""
         if begin_date:
-            begin_date = qsutils.as_date(begin_date)
+            begin_date = qsutils.qsutils.as_date(begin_date)
         if end_date:
-            end_date = qsutils.as_date(end_date)
+            end_date = qsutils.qsutils.as_date(end_date)
         result = named_column_sheet(self.config, self.column_names_list())
         result.rows = {timestamp: row
                        for timestamp, row in self.rows.items()
@@ -85,7 +85,7 @@ class named_column_sheet(base_sheet.base_sheet):
                     possibilities = reference.find_amount(v, timestamp, 7, k)
                     originals = ["%s: %s" % (r['payee'], r['timestamp'].date())
                                  for r in possibilities]
-                    annotated_row[k] = qsutils.tidy_for_output(v) + ((":" + ";".join(originals))
+                    annotated_row[k] = qsutils.qsutils.tidy_for_output(v) + ((":" + ";".join(originals))
                                                                    if originals else "")
             result.rows[timestamp] = annotated_row
         return result
@@ -120,25 +120,25 @@ class named_column_sheet(base_sheet.base_sheet):
         """Write a named-column sheet to a CSV file."""
         full_filename = os.path.expanduser(os.path.expandvars(filename))
         # print("named_column_sheet.write_csv", filename, "suppress_timestamp", suppress_timestamp, self)
-        qsutils.ensure_directory_for_file(full_filename)
+        qsutils.qsutils.ensure_directory_for_file(full_filename)
         with open(full_filename, 'w') as outfile:
             writer = csv.writer(outfile)
             writer.writerow(([] if suppress_timestamp else ['Date']) + [n for n in self.column_names if n != 'Date'])
             if show_averages:
                 avs = self.averages()
-                writer.writerow(['Averages'] + [qsutils.tidy_for_output(avs.get(col, ""))
+                writer.writerow(['Averages'] + [qsutils.qsutils.tidy_for_output(avs.get(col, ""))
                                                 for col in self.column_names])
             for date in sorted(self.rows):
                 row_data = self.rows[date]
                 writer.writerow(([]
                                  if suppress_timestamp
-                                 else [date]) + [qsutils.tidy_for_output(row_data.get(n, ''))
+                                 else [date]) + [qsutils.qsutils.tidy_for_output(row_data.get(n, ''))
                                                  for n in self.column_names
                                                  if n != 'Date'])
 
     def sparse_row(self, row):
         """Return a dictionary containing the occupied entries in a row."""
-        return {str(k): qsutils.tidy_for_output(v)
+        return {str(k): qsutils.qsutils.tidy_for_output(v)
                 for k, v in row.items()
                 if k in self.column_names_list() and v not in (None, "", 0, 0.0)}
 
@@ -148,7 +148,7 @@ class named_column_sheet(base_sheet.base_sheet):
     def write_json(self, filename):
         """Write a named-column sheet to a JSON file."""
         full_filename = os.path.expanduser(os.path.expandvars(filename))
-        qsutils.ensure_directory_for_file(full_filename)
+        qsutils.qsutils.ensure_directory_for_file(full_filename)
         with open(full_filename, 'w') as outfile:
             json.dump(self.sparse_contents(), outfile, indent=2)
             outfile.write("\n")

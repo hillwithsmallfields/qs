@@ -8,7 +8,7 @@ import base_sheet
 import canonical_sheet
 import named_column_sheet
 import qsutils
-    
+
 class diff_sheet(base_sheet.base_sheet):
 
     """A sheet representing the timeline of differences between columns in
@@ -19,7 +19,7 @@ class diff_sheet(base_sheet.base_sheet):
                  sheet_a, column_a,
                  sheet_b, column_b,
                  initial_a=0, track_a=None,
-                 filter_a_col=None, filter_a_val=None, 
+                 filter_a_col=None, filter_a_val=None,
                  initial_b=0, track_b=None,
                  filter_b_col=None, filter_b_val=None):
         super().__init__(sheet_a.config)
@@ -115,7 +115,7 @@ class diff_sheet(base_sheet.base_sheet):
             if a.get(k) != b.get(k):
                 return False
         return True
-        
+
     def column_names_list(self):
         return self.colseq
 
@@ -126,14 +126,14 @@ class diff_sheet(base_sheet.base_sheet):
     def write_csv(self, filename, suppress_timestamp=False):
         """Write a differences spreadsheet to a file."""
         full_filename = os.path.expanduser(os.path.expandvars(filename))
-        qsutils.ensure_directory_for_file(full_filename)
+        qsutils.qsutils.ensure_directory_for_file(full_filename)
         with open(full_filename, 'w') as outfile:
             writer = csv.DictWriter(outfile, self.colseq)
             writer.writeheader()
             for timestamp in sorted(self.rows.keys()):
                 row = self.rows[timestamp]
                 # round the unfortunately-represented floats
-                writer.writerow({sk: qsutils.tidy_for_output(row.get(sk, ""))
+                writer.writerow({sk: qsutils.qsutils.tidy_for_output(row.get(sk, ""))
                                  for sk in self.colseq})
 
 # tests
@@ -142,7 +142,7 @@ import argparse
 
 def main():
     """Tests for this module."""
-    parser = qsutils.program_argparser()
+    parser = qsutils.qsutils.program_argparser()
     parser.add_argument("--output", "-o",
                         help="""The file to write the result to.""")
     parser.add_argument("out-column", "-c",
@@ -161,7 +161,7 @@ def main():
     parser.add_argument('file_a')
     parser.add_argument('file_b')
     args = parser.parse_args()
-    config = qsutils.program_load_config(args)
+    config = qsutils.qsutils.program_load_config(args)
     result = diff_sheet.diff_sheet(
         args.out_column,
         canonical_sheet.canonical_sheet(args.file_a,
