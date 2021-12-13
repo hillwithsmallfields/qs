@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Time-stamp: <2021-04-23 20:38:55 jcgs>
+# Time-stamp: <2021-12-13 17:19:40 jcgs>
 
 # Program to merge my Quantified Self files.
 
@@ -11,7 +11,9 @@ import math
 import os
 import re
 import shutil
+import sys
 
+sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 import file_types
 import qsutils
 

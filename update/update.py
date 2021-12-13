@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import argparse
 import csv
@@ -17,14 +17,14 @@ import yaml
 
 # other parts of this project group:
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-import utils.check_merged_row_dates
 import dashboard.dashboard
+import qsutils.check_merged_row_dates
 import financial.finlisp
 import list_completions
 import physical.mfp_reader
 import physical.oura_reader
-import utils.trim_csv
-import qsmerge
+import qsutils.trim_csv
+import qsutils.qsmerge
 import qsutils
 
 my_projects = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
@@ -72,9 +72,9 @@ def update_finances(verbose):
     """Merge new transactions from my bank statement (if I've saved a new bank statement file) and prepare CSV
     files for making into charts, and HTML for incorporating into the dashboard page."""
 
-    config = qsutils.load_config(verbose, None, None,
-                                 os.path.join(FILECONF('finance', 'configdir'), CONF('finance', 'accounts-config')),
-                                 os.path.join(FILECONF('finance', 'conversions-dir'), CONF('finance', 'conversions-config')))
+    config = qsutils.qsutils.load_config(verbose, None, None,
+                                         os.path.join(FILECONF('finance', 'configdir'), CONF('finance', 'accounts-config')),
+                                         os.path.join(FILECONF('finance', 'conversions-dir'), CONF('finance', 'conversions-config')))
 
     main_account = FILECONF('finance', 'main-account')
     merge_results_dir = FILECONF('finance', 'merge-results-dir')
@@ -82,7 +82,7 @@ def update_finances(verbose):
     latest_bank_statement = latest_file_matching(FILECONF('finance', 'bank-statement-template'))
 
     if latest_bank_statement and file_newer_than_file(latest_bank_statement, main_account):
-        qsutils.ensure_directory_present_and_empty(merge_results_dir)
+        qsutils.qsutils.ensure_directory_present_and_empty(merge_results_dir)
         if verbose: print("Updating from latest bank statement", latest_bank_statement)
         financial.finlisp.finlisp_main([os.path.join(my_projects, "qs/financial", "merge-latest-statement.lisp")],
                                        merge_results_dir,
@@ -131,7 +131,7 @@ def update_physical(begin_date, end_date):
     qsmerge.qsmerge(physical,
                     physical_files, None, phys_scratch)
 
-    if utils.check_merged_row_dates.check_merged_row_dates(phys_scratch, physical, *physical_files):
+    if qsutils.qsutils.check_merged_row_dates.check_merged_row_dates(phys_scratch, physical, *physical_files):
         backup(physical, archive_dir, "physical-to-%s.csv")
         shutil.copy(phys_scratch, physical)
     else:
@@ -217,7 +217,7 @@ def merge_incoming_csv(main_file_key, incoming_key,
     incoming_filename = latest_file_matching(FILECONF('physical', incoming_key))
     if incoming_filename:
         print("merging", incoming_filename, "into", main_filename, "with column_renames", column_renames, "and matches", match_key, match_value)
-        utils.trim_csv.trim_csv(incoming_filename)
+        qsutils.qsutils.trim_csv.trim_csv(incoming_filename)
         if (os.path.isfile(incoming_filename)
             and ((not os.path.isfile(main_filename))
                  or file_newer_than_file(incoming_filename, main_filename))):
@@ -302,7 +302,7 @@ def fetch_oura(begin_date, end_date, verbose):
     physical.oura_reader.oura_read_existing(data, oura_filename)
     existing_rows = len(data)
     if begin_date is None:
-        begin_date = qsutils.earliest_unfetched(data)
+        begin_date = qsutils.qsutils.earliest_unfetched(data)
     if verbose: print("fetching data from oura")
     physical.oura_reader.oura_fetch(data, begin_date, end_date)
     if verbose: print("fetched data from oura")
@@ -328,9 +328,9 @@ def fetch_omron(begin_date, end_date, verbose):
                                        'DIA(mmHg)': 'DIA',
                                        'Pulse(bpm)': 'Pulse',
                                        'Device': 'Device Model Name'},
-                       transformations={'Irregular heartbeat detected': qsutils.string_to_bool,
-                                        'Body Movement': qsutils.string_to_bool,
-                                        'Date': qsutils.normalize_date})
+                       transformations={'Irregular heartbeat detected': qsutils.qsutils.string_to_bool,
+                                        'Body Movement': qsutils.qsutils.string_to_bool,
+                                        'Date': qsutils.qsutils.normalize_date})
 
 def fetch_running(begin_date, end_date, verbose):
 
@@ -343,8 +343,8 @@ def fetch_running(begin_date, end_date, verbose):
     merge_incoming_csv('running-filename', 'garmin-incoming-pattern',
                        begin_date, end_date,
                        match_key='Activity Type', match_value='Running',
-                       transformations={'Time': qsutils.duration_string_to_minutes,
-                                        'Calories': qsutils.string_to_number})
+                       transformations={'Time': qsutils.qsutils.duration_string_to_minutes,
+                                        'Calories': qsutils.qsutils.string_to_number})
 
 def fetch_cycling(begin_date, end_date, verbose):
 
@@ -357,8 +357,8 @@ def fetch_cycling(begin_date, end_date, verbose):
     merge_incoming_csv('cycling-filename', 'garmin-incoming-pattern',
                        begin_date, end_date,
                        match_key='Activity Type', match_value='Cycling',
-                       transformations={'Time': qsutils.duration_string_to_minutes,
-                                        'Calories': qsutils.string_to_number})
+                       transformations={'Time': qsutils.qsutils.duration_string_to_minutes,
+                                        'Calories': qsutils.qsutils.string_to_number})
 
 def fetch_travel(begin_date, end_date, verbose):
     # TODO: fetch from Google, updating FILECONF('travel', 'travel-filename') and FILECONF('travel', 'places-filename')
@@ -390,7 +390,7 @@ def updates(begin_date, end_date,
 
     os.makedirs(FILECONF('general', 'charts'), exist_ok=True)
     # if end_date is None:
-    #     end_date = qsutils.yesterday()
+    #     end_date = qsutils.qsutils.yesterday()
 
     if do_externals:
         if verbose: print("Fetching external data")
@@ -422,7 +422,7 @@ def updates(begin_date, end_date,
                                             chart_sizes=CHART_SIZES)
 
 def main():
-    parser = qsutils.program_argparser()
+    parser = qsutils.qsutils.program_argparser()
     parser.add_argument("--charts", default=os.path.expanduser("~/private_html/dashboard"),
                         help="""Directory to write charts into.""")
     parser.add_argument("--begin",

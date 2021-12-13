@@ -103,7 +103,7 @@ class canonical_sheet(base_sheet.base_sheet):
             print("input sheet format name is", input_sheet.format_name)
             self.original_format_name = input_sheet.format_name
         if isinstance(input_sheet, csv_sheet.csv_sheet):
-            self.config = qsutils.combine_configs(input_sheet.config, config)
+            self.config = qsutils.qsutils.combine_configs(input_sheet.config, config)
             self.origin_files = input_sheet.origin_files
             if input_sheet.currency_conversion:
                 self.currency_conversion = re.compile(input_sheet.currency_conversion)
@@ -142,7 +142,7 @@ class canonical_sheet(base_sheet.base_sheet):
             # take a copy
             self.rows = {k: {vk: vv for vk, vv in v.items()} for k, v in input_sheet.rows.items()}
         elif isinstance(input_sheet, account.account):
-            self.config = qsutils.combine_configs(input_sheet.config, config)
+            self.config = qsutils.qsutils.combine_configs(input_sheet.config, config)
             for payee in input_sheet:
                 for timestamp, row in payee:
                     adjusted_timestamp = self.unused_timestamp_from(timestamp)
@@ -233,16 +233,16 @@ class canonical_sheet(base_sheet.base_sheet):
     def subtract_cells(self, other):
         """Return the cell-by-cell subtraction of another sheet from this one."""
         result = canonical_sheet(self.config)
-        result.rows = {date: qsutils.subtracted_row(row,
-                                            other.rows.get(date, {}),
-                                            self.column_names_list())
+        result.rows = {date: qsutils.qsutils.subtracted_row(row,
+                                                            other.rows.get(date, {}),
+                                                            self.column_names_list())
                        for date, row in self.rows.items()}
         return result
 
     def abs_threshold(self, threshold):
         """Return a sheet like this but with any entries smaller than a given threshold omitted."""
         result = canonical_sheet(self.config)
-        result.rows = {date: qsutils.thresholded_row(row, threshold)
+        result.rows = {date: qsutils.qsutils.thresholded_row(row, threshold)
                        for date, row in self.rows.items()}
         return result
 
@@ -261,7 +261,7 @@ class canonical_sheet(base_sheet.base_sheet):
             reference_sheet = input_sheet
         input_format = input_sheet.format
         in_columns = input_format['columns']
-        row_date = qsutils.normalize_date(input_sheet.get_cell(row, 'date', None))
+        row_date = qsutils.qsutils.normalize_date(input_sheet.get_cell(row, 'date', None))
         if row_date is None:
             if self.verbose:
                 print("empty date from row", row)
@@ -418,9 +418,11 @@ class canonical_sheet(base_sheet.base_sheet):
 
     def find_amount(self, amount, timestamp, within_days, payee_hint=None):
         """Find entries with a given amount, around a given time."""
+        print("find_amount", amount, type(amount), set([type(row['amount']) for row in self.rows.values()]))
         possibilities = [row for row in self.rows.values()
+                         # TODO: convert row['amount'] to number before doing abs() on it
                         if (abs(row['amount']) == abs(amount)
-                             and qsutils.within_days(row['timestamp'], timestamp, within_days))]
+                             and qsutils.qsutils.within_days(row['timestamp'], timestamp, within_days))]
         if payee_hint:
             filtered = [row
                         for row in possibilities
@@ -458,6 +460,10 @@ class canonical_sheet(base_sheet.base_sheet):
             if row_date not in accumulators:
                 accumulators[row_date] = {}
             this_period_by_payee = accumulators[row_date]
+            # make a key representing what we're gathering items by within each date:
+            # either of these:
+            # - account and payee
+            # - account, payee, and category
             try:
                 payee_key = ((row['account'], row['payee'])
                              if combine_categories
@@ -466,9 +472,11 @@ class canonical_sheet(base_sheet.base_sheet):
                 print("required key missing in", row)
                 raise(KeyError)
             if payee_key in this_period_by_payee:
+                # print("cspe adding row", row['timestamp'], row['amount'], row['payee'], "to existing", this_period_by_payee[payee_key], "of type", type(this_period_by_payee[payee_key]))
                 this_period_by_payee[payee_key] += row
             else:
                 this_period_by_payee[payee_key] = itemized_amount.itemized_amount(row)
+                # print("cspe starting row", row['timestamp'], row['amount'], row['payee'], "as", this_period_by_payee[payee_key], "of type", type(this_period_by_payee[payee_key]))
         if verbose:
             for timestamp in sorted(accumulators.keys()):
                 summaries = accumulators[timestamp]
@@ -476,7 +484,7 @@ class canonical_sheet(base_sheet.base_sheet):
                 for summarykey in sorted(summaries.keys()):
                     print("cspe sum   ", summarykey, repr(summaries[summarykey]))
                     for sub in summaries[summarykey].transactions:
-                        print("cspe sub       ", itemized_amount.row_descr(sub))
+                        print("cspe sub       ", sub)
         unique_number = 0
         debug = False
         for timestamp, summaries in accumulators.items():
@@ -486,16 +494,23 @@ class canonical_sheet(base_sheet.base_sheet):
                     continue
                 adjusted_datetime = result.unused_timestamp_from(timestamp)
                 if verbose:
-                    desc = ", ".join(summary.transactions.keys())
+                    print("summary", summary)
+                    print("summary.transactions.keys()", summary.transactions.keys())
+                    # the keys are tuples of (date, time, payee, amount, category, ?)
+                    desc = ", ".join([str(k) for k in summary.transactions.keys()])
                     print("making row at", adjusted_datetime, "from", summary, "which is", desc)
-                    print("summary.transactions is", summary.transactions)
+                    print("transaction types", [type(t) for t in summary.transactions.values()])
+                    # print("summary.transactions is", summary.transactions)
                 result.rows[adjusted_datetime] = {
                     'amount': summary,
-                    'category': (";".join([item['category'] for item in summary.transactions])
+                    'category': (";".join([item['category'] for item in summary.transactions.values()])
                                  if combine_categories
                                  else list(summary.transactions.values())[0]['category']),
-                    'combicount': ";".join([itemized_amount.compact_row_string(item) for item in summary.transactions]) if debug else len(summary.transactions),
-                    'item': (";".join([(item.get('item') or "") for item in summary.transactions])
+                    'combicount': (";".join([itemized_amount.compact_row_string(item)
+                                             for item in summary.transactions.values()])
+                                   if debug
+                                   else len(summary.transactions)),
+                    'item': (";".join([(item.get('item') or "") for item in summary.transactions.values()])
                                if combine_categories
                                else (list(summary.transactions.values())[0].get('item') or "")),
                     'timestamp': adjusted_datetime,
@@ -594,7 +609,7 @@ class canonical_sheet(base_sheet.base_sheet):
         Any columns not in the canonical format are ignored."""
         full_filename = os.path.expanduser(os.path.expandvars(filename))
         # print("writing canonical csv", full_filename, "from", self)
-        qsutils.ensure_directory_for_file(full_filename)
+        qsutils.qsutils.ensure_directory_for_file(full_filename)
         column_sequence = (canonical_sheet.canonical_column_sequence_no_timestamp
                            if suppress_timestamp
                            else canonical_sheet.canonical_column_sequence)
@@ -613,7 +628,7 @@ class canonical_sheet(base_sheet.base_sheet):
                     row['time'] = timestamp.time()
                 # select only the columns required for this sheet, and
                 # also round the unfortunately-represented floats
-                output_row = {sk: qsutils.tidy_for_output(row.get(sk, ""))
+                output_row = {sk: qsutils.qsutils.tidy_for_output(row.get(sk, ""))
                               for sk in column_sequence}
                 writer.writerow(output_row)
 
@@ -628,10 +643,10 @@ import argparse
 
 def main():
     """Tests for this module."""
-    parser = qsutils.program_argparser()
+    parser = qsutils.qsutils.program_argparser()
     parser.add_argument("input_files", nargs='*')
     args = parser.parse_args()
-    config = qsutils.program_load_config(args)
+    config = qsutils.qsutils.program_load_config(args)
     for filename in args.input_files:
         for all_rows in (False, True):
             print("reading and converting", filename)

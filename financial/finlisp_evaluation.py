@@ -244,7 +244,7 @@ def finlisp_eval(context, expr):
         for binding_frame in context['bindings']:
             print("bindings:")
             for varname, varval in binding_frame.items():
-                print("    " + varname + ":", varval)
+                print("    " + varname + ":", str(varval)[:132])
         raise EvalError(expr)
 
 def lisp_to_string(value):

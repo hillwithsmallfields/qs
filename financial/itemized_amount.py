@@ -26,9 +26,19 @@ FULL_TS_IN_COMPACT = True
 def date_for_compact(date):
     return date_in_full(date) if FULL_TS_IN_COMPACT else date_in_year(date)
 
+class MalformedRow(Exception):
+
+    def __init__(self, message, details):
+        self.message = message
+        self.details = details
+
 def row_summary(row):
-    # if 'amount' not in row:
-    #     print("Row", row, "is missing an amount")
+    if not isinstance(row, dict):
+        print("trying to get summary of non-row", row)
+        raise MalformedRow("trying to get summary of non-row", row)
+    if 'amount' not in row:
+        print("Row", str(row)[:132], "is missing an amount")
+        raise MalformedRow("missing amount in getting summary of row", list(row.keys())[:4])
     amount = row['amount']
     while isinstance(amount, itemized_amount):
         amount = amount.amount
@@ -39,6 +49,10 @@ def row_summary(row):
                   row.get('unique_number')))
 
 def row_descr(row):
+    print("describing row", row)
+    if not isinstance(row, dict):
+        print("Not a row")
+        return "<non-row %s>"
     return "<item " \
             + row['timestamp'].isoformat() \
             + " " + str(row['amount']) \
@@ -52,9 +66,11 @@ def row_descr(row):
             + ">"
 
 def diagnostic_amount_string(am):
+    """Return a string intended for debugging itemized amounts."""
     return repr(am) if isinstance(am, itemized_amount) else "fl %.2f" % am
 
 def compact_row_string(item):
+    """Return a compact string describing an item."""
     if 'date' not in item or 'category' not in item or 'amount' not in item:
         return str(item)
     return "%s %s%s %s: %s" % (date_for_compact(item['date']),
@@ -64,12 +80,14 @@ def compact_row_string(item):
                                diagnostic_amount_string(item['amount']))
 
 def row_annotation(row):
+    """Return an annotated description of a row's item."""
     item = row.get('item', "")
     return row.get('category', "unknown category") + ((" " + item)
                                                       if item and item != ""
                                                       else "")
 
 def tooltip_string(item, with_time=False):
+    """Return some HTML text suitable for use as a tooltip."""
     return (('''          <tr><td class="detdate">%s %s</td><td class="detamt">%s</td><td class="detpay">%s</td><td class="detcat">%s</td><td class="detitem">%s</td></tr>'''
              % (item.get('date', "date?"),
                 item.get('time', "time?"),
@@ -86,6 +104,7 @@ def tooltip_string(item, with_time=False):
                      item.get('item', ""))))
 
 def as_number(x):
+    """Try to get a number from an itemized_amount."""
     try:
         return (0
                 if not x
@@ -214,3 +233,4 @@ class itemized_amount:
                 + ('\n'.join([tooltip_string(self.transactions[key], with_time)
                               for key in sorted(self.transactions.keys())]))
                 + '\n        </table>\n      </div>\n    </td>')
+1

@@ -17,8 +17,8 @@ source_dir = os.path.dirname(os.path.realpath(__file__))
 # other parts of this project group
 sys.path.append(os.path.dirname(source_dir))
 import financial.classify       # https://github.com/hillwithsmallfields/qs/blob/master/financial/classify.py
-import utils.qsutils            # https://github.com/hillwithsmallfields/qs/blob/master/utils/qsutils.py
-import utils.qschart
+import qsutils.qsutils            # https://github.com/hillwithsmallfields/qs/blob/master/utils/qsutils.py
+import qsutils.qschart
 
 # This corresponds to https://github.com/hillwithsmallfields
 my_projects = os.path.dirname(os.path.dirname(source_dir))
@@ -166,7 +166,7 @@ def linked_image(image_name, label, fallback=None):
                             'past_quarter')
 
 def recent_transactions_table(filename, days_back):
-    start_date = utils.qsutils.back_from(datetime.date.today(), None, None, days_back)
+    start_date = qsutils.qsutils.back_from(datetime.date.today(), None, None, days_back)
     with open(filename) as instream:
         recent_transactions = [transaction
                            for transaction in csv.DictReader(instream)
@@ -216,14 +216,14 @@ def transactions_section():
                                                                  "unmatched-non-auto.html")))])]
 
 def timetable_section():
-    day_after_tomorrow = utils.qsutils.forward_from(datetime.date.today(), None, None, 2)
+    day_after_tomorrow = qsutils.qsutils.forward_from(datetime.date.today(), None, None, 2)
     day_after_tomorrow_name = day_after_tomorrow.strftime("%A")
     return T.div(class_='timetable')[
         T.h2["Timetable"],
         switchable_panel(
             'timetable_switcher',
             {'today': one_day_timetable_section(with_form=True),
-             'tomorrow': one_day_timetable_section(day=utils.qsutils.forward_from(datetime.date.today(),
+             'tomorrow': one_day_timetable_section(day=qsutils.qsutils.forward_from(datetime.date.today(),
                                                                                   None, None, 1)),
              day_after_tomorrow_name: one_day_timetable_section(day=day_after_tomorrow)},
             {'today': "Today",
@@ -268,7 +268,7 @@ def one_day_timetable_section(day=None, with_form=False):
                 value="Log activities")] if with_form else table
 
 def weather_section():
-    day_after_tomorrow = utils.qsutils.forward_from(datetime.date.today(), None, None, 2)
+    day_after_tomorrow = qsutils.qsutils.forward_from(datetime.date.today(), None, None, 2)
     day_after_tomorrow_name = day_after_tomorrow.strftime("%A")
     with open(CONF('weather', 'sunlight-times-file')) as sunlight_stream:
         sunlight_times = json.load(sunlight_stream)
@@ -277,7 +277,7 @@ def weather_section():
         switchable_panel('weather_switcher',
                          {'today': one_day_weather_section(),
                           'tomorrow': one_day_weather_section(
-                              utils.qsutils.forward_from(datetime.date.today(),
+                              qsutils.qsutils.forward_from(datetime.date.today(),
                                                          None, None, 1)),
                           # day_after_tomorrow_name: one_day_weather_section(
                           #     day_after_tomorrow)
@@ -638,14 +638,14 @@ def tagged_file_contents(tag, filename):
 def update_finances_charts(chart_sizes, begin_date, end_date, date_suffix, verbose):
 
     charts_dir = FILECONF('general', 'charts')
-    utils.qschart.qscharts(os.path.join(charts_dir, "by-class.csv"),
+    qsutils.qschart.qscharts(os.path.join(charts_dir, "by-class.csv"),
                            'finances',
                            CATEGORIES_OF_INTEREST,
                            begin_date, end_date, None, False,
                            os.path.join(charts_dir, "by-class-%s-%%s.png" % date_suffix),
                            chart_sizes)
     # TODO: split main file into running balances for each account (tracking as needed), take the end of each month for each account, and put them all in a file to display here (and get that shown in the resulting page)
-    # utils.qschart.qscharts(FILECONF('finance', 'account-balances'), 'finances',
+    # qsutils.qschart.qscharts(FILECONF('finance', 'account-balances'), 'finances',
     #                        [FILECONF('finance', 'main-current-account'),
     #                         FILECONF('finance', 'main-savings-account')],
     #                        begin, end, None, False,
@@ -662,28 +662,28 @@ def update_physical_charts(chart_sizes, begin_date, end_date, date_suffix):
 
     # TODO: rolling averages
     for units in ('stone', 'kilogram', 'pound'):
-        utils.qschart.qscharts(physical,
+        qsutils.qschart.qscharts(physical,
                                'weight',
                                [units],
                                begin_date, end_date, None, split_by_DoW,
                                os.path.join(charts_dir, "weight-%s-%s-%%s.png" % (units, date_suffix)),
                                chart_sizes)
-    utils.qschart.qscharts(mfp_filename,
+    qsutils.qschart.qscharts(mfp_filename,
                            'calories', ['calories'],
                            begin_date, end_date, None, split_by_DoW,
                            os.path.join(charts_dir, "total_calories-%s-%%s.png" % date_suffix),
                            chart_sizes)
-    utils.qschart.qscharts(mfp_filename, 'meals',
+    qsutils.qschart.qscharts(mfp_filename, 'meals',
                            ['breakfast', 'lunch', 'dinner', 'snacks'],
                            begin_date, end_date, None, False,
                            os.path.join(charts_dir, "meal_calories-%s-%%s.png" % date_suffix),
                            chart_sizes)
-    utils.qschart.qscharts(mfp_filename, 'food_groups',
+    qsutils.qschart.qscharts(mfp_filename, 'food_groups',
                            ['carbohydrates', 'fat', 'protein', 'sugar'],
                            begin_date, end_date, None, False,
                            os.path.join(charts_dir, "origin_calories-%s-%%s.png" % date_suffix),
                            chart_sizes)
-    utils.qschart.qscharts(FILECONF('physical', 'oura-filename'), 'sleep',
+    qsutils.qschart.qscharts(FILECONF('physical', 'oura-filename'), 'sleep',
                            ['Latency', 'Rem', 'Deep', 'Total'],
                            begin_date, end_date, None, split_by_DoW,
                            os.path.join(charts_dir, "sleep-split-%s-%%s.png" % date_suffix),
@@ -691,35 +691,35 @@ def update_physical_charts(chart_sizes, begin_date, end_date, date_suffix):
     sleep_chart_params = {suffix: chart.copy() for suffix, chart in chart_sizes.items()}
     for scp in sleep_chart_params.values():
         scp['subplot_kw'] = {'ylim': (0, 24.0)}
-    utils.qschart.qscharts(FILECONF('physical', 'oura-filename'), 'sleep',
+    qsutils.qschart.qscharts(FILECONF('physical', 'oura-filename'), 'sleep',
                            ['Start', 'End'],
                            begin_date, end_date, None, split_by_DoW,
                            os.path.join(charts_dir, "sleep-times-%s-%%s.png" % date_suffix),
                            sleep_chart_params
                            # TODO: plt.ylim(0, 24) in the charting code
     )
-    # utils.qschart.qscharts(smart_one_filename, 'peak_flow',
+    # qsutils.qschart.qscharts(smart_one_filename, 'peak_flow',
     #                        ['Peak flow'],
     #                        begin_date, end_date, None,
     #                        os.path.join(charts_dir, "peak-flow-%s-%%s.png" % date_suffix),
     #                        chart_sizes)
-    # utils.qschart.qscharts(FILECONF('physical', 'temperature-file'), 'temperature',
+    # qsutils.qschart.qscharts(FILECONF('physical', 'temperature-file'), 'temperature',
     #                        ['Temperature'],
     #                        begin_date, end_date, None,
     #                        os.path.join(charts_dir, "temperature-%s-%%s.png" % date_suffix),
     #                        chart_sizes)
-    utils.qschart.qscharts(FILECONF('physical', 'omron-filename'), 'blood_pressure',
+    qsutils.qschart.qscharts(FILECONF('physical', 'omron-filename'), 'blood_pressure',
                            ['systolic', 'diastolic', 'heart_rate'],
                            begin_date, end_date, None, split_by_DoW,
                            os.path.join(charts_dir, "blood-pressure-%s-%%s.png" % date_suffix),
                            chart_sizes)
-    utils.qschart.qscharts(FILECONF('physical', 'cycling-filename'), 'cycling',
+    qsutils.qschart.qscharts(FILECONF('physical', 'cycling-filename'), 'cycling',
                            ['Distance', 'Calories', 'Time'],
                            begin_date, end_date, None, False,
                            os.path.join(charts_dir, "cycling-%s-%%s.png" % date_suffix),
                            chart_sizes,
                            bar=True)
-    utils.qschart.qscharts(FILECONF('physical', 'running-filename'), 'running',
+    qsutils.qschart.qscharts(FILECONF('physical', 'running-filename'), 'running',
                            ['Distance', 'Calories', 'Time'],
                            begin_date, end_date, None, False,
                            os.path.join(charts_dir, "running-%s-%%s.png" % date_suffix),
@@ -734,7 +734,7 @@ def write_dashboard_page(contacts_analysis,
             page_text(
                 construct_dashboard_page(contacts_analysis),
                 (tagged_file_contents("style", os.path.join(source_dir, "dashboard.css"))
-                 + utils.qsutils.table_support_css(details_background_color)) if inline else "",
+                 + qsutils.qsutils.table_support_css(details_background_color)) if inline else "",
                 tagged_file_contents("script", os.path.join(source_dir, "dashboard.js")) if inline else ""))
     if not inline:
         for filename in ("dashboard.css",
@@ -751,10 +751,10 @@ def make_dashboard_images(chart_sizes,
         param_set['facecolor'] = background_colour
 
     periods = {'all_time': datetime.date(year=1973, month=1, day=1),
-               'past_week': utils.qsutils.back_from(today, None, None, 7),
-               'past_month': utils.qsutils.back_from(today, None, 1, None),
-               'past_quarter': utils.qsutils.back_from(today, None, 3, None),
-               'past_year': utils.qsutils.back_from(today, 1, None, None)}
+               'past_week': qsutils.qsutils.back_from(today, None, None, 7),
+               'past_month': qsutils.qsutils.back_from(today, None, 1, None),
+               'past_quarter': qsutils.qsutils.back_from(today, None, 3, None),
+               'past_year': qsutils.qsutils.back_from(today, 1, None, None)}
     for date_suffix, begin in ({'custom': begin_date}
                                if begin_date
                                else periods).items():
@@ -784,7 +784,7 @@ def make_dashboard_page(chart_dir=None,
                          details_background_color=shading)
 
 def main():
-    parser = utils.qsutils.program_argparser()
+    parser = qsutils.qsutils.program_argparser()
     parser.add_argument("--charts", default=os.path.expanduser("~/private_html/dashboard"),
                         help="""Directory to write charts into.""")
     args = parser.parse_args()

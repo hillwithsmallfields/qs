@@ -113,10 +113,10 @@ class csv_sheet(base_sheet.base_sheet):
         A collection of header lines is scanned to find the type."""
         filename = os.path.expanduser(os.path.expandvars(filename))
         with open(filename) as infile:
-            self.format_name, self.header_row_number = qsutils.deduce_stream_format(infile, self.config, verbose=self.verbose)
+            self.format_name, self.header_row_number = qsutils.qsutils.deduce_stream_format(infile, self.config, verbose=self.verbose)
             if self.format_name is None:
                 if not self.verbose:
-                    self.format_name, self.header_row_number = qsutils.deduce_stream_format(infile, self.config, verbose=True)
+                    self.format_name, self.header_row_number = qsutils.qsutils.deduce_stream_format(infile, self.config, verbose=True)
                 print("Could not deduce format for", filename)
                 raise UnknownCSVFormat(infile)
             # print("Detected", self.format_name, "spreadsheet in", filename)
@@ -159,7 +159,7 @@ class csv_sheet(base_sheet.base_sheet):
                 row = self.rows[timestamp]
                 # select only the columns required for this sheet, and
                 # also round the unfortunately-represented floats
-                writer.writerow({sk: qsutils.tidy_for_output(row.get(sk, "")) for sk in self.colseq})
+                writer.writerow({sk: qsutils.qsutils.tidy_for_output(row.get(sk, "")) for sk in self.colseq})
 
     def write_debug(self, filename):
         """Write a account to a file, for debugging."""
@@ -172,10 +172,10 @@ import argparse
 
 def main():
     """Tests for this module."""
-    parser = qsutils.program_argparser()
+    parser = qsutils.qsutils.program_argparser()
     parser.add_argument("input_files", nargs='*')
     args = parser.parse_args()
-    config = qsutils.program_load_config(args)
+    config = qsutils.qsutils.program_load_config(args)
     for filename in args.input_files:
         print("reading test data from", filename)
         sheet = csv_sheet(config, input_filename=filename)

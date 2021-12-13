@@ -171,13 +171,13 @@ def add_sheets(context, *sheets):
     return sheets[0].add_sheets(*sheets[1:])
 
 def adjustments_by_day(context, mainsheet, statements, account_name):
-    return mainsheet.adjustments(statements, account_name, qsutils.granularity_day)
+    return mainsheet.adjustments(statements, account_name, qsutils.qsutils.granularity_day)
 
 def adjustments_by_month(context, mainsheet, statements, account_name):
-    return mainsheet.adjustments(statements, account_name, qsutils.granularity_month)
+    return mainsheet.adjustments(statements, account_name, qsutils.qsutils.granularity_month)
 
 def adjustments_by_year(context, mainsheet, statements, account_name):
-    return mainsheet.adjustments(statements, account_name, qsutils.granularity_year)
+    return mainsheet.adjustments(statements, account_name, qsutils.qsutils.granularity_year)
 
 def annotate_by_timestamp(context, sheet, reference, annotation_columns):
     return filter_dates.annotate_by_timestamp(sheet, reference, annotation_columns)
@@ -206,7 +206,7 @@ def by_classification(context, original, parentage_table, classifiers, collect_u
                                  verbose=True)
 
 def by_day(context, original, combine_categories, combined_only):
-    return original.combine_same_period_entries(qsutils.granularity_day,
+    return original.combine_same_period_entries(qsutils.qsutils.granularity_day,
                                                 combine_categories,
                                                 combined_only,
                                                 comment="Daily summary")
@@ -249,7 +249,7 @@ def by_hierarchy(context, original, depth, parentage_table):
                                  label="by_hierarchy")
 
 def by_month(context, original, combine_categories, combined_only):
-    return original.combine_same_period_entries(qsutils.granularity_month,
+    return original.combine_same_period_entries(qsutils.qsutils.granularity_month,
                                                 combine_categories,
                                                 combined_only,
                                                 comment="Monthly summary")
@@ -261,7 +261,7 @@ def by_parent(context, original, parentage_table):
                                  label="by_parent")
 
 def by_year(context, original, combine_categories, combined_only):
-    return original.combine_same_period_entries(qsutils.granularity_year,
+    return original.combine_same_period_entries(qsutils.qsutils.granularity_year,
                                                 combine_categories,
                                                 combined_only,
                                                 comment="Yearly summary")
@@ -406,22 +406,22 @@ def compare(context,
                                  track_b=track_b, filter_b_col=filter_b_col, filter_b_val=filter_b_val)
 
 def count_day_categories(context, sheet):
-    return sheet.count_same_period_categories(qsutils.granularity_day)
+    return sheet.count_same_period_categories(qsutils.qsutils.granularity_day)
 
 def count_day_transactions(context, sheet):
-    return filter_dates.count_by_dates(sheet, qsutils.granularity_day)
+    return filter_dates.count_by_dates(sheet, qsutils.qsutils.granularity_day)
 
 def count_month_categories(context, sheet):
-    return sheet.count_same_period_categories(qsutils.granularity_month)
+    return sheet.count_same_period_categories(qsutils.qsutils.granularity_month)
 
 def count_month_transactions(context, sheet):
-    return filter_dates.count_by_dates(sheet, qsutils.granularity_month)
+    return filter_dates.count_by_dates(sheet, qsutils.qsutils.granularity_month)
 
 def count_year_categories(context, sheet):
-    return sheet.count_same_period_categories(qsutils.granularity_year)
+    return sheet.count_same_period_categories(qsutils.qsutils.granularity_year)
 
 def count_year_transactions(context, sheet):
-    return filter_dates.count_by_dates(sheet, qsutils.granularity_year)
+    return filter_dates.count_by_dates(sheet, qsutils.qsutils.granularity_year)
 
 def eval_python(context, command):
     return eval(command)
@@ -512,30 +512,30 @@ It matches if equal, a substring, or a superstring."""
     return False
 
 def first_of_month(context, sheet):
-    return filter_dates.filtered_by_date(sheet, qsutils.granularity_month, True)
+    return filter_dates.filtered_by_date(sheet, qsutils.qsutils.granularity_month, True)
 
 def first_of_year(context, sheet):
-    return filter_dates.filtered_by_date(sheet, qsutils.granularity_year, True)
+    return filter_dates.filtered_by_date(sheet, qsutils.qsutils.granularity_year, True)
 
 def join_by_days(context, sheet_a, sheet_b):
-    return filter_dates.join_by_dates(sheet_a, sheet_b, qsutils.granularity_day)
+    return filter_dates.join_by_dates(sheet_a, sheet_b, qsutils.qsutils.granularity_day)
 
 def join_by_months(context, sheet_a, sheet_b):
-    return filter_dates.join_by_dates(sheet_a, sheet_b, qsutils.granularity_month)
+    return filter_dates.join_by_dates(sheet_a, sheet_b, qsutils.qsutils.granularity_month)
 
 def join_by_years(context, sheet_a, sheet_b):
-    return filter_dates.join_by_dates(sheet_a, sheet_b, qsutils.granularity_year)
+    return filter_dates.join_by_dates(sheet_a, sheet_b, qsutils.qsutils.granularity_year)
 
 def last_of_month(context, sheet):
-    return filter_dates.filtered_by_date(sheet, qsutils.granularity_month, False)
+    return filter_dates.filtered_by_date(sheet, qsutils.qsutils.granularity_month, False)
 
 def last_of_year(context, sheet):
-    return filter_dates.filtered_by_date(sheet, qsutils.granularity_year, False)
+    return filter_dates.filtered_by_date(sheet, qsutils.qsutils.granularity_year, False)
 
 def list_accounts(context, filename=None):
     varnames = sorted(context['variables'].keys())
     if filename:
-        with open(qsutils.resolve_filename(filename), 'w') as outfile:
+        with open(qsutils.qsutils.resolve_filename(filename), 'w') as outfile:
             colseq = ['variable', 'type']
             writer = csv.writer(outfile, colseq)
             writer.writerow(colseq)
@@ -552,7 +552,7 @@ def occupied_columns(context, sheet):
 
 def past_months(context, original, months):
     return between_dates(context, original,
-                         qsutils.back_from(datetime.date.today(), 0, months, 0),
+                         qsutils.qsutils.back_from(datetime.date.today(), 0, months, 0),
                          None)
 
 def payees(context, original, pattern=None):
@@ -586,7 +586,7 @@ def remove_columns_row(timestamp, row, output_rows, colnames):
     output_rows[timestamp] = {colname: row[colname] for colname in row.keys() if colname not in colnames}
 
 def remove_columns(context, sheet, column_names):
-    _, output_rows = qsutils.process_rows(column_names, # app-data
+    _, output_rows = qsutils.qsutils.process_rows(column_names, # app-data
                                           None, # input-format
                                           sheet.rows, # rows
                                           None, # setup
@@ -600,7 +600,7 @@ def rename_columns_row(timestamp, row, output_rows, names):
     output_rows[timestamp] = {names[1] if colname == names[0] else colname: cellvalue for colname, cellvalue in row.items()}
 
 def rename_column(context, sheet, oldname, newname):
-    _, output_rows = qsutils.process_rows([oldname, newname], # app-data
+    _, output_rows = qsutils.qsutils.process_rows([oldname, newname], # app-data
                                           None, # input-format
                                           sheet.rows, # rows
                                           None, # setup
@@ -637,7 +637,7 @@ def select_columns_row(timestamp, row, output_rows, colnames):
         print("Cannot select missing column; row:", row, "selected:", colnames)
 
 def select_columns(context, sheet, column_names):
-    _, output_rows = qsutils.process_rows(column_names, # app-data
+    _, output_rows = qsutils.qsutils.process_rows(column_names, # app-data
                                           None, # input-format
                                           sheet.rows, # rows
                                           None, # setup
@@ -673,7 +673,7 @@ def sheet(context, subject):
 
 def show(context, value, filename):
     """Output any of the types we handle, for debugging."""
-    with open(qsutils.resolve_filename(filename), 'w') as output:
+    with open(qsutils.qsutils.resolve_filename(filename), 'w') as output:
         output.write(repr(value))
 
 def subtract_cells(context, sheet, subtrahend):
@@ -702,7 +702,7 @@ def unclassified_categories(context, classifiers, parentage_table):
 
 def write_all_columns(context, value, filename):
     if value:
-        value.write_all_columns(qsutils.resolve_filename(
+        value.write_all_columns(qsutils.qsutils.resolve_filename(
             filename,
             finlisp_evaluation.finlisp_var_value(context,
                                                  'output-dir')))
@@ -713,7 +713,7 @@ def write_all_columns(context, value, filename):
 def write_csv(context, value, filename):
     # print("write_csv", filename, value)
     if value:
-        value.write_csv(qsutils.resolve_filename(
+        value.write_csv(qsutils.qsutils.resolve_filename(
             filename,
             finlisp_evaluation.finlisp_var_value(
                 context,
@@ -725,7 +725,7 @@ def write_csv(context, value, filename):
 def write_csv_with_averages(context, value,
                             filename, suppress_timestamp=False):
     if value:
-        value.write_csv(qsutils.resolve_filename(
+        value.write_csv(qsutils.qsutils.resolve_filename(
             filename,
             finlisp_evaluation.finlisp_var_value(context,
                                                  'output-dir')),
@@ -743,11 +743,11 @@ def write_table(context, sheet,
                 with_time=False,
                 details_background_colour="yellow",
                 summarize=False):
-    full_filename = qsutils.resolve_filename(
+    full_filename = qsutils.qsutils.resolve_filename(
         filename,
         finlisp_evaluation.finlisp_var_value(context,
                                              'output-dir'))
-    qsutils.ensure_directory_for_file(full_filename)
+    qsutils.qsutils.ensure_directory_for_file(full_filename)
     with open(full_filename, 'w') as outstream:
         sheet.write_html_table(outstream,
                                css_class=style,
@@ -763,15 +763,15 @@ def write_html(context, sheet, filename, title,
                explanation=None,
                colnames=None,
                details_background_colour="yellow"):
-    full_filename = qsutils.resolve_filename(
+    full_filename = qsutils.qsutils.resolve_filename(
         filename,
         finlisp_evaluation.finlisp_var_value(context,
                                              'output-dir'))
-    qsutils.ensure_directory_for_file(full_filename)
+    qsutils.qsutils.ensure_directory_for_file(full_filename)
     with open(full_filename, 'w') as outstream:
         outstream.write('<html><head><title>%s</title></head>' % title)
         if details:
-            qsutils.write_table_support_css(outstream, details_background_colour)
+            qsutils.qsutils.write_table_support_css(outstream, details_background_colour)
         outstream.write('\n<body>\n')
         if explanation:
             outstream.write("\n<p>" + explanation + "</p>\n")
@@ -785,7 +785,7 @@ def write_html(context, sheet, filename, title,
 
 def write_json(context, value, filename):
     if value:
-        value.write_json(qsutils.resolve_filename(
+        value.write_json(qsutils.qsutils.resolve_filename(
             filename,
             finlisp_evaluation.finlisp_var_value(context,
                                                  'output-dir')))
@@ -795,7 +795,7 @@ def write_json(context, value, filename):
 
 def write_debug(context, value, filename):
     if value:
-        value.write_debug(qsutils.resolve_filename(
+        value.write_debug(qsutils.qsutils.resolve_filename(
             filename,
             finlisp_evaluation.finlisp_var_value(context,
                                                  'output-dir')))

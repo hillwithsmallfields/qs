@@ -1,5 +1,9 @@
 #!/bin/bash
 
+SCRIPT_DIR=$(dirname $(readlink -f "$0"))
+
+source $SCRIPT_DIR/../../noticeboard/env/bin/activate
+
 export ARCHIVE=$HOME/archive
 export DOWNLOADS=$HOME/Downloads
 export ISOS=$HOME/isos
