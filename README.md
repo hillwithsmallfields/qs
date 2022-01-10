@@ -1,6 +1,11 @@
 My Quantified Self code
 =======================
 
+This badly needs either a re-write or a major refactoring, and I'm
+embarrassed about how rambling it has become.  However, I also have
+other things to do, and it largely works.  A bit like quite a lot of
+closed-source commercial software.
+
 Weight and fitness
 ==================
 
@@ -35,29 +40,10 @@ Tracker app on my phone (Android).
 Finances
 ========
 
-finconv
--------
+For atavistic reasons, partway through this I decided the upper levels
+of it would be better in Lisp, so I wrote a small Lisp interpreter for
+it.  However, the Lisp parts of the code are very small, and I'm not
+sure it was a good idea, although it does nicely separate the upper
+and lower parts of the code.
 
-For finance data, I've been quite good at accumulating expenditure
-that I do manually, using "Financisto" on my phone, but I've neglected
-to add Direct Debits etc.  I started the program "finconv" to filter
-and convert the data from my bank statements (it wasn't quite in the
-scope of the csvutils I found); then I added features to it to let it
-make an overall file within which the comparisons can be done.
-
-fintrack
---------
-
-"fintrack" is for tracking transactions, updating the running balance,
-so that I can compare them with the balances provided in the bank
-statements.  Easy enough to do in a spreadsheet, but that doesn't
-really fit into a scripted workflow, as data and formula would need
-sticking together.
-
-finsum
-------
-
-"finsum" combines all the transactions for a payee, or for a category,
-in a day, month, or year.  It's fiddling around towards solutions to
-the problem that things can appear in my bank statement on a different
-date from the one they nominally happen.
+This is probably the part that needs most rewriting.
