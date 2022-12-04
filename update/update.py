@@ -118,11 +118,8 @@ def update_physical(begin_date, end_date):
 
     """Merge incoming health-related data from various files, into one central file."""
 
-    charts_dir = FILECONF('general', 'charts')
     physical = FILECONF('physical', 'physical-filename')
-    mfp_filename = FILECONF('physical', 'mfp-filename')
     phys_scratch = "/tmp/physical-tmp.csv"
-    archive_dir = FILECONF('backups', 'archive')
 
     physical_files = [FILECONF('physical', 'weight-filename')
                      # TODO: merge the other physical files
@@ -132,7 +129,7 @@ def update_physical(begin_date, end_date):
                             physical_files, None, phys_scratch)
 
     if qsutils.check_merged_row_dates.check_merged_row_dates(phys_scratch, physical, *physical_files):
-        backup(physical, archive_dir, "physical-to-%s.csv")
+        backup(physical, FILECONF('backups', 'archive'), "physical-to-%s.csv")
         shutil.copy(phys_scratch, physical)
     else:
         print("merge of physical data produced the wrong number of rows")
@@ -398,7 +395,7 @@ def updates(begin_date, end_date,
                 (('weather', 'weather-filename'), fetch_weather, "weather-to-%s.csv"),
                 (('physical', 'mfp-filename'), fetch_mfp, "mfp-to-%s.csv"),
                 (('travel', 'travel-filename'), fetch_travel, "travel-to-%s.csv"),
-                (('physical', 'oura-filename'), fetch_oura, "oura-to-%s.csv"),
+                # (('physical', 'oura-filename'), fetch_oura, "oura-to-%s.csv"),
                 (('physical', 'omron-filename'), fetch_omron, "omron-to-%s.csv"),
                 (('physical', 'cycling-filename'), fetch_cycling, "cycling-to-%s.csv"),
                 (('physical', 'running-filename'), fetch_running, "running-to-%s.csv")

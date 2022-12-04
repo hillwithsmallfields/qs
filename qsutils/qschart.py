@@ -105,8 +105,9 @@ def qscharts(mainfile, file_type,
              outfile_template,
              plot_param_sets,
              bar=False):
-    # print("charting", mainfile)
+    print("charting", mainfile)
     for name_suffix, params in plot_param_sets.items():
+        print("charting into", outfile_template % name_suffix)
         if not qschart(mainfile, file_type,
                        columns, begin, end, match, by_day_of_week,
                        outfile_template % name_suffix, params, bar=bar):
@@ -136,6 +137,9 @@ def qschart(mainfile, file_type, columns, begin, end, match, by_day_of_week, out
     # TODO: filter by day of week
     # TODO: check timestamps of mainfile and outfile
 
+    if mainfile == "/home/jcgs/Sync/health/physical.csv":
+        print("Watching this one")
+
     data = pd.read_csv(mainfile, parse_dates=['Date'])
 
     # do this before trimming to 'begin' and 'end', as this may create
@@ -163,12 +167,16 @@ def qschart(mainfile, file_type, columns, begin, end, match, by_day_of_week, out
 
     # TODO: label every year; grid lines?
     # TODO: plot absolute values
+    if mainfile == "/home/jcgs/Sync/health/physical.csv":
+        print("plotting column set")
 
     plot_column_set(axs, data, columns,
                     "All " if by_day_of_week else "",
                     bar=bar)
 
     if by_day_of_week:
+        if mainfile == "/home/jcgs/Sync/health/physical.csv":
+            print("plotting column set for", dow)
         for dow in range(7):
             plot_column_set(axs,
                             data[data['Date'].dt.dayofweek == dow],
@@ -178,6 +186,9 @@ def qschart(mainfile, file_type, columns, begin, end, match, by_day_of_week, out
 
     plt.xlabel("Date")
     plt.grid(axis='both')
+
+    if mainfile == "/home/jcgs/Sync/health/physical.csv":
+        print("writing to outfile", outfile)
 
     fig.savefig(outfile,
                 facecolor=fig.get_facecolor())

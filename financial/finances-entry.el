@@ -96,7 +96,7 @@ With optional FORCE, do it even if it seems unnecessary."
                                          collection
                                          :test 'string=))))))
 
-(defun finances-read-entry (&optional given-payee item given-category)
+(defun finances-read-entry (&optional given-payee item given-category always-debit)
   "Read the details of a transaction.
 Optional argument GIVEN-PAYEE, ITEM, and GIVEN-CATEGORY are the payee, item, and category, if pre-specified."
   (finances-read-completions)
@@ -104,7 +104,7 @@ Optional argument GIVEN-PAYEE, ITEM, and GIVEN-CATEGORY are the payee, item, and
          (date (format-time-string "%F"))
          (time (format-time-string "%T"))
          (amount (eval (read (read-from-minibuffer "Amount:" ))))
-         (debit (y-or-n-p "Debit? "))
+         (debit (or always-debit (y-or-n-p "Debit? ")))
          (account (completing-read-with-preloaded-history
                    "Account: " 'account-completions
                    t finances-default-account))
@@ -191,7 +191,7 @@ Optional argument GIVEN-PAYEE, ITEM, and GIVEN-CATEGORY are the payee, item, and
 (defun finances-enter-from-shopping-list (payee item category)
   "Add a finances entry from PAYEE for ITEM in CATEGORY."
   (save-excursion
-    (apply 'finances-enter (finances-read-entry payee item category))))
+    (apply 'finances-enter (finances-read-entry payee item category t))))
 
 (defun finances-enter (date time
                             account amount currency
@@ -203,27 +203,28 @@ The fields DATE TIME ACCOUNT AMOUNT CURRENCY ORIGINAL-AMOUNT
 ORIGINAL-CURRENCY CATEGORY PARENT PAYEE LOCATION PROJECT NOTE are
 as in the Financisto app."
   (interactive (finances-read-entry))
-  (find-file (substitute-in-file-name finances-transactions-file))
-  (save-excursion
-    (goto-char (point-max))
-    (unless (looking-at "^$")
-      (insert "\n"))
-    (let* ((balance nil)
-           (adjusted-date-time (adjust-date-time date time))
-           (adjusted-date (car adjusted-date-time))
-           (adjusted-time (cdr adjusted-date-time)))
-      (insert (mapconcat 'finances-entry-cell-as-string
-                         (list adjusted-date adjusted-time
-                               account (format-currency amount currency) currency
-                               (format-currency original-amount original-currency) original-currency
-                               balance
-                               0.0        ; statement
-                               payee
-                               category project
-                               note)
-                         ",")
-              "\n")))
-  (cons payee amount))
+  (save-window-excursion
+    (find-file (substitute-in-file-name finances-transactions-file))
+    (save-excursion
+      (goto-char (point-max))
+      (unless (looking-at "^$")
+        (insert "\n"))
+      (let* ((balance nil)
+             (adjusted-date-time (adjust-date-time date time))
+             (adjusted-date (car adjusted-date-time))
+             (adjusted-time (cdr adjusted-date-time)))
+        (insert (mapconcat 'finances-entry-cell-as-string
+                           (list adjusted-date adjusted-time
+                                 account (format-currency amount currency) currency
+                                 (format-currency original-amount original-currency) original-currency
+                                 balance
+                                 0.0    ; statement
+                                 payee
+                                 category project
+                                 note)
+                           ",")
+                "\n")))
+  (cons payee amount)))
 
 (defun finances-multi-enter ()
   "Read multiple entries."

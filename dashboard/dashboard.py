@@ -668,36 +668,78 @@ def update_physical_charts(chart_sizes, begin_date, end_date, date_suffix):
                                begin_date, end_date, None, split_by_DoW,
                                os.path.join(charts_dir, "weight-%s-%s-%%s.png" % (units, date_suffix)),
                                chart_sizes)
-    qsutils.qschart.qscharts(mfp_filename,
-                           'calories', ['calories'],
-                           begin_date, end_date, None, split_by_DoW,
-                           os.path.join(charts_dir, "total_calories-%s-%%s.png" % date_suffix),
-                           chart_sizes)
-    qsutils.qschart.qscharts(mfp_filename, 'meals',
-                           ['breakfast', 'lunch', 'dinner', 'snacks'],
-                           begin_date, end_date, None, False,
-                           os.path.join(charts_dir, "meal_calories-%s-%%s.png" % date_suffix),
-                           chart_sizes)
-    qsutils.qschart.qscharts(mfp_filename, 'food_groups',
-                           ['carbohydrates', 'fat', 'protein', 'sugar'],
-                           begin_date, end_date, None, False,
-                           os.path.join(charts_dir, "origin_calories-%s-%%s.png" % date_suffix),
-                           chart_sizes)
-    qsutils.qschart.qscharts(FILECONF('physical', 'oura-filename'), 'sleep',
-                           ['Latency', 'Rem', 'Deep', 'Total'],
-                           begin_date, end_date, None, split_by_DoW,
-                           os.path.join(charts_dir, "sleep-split-%s-%%s.png" % date_suffix),
-                           chart_sizes)
+
+    for chartdef, template in [
+            ({'mainfile': mfp_filename,
+              'file_type': 'calories',
+              'columns': ['calories']},
+             "total_calories-%s-%%s.png"),
+            ({'mainfile': mfp_filename,
+              'file_type': 'meals',
+              'columns': ['breakfast', 'lunch', 'dinner', 'snacks']},
+             "meal_calories-%s-%%s.png"),
+            ({'mainfile': mfp_filename,
+              'file_type': 'food_groups',
+              'columns': ['carbohydrates', 'fat', 'protein', 'sugar']
+              }, "origin_calories-%s-%%s.png"),
+            # ({'mainfile': FILECONF('physical', 'oura-filename'),
+            #   'file_type': 'sleep',
+            #   'columns': ['Latency', 'Rem', 'Deep', 'Total']
+            #   }, "sleep-split-%s-%%s.png"),
+            ({'mainfile': FILECONF('physical', 'omron-filename'),
+              'file_type': 'blood_pressure',
+              'columns': ['systolic', 'diastolic', 'heart_rate']
+              }, "blood-pressure-%s-%%s.png"),
+            ({'mainfile': FILECONF('physical', 'cycling-filename'),
+              'file_type': 'cycling',
+              'columns': ['Distance', 'Calories', 'Time']
+              }, "cycling-%s-%%s.png"),
+            ({'mainfile': FILECONF('physical', 'running-filename'),
+              'file_type': 'running',
+              'columns': ['Distance', 'Calories', 'Time']
+              }, "running-%s-%%s.png"),
+            # ({'mainfile':,
+            #   'file_type':,
+            #   'columns':
+            #   }, ),
+            # ({'mainfile':,
+            #   'file_type':,
+            #   'columns':
+            #   }, ),
+            # ({'mainfile':,
+            #   'file_type':,
+            #   'columns':
+            #   }, ),
+            # ({'mainfile':,
+            #   'file_type':,
+            #   'columns':
+            #   }, ),
+            # ({'mainfile':,
+            #   'file_type':,
+            #   'columns':
+            #   }, )
+    ]:
+        qsutils.qschart.qscharts(begin=begin_date, end=end_date,
+                                 match=None,
+                                 by_day_of_week=split_by_DoW,
+                                 plot_param_sets=chart_sizes,
+                                 outfile_template=os.path.join(charts_dir,
+                                                               template % date_suffix),
+                                 bar=False,
+                                 **chartdef)
+
     sleep_chart_params = {suffix: chart.copy() for suffix, chart in chart_sizes.items()}
     for scp in sleep_chart_params.values():
         scp['subplot_kw'] = {'ylim': (0, 24.0)}
-    qsutils.qschart.qscharts(FILECONF('physical', 'oura-filename'), 'sleep',
-                           ['Start', 'End'],
-                           begin_date, end_date, None, split_by_DoW,
-                           os.path.join(charts_dir, "sleep-times-%s-%%s.png" % date_suffix),
-                           sleep_chart_params
-                           # TODO: plt.ylim(0, 24) in the charting code
-    )
+    # qsutils.qschart.qscharts(FILECONF('physical',
+    #                                   'oura-filename'
+    #                                   ), 'sleep',
+    #                        ['Start', 'End'],
+    #                        begin_date, end_date, None, split_by_DoW,
+    #                        os.path.join(charts_dir, "sleep-times-%s-%%s.png" % date_suffix),
+    #                        sleep_chart_params
+    #                        # TODO: plt.ylim(0, 24) in the charting code
+    # )
     # qsutils.qschart.qscharts(smart_one_filename, 'peak_flow',
     #                        ['Peak flow'],
     #                        begin_date, end_date, None,
@@ -708,23 +750,6 @@ def update_physical_charts(chart_sizes, begin_date, end_date, date_suffix):
     #                        begin_date, end_date, None,
     #                        os.path.join(charts_dir, "temperature-%s-%%s.png" % date_suffix),
     #                        chart_sizes)
-    qsutils.qschart.qscharts(FILECONF('physical', 'omron-filename'), 'blood_pressure',
-                           ['systolic', 'diastolic', 'heart_rate'],
-                           begin_date, end_date, None, split_by_DoW,
-                           os.path.join(charts_dir, "blood-pressure-%s-%%s.png" % date_suffix),
-                           chart_sizes)
-    qsutils.qschart.qscharts(FILECONF('physical', 'cycling-filename'), 'cycling',
-                           ['Distance', 'Calories', 'Time'],
-                           begin_date, end_date, None, False,
-                           os.path.join(charts_dir, "cycling-%s-%%s.png" % date_suffix),
-                           chart_sizes,
-                           bar=True)
-    qsutils.qschart.qscharts(FILECONF('physical', 'running-filename'), 'running',
-                           ['Distance', 'Calories', 'Time'],
-                           begin_date, end_date, None, False,
-                           os.path.join(charts_dir, "running-%s-%%s.png" % date_suffix),
-                           chart_sizes,
-                           bar=True)
 
 def write_dashboard_page(contacts_analysis,
                          details_background_color="gold", inline=True):

@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Time-stamp: <2021-12-13 19:00:48 jcgs>
+# Time-stamp: <2022-12-04 17:42:15 jcgs>
 
 # Program to merge my Quantified Self files.
 
@@ -48,6 +48,7 @@ def weight_tracker_complete_row(row):
         row['Date number'] = excel_date(row['Date'])
     if (not given(row, 'St total')) and given(row, 'Lbs total'):
             row['St total'] = float(row['Lbs total']) / 14
+    # print(row)
 
 def iso8601_date_time(timestamp):
     return timestamp.replace('/', '-').replace(' ', 'T')

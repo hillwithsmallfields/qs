@@ -26,7 +26,12 @@ def ensure_mfp_login():
     """Ensure that we are connected to MyFitnessPal."""
     global client
     if client is None:
-        client = myfitnesspal.Client(config('MFP_USERNAME'), config('MFP_PASSWORD'))
+        try:
+            client = myfitnesspal.Client(config('MFP_USERNAME'), config('MFP_PASSWORD'))
+            return True
+        except json.decoder.JSONDecodeError:
+            print("Could not connect to MyFitnessPal")
+            return False
 
 meal_keys = ['breakfast', 'lunch', 'dinner', 'snacks']
 meal_numbers = {v:i for i,v in enumerate(meal_keys)}
@@ -54,64 +59,67 @@ def fetch_streak_upto(when,
     have been fetched.
 
     """
-    ensure_mfp_login()
-    if verbose:
-        print("now logged in")
-    day_count = 0
-    while True:
-        if (overlap is not None
-            and ((accumulator is not None
-                  and when in accumulator)
-                 or (sheet is not None
-                     and when in sheet))):
-            overlap -= 1
-            if overlap == 0:
-                break
-        if ((accumulator is not None and when not in accumulator)
-            or (sheet is not None and when not in sheet)):
-            if verbose:
-                print("getting data for", when, "count", day_count)
-            day_count += 1
-            day_data = client.get_date(when.year, when.month, when.day)
-            dict_data = day_data.get_as_dict()
-            cardio = day_data.exercises[0].get_as_list()
-            if verbose:
-                print("day_data is", day_data, "and dict_data is", dict_data, "and cardio is", cardio)
-            if all_empty(dict_data):
-                if verbose:
-                    print("couldn't get any data for", when)
-                break
-            if accumulator is not None:
-                if verbose:
-                    print("adding", dict_data, "to json")
-                accumulator[when] = dict_data
-            if sheet is not None:
-                if verbose:
-                    print("accumulating spreadsheet data")
-                row = {mealname+'_cals': meal_calories(day_data, i)
-                       for i, mealname in enumerate(meal_keys)}
-                row['cardio_minutes'] = sum([exercise['nutrition_information']['minutes'] or 0.0 for exercise in cardio])
-                row['cardio_calories'] = sum([exercise['nutrition_information']['calories burned'] or 0.0 for exercise in cardio])
-                row.update(day_data.totals)
-                row['Date'] = when
-                if verbose:
-                    print("adding", row, "to sheet with date", when)
-                sheet[when] = row
-            if countdown:
-                countdown -= 1
-                if verbose:
-                    print("countdown is", countdown)
-                if countdown <= 0:
-                    break
-        when = when - datetime.timedelta(days=1)
-        if save_daily:
-            save_data(save_daily[0], sheet,
-                      save_daily[1], accumulator)
-        pause = random.randint(minpause, maxpause)
+    if ensure_mfp_login():
         if verbose:
-            print("pausing", pause, "before fetching previous day")
-        time.sleep(pause)
-    return accumulator
+            print("now logged in")
+        day_count = 0
+        while True:
+            if (overlap is not None
+                and ((accumulator is not None
+                      and when in accumulator)
+                     or (sheet is not None
+                         and when in sheet))):
+                overlap -= 1
+                if overlap == 0:
+                    break
+            if ((accumulator is not None and when not in accumulator)
+                or (sheet is not None and when not in sheet)):
+                if verbose:
+                    print("getting data for", when, "count", day_count)
+                day_count += 1
+                day_data = client.get_date(when.year, when.month, when.day)
+                dict_data = day_data.get_as_dict()
+                cardio = day_data.exercises[0].get_as_list()
+                if verbose:
+                    print("day_data is", day_data, "and dict_data is", dict_data, "and cardio is", cardio)
+                if all_empty(dict_data):
+                    if verbose:
+                        print("couldn't get any data for", when)
+                    break
+                if accumulator is not None:
+                    if verbose:
+                        print("adding", dict_data, "to json")
+                    accumulator[when] = dict_data
+                if sheet is not None:
+                    if verbose:
+                        print("accumulating spreadsheet data")
+                    row = {mealname+'_cals': meal_calories(day_data, i)
+                           for i, mealname in enumerate(meal_keys)}
+                    row['cardio_minutes'] = sum([exercise['nutrition_information']['minutes'] or 0.0 for exercise in cardio])
+                    row['cardio_calories'] = sum([exercise['nutrition_information']['calories burned'] or 0.0 for exercise in cardio])
+                    row.update(day_data.totals)
+                    row['Date'] = when
+                    if verbose:
+                        print("adding", row, "to sheet with date", when)
+                    sheet[when] = row
+                if countdown:
+                    countdown -= 1
+                    if verbose:
+                        print("countdown is", countdown)
+                    if countdown <= 0:
+                        break
+            when = when - datetime.timedelta(days=1)
+            if save_daily:
+                save_data(save_daily[0], sheet,
+                          save_daily[1], accumulator)
+            pause = random.randint(minpause, maxpause)
+            if verbose:
+                print("pausing", pause, "before fetching previous day")
+            time.sleep(pause)
+        return accumulator
+    else:
+        print("Could not get MyFitnessPal data")
+        return None
 
 def save_data(sheet_filename, rows, json_filename=None, so_far=None):
     if json_filename:
@@ -137,18 +145,18 @@ def update_mfp(sheet, verbose):
     if verbose:
         print("fetching data from myfitnesspal.com")
 
-    fetch_streak_upto(datetime.date.today() - datetime.timedelta(days=1),
-                      None,
-                      sheet=rows,
-                      countdown=7,
-                      overlap=3,
-                      save_daily=None,
-                      verbose=verbose)
+    if fetch_streak_upto(datetime.date.today() - datetime.timedelta(days=1),
+                         None,
+                         sheet=rows,
+                         countdown=7,
+                         overlap=3,
+                         save_daily=None,
+                         verbose=verbose):
 
-    if verbose:
-        print("finished fetching data from myfitnesspal.com")
+        if verbose:
+            print("finished fetching data from myfitnesspal.com")
 
-    save_data(sheet, rows)
+        save_data(sheet, rows)
 
 def main():
     parser = qsutils.program_argparser()
