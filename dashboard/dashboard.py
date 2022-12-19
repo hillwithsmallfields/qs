@@ -635,9 +635,10 @@ def tagged(tag, text):
 def tagged_file_contents(tag, filename):
     return tagged(tag, file_contents(filename))
 
-def update_finances_charts(chart_sizes, begin_date, end_date, date_suffix, verbose):
+def update_finances_charts(charts_dir, chart_sizes, begin_date, end_date, date_suffix, verbose):
 
-    charts_dir = FILECONF('general', 'charts')
+    if not charts_dir:
+        charts_dir = FILECONF('general', 'charts')
     qsutils.qschart.qscharts(os.path.join(charts_dir, "by-class.csv"),
                            'finances',
                            CATEGORIES_OF_INTEREST,
@@ -652,9 +653,10 @@ def update_finances_charts(chart_sizes, begin_date, end_date, date_suffix, verbo
     #                        os.path.join(charts_dir, "balances-%s-%%s.png" % date_suffix),
     #                        chart_sizes)
 
-def update_physical_charts(chart_sizes, begin_date, end_date, date_suffix):
+def update_physical_charts(charts_dir, chart_sizes, begin_date, end_date, date_suffix):
 
-    charts_dir = FILECONF('general', 'charts')
+    if not charts_dir:
+        charts_dir = FILECONF('general', 'charts')
     physical = FILECONF('physical', 'physical-filename')
     mfp_filename = FILECONF('physical', 'mfp-filename')
 
@@ -751,26 +753,35 @@ def update_physical_charts(chart_sizes, begin_date, end_date, date_suffix):
     #                        os.path.join(charts_dir, "temperature-%s-%%s.png" % date_suffix),
     #                        chart_sizes)
 
-def write_dashboard_page(contacts_analysis,
+def write_dashboard_page(charts_dir,
+                         contacts_analysis,
                          details_background_color="gold", inline=True):
-    charts_dir = FILECONF('general', 'charts')
+    """Construct and save the dashboard page."""
+    if not charts_dir:
+        charts_dir = FILECONF('general', 'charts')
     with open(os.path.join(charts_dir, "index.html"), 'w') as page_stream:
         page_stream.write(
             page_text(
                 construct_dashboard_page(contacts_analysis),
-                (tagged_file_contents("style", os.path.join(source_dir, "dashboard.css"))
-                 + qsutils.qsutils.table_support_css(details_background_color)) if inline else "",
-                tagged_file_contents("script", os.path.join(source_dir, "dashboard.js")) if inline else ""))
+                ((tagged_file_contents("style", os.path.join(source_dir, "dashboard.css"))
+                 + qsutils.qsutils.table_support_css(details_background_color))
+                 if inline
+                 else ""),
+                (tagged_file_contents("script", os.path.join(source_dir, "dashboard.js"))
+                 if inline
+                 else "")))
     if not inline:
         for filename in ("dashboard.css",
                          "dashboard.js"):
             shutil.copy(os.path.join(source_dir, filename),
                         os.path.join(charts_dir, filename))
 
-def make_dashboard_images(chart_sizes,
+def make_dashboard_images(charts_dir,
+                          chart_sizes,
                           background_colour,
                           begin_date=None, end_date=None,
                           verbose=False):
+    """Make all the images for the dashboard."""
     today = datetime.date.today()
     for param_set in chart_sizes.values():
         param_set['facecolor'] = background_colour
@@ -784,28 +795,32 @@ def make_dashboard_images(chart_sizes,
                                if begin_date
                                else periods).items():
         begin = np.datetime64(datetime.datetime.combine(begin, datetime.time())) # .timestamp()
-        update_finances_charts(chart_sizes, begin, end_date, date_suffix, verbose)
-        update_physical_charts(chart_sizes, begin, end_date, date_suffix)
+        update_finances_charts(charts_dir, chart_sizes, begin, end_date, date_suffix, verbose)
+        update_physical_charts(charts_dir, chart_sizes, begin, end_date, date_suffix)
 
-def make_dashboard_page(chart_dir=None,
+def make_dashboard_page(charts_dir=None,
                         contacts_analysis=None,
                         chart_sizes={'small': {'figsize': (5,4)},
                                      'large': {'figsize': (11,8)}},
                         begin_date=None, end_date=None,
                         verbose=False):
 
+    """Make the dashboard page, including refreshed images for it."""
+
     global CONFIGURATION
     CONFIGURATION = lifehacking_config.load_config()
 
-    if chart_dir:
-        CONFIGURATION['general']['charts'] = chart_dir
+    if not charts_dir:
+        charts_dir = CONFIGURATION['general']['charts']
 
     text_colour, background_colour, shading = dashboard_page_colours()
-    make_dashboard_images(chart_sizes,
+    make_dashboard_images(charts_dir,
+                          chart_sizes,
                           background_colour,
                           begin_date, end_date,
                           verbose)
-    write_dashboard_page(contacts_analysis,
+    write_dashboard_page(charts_dir,
+                         contacts_analysis,
                          details_background_color=shading)
 
 def main():
@@ -814,7 +829,7 @@ def main():
                         help="""Directory to write charts into.""")
     args = parser.parse_args()
 
-    make_dashboard_page(chart_dir=args.chart)
+    make_dashboard_page(charts_dir=args.charts)
 
 if __name__ == '__main__':
     main()

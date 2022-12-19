@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Time-stamp: <2022-12-04 17:42:15 jcgs>
+# Time-stamp: <2022-12-19 20:03:23 jcgs>
 
 # Program to merge my Quantified Self files.
 
@@ -90,20 +90,17 @@ def qsmerge(mainfile, incoming, type_given, output):
 
     handler = file_type_handlers[file_type]
     with open(mainfile) as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
+        for row in csv.DictReader(csvfile):
             row_date = handler['date'](row['Date'])
             row['Date'] = row_date
             by_date[row_date] = row
-        csvfile.close()
     for incoming_file in incoming:
         row_parser = find_row_parser_for(file_type, incoming_file)
         if row_parser is None:
             print("Skipping", incoming_file, "as I don't have a parser for", file_type)
         else:
             with open(incoming_file) as incoming:
-                inreader = csv.DictReader(incoming)
-                for raw in inreader:
+                for raw in csv.DictReader(incoming):
                     new_row = row_parser(raw)
                     if new_row is not None:
                         new_row_date = handler['date'](new_row['Date'])
@@ -127,26 +124,29 @@ def qsmerge(mainfile, incoming, type_given, output):
         writer = csv.DictWriter(outstream, fieldnames, quoting=csv.QUOTE_NONE)
         writer.writeheader()
         for date in sorted_dates:
-            writer.writerow({k: qsutils.qsutils.tidy_for_output(v) for k,v in by_date[date].items()})
+            writer.writerow({k: qsutils.qsutils.tidy_for_output(v)
+                             for k,v in by_date[date].items()})
 
-def main():
+def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-o", "--output")
-    parser.add_argument("-t", "--type")
+    parser.add_argument("-t", "--filetype")
     parser.add_argument("-v", "--verbose", action='store_true')
     parser.add_argument("mainfile")
     parser.add_argument('incoming', nargs='*')
-    args = parser.parse_args()
-    if args.output is None:
-        old_base, old_ext = os.path.splitext(args.mainfile)
-        shutil.copyfile(args.mainfile, old_base + "-old" + old_ext)
-        output = args.mainfile
+    return vars(parser.parse_args())
+
+def main(mainfile, incoming, output, filetype, verbose=False):
+    if output is None:
+        old_base, old_ext = os.path.splitext(mainfile)
+        shutil.copyfile(mainfile, old_base + "-old" + old_ext)
+        output = mainfile
     else:
-        output = args.output
-    if args.verbose:
-        print("Main input is", args.mainfile, "and output is", output)
-        print("Incoming files are", args.incoming)
-    qsmerge(args.mainfile, args.incoming, args.type, args.output)
+        output = output
+    if verbose:
+        print("Main input is", mainfile, "and output is", output)
+        print("Incoming files are", incoming)
+    qsmerge(mainfile, incoming, filetype, output)
 
 if __name__ == "__main__":
-    main()
+    main(**get_args())

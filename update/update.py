@@ -370,17 +370,22 @@ def update_travel():
     # TODO: calculate distances
     pass
 
-def updates(begin_date, end_date,
-            do_externals,
+def updates(charts_dir,
+            begin_date, end_date,
+            read_externals,
             verbose=False,
             testing=False,
             force=False):
 
-    """Update my Quantified Self record files, which are generally CSV files with a row for each day.  This also
-    prepares some files for making charts.  Finally, it calls the dashboard code, which uses matplotlib to
-    make the charts, as well as generating the HTML they are embedded in.
+    """Update my Quantified Self record files, which are generally CSV
+    files with a row for each day.  This also prepares some files for
+    making charts.  Finally, it calls the dashboard code, which uses
+    matplotlib to make the charts, as well as generating the HTML they
+    are embedded in.
 
-    The argument do_externals says whether to contact any external data sources."""
+    The argument read_externals says whether to contact any external data sources.
+
+    """
 
     global CONFIGURATION
     CONFIGURATION = lifehacking_config.load_config()
@@ -389,7 +394,7 @@ def updates(begin_date, end_date,
     # if end_date is None:
     #     end_date = qsutils.qsutils.yesterday()
 
-    if do_externals:
+    if read_externals:
         if verbose: print("Fetching external data")
         for location_name, fetcher, archive_template in [
                 (('weather', 'weather-filename'), fetch_weather, "weather-to-%s.csv"),
@@ -415,7 +420,8 @@ def updates(begin_date, end_date,
     update_agenda()
     update_travel()
     update_startpage()
-    dashboard.dashboard.make_dashboard_page(contacts_analysis=contacts_analysis,
+    dashboard.dashboard.make_dashboard_page(charts_dir=charts_dir,
+                                            contacts_analysis=contacts_analysis,
                                             chart_sizes=CHART_SIZES)
 
 def main():
