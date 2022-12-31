@@ -5,8 +5,11 @@
 import argparse
 import csv
 import datetime
+import os.path
 import re
 # import tempfile
+
+from typing import List
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -104,13 +107,23 @@ def qscharts(mainfile, file_type,
              columns, begin, end, match, by_day_of_week,
              outfile_template,
              plot_param_sets,
-             bar=False):
+             bar=False,
+             vlines=None):
+    """Plot a set of related charts.
+
+    The charts in the set use the same data but different plot params.
+
+    Sample plot params group:
+
+        {'small': {'figsize': (5,4)},
+         'large': {'figsize': (11,8)}}
+    """
     print("charting", mainfile)
     for name_suffix, params in plot_param_sets.items():
         print("charting into", outfile_template % name_suffix)
         if not qschart(mainfile, file_type,
                        columns, begin, end, match, by_day_of_week,
-                       outfile_template % name_suffix, params, bar=bar):
+                       outfile_template % name_suffix, params, bar=bar, vlines=vlines):
             print("TODO: output instructions for fetching missing data for", mainfile, file_type, name_suffix)
 
 def plot_column_set(axs, data, columns, prefix, bar=False):
@@ -131,14 +144,32 @@ def plot_column_set(axs, data, columns, prefix, bar=False):
             # TODO: it's not including the prefix (which I'm using for the day of the week)
             plt.ylabel(prefix + column_label(column))
 
-def qschart(mainfile, file_type, columns, begin, end, match, by_day_of_week, outfile, plot_params, bar=False):
+def qschart(mainfile: str,
+            file_type: str, # one of 'weight', 'calories', 'finances', 'sleep'
+            columns: List[str],
+            begin: datetime.datetime, end: datetime.datetime,
+            match,
+            by_day_of_week,
+            outfile,
+            plot_params,
+            bar=False,
+            vlines=None):
+
+    """Plot a chart, if it needs updating.
+
+    Returns whether the non-empty chart exists at the end.
+
+    If it returns False, the data probably needs to be fetched.
+    """
 
     # TODO: rolling averages, as in http://jonathansoma.com/lede/foundations-2018/pandas/rolling-averages-in-pandas/
     # TODO: filter by day of week
-    # TODO: check timestamps of mainfile and outfile
 
-    if mainfile == "/home/jcgs/Sync/health/physical.csv":
-        print("Watching this one")
+    if not os.path.exists(mainfile):
+        return False
+
+    if os.path.exists(outfile) and os.path.getmtime(outfile) > os.path.getmtime(mainfile):
+        return True
 
     data = pd.read_csv(mainfile, parse_dates=['Date'])
 
@@ -148,7 +179,6 @@ def qschart(mainfile, file_type, columns, begin, end, match, by_day_of_week, out
         MUNGERS[file_type](data)
 
     if begin:
-        # print("begin is of type", type(begin), "and value", begin)
         data = data.loc[data['Date'] >= begin]
     if end:
         data = data.loc[data['Date'] <= end]
@@ -161,22 +191,23 @@ def qschart(mainfile, file_type, columns, begin, end, match, by_day_of_week, out
     data.set_index("Date")
 
     fig, axs = plt.subplots(**plot_params) # the background colour comes in here
+    # plot_params is something like {'figsize': (5,4)}
     # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html for more parameters
 
     axs.set_facecolor(fig.get_facecolor())
 
+    if vlines:
+    # https://matplotlib.org/stable/gallery/lines_bars_and_markers/vline_hline_demo.html#sphx-glr-gallery-lines-bars-and-markers-vline-hline-demo-py
+        axs.vlines(vlines, 0, 1, transform=axs.get_xaxis_transform(), colors='r')
+
     # TODO: label every year; grid lines?
     # TODO: plot absolute values
-    if mainfile == "/home/jcgs/Sync/health/physical.csv":
-        print("plotting column set")
 
     plot_column_set(axs, data, columns,
                     "All " if by_day_of_week else "",
                     bar=bar)
 
     if by_day_of_week:
-        if mainfile == "/home/jcgs/Sync/health/physical.csv":
-            print("plotting column set for", dow)
         for dow in range(7):
             plot_column_set(axs,
                             data[data['Date'].dt.dayofweek == dow],
@@ -186,9 +217,6 @@ def qschart(mainfile, file_type, columns, begin, end, match, by_day_of_week, out
 
     plt.xlabel("Date")
     plt.grid(axis='both')
-
-    if mainfile == "/home/jcgs/Sync/health/physical.csv":
-        print("writing to outfile", outfile)
 
     fig.savefig(outfile,
                 facecolor=fig.get_facecolor())

@@ -635,16 +635,21 @@ def tagged(tag, text):
 def tagged_file_contents(tag, filename):
     return tagged(tag, file_contents(filename))
 
-def update_finances_charts(charts_dir, chart_sizes, begin_date, end_date, date_suffix, verbose):
+def update_finances_charts(charts_dir,
+                           chart_sizes,
+                           begin_date, end_date, date_suffix,
+                           verbose):
+
+    """Update the financial charts."""
 
     if not charts_dir:
         charts_dir = FILECONF('general', 'charts')
     qsutils.qschart.qscharts(os.path.join(charts_dir, "by-class.csv"),
-                           'finances',
-                           CATEGORIES_OF_INTEREST,
-                           begin_date, end_date, None, False,
-                           os.path.join(charts_dir, "by-class-%s-%%s.png" % date_suffix),
-                           chart_sizes)
+                             'finances',
+                             CATEGORIES_OF_INTEREST,
+                             begin_date, end_date, None, False,
+                             os.path.join(charts_dir, "by-class-%s-%%s.png" % date_suffix),
+                             chart_sizes)
     # TODO: split main file into running balances for each account (tracking as needed), take the end of each month for each account, and put them all in a file to display here (and get that shown in the resulting page)
     # qsutils.qschart.qscharts(FILECONF('finance', 'account-balances'), 'finances',
     #                        [FILECONF('finance', 'main-current-account'),
@@ -653,7 +658,13 @@ def update_finances_charts(charts_dir, chart_sizes, begin_date, end_date, date_s
     #                        os.path.join(charts_dir, "balances-%s-%%s.png" % date_suffix),
     #                        chart_sizes)
 
-def update_physical_charts(charts_dir, chart_sizes, begin_date, end_date, date_suffix):
+def update_physical_charts(charts_dir,
+                           chart_sizes,
+                           begin_date, end_date,
+                           date_suffix,
+                           vlines=None):
+
+    """Update the physical (health) charts."""
 
     if not charts_dir:
         charts_dir = FILECONF('general', 'charts')
@@ -665,11 +676,12 @@ def update_physical_charts(charts_dir, chart_sizes, begin_date, end_date, date_s
     # TODO: rolling averages
     for units in ('stone', 'kilogram', 'pound'):
         qsutils.qschart.qscharts(physical,
-                               'weight',
-                               [units],
-                               begin_date, end_date, None, split_by_DoW,
-                               os.path.join(charts_dir, "weight-%s-%s-%%s.png" % (units, date_suffix)),
-                               chart_sizes)
+                                 'weight',
+                                 [units],
+                                 begin_date, end_date, None, split_by_DoW,
+                                 os.path.join(charts_dir, "weight-%s-%s-%%s.png" % (units, date_suffix)),
+                                 chart_sizes,
+                                 vlines=vlines)
 
     for chartdef, template in [
             ({'mainfile': mfp_filename,
@@ -786,6 +798,9 @@ def make_dashboard_images(charts_dir,
     for param_set in chart_sizes.values():
         param_set['facecolor'] = background_colour
 
+    with open(os.path.expanduser("~/Sync/accomplishments/employment.csv")) as instream:
+        vlines = [datetime.datetime(year=int(row['From']), month=1, day=1) for row in csv.DictReader(instream)]
+
     periods = {'all_time': datetime.date(year=1973, month=1, day=1),
                'past_week': qsutils.qsutils.back_from(today, None, None, 7),
                'past_month': qsutils.qsutils.back_from(today, None, 1, None),
@@ -796,7 +811,7 @@ def make_dashboard_images(charts_dir,
                                else periods).items():
         begin = np.datetime64(datetime.datetime.combine(begin, datetime.time())) # .timestamp()
         update_finances_charts(charts_dir, chart_sizes, begin, end_date, date_suffix, verbose)
-        update_physical_charts(charts_dir, chart_sizes, begin, end_date, date_suffix)
+        update_physical_charts(charts_dir, chart_sizes, begin, end_date, date_suffix, vlines=vlines if date_suffix == 'all_time' else None)
 
 def make_dashboard_page(charts_dir=None,
                         contacts_analysis=None,
