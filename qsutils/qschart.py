@@ -190,6 +190,8 @@ def qschart(mainfile: str,
 
     data.set_index("Date")
 
+    min_date = data['Date'].min()
+
     fig, axs = plt.subplots(**plot_params) # the background colour comes in here
     # plot_params is something like {'figsize': (5,4)}
     # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html for more parameters
@@ -198,7 +200,9 @@ def qschart(mainfile: str,
 
     if vlines:
     # https://matplotlib.org/stable/gallery/lines_bars_and_markers/vline_hline_demo.html#sphx-glr-gallery-lines-bars-and-markers-vline-hline-demo-py
-        axs.vlines(vlines, 0, 1, transform=axs.get_xaxis_transform(), colors='r')
+        axs.vlines([when for when in vlines if when >= min_date],
+                   0, 1,
+                   transform=axs.get_xaxis_transform(), colors='purple')
 
     # TODO: label every year; grid lines?
     # TODO: plot absolute values
