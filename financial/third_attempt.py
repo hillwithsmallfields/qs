@@ -5,17 +5,7 @@ import os.path
 import re
 import yaml
 
-def read_csv(filename):
-    with open(os.path.expanduser(filename)) as instream:
-        return list(csv.DictReader(instream))
-
-def read_yaml(filename):
-    with open(os.path.expanduser(filename)) as instream:
-        return yaml.safe_load(instream)
-
-def show_sample(table, n_samples=12):
-    for i in range(0, len(table), len(table)//n_samples):
-        print(i, table[i])
+import finutils
 
 def without_numeric_tail(string):
     matched = re.match("^[^-0-9]+", string)
@@ -35,16 +25,16 @@ def convert_bank_table(table, conversions):
     return [convert_bank_row(row, conversions) for row in table]
 
 def finances_update():
-    conversions = read_yaml("~/Sync/finances/conversions.yaml")['formats']['Default']['conversions']
-    main = read_csv("~/Sync/finances/finances.csv")
-    bank = read_csv("~/Sync/finances/handelsbanken/handelsbanken-full.csv")
+    conversions = finutils.read_yaml("~/Sync/finances/conversions.yaml")['formats']['Default']['conversions']
+    main = finutils.read_csv("~/Sync/finances/finances.csv")
+    bank = finutils.read_csv("~/Sync/finances/handelsbanken/handelsbanken-full.csv")
     converted = convert_bank_table(bank, conversions)
     print("main")
-    show_sample(main)
+    finutils.show_sample(main)
     print("bank")
-    show_sample(bank)
+    finutils.show_sample(bank)
     print("converted")
-    show_sample(converted)
+    finutils.show_sample(converted)
 
 if __name__ == "__main__":
     finances_update()
