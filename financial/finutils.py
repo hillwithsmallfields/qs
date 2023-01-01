@@ -1,5 +1,6 @@
 import csv
 import os.path
+import re
 import yaml
 from frozendict import frozendict
 
@@ -30,6 +31,10 @@ def write_csv(data, header, filename, sort_key):
 def read_yaml(filename):
     with open(os.path.expanduser(filename)) as instream:
         return yaml.safe_load(instream)
+
+def without_numeric_tail(string):
+    matched = re.match("^[^-0-9]+", string)
+    return matched.group(0).strip().lstrip(" *") if matched else string
 
 def show_sample(table, n_samples=12):
     table = sorted(table, key=lambda r: (r.get('Date', r.get('date')), r'[Details'))

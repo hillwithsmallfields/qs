@@ -1,18 +1,13 @@
 #!/usr/bin/env python3
 
 import argparse
-import re
 
 from frozendict import frozendict
 
 import finutils
 
-def without_numeric_tail(string):
-    matched = re.match("^[^-0-9]+", string)
-    return matched.group(0).strip().lstrip(" *") if matched else string
-
 def convert_bank_row(row, conversions):
-    trimmed = without_numeric_tail(row['Details'])
+    trimmed = finutils.without_numeric_tail(row['Details'])
     conversion = conversions.get(trimmed, {})
     amount = float(row.get('Money in') or 0) - float(row.get('Money out') or 0)
     return frozendict({
