@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-import csv
-import os.path
 import re
 
 from frozendict import frozendict
