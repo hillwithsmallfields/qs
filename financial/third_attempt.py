@@ -5,6 +5,8 @@ import os.path
 import re
 import yaml
 
+from frozendict import frozendict
+
 import finutils
 
 def without_numeric_tail(string):
@@ -14,15 +16,17 @@ def without_numeric_tail(string):
 def convert_bank_row(row, conversions):
     trimmed = without_numeric_tail(row['Details'])
     conversion = conversions.get(trimmed, {})
-    return {
+    return frozendict({
         'account': "Handelsbanken current account",
+        'date': row.get('Date'),
         'payee': conversion.get('payee', trimmed),
         'category': conversion.get('category', 'unknown category'),
-        'amount': float(row.get('Money in') or 0) - float(row.get('Money out') or 0)
-    }
+        'amount': float(row.get('Money in') or 0) - float(row.get('Money out') or 0),
+        'statement': float(row.get('Balance', 0)),
+    })
 
 def convert_bank_table(table, conversions):
-    return [convert_bank_row(row, conversions) for row in table]
+    return set(convert_bank_row(row, conversions) for row in table)
 
 def finances_update():
     conversions = finutils.read_yaml("~/Sync/finances/conversions.yaml")['formats']['Default']['conversions']
