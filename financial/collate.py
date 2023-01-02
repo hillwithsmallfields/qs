@@ -8,7 +8,7 @@ import operator
 
 import finutils
 
-def collate(incoming, key, period):
+def collate(incoming, key, period, keymap=None):
 
     """Returns a collation of a table.
 
@@ -30,7 +30,9 @@ def collate(incoming, key, period):
 
     result = defaultdict(lambda: defaultdict(list))
     for row in incoming:
-        result[period_fn(row['date'])][row[key]].append(row)
+        result[period_fn(row['date'])][keymap[row[key]]
+                                       if keymap
+                                       else row[key]].append(row)
     return finutils.with_key_as_column(result, 'date')
 
 def ize(table, izefn):
@@ -68,7 +70,8 @@ def textualize(table):
                                                          item['amount'])
                                        for item in cell)))
 
-def collate_in_files(incoming, key, period, summary, output):
+def collate_in_files(incoming, key, period, summary, output,
+                     starting=None, ending=None):
     """Collates a table from a file, with the output to files.
 
     The 'summary' file is a table with the total transactions for each
@@ -78,7 +81,12 @@ def collate_in_files(incoming, key, period, summary, output):
     classification, in a short textual form.
 
     """
-    result = collate(finutils.read_csv(incoming), key, period)
+    transactions = finutils.read_csv(incoming)
+    if starting:
+        transactions = finutils.onwards(transactions, starting)
+    if ending:
+        transactions = finutils.until(transactions, ending)
+    result = collate(transactions, key, period)
     headings = finutils.bring_to_front(sorted(finutils.headings(result)), {'date'})
     if summary:
         finutils.write_csv(summarize(result), headings, summary, lambda r: r['date'])
@@ -90,6 +98,8 @@ def get_args():
     parser.add_argument("--incoming", "-i", default=finutils.MAIN_ACCOUNTING_FILE)
     parser.add_argument("--key", "-k", default='category')
     parser.add_argument("--period", "-p", default='month')
+    parser.add_argument("--starting")
+    parser.add_argument("--ending")
     parser.add_argument("--output", "-o")
     parser.add_argument("--summary", "-s")
     return vars(parser.parse_args())
