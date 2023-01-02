@@ -1,9 +1,0 @@
-#!/bin/bash
-
-echo running reconciliation
-
-source setupfintest
-
-echo done setup
-
-./finlisp.py --verbose --no-default-config --config $CONFIGDIR/accounts.yaml --config $CONVDIR/conversions.yaml reconcile.lisp
