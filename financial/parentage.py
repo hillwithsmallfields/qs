@@ -1,9 +1,10 @@
 #!/usr/bin/python3
 
 import finutils
+from collections import defaultdict
 
 def add_parentage(tree, table, ancestry):
-    """Process the parentage of a tree level."""
+    """Processes the parentage of a tree level."""
     for parent, children in tree.items():
         if len(children) == 0:
             table[parent] = ancestry
@@ -11,17 +12,32 @@ def add_parentage(tree, table, ancestry):
             add_parentage(children, table, [parent] + ancestry)
 
 def read_parentage_table(parentage_filename):
-    """Read the parentage table.
+    """Reads the parentage table.
     The result is a dictionary of category to list of parent categories.
     The parent categories are given nearest-first."""
     table = dict()
     add_parentage(finutils.read_yaml(parentage_filename), table, [])
     return table
 
+def highlights(parentage_table, selection, other='other'):
+    """Returns a dictionary mapping categories in input table to those in the selection."""
+    return defaultdict(lambda: other,
+                       **{cat: list(pars)[0]
+                          for cat, pars in {category: set(parents) & selection
+                                            for category, parents in parentage_table.items()}.items()
+                          if pars})
+
 def main():
     """Test program for read_parentage_table."""
-    for key, value in read_parentage_table("../conf/cats.yaml").items():
-        print(key, value)
+    import os.path
+    all_entries = read_parentage_table(os.path.expanduser(finutils.CATPARENTS))
+    print("All:")
+    for key, value in all_entries.items():
+        print("  ", key, "->", value)
+    some_entries = highlights(all_entries, set(['Food and sundries', 'Charitable donation', 'Clothes']))
+    print("Highlights:")
+    for key, value in some_entries.items():
+        print("    ", key, "=>", value)
 
 if __name__ == "__main__":
     main()
