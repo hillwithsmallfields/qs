@@ -95,13 +95,22 @@ def collate_in_files(incoming, key, period, summary, output,
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--incoming", "-i", default=finutils.MAIN_ACCOUNTING_FILE)
-    parser.add_argument("--key", "-k", default='category')
-    parser.add_argument("--period", "-p", default='month')
-    parser.add_argument("--starting")
-    parser.add_argument("--ending")
-    parser.add_argument("--output", "-o")
-    parser.add_argument("--summary", "-s")
+    parser.add_argument("--incoming", "-i", default=finutils.MAIN_ACCOUNTING_FILE,
+                        help="""The input file, in my financisto-like format.""")
+    parser.add_argument("--key", "-k", default='category',
+                        help="""The field to group transactions by.
+                        'category' and 'payee' are probably the most useful.""")
+    parser.add_argument("--period", "-p", default='month',
+                        help="""The period to group transactions by.
+                        Must be one of 'day', 'month', 'year', or 'weekday'.""")
+    parser.add_argument("--starting",
+                        help="""Trim the transactions to start at this date.""")
+    parser.add_argument("--ending",
+                        help="""Trim the transactions to end at this date.""")
+    parser.add_argument("--output", "-o",
+                        help="""The full output file.""")
+    parser.add_argument("--summary", "-s",
+                        help="""The summary output file.""")
     return vars(parser.parse_args())
 
 if __name__ == "__main__":
