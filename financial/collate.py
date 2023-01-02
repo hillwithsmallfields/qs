@@ -20,8 +20,6 @@ def collate(incoming, key, period):
     result = defaultdict(lambda: defaultdict(list))
     for row in incoming:
         result[period_fn(row['date'])][row[key]].append(row)
-    # for outkey, outrow in result.items():
-    #     print(outkey, outrow)
     return finutils.with_key_as_column(result, 'date')
 
 def summarize(table):
