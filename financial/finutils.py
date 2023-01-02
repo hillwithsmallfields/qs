@@ -16,6 +16,7 @@ BANK_COLUMNS = ('Date', 'Details', 'Money out', 'Money in', 'Balance')
 UPDATES_GLOB = "~/Downloads/Transactions*.csv"
 
 CONVERSIONS = "~/Sync/finances/conversions.yaml"
+CATPARENTS = "~/open-projects/github.com/hillwithsmallfields/qs/conf/cats.yaml"
 
 def read_csv(filename):
     with open(os.path.expanduser(filename)) as instream:
@@ -27,6 +28,18 @@ def write_csv(data, header, filename, sort_key):
         writer.writeheader()
         for row in sorted(data, key=sort_key):
             writer.writerow(row)
+
+def onwards(table, date):
+    """Return the rows of the table whose dates are at least the given date."""
+    return [row
+            for row in table
+            if row['date'] >= date]
+
+def until(table, date):
+    """Return the rows of the table whose dates are at most the given date."""
+    return [row
+            for row in table
+            if row['date'] <= date]
 
 def read_yaml(filename):
     with open(os.path.expanduser(filename)) as instream:
