@@ -36,6 +36,16 @@ def without_numeric_tail(string):
     matched = re.match("^[^-0-9]+", string)
     return matched.group(0).strip().lstrip(" *") if matched else string
 
+def headings(table):
+    return set().union(*(frozenset(row.keys()) for row in table))
+
+def bring_to_front(seq, frontables):
+    return [item for item in seq if item in frontables] + [item for item in seq if item not in frontables]
+
+def with_key_as_column(table, key_column_name):
+    return [row | {key_column_name: key}
+            for key, row in table.items()]
+
 def show_sample(table, n_samples=12):
     table = sorted(table, key=lambda r: (r.get('Date', r.get('date')), r'[Details'))
     for i in range(0, len(table), len(table)//n_samples):
