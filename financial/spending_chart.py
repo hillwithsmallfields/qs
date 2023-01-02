@@ -24,22 +24,6 @@ import finutils
 import parentage
 import collate
 
-# <td class="Eating_in"><span class="overview">-126.70 <span class="ic">[8]</span>
-#   <div class="details">
-#     <table border>
-#       <tr><th colspan="5" class="dethead">2022-01-01: Eating in (-126.70 in 8 items)</th></tr>
-#       <tr><td class="detdate">2022-01-10</td><td class="detamt">-5.69</td>
-#           <td class="detpay">Budgens</td>
-#           <td class="detcat">Groceries and sundry supplies</td><td class="detitem"></td>
-#       </tr>
-#       <tr><td class="detdate">2022-01-13</td>
-#           <td class="detamt">-2.99</td>
-#           <td class="detpay">Budgens</td><td class="detcat">Groceries and sundry supplies</td><td class="detitem"></td>
-#       </tr>
-#     </table>
-#   </div>
-# </td>
-
 def entry_as_html(entry, row, column, total):
     cell = row[column]
     return T.div(class_='details')[
@@ -62,9 +46,10 @@ def cell_as_html(row, column):
         total = functools.reduce(
             operator.add, (float(item['amount'])
                            for item in cell))
-        return T.td(class_=column)[[T.span(class_='overview')["{:.2f}".format(total)],
-                                    [entry_as_html(entry, row, column, total)
-                                     for entry in cell]]]
+        return T.td(class_=column)[[T.span(class_='overview')["{:.2f}".format(total),
+                                                              T.span(class_='ic')["[{:d}]".format(len(cell))],
+                                                              [entry_as_html(entry, row, column, total)
+                                                               for entry in cell]]]]
     else:
         return T.td[""]
 
@@ -97,11 +82,11 @@ def spending_chart_to_file(incoming, key, period, output, selection,
                         parentage.read_parentage_table(os.path.expanduser(finutils.CATPARENTS)),
                         set(columns),
                         'Other')),
-                ((qsutils.html_pages.tagged_file_contents("style", os.path.join(source_dir, "dashboard.css"))
+                ((qsutils.html_pages.tagged_file_contents("style", os.path.join(source_dir, "../dashboard/dashboard.css"))
                  + qsutils.qsutils.table_support_css(details_background_color))
                  if inline
                  else ""),
-                (qsutils.html_pages.tagged_file_contents("script", os.path.join(source_dir, "dashboard.js"))
+                (qsutils.html_pages.tagged_file_contents("script", os.path.join(source_dir, "../dashboard/dashboard.js"))
                  if inline
                  else "")))
     # if not inline:

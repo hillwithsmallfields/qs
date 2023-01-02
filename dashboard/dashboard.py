@@ -19,6 +19,7 @@ sys.path.append(os.path.dirname(source_dir))
 import financial.classify       # https://github.com/hillwithsmallfields/qs/blob/master/financial/classify.py
 import qsutils.qsutils            # https://github.com/hillwithsmallfields/qs/blob/master/utils/qsutils.py
 import qsutils.qschart
+import qsutils.html_pages
 
 # This corresponds to https://github.com/hillwithsmallfields
 my_projects = os.path.dirname(os.path.dirname(source_dir))
@@ -201,18 +202,18 @@ def transactions_section():
               recent_transactions_table(FILECONF('finance', 'main-account'), 14)],
         T.div[T.h3["Spending by category"],
               T.a(class_='plainlink', href="by-class.html")[
-                  untemplate.safe_unicode(file_contents(spending_chart_file))]],
+                  untemplate.safe_unicode(qsutils.html_pages.file_contents(spending_chart_file))]],
         T.div[T.h3["Automatic Spending by day of month"],
-              untemplate.safe_unicode(file_contents(os.path.join(FILECONF('finance', 'merge-results-dir'),
+              untemplate.safe_unicode(qsutils.html_pages.file_contents(os.path.join(FILECONF('finance', 'merge-results-dir'),
                                                                  "auto-by-day-of-month.html")))],
         T.div[T.h3["Spending by day of week"],
-              untemplate.safe_unicode(file_contents(os.path.join(FILECONF('finance', 'merge-results-dir'),
+              untemplate.safe_unicode(qsutils.html_pages.file_contents(os.path.join(FILECONF('finance', 'merge-results-dir'),
                                                                  "by-day-of-week.html")))],
         T.div[T.h3["Unmatched automatic transactions"],
-              untemplate.safe_unicode(file_contents(os.path.join(FILECONF('finance', 'merge-results-dir'),
+              untemplate.safe_unicode(qsutils.html_pages.file_contents(os.path.join(FILECONF('finance', 'merge-results-dir'),
                                                                  "unmatched-auto.html")))],
         T.div[T.h3["Unmatched non-automatic transactions"],
-              untemplate.safe_unicode(file_contents(os.path.join(FILECONF('finance', 'merge-results-dir'),
+              untemplate.safe_unicode(qsutils.html_pages.file_contents(os.path.join(FILECONF('finance', 'merge-results-dir'),
                                                                  "unmatched-non-auto.html")))])]
 
 def timetable_section():
@@ -612,29 +613,6 @@ def construct_dashboard_page(contacts_analysis):
                  weather_section()),
         page.sections()]]
 
-def page_text(page_contents, style_text, script_text):
-    return untemplate.Serializer(untemplate.examples_vmap, 'utf-8').serialize(
-        untemplate.HTML5Doc([untemplate.safe_unicode(style_text
-                                                     + script_text),
-                             page_contents],
-                            head=T.head[T.meta(charset='utf-8'),
-                                        T.meta(rel='stylesheet',
-                                               type_='text/css',
-                                               href="dashboard.css"),
-                                        T.title["Personal dashboard"]]))
-
-def file_contents(filename):
-    if os.path.isfile(filename):
-        with open(filename) as instream:
-            return instream.read()
-    return "File %s not found" % filename
-
-def tagged(tag, text):
-    return "<" + tag + ">" + text + "</" + tag + ">"
-
-def tagged_file_contents(tag, filename):
-    return tagged(tag, file_contents(filename))
-
 def update_finances_charts(charts_dir,
                            chart_sizes,
                            begin_date, end_date, date_suffix,
@@ -773,13 +751,13 @@ def write_dashboard_page(charts_dir,
         charts_dir = FILECONF('general', 'charts')
     with open(os.path.join(charts_dir, "index.html"), 'w') as page_stream:
         page_stream.write(
-            page_text(
+            qsutils.html_pages.page_text(
                 construct_dashboard_page(contacts_analysis),
-                ((tagged_file_contents("style", os.path.join(source_dir, "dashboard.css"))
+                ((qsutils.html_pages.tagged_file_contents("style", os.path.join(source_dir, "dashboard.css"))
                  + qsutils.qsutils.table_support_css(details_background_color))
                  if inline
                  else ""),
-                (tagged_file_contents("script", os.path.join(source_dir, "dashboard.js"))
+                (qsutils.html_pages.tagged_file_contents("script", os.path.join(source_dir, "dashboard.js"))
                  if inline
                  else "")))
     if not inline:

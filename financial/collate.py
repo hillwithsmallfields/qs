@@ -81,8 +81,7 @@ def collate_in_files(incoming, key, period, summary, output,
     classification, in a short textual form.
 
     """
-    transactions = finutils.read_csv(incoming, starting, ending)
-    result = collate(transactions, key, period)
+    result = collate(finutils.read_csv(incoming, starting, ending), key, period)
     headings = finutils.bring_to_front(sorted(finutils.headings(result)), {'date'})
     if summary:
         finutils.write_csv(summarize(result), headings, summary, lambda r: r['date'])
