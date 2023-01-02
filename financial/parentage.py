@@ -1,27 +1,21 @@
 #!/usr/bin/python3
 
-import yaml
+import finutils
 
 def add_parentage(tree, table, ancestry):
-    # print("  tree", tree, "ancestry", ancestry)
+    """Process the parentage of a tree level."""
     for parent, children in tree.items():
-        # print("    parent", parent, "children", children, "ancestry", ancestry)
         if len(children) == 0:
-            # print("    registering", parent, "as having ancestry", ancestry)
             table[parent] = ancestry
         else:
-            # print("    recursing with", children, "and ancestry", ancestry + [parent])
-            add_parentage(children, table, ancestry + [parent])
+            add_parentage(children, table, [parent] + ancestry)
 
 def read_parentage_table(parentage_filename):
-    if parentage_filename.endswith(".yaml"):
-        with open(parentage_filename) as instream:
-            tree = yaml.safe_load(instream)
-    else:
-        print("don't know how to read parentage from", parentage_filename)
-        return None
-    table = {}
-    add_parentage(tree, table, [])
+    """Read the parentage table.
+    The result is a dictionary of category to list of parent categories.
+    The parent categories are given nearest-first."""
+    table = dict()
+    add_parentage(finutils.read_yaml(parentage_filename), table, [])
     return table
 
 def main():
