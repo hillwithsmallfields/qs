@@ -40,33 +40,42 @@ def entry_as_html(entry, row, column, total):
             ]
         ]
 
-def cell_as_html(row, column):
+def cell_as_html(row, column, threshold):
     cell = row[column]
     if cell:
         total = functools.reduce(
             operator.add, (float(item['amount'])
                            for item in cell))
-        return T.td(class_=column)[[T.span(class_='overview')["{:.2f}".format(total),
-                                                              T.span(class_='ic')["[{:d}]".format(len(cell))],
-                                                              [entry_as_html(entry, row, column, total)
-                                                               for entry in cell]]]]
+        return T.td(class_=column)[[
+            T.span(class_='overview' + (
+                ' large'
+                if threshold and abs(total) > abs(threshold)
+                else '') + (' credit'
+                            if total > 0
+                            else ''))["{:.2f}".format(total),
+                               T.span(class_='ic')["[{:d}]".format(len(cell))],
+                               [entry_as_html(entry, row, column, total)
+                                for entry in cell]]]]
     else:
         return T.td[""]
 
-def spending_chart(transactions, key, period, columns, map_to_highlights):
-    result = collate.collate(transactions, key, period, map_to_highlights)
+def spending_chart(transactions, key, period, columns, map_to_highlights, thresholds):
+    """Create a spending chart, as an untemplate structure."""
+    result = collate.collate(transactions, key, period, map_to_highlights, thresholds)
     for row in result:
         del row['Other']
     return T.table[
         T.tr[T.th["Date"],
              [T.th[column] for column in columns]],
         [T.tr[T.th[row['date']],
-              [cell_as_html(row, column)
+              [cell_as_html(row, column, thresholds.get(column))
                for column in columns]]
-         for row in sorted(result, key=lambda r: r['date'])]]
+         for row in sorted(result, key=lambda r: r['date'])],
+    ]
 
 def spending_chart_to_file(incoming, key, period, output, selection,
                            starting=None, ending=None,
+                           thresholds=None,
                            details_background_color="gold",
                            inline=True):
     """Collates a table from a file, with the output to file."""
@@ -81,7 +90,8 @@ def spending_chart_to_file(incoming, key, period, output, selection,
                     parentage.highlights(
                         parentage.read_parentage_table(os.path.expanduser(finutils.CATPARENTS)),
                         set(columns),
-                        'Other')),
+                        'Other'),
+                    thresholds or {}),
                 ((qsutils.html_pages.tagged_file_contents("style", os.path.join(source_dir, "../dashboard/dashboard.css"))
                  + qsutils.qsutils.table_support_css(details_background_color))
                  if inline
