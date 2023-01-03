@@ -17,6 +17,8 @@ source_dir = os.path.dirname(os.path.realpath(__file__))
 # other parts of this project group
 sys.path.append(os.path.dirname(source_dir))
 import financial.classify       # https://github.com/hillwithsmallfields/qs/blob/master/financial/classify.py
+import financial.spending_chart
+import financial.parentage
 import qsutils.qsutils            # https://github.com/hillwithsmallfields/qs/blob/master/utils/qsutils.py
 import qsutils.qschart
 import qsutils.html_pages
@@ -190,31 +192,49 @@ def peak_flow_section():
     return None
 
 def transactions_section():
-    """Incorporate the file of recent spending in monitored categories
-    that is produced by chart-categories.lisp."""
+    """Returns various listings of my financial transactions."""
     # TODO: spending per category per day of month/week
 
-    spending_chart_file = os.path.join(FILECONF('general', 'charts'),
-                                       "past-year.html")
+    some_columns = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
+
+    many_columns = ['Adjustment', 'Clothes', 'Eating', 'in', 'Eating',
+                    'out', 'Giving', 'Health', 'Hobbies', 'House', 'Income',
+                    'Leisure', 'Memberships', 'Other', 'Projects', 'Services',
+                    'Travel', 'Balance']
+
+    full_details_file = "by-class.html" # todo: place this in a specific directory
+
+    spending_chart.spending_chart_to_file(finutils.read_csv(incoming),
+                                          key='category', period='month', output=full_details_file, selection=many_columns, inline=True)
+
     return T.div[wrap_box(
         linked_image("by-class", "transactions"),
         T.div[T.h3["Recent transactions"],
               recent_transactions_table(FILECONF('finance', 'main-account'), 14)],
         T.div[T.h3["Spending by category"],
-              T.a(class_='plainlink', href="by-class.html")[
-                  untemplate.safe_unicode(qsutils.html_pages.file_contents(spending_chart_file))]],
-        T.div[T.h3["Automatic Spending by day of month"],
-              untemplate.safe_unicode(qsutils.html_pages.file_contents(os.path.join(FILECONF('finance', 'merge-results-dir'),
-                                                                 "auto-by-day-of-month.html")))],
-        T.div[T.h3["Spending by day of week"],
-              untemplate.safe_unicode(qsutils.html_pages.file_contents(os.path.join(FILECONF('finance', 'merge-results-dir'),
-                                                                 "by-day-of-week.html")))],
-        T.div[T.h3["Unmatched automatic transactions"],
-              untemplate.safe_unicode(qsutils.html_pages.file_contents(os.path.join(FILECONF('finance', 'merge-results-dir'),
-                                                                 "unmatched-auto.html")))],
-        T.div[T.h3["Unmatched non-automatic transactions"],
-              untemplate.safe_unicode(qsutils.html_pages.file_contents(os.path.join(FILECONF('finance', 'merge-results-dir'),
-                                                                 "unmatched-non-auto.html")))])]
+              T.a(class_='plainlink', href=full_details_file)[
+                  financial.spending_chart.spending_chart(
+                      finutils.read_csv(incoming, starting),
+                      key='category', period='month',
+                      selection=some_columns,
+                      map_to_highlights = financial.parentage.highlights(
+                          parentage.read_parentage_table(os.path.expanduser(finutils.CATPARENTS)),
+                          set(columns),
+                          'Other'))
+              ]],
+        # T.div[T.h3["Automatic Spending by day of month"],
+        #       untemplate.safe_unicode(qsutils.html_pages.file_contents(os.path.join(FILECONF('finance', 'merge-results-dir'),
+        #                                                          "auto-by-day-of-month.html")))],
+        # T.div[T.h3["Spending by day of week"],
+        #       untemplate.safe_unicode(qsutils.html_pages.file_contents(os.path.join(FILECONF('finance', 'merge-results-dir'),
+        #                                                          "by-day-of-week.html")))],
+        # T.div[T.h3["Unmatched automatic transactions"],
+        #       untemplate.safe_unicode(qsutils.html_pages.file_contents(os.path.join(FILECONF('finance', 'merge-results-dir'),
+        #                                                          "unmatched-auto.html")))],
+        # T.div[T.h3["Unmatched non-automatic transactions"],
+        #       untemplate.safe_unicode(qsutils.html_pages.file_contents(os.path.join(FILECONF('finance', 'merge-results-dir'),
+        #                                                          "unmatched-non-auto.html")))]
+    )]
 
 def timetable_section():
     day_after_tomorrow = qsutils.qsutils.forward_from(datetime.date.today(), None, None, 2)
