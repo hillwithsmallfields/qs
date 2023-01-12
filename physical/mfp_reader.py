@@ -7,10 +7,7 @@ import os
 # sys.path.append(os.path.expanduser("~/open-projects/github.com/hillwithsmallfields/python-myfitnesspal"))
 sys.path.append(os.path.expanduser("~/open-projects/github.com/coddingtonbear/python-myfitnesspal"))
 
-print("path is now", sys.path)
-
 import argparse
-import base_sheet
 import qsutils
 import csv
 from decouple import config
@@ -128,7 +125,12 @@ def save_data(sheet_filename, rows, json_filename=None, so_far=None):
                        for d,v in so_far.items()},
                       outstream)
     if sheet_filename:
-        base_sheet.base_sheet(None, rows=rows).write_csv(sheet_filename)
+        with open(sheet_filename, 'w') as outstream:
+            writer = csv.DictWriter(outstream,
+                                    fieldnames=sorted(list(set(*(row.keys() for row in rows)))))
+            writer.writeheader()
+            for row in rows:
+                writer.writerow(row)
 
 def find_last_unfetched_date(dict_by_date):
     """Return the latest day before the first that appears as a key of a dict.

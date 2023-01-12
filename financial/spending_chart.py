@@ -12,7 +12,9 @@ sys.path.append(os.path.dirname(source_dir))
 # This corresponds to https://github.com/hillwithsmallfields
 my_projects = os.path.dirname(os.path.dirname(source_dir))
 
-sys.path.append(os.path.join(my_projects, "makers", "untemplate"))
+untemplate_dir = os.path.join(my_projects, "makers", "untemplate")
+if untemplate_dir not in sys.path:
+    sys.path.append(untemplate_dir)
 
 import throw_out_your_templates_p3 as untemplate
 from throw_out_your_templates_p3 import htmltags as T
@@ -20,9 +22,9 @@ from throw_out_your_templates_p3 import htmltags as T
 import qsutils.qsutils
 import qsutils.html_pages
 
-import finutils
-import parentage
-import collate
+import financial.finutils
+import financial.parentage
+import financial.collate
 
 def entry_as_html(entry, row, column, total):
     cell = row[column]
@@ -44,7 +46,7 @@ def cell_total(cell):
     return functools.reduce(
         operator.add,
         (float(item['amount'])
-         for item in cell))
+         for item in cell)) if len(cell) > 0 else 0
 
 def cell_as_html(row, column, threshold):
     cell = row[column]
@@ -69,9 +71,11 @@ def column_total(table, column):
         (cell_total(row[column])
          for row in table))
 
-def spending_chart(transactions, key, period, columns, map_to_highlights, thresholds):
+def spending_chart(transactions, key, period, columns, map_to_highlights, thresholds={}):
     """Create a spending chart, as an untemplate structure."""
-    result = collate.collate(transactions, key, period, map_to_highlights)
+    result = financial.collate.collate(transactions,
+                                       key, period,
+                                       column_mapping=map_to_highlights)
     for row in result:
         if 'Other' in row:
             del row['Other']
@@ -79,7 +83,7 @@ def spending_chart(transactions, key, period, columns, map_to_highlights, thresh
         T.tr[T.th["Date"],
              [T.th[column] for column in columns]],
         [T.tr[T.th[row['date']],
-              [cell_as_html(row, column, thresholds.get(column))
+              [cell_as_html(row, column, thresholds.get(column, 0))
                for column in columns]]
          for row in sorted(result, key=lambda r: r['date'])],
         T.tr[T.th["Total"],
@@ -93,12 +97,12 @@ def spending_chart_to_file(incoming, key, period, output,
                            inline=True,
                            all_cats=False):
     """Collates a table from a file, with the output to file."""
-    category_mapping = parentage.read_budgetting_classes_table(finutils.BUDGETCATS)
+    category_mapping = financial.parentage.read_budgetting_classes_table(financial.finutils.BUDGETCATS)
     with open(output, 'w') as page_stream:
         page_stream.write(
             qsutils.html_pages.page_text(
                 spending_chart(
-                    finutils.read_csv(incoming, starting, ending),
+                    financial.finutils.read_csv(incoming, starting, ending),
                     key, period,
                     sorted(list(set(category_mapping.values()))),
                     category_mapping,
@@ -118,7 +122,7 @@ def spending_chart_to_file(incoming, key, period, output,
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--incoming", "-i", default=finutils.MAIN_ACCOUNTING_FILE,
+    parser.add_argument("--incoming", "-i", default=financial.finutils.MAIN_ACCOUNTING_FILE,
                         help="""The input file, in my financisto-like format.""")
     parser.add_argument("--key", "-k", default='category',
                         help="""The field to group transactions by.

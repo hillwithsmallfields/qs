@@ -6,9 +6,9 @@ import datetime
 import functools
 import operator
 
-import finutils
+import financial.finutils
 
-def collate(incoming, key, period, keymap=None):
+def collate(incoming, key, period, column_mapping=None):
 
     """Returns a collation of a table.
 
@@ -19,6 +19,8 @@ def collate(incoming, key, period, keymap=None):
     year, weekday), with a column for each value of a selected field
     (such as 'category' or 'payee'), and the cells are lists of the
     original rows matching that period and that field value.
+
+    A map may be given to map multiple input keys to fewer output keys.
     """
 
     period_fn = {
@@ -30,10 +32,10 @@ def collate(incoming, key, period, keymap=None):
 
     result = defaultdict(lambda: defaultdict(list))
     for row in incoming:
-        result[period_fn(row['date'])][keymap[row[key]]
-                                       if keymap
+        result[period_fn(row['date'])][column_mapping[row[key]]
+                                       if column_mapping
                                        else row[key]].append(row)
-    return finutils.with_key_as_column(result, 'date')
+    return financial.finutils.with_key_as_column(result, 'date')
 
 def ize(table, izefn):
     """Returns a table containing the result of applying a function to each cell of the input.
@@ -81,16 +83,16 @@ def collate_in_files(incoming, key, period, summary, output,
     classification, in a short textual form.
 
     """
-    result = collate(finutils.read_csv(incoming, starting, ending), key, period)
-    headings = finutils.bring_to_front(sorted(finutils.headings(result)), {'date'})
+    result = collate(financial.finutils.read_csv(incoming, starting, ending), key, period)
+    headings = financial.finutils.bring_to_front(sorted(financial.finutils.headings(result)), {'date'})
     if summary:
-        finutils.write_csv(summarize(result), headings, summary, lambda r: r['date'])
+        financial.finutils.write_csv(summarize(result), headings, summary, lambda r: r['date'])
     if output:
-        finutils.write_csv(textualize(result), headings, output, lambda r: r['date'])
+        financial.finutils.write_csv(textualize(result), headings, output, lambda r: r['date'])
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--incoming", "-i", default=finutils.MAIN_ACCOUNTING_FILE,
+    parser.add_argument("--incoming", "-i", default=financial.finutils.MAIN_ACCOUNTING_FILE,
                         help="""The input file, in my financisto-like format.""")
     parser.add_argument("--key", "-k", default='category',
                         help="""The field to group transactions by.

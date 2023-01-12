@@ -1,7 +1,10 @@
 import csv
+import datetime
 import os.path
 import re
 import yaml
+
+import sys
 from frozendict import frozendict
 
 MAIN_ACCOUNTING_FILE = "~/Sync/finances/finances.csv"
@@ -21,11 +24,12 @@ BUDGETCATS = "~/open-projects/github.com/hillwithsmallfields/qs/conf/budgetting-
 
 def read_csv(filename,
              starting=None, ending=None):
-    """Returns the contents of a CSV file, as a list of dictionaries.
+    """Returns the contents of a CSV file, as a set of frozendicts.
     If the starting or ending arguments are given, they are used to limit
     the rows returned to those with a 'date' field within those limits."""
     with open(os.path.expanduser(filename)) as instream:
-        transactions = list(csv.DictReader(instream))
+        transactions = sorted(list(csv.DictReader(instream)),
+                              key=lambda r: r['date'])
         if starting:
             transactions = onwards(transactions, starting)
         if ending:
@@ -40,14 +44,24 @@ def write_csv(data, header, filename, sort_key):
         for row in sorted(data, key=sort_key):
             writer.writerow(row)
 
+def datestring(date):
+    """For comparing dates read from a CSV file, which will be strings."""
+    return (date.isoformat()
+            if isinstance(date, datetime.date)
+            else (date.isoformat(sep=' ')
+                  if isinstance(date, datetime.datetime)
+                  else date))
+
 def onwards(table, date):
     """Returns the rows of the table whose dates are at least the given date."""
+    date = datestring(date)
     return [row
             for row in table
             if row['date'] >= date]
 
 def until(table, date):
     """Returns the rows of the table whose dates are at most the given date."""
+    date = datestring(date)
     return [row
             for row in table
             if row['date'] <= date]

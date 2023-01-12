@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import finutils
+import financial.finutils
 from collections import defaultdict
 
 def add_parentage(tree, table, ancestry):
@@ -16,7 +16,7 @@ def read_parentage_table(parentage_filename):
     The result is a dictionary of category to list of parent categories.
     The parent categories are given nearest-first."""
     table = dict()
-    add_parentage(finutils.read_yaml(parentage_filename), table, [])
+    add_parentage(financial.finutils.read_yaml(parentage_filename), table, [])
     return table
 
 def highlights(parentage_table, selection, other='other'):
@@ -29,7 +29,7 @@ def highlights(parentage_table, selection, other='other'):
 
 def read_budgetting_classes_table(classes_filename):
     """Returns a dictionary mapping categories to budgetting groups, from a file."""
-    return budgetting_classes_table(finutils.read_yaml(classes_filename))
+    return budgetting_classes_table(financial.finutils.read_yaml(classes_filename))
 
 def budgetting_classes_table(classes, other='other'):
     """Returns a dictionary mapping categories to budgetting groups."""
@@ -41,7 +41,7 @@ def budgetting_classes_table(classes, other='other'):
 def main():
     """Test program for read_parentage_table."""
     import os.path
-    all_entries = read_parentage_table(os.path.expanduser(finutils.CATPARENTS))
+    all_entries = read_parentage_table(os.path.expanduser(financial.finutils.CATPARENTS))
     print("All:")
     for key, value in all_entries.items():
         print("  ", key, "->", value)
@@ -49,7 +49,7 @@ def main():
     print("Highlights:")
     for key, value in some_entries.items():
         print("    ", key, "=>", value)
-    classes = read_budgetting_classes_table(finutils.BUDGETCATS)
+    classes = read_budgetting_classes_table(financial.finutils.BUDGETCATS)
     print("From budgetting table")
     for key, value in classes.items():
         print("    ", key, "==>", value)

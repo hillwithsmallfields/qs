@@ -12,13 +12,18 @@ import sys
 
 import numpy as np
 
+def ensure_in_path(directory):
+    if directory not in sys.path:
+        sys.path.append(directory)
+
 source_dir = os.path.dirname(os.path.realpath(__file__))
 
 # other parts of this project group
-sys.path.append(os.path.dirname(source_dir))
+ensure_in_path(os.path.dirname(source_dir))
 import financial.classify       # https://github.com/hillwithsmallfields/qs/blob/master/financial/classify.py
 import financial.spending_chart
 import financial.parentage
+import financial.finutils
 import qsutils.qsutils            # https://github.com/hillwithsmallfields/qs/blob/master/utils/qsutils.py
 import qsutils.qschart
 import qsutils.html_pages
@@ -26,23 +31,23 @@ import qsutils.html_pages
 # This corresponds to https://github.com/hillwithsmallfields
 my_projects = os.path.dirname(os.path.dirname(source_dir))
 
-sys.path.append(os.path.join(my_projects, "makers", "untemplate"))
+ensure_in_path(os.path.join(my_projects, "makers", "untemplate"))
 
 import throw_out_your_templates_p3 as untemplate
 from throw_out_your_templates_p3 import htmltags as T
 
-sys.path.append(os.path.join(my_projects, "coimealta/contacts"))
+ensure_in_path(os.path.join(my_projects, "coimealta/contacts"))
 import contacts_data            # https://github.com/hillwithsmallfields/coimealta/blob/master/contacts/contacts_data.py
 
-sys.path.append(os.path.join(my_projects, "coimealta/inventory"))
+ensure_in_path(os.path.join(my_projects, "coimealta/inventory"))
 import storage
 
-sys.path.append(os.path.join(my_projects, "noticeboard"))
+ensure_in_path(os.path.join(my_projects, "noticeboard"))
 
 import announce                 # https://github.com/hillwithsmallfields/noticeboard/blob/master/announce.py
 import lifehacking_config       # https://github.com/hillwithsmallfields/noticeboard/blob/master/lifehacking_config.py
 
-sys.path.append(os.path.join(my_projects, "coimealta/inventory"))
+ensure_in_path(os.path.join(my_projects, "coimealta/inventory"))
 import perishables              # https://github.com/hillwithsmallfields/coimealta/blob/master/inventory/perishables.py
 
 CONFIGURATION = {}
@@ -205,8 +210,11 @@ def transactions_section():
 
     full_details_file = "by-class.html" # todo: place this in a specific directory
 
-    spending_chart.spending_chart_to_file(
-        finutils.read_csv(incoming),
+    account_file = FILECONF('finance', 'main-account')
+
+    financial.spending_chart.spending_chart_to_file(
+        # financial.finutils.read_csv(FILECONF('finance', 'main-account')),
+        account_file,
         key='category', period='month',
         output=full_details_file,
         inline=True)
@@ -214,14 +222,17 @@ def transactions_section():
     return T.div[wrap_box(
         linked_image("by-class", "transactions"),
         T.div[T.h3["Recent transactions"],
-              recent_transactions_table(FILECONF('finance', 'main-account'), 14)],
+              recent_transactions_table(account_file, 14)],
         T.div[T.h3["Spending by category"],
               T.a(class_='plainlink', href=full_details_file)[
                   financial.spending_chart.spending_chart(
-                      finutils.read_csv(incoming, starting),
+                      financial.finutils.read_csv(
+                          account_file,
+                          datetime.date.today() - datetime.timedelta(days=365)),
                       key='category', period='month',
-                      selection=some_columns,
-                      map_to_highlights = financial.parentage.read_budgetting_classes_table(finutils.BUDGETCATS))
+                      columns=some_columns,
+                      map_to_highlights = financial.parentage.read_budgetting_classes_table(
+                          financial.finutils.BUDGETCATS))
               ]],
         # T.div[T.h3["Automatic Spending by day of month"],
         #       untemplate.safe_unicode(qsutils.html_pages.file_contents(os.path.join(FILECONF('finance', 'merge-results-dir'),

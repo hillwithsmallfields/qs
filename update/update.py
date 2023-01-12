@@ -15,12 +15,15 @@ import shutil
 import sys
 import yaml
 
+def ensure_in_path(directory):
+    if directory not in sys.path:
+        sys.path.append(directory)
+
 # other parts of this project group:
-sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+ensure_in_path(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import dashboard.dashboard
 import qsutils.check_merged_row_dates
-import financial.finlisp
-import list_completions
+import financial.list_completions
 import physical.mfp_reader
 import physical.oura_reader
 import qsutils.trim_csv
@@ -28,10 +31,10 @@ import qsutils.qsmerge
 import qsutils
 
 my_projects = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-sys.path.append(os.path.join(my_projects, "coimealta/contacts"))
+ensure_in_path(os.path.join(my_projects, "coimealta/contacts"))
 import link_contacts # https://github.com/hillwithsmallfields/coimealta/blob/master/contacts/link_contacts.py
 
-sys.path.append(os.path.join(my_projects, "noticeboard"))
+ensure_in_path(os.path.join(my_projects, "noticeboard"))
 
 import lifehacking_config       # https://github.com/hillwithsmallfields/noticeboard/blob/master/lifehacking_config.py
 
@@ -100,19 +103,19 @@ def update_finances(verbose):
 
     print("calling charter on", main_account, "with merge results in", merge_results_dir)
 
-    financial.finlisp.finlisp_main([os.path.join(my_projects, "qs/financial", "chart-categories.lisp")],
-                                   FILECONF('general', 'charts'),
-                                   config,
-                                   verbose,
-                                   {'input-file': main_account,
-                                    'statements-file': FILECONF('finance', 'accumulated-bank-statements-file'),
-                                    'classifiers-file': CONF('finance', 'budgeting-classes-file'),
-                                    'thresholds-file': CONF('finance', 'thresholds-file'),
-                                    'verbose': verbose})
+    # financial.finlisp.finlisp_main([os.path.join(my_projects, "qs/financial", "chart-categories.lisp")],
+    #                                FILECONF('general', 'charts'),
+    #                                config,
+    #                                verbose,
+    #                                {'input-file': main_account,
+    #                                 'statements-file': FILECONF('finance', 'accumulated-bank-statements-file'),
+    #                                 'classifiers-file': CONF('finance', 'budgeting-classes-file'),
+    #                                 'thresholds-file': CONF('finance', 'thresholds-file'),
+    #                                 'verbose': verbose})
 
     if file_newer_than_file(main_account, FILECONF('finance', 'finances-completions')):
         if verbose: print("updating finances completions")
-        list_completions.list_completions()
+        financial.list_completions.list_completions()
 
 def update_physical(begin_date, end_date):
 
