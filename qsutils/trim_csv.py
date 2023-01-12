@@ -3,6 +3,7 @@
 import argparse
 
 def trim_csv(infilename, outfilename=None):
+    """Remove leading guff bytes added by financisto etc."""
     with open(infilename, 'rb') as instream:
         data = instream.read()
         start = 0

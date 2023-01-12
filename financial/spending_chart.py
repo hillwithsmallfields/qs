@@ -40,12 +40,16 @@ def entry_as_html(entry, row, column, total):
             ]
         ]
 
+def cell_total(cell):
+    return functools.reduce(
+        operator.add,
+        (float(item['amount'])
+         for item in cell))
+
 def cell_as_html(row, column, threshold):
     cell = row[column]
     if cell:
-        total = functools.reduce(
-            operator.add, (float(item['amount'])
-                           for item in cell))
+        total = cell_total(cell)
         return T.td(class_=column)[[
             T.span(class_='overview' + (
                 ' large'
@@ -59,11 +63,18 @@ def cell_as_html(row, column, threshold):
     else:
         return T.td[""]
 
+def column_total(table, column):
+    return functools.reduce(
+        operator.add,
+        (cell_total(row[column])
+         for row in table))
+
 def spending_chart(transactions, key, period, columns, map_to_highlights, thresholds):
     """Create a spending chart, as an untemplate structure."""
-    result = collate.collate(transactions, key, period, map_to_highlights, thresholds)
+    result = collate.collate(transactions, key, period, map_to_highlights)
     for row in result:
-        del row['Other']
+        if 'Other' in row:
+            del row['Other']
     return T.table[
         T.tr[T.th["Date"],
              [T.th[column] for column in columns]],
@@ -71,26 +82,26 @@ def spending_chart(transactions, key, period, columns, map_to_highlights, thresh
               [cell_as_html(row, column, thresholds.get(column))
                for column in columns]]
          for row in sorted(result, key=lambda r: r['date'])],
+        T.tr[T.th["Total"],
+             [T.td[column_total(result, column)] for column in columns]],
     ]
 
-def spending_chart_to_file(incoming, key, period, output, selection,
+def spending_chart_to_file(incoming, key, period, output,
                            starting=None, ending=None,
                            thresholds=None,
                            details_background_color="gold",
-                           inline=True):
+                           inline=True,
+                           all_cats=False):
     """Collates a table from a file, with the output to file."""
-    columns = selection.split(',')
+    category_mapping = parentage.read_budgetting_classes_table(finutils.BUDGETCATS)
     with open(output, 'w') as page_stream:
         page_stream.write(
             qsutils.html_pages.page_text(
                 spending_chart(
                     finutils.read_csv(incoming, starting, ending),
                     key, period,
-                    columns,
-                    parentage.highlights(
-                        parentage.read_parentage_table(os.path.expanduser(finutils.CATPARENTS)),
-                        set(columns),
-                        'Other'),
+                    sorted(list(set(category_mapping.values()))),
+                    category_mapping,
                     thresholds or {}),
                 ((qsutils.html_pages.tagged_file_contents("style", os.path.join(source_dir, "../dashboard/dashboard.css"))
                  + qsutils.qsutils.table_support_css(details_background_color))
@@ -115,7 +126,6 @@ def get_args():
     parser.add_argument("--period", "-p", default='month',
                         help="""The period to group transactions by.
                         Must be one of 'day', 'month', 'year', or 'weekday'.""")
-    parser.add_argument("--selection", default="Clothes,Prepared meals,Groceries and sundry supplies,Snacks,Health and fitness,Hobbies,Household,Travel")
     parser.add_argument("--starting",
                         help="""Trim the transactions to start at this date.""")
     parser.add_argument("--ending",

@@ -17,6 +17,7 @@ UPDATES_GLOB = "~/Downloads/Transactions*.csv"
 
 CONVERSIONS = "~/Sync/finances/conversions.yaml"
 CATPARENTS = "~/open-projects/github.com/hillwithsmallfields/qs/conf/cats.yaml"
+BUDGETCATS = "~/open-projects/github.com/hillwithsmallfields/qs/conf/budgetting-classes.yaml"
 
 def read_csv(filename,
              starting=None, ending=None):

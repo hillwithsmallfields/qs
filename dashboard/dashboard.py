@@ -72,9 +72,11 @@ def make_name_with_email(name, email):
             else name)
 
 def row(*things):
+    """Returns an untemplated table row for its arguments."""
     return T.table(width="100%")[T.tr[[T.td(valign="top")[thing] for thing in things]]]
 
 def wrap_box(*things):
+    """Returns a flex container box contains its arguments."""
     return (T.div(class_='flex-container')[[T.div[thing]
                                             for thing in things
                                             if thing]]
@@ -82,6 +84,7 @@ def wrap_box(*things):
             else None)
 
 def labelled_section(title, body):
+    """Returns a titled version of the body."""
     return T.div[T.h2[title], body] if body else None
 
 class SectionalPage(object):
@@ -137,10 +140,12 @@ def dashboard_page_colours():
 
 def switchable_panel(switcher_id, panels, labels, order, initial):
     """Return a group of panels, only one of which is displayed at a time.
-    panels is a dictionary binding keys to the panel contents,
-    and labels is a dictionary binding the same keys to button labels.
-    order is the order of the keys in the button row,
-    and initial is the button to be selected initially."""
+
+    - panels is a dictionary binding keys to the panel contents,
+    - labels is a dictionary binding the same keys to button labels.
+    - order is the order of the keys in the button row,
+    - initial is the button to be selected initially.
+    """
     return T.table(class_='switcher', id_=switcher_id)[
         T.tr(align="center")[T.td[[T.div(class_='choice', name=choice)[panels[choice]]
                                    for choice in order]]],
@@ -152,11 +157,12 @@ def switchable_panel(switcher_id, panels, labels, order, initial):
                   for choice in order]]]]
 
 def linked_image(image_name, label, fallback=None):
+    """Returns a group of image panels with the image of each linked to a larger version of itself."""
     charts_dir = FILECONF('general', 'charts')
     os.path.join(charts_dir)
     periods = ('all_time', 'past_year', 'past_quarter', 'past_month', 'past_week')
     return switchable_panel(label,
-                            {period: [
+                            panels={period: [
                                 T.div(class_='choice', name=period)[
                                     (T.a(href="%s-%s-large.png" % (image_name, period))[
                                         T.img(src="%s-%s-small.png" % (image_name, period))]
@@ -164,9 +170,9 @@ def linked_image(image_name, label, fallback=None):
                                      else fallback or T.p["Data needs fetching"])]
                                 ]
                              for period in periods},
-                            {period: period.capitalize().replace('_', ' ') for period in periods},
-                            periods,
-                            'past_quarter')
+                            labels={period: period.capitalize().replace('_', ' ') for period in periods},
+                            order=periods,
+                            initial='past_quarter')
 
 def recent_transactions_table(filename, days_back):
     start_date = qsutils.qsutils.back_from(datetime.date.today(), None, None, days_back)
@@ -197,15 +203,13 @@ def transactions_section():
 
     some_columns = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
 
-    many_columns = ['Adjustment', 'Clothes', 'Eating', 'in', 'Eating',
-                    'out', 'Giving', 'Health', 'Hobbies', 'House', 'Income',
-                    'Leisure', 'Memberships', 'Other', 'Projects', 'Services',
-                    'Travel', 'Balance']
-
     full_details_file = "by-class.html" # todo: place this in a specific directory
 
-    spending_chart.spending_chart_to_file(finutils.read_csv(incoming),
-                                          key='category', period='month', output=full_details_file, selection=many_columns, inline=True)
+    spending_chart.spending_chart_to_file(
+        finutils.read_csv(incoming),
+        key='category', period='month',
+        output=full_details_file,
+        inline=True)
 
     return T.div[wrap_box(
         linked_image("by-class", "transactions"),
@@ -217,10 +221,7 @@ def transactions_section():
                       finutils.read_csv(incoming, starting),
                       key='category', period='month',
                       selection=some_columns,
-                      map_to_highlights = financial.parentage.highlights(
-                          parentage.read_parentage_table(os.path.expanduser(finutils.CATPARENTS)),
-                          set(columns),
-                          'Other'))
+                      map_to_highlights = financial.parentage.read_budgetting_classes_table(finutils.BUDGETCATS))
               ]],
         # T.div[T.h3["Automatic Spending by day of month"],
         #       untemplate.safe_unicode(qsutils.html_pages.file_contents(os.path.join(FILECONF('finance', 'merge-results-dir'),

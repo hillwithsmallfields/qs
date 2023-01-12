@@ -27,6 +27,17 @@ def highlights(parentage_table, selection, other='other'):
                                             for category, parents in parentage_table.items()}.items()
                           if pars})
 
+def read_budgetting_classes_table(classes_filename):
+    """Returns a dictionary mapping categories to budgetting groups, from a file."""
+    return budgetting_classes_table(finutils.read_yaml(classes_filename))
+
+def budgetting_classes_table(classes, other='other'):
+    """Returns a dictionary mapping categories to budgetting groups."""
+    return defaultdict(lambda: other,
+                       {origin: destination
+                        for destination, group in classes.items()
+                        for origin in list(group)})
+
 def main():
     """Test program for read_parentage_table."""
     import os.path
@@ -38,6 +49,10 @@ def main():
     print("Highlights:")
     for key, value in some_entries.items():
         print("    ", key, "=>", value)
+    classes = read_budgetting_classes_table(finutils.BUDGETCATS)
+    print("From budgetting table")
+    for key, value in classes.items():
+        print("    ", key, "==>", value)
 
 if __name__ == "__main__":
     main()

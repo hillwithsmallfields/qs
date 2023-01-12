@@ -187,15 +187,19 @@ def update_covid():
     # TODO: include in charts
 
 def rename_columns(raw, column_renames):
+    """Returns a row dictionary or a header list with columns renamed."""
     return ({column_renames.get(key, key): value for key, value in raw.items()}
             if isinstance(raw, dict)
             else [column_renames.get(key, key) for key in raw])
 
 def transform_cells(row, transformations):
+    """Returns a row dict with column-specific transformations applied."""
     return {k: transformations.get(k, lambda a: a)(v)
             for k, v in row.items()}
 
 def matches(row, match_key, match_value):
+    """Returns whether a row contains a given value in a given column.
+    If no column is given, returns True."""
     return (match_key is None
             or row.get(match_key) == match_value)
 
@@ -214,7 +218,7 @@ def merge_incoming_csv(main_file_key, incoming_key,
     incoming_filename = latest_file_matching(FILECONF('physical', incoming_key))
     if incoming_filename:
         print("merging", incoming_filename, "into", main_filename, "with column_renames", column_renames, "and matches", match_key, match_value)
-        qsutils.qsutils.trim_csv.trim_csv(incoming_filename)
+        qsutils.qsutils.trim_csv.trim_csv(incoming_filename) # Remove leading guff bytes added by financisto
         if (os.path.isfile(incoming_filename)
             and ((not os.path.isfile(main_filename))
                  or file_newer_than_file(incoming_filename, main_filename))):
@@ -334,6 +338,8 @@ def fetch_running(begin_date, end_date, verbose):
     """Extract running records from the latest saved Garmin data.  Garmin don't provide API access to
     individuals, so for now I'm saving the file manually from their web page --- automatic button pusher
     possibly to follow."""
+
+    # There may be some movement on this: https://support.garmin.com/en-US/?faq=W1TvTPW8JZ6LfJSfK512Q8
 
     if verbose: print("updating running data")
 
