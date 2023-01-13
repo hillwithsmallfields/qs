@@ -339,7 +339,7 @@ def one_day_weather_section(day=None):
     day_of_week = day.strftime("%A")
     daystring = day.isoformat()
     with open(FILECONF('weather', 'weather-filename')) as weatherstream:
-        return T.table[
+        return T.table(id_='weather')[
             T.caption["%s %s" % (day_of_week, daystring)],
             T.tr[T.th["Time"],
                  T.th["Temperature"],
