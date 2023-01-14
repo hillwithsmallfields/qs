@@ -158,22 +158,23 @@ def update_contacts():
     contacts_file = FILECONF('contacts', 'contacts-file')
     contacts_scratch = "/tmp/contacts_scratch.csv"
     contacts_analysis = link_contacts.link_contacts_main(contacts_file, True, False, contacts_scratch)
-    with open(contacts_file) as confile:
+    with open(contacts_file) as confile, open(contacts_scratch) as conscratch:
         original_lines = len(confile.readlines())
-    with open(contacts_scratch) as conscratch:
         scratch_lines = len(conscratch.readlines())
-    if original_lines == scratch_lines:
-        backup(contacts_file, FILECONF('backups', 'archive'), "contacts-%s.csv")
-        shutil.copy(contacts_scratch, contacts_file)
-    else:
-        print("wrong number of people after linking contacts, originally", original_lines, "but now", scratch_lines)
+        if original_lines == scratch_lines:
+            backup(contacts_file, FILECONF('backups', 'archive'), "contacts-%s.csv")
+            shutil.copy(contacts_scratch, contacts_file)
+        else:
+            print("wrong number of people after linking contacts, originally", original_lines, "but now", scratch_lines)
     return contacts_analysis
 
 def update_agenda():
+
     """Also updates the parcels expected list.
     Files written:
     * $SYNCED/var/views.json
     * $SYNCED/var/parcels-expected.json"""
+
     os.system("emacs -q --script " +
               os.path.expandvars("$MY_ELISP/special-setups/dashboard/dashboard-emacs-query.el"))
 
