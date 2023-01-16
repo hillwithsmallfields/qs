@@ -38,6 +38,14 @@ function refresh_page() {
     document.location.reload()
 }
 
+function refresh_in_small_hours() {
+    // called once every ten minutes
+    var now = new Date();
+    if ((now.getHours() == 5) && (now.getMinutes() <= 11)) {
+        refresh_page();
+    }
+}
+
 function highlight_activity_timetable() {
     highlight_timetable("timetable");
 }
@@ -54,5 +62,6 @@ function init_dashboard() {
     // TODO: perhaps it should schedule itself at the appropriate time for the next slot
     setInterval(highlight_activity_timetable , 15000);
     setInterval(highlight_weather_timetable , 15000);
+    // setInterval(refresh_in_small_hours, 600000);
 }
 
