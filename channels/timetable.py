@@ -36,61 +36,68 @@ def FILECONF(*keys):
 
 CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
 
-def timetable_section():
-    day_after_tomorrow = qsutils.qsutils.forward_from(datetime.date.today(), None, None, 2)
-    day_after_tomorrow_name = day_after_tomorrow.strftime("%A")
-    return T.div(class_='timetable')[
-        T.h2["Timetable"],
-        switchable_panel(
-            'timetable_switcher',
-            {'today': one_day_timetable_section(with_form=True),
-             'tomorrow': one_day_timetable_section(day=qsutils.qsutils.forward_from(datetime.date.today(),
-                                                                                  None, None, 1)),
-             day_after_tomorrow_name: one_day_timetable_section(day=day_after_tomorrow)},
-            {'today': "Today",
-             'tomorrow': "Tomorrow",
-             day_after_tomorrow_name: day_after_tomorrow_name},
-            ['today', 'tomorrow', day_after_tomorrow_name],
-            'today')]
+class Timetable:
 
-def one_day_timetable_section(day=None, with_form=False):
-    # TODO: possibly add columns for weather data for the same times
-    if day is None:
-        day = datetime.date.today()
-    day_of_week = day.strftime("%A")
-    with open(FILECONF('weather', 'weather-filename')) as weatherstream:
-        weather = {row['time']: row for row in csv.DictReader(weatherstream)}
-    # TODO: look up times in the weather
-    # TODO: fetch from Google calendar (in update.py) and merge that in here
-    table = T.table(id_="timetable")[
-        T.caption["%s %s" % (day_of_week, day.isoformat())],
-        [[T.tr(class_='inactive',
-               name=slot.start.strftime("%H:%M"))[
-                   T.td(class_='time_of_day')[slot.start.strftime("%H:%M")],
-                   T.td(class_='activity')[T.a(href=slot.link)[slot.activity]
-                                           if slot.link
-                                           else slot.activity],
-                   (T.td[T.input(type='checkbox',
-                                 name=slot.activity, id_=slot.activity,
-                                 class_='activity_logger')[""]]) if with_form else []]
-          for slot in announce.get_day_announcer(
-                  os.path.join(FILECONF('timetables', 'timetables-dir'),
-                               CONF('timetables', 'default-timetable')),
-                  extra_files=[
-                      day_full_file
-                               for day_full_file in [
-                                       os.path.join(FILECONF('timetables', 'timetables-dir'),
-                                                    day_name)
-                                       for day_name in (
-                                               "%s.csv" % day_of_week,
-                                               "%s-%s.csv" % (day_of_week,
-                                                              'even'
-                                                              if day.isocalendar().week % 2 == 0
-                                                              else 'odd'))]
-                      if os.path.isfile(day_full_file)]).ordered()]]]
-    return T.form(action='log_done_timeslots')[
-        table,
-        T.input(type='submit',
-                method='post',
-                class_='activity_logger',
-                value="Log activities")] if with_form else table
+    def __init__(self):
+        pass
+
+    def html(self):
+        day_after_tomorrow = qsutils.qsutils.forward_from(datetime.date.today(), None, None, 2)
+        day_after_tomorrow_name = day_after_tomorrow.strftime("%A")
+        return T.div(class_='timetable')[
+            T.h2["Timetable"],
+            switchable_panel(
+                'timetable_switcher',
+                {'today': TimetableDay().html(with_form=True),
+                 'tomorrow': TimetableDay(qsutils.qsutils.forward_from(datetime.date.today(), None, None, 1)).html(),
+                 day_after_tomorrow_name: TimetableDay(qsutils.qsutils.forward_from(datetime.date.today(), None, None, 2)).html()},
+                {'today': "Today",
+                 'tomorrow': "Tomorrow",
+                 day_after_tomorrow_name: day_after_tomorrow_name},
+                ['today', 'tomorrow', day_after_tomorrow_name],
+                'today')]
+
+class TimetableDay:
+
+    def __init__(self, day=None):
+        self.day = day or datetime.date.today()
+        self.day_of_week = self.day.strftime("%A")
+        with open(FILECONF('weather', 'weather-filename')) as weatherstream:
+            self.weather = {row['time']: row for row in csv.DictReader(weatherstream)}
+        self.slots = announce.get_day_announcer(
+            os.path.join(FILECONF('timetables', 'timetables-dir'),
+                         CONF('timetables', 'default-timetable')),
+            [day_full_file
+             for day_full_file in [
+                     os.path.join(FILECONF('timetables', 'timetables-dir'),
+                                  day_name)
+                     for day_name in (
+                             "%s.csv" % self.day_of_week,
+                             "%s-%s.csv" % (self.day_of_week,
+                                            'even'
+                                            if self.day.isocalendar().week % 2 == 0
+                                            else 'odd'))]
+             if os.path.isfile(day_full_file)])
+
+    def html(self, with_form=False):
+        # TODO: possibly add columns for weather data for the same times
+        # TODO: look up times in the weather
+        # TODO: fetch from Google calendar (in update.py) and merge that in here
+        table = T.table(id_="timetable")[
+            T.caption["%s %s" % (self.day_of_week, self.day.isoformat())],
+            [[T.tr(class_='inactive',
+                   name=slot.start.strftime("%H:%M"))[
+                       T.td(class_='time_of_day')[slot.start.strftime("%H:%M")],
+                       T.td(class_='activity')[T.a(href=slot.link)[slot.activity]
+                                               if slot.link
+                                               else slot.activity],
+                       (T.td[T.input(type='checkbox',
+                                     name=slot.activity, id_=slot.activity,
+                                     class_='activity_logger')[""]]) if with_form else []]
+              for slot in self.slots.ordered()]]]
+        return T.form(action='log_done_timeslots')[
+            table,
+            T.input(type='submit',
+                    method='post',
+                    class_='activity_logger',
+                    value="Log activities")] if with_form else table

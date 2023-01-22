@@ -580,7 +580,7 @@ def construct_dashboard_page(contacts_analysis):
                        perishables_section(),
                        T.h2["Parcels expected"],
                        parcels_section()],
-                 channels.timetable.timetable_section(),
+                 channels.timetable.Timetable().html(),
                  weather_section()),
         page.sections()]]
 
