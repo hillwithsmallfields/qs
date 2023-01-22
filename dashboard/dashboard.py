@@ -28,6 +28,9 @@ import qsutils.qsutils            # https://github.com/hillwithsmallfields/qs/bl
 import qsutils.qschart
 import qsutils.html_pages
 
+import channels.timetable
+from channels.panels import switchable_panel
+
 # This corresponds to https://github.com/hillwithsmallfields
 my_projects = os.path.dirname(os.path.dirname(source_dir))
 
@@ -143,24 +146,6 @@ def dashboard_page_colours():
 
     return foreground, background, shading
 
-def switchable_panel(switcher_id, panels, labels, order, initial):
-    """Return a group of panels, only one of which is displayed at a time.
-
-    - panels is a dictionary binding keys to the panel contents,
-    - labels is a dictionary binding the same keys to button labels.
-    - order is the order of the keys in the button row,
-    - initial is the button to be selected initially.
-    """
-    return T.table(class_='switcher', id_=switcher_id)[
-        T.tr(align="center")[T.td[[T.div(class_='choice', name=choice)[panels[choice]]
-                                   for choice in order]]],
-        T.tr(align="center")[
-            T.td[[[T.button(class_=('active'
-                                    if choice == initial
-                                    else 'inactive'),
-                            name=choice, onclick="select_version('%s', '%s')"%(switcher_id, choice))[labels[choice]]]
-                  for choice in order]]]]
-
 def linked_image(image_name, label, fallback=None):
     """Returns a group of image panels with the image of each linked to a larger version of itself."""
     charts_dir = FILECONF('general', 'charts')
@@ -247,65 +232,6 @@ def transactions_section():
         #       untemplate.safe_unicode(qsutils.html_pages.file_contents(os.path.join(FILECONF('finance', 'merge-results-dir'),
         #                                                          "unmatched-non-auto.html")))]
     )]
-
-def timetable_section():
-    day_after_tomorrow = qsutils.qsutils.forward_from(datetime.date.today(), None, None, 2)
-    day_after_tomorrow_name = day_after_tomorrow.strftime("%A")
-    return T.div(class_='timetable')[
-        T.h2["Timetable"],
-        switchable_panel(
-            'timetable_switcher',
-            {'today': one_day_timetable_section(with_form=True),
-             'tomorrow': one_day_timetable_section(day=qsutils.qsutils.forward_from(datetime.date.today(),
-                                                                                  None, None, 1)),
-             day_after_tomorrow_name: one_day_timetable_section(day=day_after_tomorrow)},
-            {'today': "Today",
-             'tomorrow': "Tomorrow",
-             day_after_tomorrow_name: day_after_tomorrow_name},
-            ['today', 'tomorrow', day_after_tomorrow_name],
-            'today')]
-
-def one_day_timetable_section(day=None, with_form=False):
-    # TODO: possibly add columns for weather data for the same times
-    if day is None:
-        day = datetime.date.today()
-    day_of_week = day.strftime("%A")
-    with open(FILECONF('weather', 'weather-filename')) as weatherstream:
-        weather = {row['time']: row for row in csv.DictReader(weatherstream)}
-    # TODO: look up times in the weather
-    # TODO: fetch from Google calendar (in update.py) and merge that in here
-    table = T.table(id_="timetable")[
-        T.caption["%s %s" % (day_of_week, day.isoformat())],
-        [[T.tr(class_='inactive',
-               name=slot.start.strftime("%H:%M"))[
-                   T.td(class_='time_of_day')[slot.start.strftime("%H:%M")],
-                   T.td(class_='activity')[T.a(href=slot.link)[slot.activity]
-                                           if slot.link
-                                           else slot.activity],
-                   (T.td[T.input(type='checkbox',
-                                 name=slot.activity, id_=slot.activity,
-                                 class_='activity_logger')[""]]) if with_form else []]
-          for slot in announce.get_day_announcer(
-                  os.path.join(FILECONF('timetables', 'timetables-dir'),
-                               CONF('timetables', 'default-timetable')),
-                  extra_files=[
-                      day_full_file
-                               for day_full_file in [
-                                       os.path.join(FILECONF('timetables', 'timetables-dir'),
-                                                    day_name)
-                                       for day_name in (
-                                               "%s.csv" % day_of_week,
-                                               "%s-%s.csv" % (day_of_week,
-                                                              'even'
-                                                              if day.isocalendar().week % 2 == 0
-                                                              else 'odd'))]
-                      if os.path.isfile(day_full_file)]).ordered()]]]
-    return T.form(action='log_done_timeslots')[
-        table,
-        T.input(type='submit',
-                method='post',
-                class_='activity_logger',
-                value="Log activities")] if with_form else table
 
 def weather_section():
     day_after_tomorrow = qsutils.qsutils.forward_from(datetime.date.today(), None, None, 2)
@@ -654,7 +580,7 @@ def construct_dashboard_page(contacts_analysis):
                        perishables_section(),
                        T.h2["Parcels expected"],
                        parcels_section()],
-                 timetable_section(),
+                 channels.timetable.timetable_section(),
                  weather_section()),
         page.sections()]]
 
