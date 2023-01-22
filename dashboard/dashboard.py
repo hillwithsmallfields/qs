@@ -270,10 +270,6 @@ def one_day_timetable_section(day=None, with_form=False):
     if day is None:
         day = datetime.date.today()
     day_of_week = day.strftime("%A")
-    day_file = os.path.join(FILECONF('timetables', 'timetables-dir'), day_of_week + ".csv")
-    extras = []
-    if os.path.isfile(day_file):
-        extras.append(day_file)
     with open(FILECONF('weather', 'weather-filename')) as weatherstream:
         weather = {row['time']: row for row in csv.DictReader(weatherstream)}
     # TODO: look up times in the weather
@@ -292,7 +288,18 @@ def one_day_timetable_section(day=None, with_form=False):
           for slot in announce.get_day_announcer(
                   os.path.join(FILECONF('timetables', 'timetables-dir'),
                                CONF('timetables', 'default-timetable')),
-                  extra_files=extras).ordered()]]]
+                  extra_files=[
+                      day_full_file
+                               for day_full_file in [
+                                       os.path.join(FILECONF('timetables', 'timetables-dir'),
+                                                    day_name)
+                                       for day_name in (
+                                               "%s.csv" % day_of_week,
+                                               "%s-%s.csv" % (day_of_week,
+                                                              'even'
+                                                              if day.isocalendar().week % 2 == 0
+                                                              else 'odd'))]
+                      if os.path.isfile(day_full_file)]).ordered()]]]
     return T.form(action='log_done_timeslots')[
         table,
         T.input(type='submit',
@@ -407,6 +414,7 @@ def contacts_section(contacts_analysis):
     if contacts_analysis is None:
         return None
     n_people = contacts_analysis['n_people']
+    print("flagged:", contacts_analysis['flagged'])
     return T.dl[
         T.dt["Number of people"], T.dd[str(n_people)],
         T.dt["By gender"],
@@ -417,7 +425,12 @@ def contacts_section(contacts_analysis):
                                      round(100*contacts_analysis['ordained']/n_people))],
         T.dt["Dr/Prof"],
         T.dd["%d (%d%% of total)" % (contacts_analysis['doctored'],
-                                     round(100*contacts_analysis['doctored']/n_people))]]
+                                     round(100*contacts_analysis['doctored']/n_people))],
+        T.dt["flagged"],
+        T.dd[T.dl[[[T.dt[flag], T.dd[[str(len(people))]]]
+                   for flag, people in contacts_analysis['flagged'].items()
+                  ]]]
+    ]
 
 def people_groups_section(contacts_analysis):
     if contacts_analysis is None:
