@@ -8,7 +8,6 @@ import glob
 import io
 import json
 import os
-import pyowm
 import re
 import requests
 import shutil
@@ -29,6 +28,7 @@ import physical.oura_reader
 import qsutils.trim_csv
 import qsutils.qsmerge
 import qsutils
+import channels.weather
 
 my_projects = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 ensure_in_path(os.path.join(my_projects, "coimealta/contacts"))
@@ -38,10 +38,8 @@ ensure_in_path(os.path.join(my_projects, "noticeboard"))
 
 import lifehacking_config       # https://github.com/hillwithsmallfields/noticeboard/blob/master/lifehacking_config.py
 
-CONFIGURATION = {}
-
 def CONF(*keys):
-    return lifehacking_config.lookup(CONFIGURATION, *keys)
+    return lifehacking_config.lookup(lifehacking_config.CONFIGURATION, *keys)
 
 def FILECONF(*keys):
     return os.path.expanduser(os.path.expandvars(CONF(*keys)))
@@ -255,41 +253,6 @@ def merge_incoming_csv(main_file_key, incoming_key,
     else:
         print("could not find an incoming file matching", FILECONF('physical', incoming_key), "for", incoming_key, "to merge into", main_filename)
 
-def fetch_weather(_begin_date, _end_date, verbose):
-
-    """Fetch the short-term forecast from openweathermap, saving hourly extracts from it into a CSV file, and
-    the sunrise and sunset data into a JSON file."""
-
-    owm = pyowm.owm.OWM(decouple.config('OWM_API_KEY'))
-    reg = owm.city_id_registry()
-    city = FILECONF('weather', 'weather-city')
-    country = FILECONF('weather', 'weather-country')
-    loc_name = "%s,%s" % (city, country)
-    list_of_locations = reg.locations_for(city, country)
-    place = list_of_locations[0]
-    weather_manager = owm.weather_manager()
-    observation = weather_manager.weather_at_place(loc_name)
-    with open(FILECONF('weather', 'sunlight-times-file'), 'w') as outstream:
-        json.dump({'sunrise': datetime.datetime.fromtimestamp(observation.weather.sunrise_time()).time().isoformat(timespec='minutes'),
-                   'sunset': datetime.datetime.fromtimestamp(observation.weather.sunset_time()).time().isoformat(timespec='minutes')},
-                  outstream)
-    weather = weather_manager.one_call(lat=place.lat, lon=place.lon,units='metric')
-    forecast = [{
-        'time': datetime.datetime.fromtimestamp(h.ref_time).isoformat()[:16],
-        'status': h.detailed_status,
-        'precipitation': h.precipitation_probability,
-        'temperature': h.temp['temp'],
-        'uvi': h.uvi,
-        'wind-speed': h.wnd['speed'],
-        'wind-direction': h.wnd['deg']
-    } for h in weather.forecast_hourly]
-
-    with open(FILECONF('weather', 'weather-filename'), 'w') as outstream:
-        writer = csv.DictWriter(outstream, ['time', 'status', 'precipitation', 'temperature', 'uvi', 'wind-speed', 'wind-direction'])
-        writer.writeheader()
-        for hour in forecast:
-            writer.writerow(hour)
-
 def fetch_mfp(_begin_date, _end_date, verbose):
 
     """Fetch recent data from MyFitnessPal.com."""
@@ -397,8 +360,7 @@ def updates(charts_dir,
 
     """
 
-    global CONFIGURATION
-    CONFIGURATION = lifehacking_config.load_config()
+    lifehacking_config.load_config()
 
     os.makedirs(FILECONF('general', 'charts'), exist_ok=True)
     # if end_date is None:
@@ -406,8 +368,13 @@ def updates(charts_dir,
 
     if read_externals:
         if verbose: print("Fetching external data")
+        print("calling Weather initializer")
+        weather = channels.weather.Weather(
+            begin_date, end_date, verbose
+        )
+        print("weather forecast is", weather)
         for location_name, fetcher, archive_template in [
-                (('weather', 'weather-filename'), fetch_weather, "weather-to-%s.csv"),
+                # (('weather', 'weather-filename'), fetch_weather, "weather-to-%s.csv"),
                 (('physical', 'mfp-filename'), fetch_mfp, "mfp-to-%s.csv"),
                 (('travel', 'travel-filename'), fetch_travel, "travel-to-%s.csv"),
                 # (('physical', 'oura-filename'), fetch_oura, "oura-to-%s.csv"),

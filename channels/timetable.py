@@ -28,48 +28,55 @@ ensure_in_path(os.path.join(my_projects, "noticeboard"))
 import announce                 # https://github.com/hillwithsmallfields/noticeboard/blob/master/announce.py
 import lifehacking_config       # https://github.com/hillwithsmallfields/noticeboard/blob/master/lifehacking_config.py
 
-def CONF(*keys):
-    return lifehacking_config.lookup(dashboard.dashboard.CONFIGURATION, *keys)
-
-def FILECONF(*keys):
-    return os.path.expanduser(os.path.expandvars(CONF(*keys)))
-
 CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
 
 class Timetable:
 
     def __init__(self):
+        self.day_after_tomorrow_name = qsutils.qsutils.forward_from(datetime.date.today(), None, None, 2).strftime("%A")
+        self.day_names = [
+            'today',
+            'tomorrow',
+            self.day_after_tomorrow_name]
+        self.days = [
+            TimetableDay().html(with_form=True),
+            TimetableDay(qsutils.qsutils.forward_from(datetime.date.today(), None, None, 1)).html(),
+            TimetableDay(qsutils.qsutils.forward_from(datetime.date.today(), None, None, 2)).html(),
+        ]
         pass
 
     def html(self):
-        day_after_tomorrow = qsutils.qsutils.forward_from(datetime.date.today(), None, None, 2)
-        day_after_tomorrow_name = day_after_tomorrow.strftime("%A")
         return T.div(class_='timetable')[
             T.h2["Timetable"],
             switchable_panel(
                 'timetable_switcher',
-                {'today': TimetableDay().html(with_form=True),
-                 'tomorrow': TimetableDay(qsutils.qsutils.forward_from(datetime.date.today(), None, None, 1)).html(),
-                 day_after_tomorrow_name: TimetableDay(qsutils.qsutils.forward_from(datetime.date.today(), None, None, 2)).html()},
+                {'today': self.days[0],
+                 'tomorrow': self.days[1],
+                 self.day_after_tomorrow_name: self.days[2]},
                 {'today': "Today",
                  'tomorrow': "Tomorrow",
-                 day_after_tomorrow_name: day_after_tomorrow_name},
-                ['today', 'tomorrow', day_after_tomorrow_name],
+                 self.day_after_tomorrow_name: self.day_after_tomorrow_name},
+                ['today',
+                 'tomorrow',
+                 self.day_after_tomorrow_name],
                 'today')]
+
+    def __repr__(self):
+        return "<timetable %s>" % ", ".join(self.days)
 
 class TimetableDay:
 
     def __init__(self, day=None):
         self.day = day or datetime.date.today()
         self.day_of_week = self.day.strftime("%A")
-        with open(FILECONF('weather', 'weather-filename')) as weatherstream:
+        with open(lifehacking_config.file_config('weather', 'weather-filename')) as weatherstream:
             self.weather = {row['time']: row for row in csv.DictReader(weatherstream)}
         self.slots = announce.get_day_announcer(
-            os.path.join(FILECONF('timetables', 'timetables-dir'),
-                         CONF('timetables', 'default-timetable')),
+            os.path.join(lifehacking_config.file_config('timetables', 'timetables-dir'),
+                         lifehacking_config.config('timetables', 'default-timetable')),
             [day_full_file
              for day_full_file in [
-                     os.path.join(FILECONF('timetables', 'timetables-dir'),
+                     os.path.join(lifehacking_config.file_config('timetables', 'timetables-dir'),
                                   day_name)
                      for day_name in (
                              "%s.csv" % self.day_of_week,
@@ -101,3 +108,6 @@ class TimetableDay:
                     method='post',
                     class_='activity_logger',
                     value="Log activities")] if with_form else table
+
+    def __repr__(self):
+        return "<timetable day %s %s>" % (self.day, self.day_of_week)

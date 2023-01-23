@@ -29,7 +29,7 @@ import qsutils.qschart
 import qsutils.html_pages
 
 import channels.timetable
-from channels.panels import switchable_panel
+from channels.panels import switchable_panel, linked_image
 
 # This corresponds to https://github.com/hillwithsmallfields
 my_projects = os.path.dirname(os.path.dirname(source_dir))
@@ -53,10 +53,8 @@ import lifehacking_config       # https://github.com/hillwithsmallfields/noticeb
 ensure_in_path(os.path.join(my_projects, "coimealta/inventory"))
 import perishables              # https://github.com/hillwithsmallfields/coimealta/blob/master/inventory/perishables.py
 
-CONFIGURATION = {}
-
 def CONF(*keys):
-    return lifehacking_config.lookup(CONFIGURATION, *keys)
+    return lifehacking_config.lookup(lifehacking_config.CONFIGURATION, *keys)
 
 def FILECONF(*keys):
     return os.path.expanduser(os.path.expandvars(CONF(*keys)))
@@ -145,24 +143,6 @@ def dashboard_page_colours():
             break
 
     return foreground, background, shading
-
-def linked_image(image_name, label, fallback=None):
-    """Returns a group of image panels with the image of each linked to a larger version of itself."""
-    charts_dir = FILECONF('general', 'charts')
-    os.path.join(charts_dir)
-    periods = ('all_time', 'past_year', 'past_quarter', 'past_month', 'past_week')
-    return switchable_panel(label,
-                            panels={period: [
-                                T.div(class_='choice', name=period)[
-                                    (T.a(href="%s-%s-large.png" % (image_name, period))[
-                                        T.img(src="%s-%s-small.png" % (image_name, period))]
-                                     if os.path.isfile(os.path.join(charts_dir, "%s-%s-small.png" % (image_name, period))) # TODO: this isn't right, is it looking in the right directory?
-                                     else fallback or T.p["Data needs fetching"])]
-                                ]
-                             for period in periods},
-                            labels={period: period.capitalize().replace('_', ' ') for period in periods},
-                            order=periods,
-                            initial='past_quarter')
 
 def recent_transactions_table(filename, days_back):
     start_date = qsutils.qsutils.back_from(datetime.date.today(), None, None, days_back)
@@ -771,11 +751,10 @@ def make_dashboard_page(charts_dir=None,
 
     """Make the dashboard page, including refreshed images for it."""
 
-    global CONFIGURATION
-    CONFIGURATION = lifehacking_config.load_config()
+    lifehacking_config.load_config()
 
     if not charts_dir:
-        charts_dir = CONFIGURATION['general']['charts']
+        charts_dir = lifehacking_config.CONFIGURATION['general']['charts']
 
     text_colour, background_colour, shading = dashboard_page_colours()
     make_dashboard_images(charts_dir,
