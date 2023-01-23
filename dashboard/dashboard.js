@@ -62,6 +62,6 @@ function init_dashboard() {
     // TODO: perhaps it should schedule itself at the appropriate time for the next slot
     setInterval(highlight_activity_timetable , 15000);
     setInterval(highlight_weather_timetable , 15000);
-    // setInterval(refresh_in_small_hours, 600000);
+    setInterval(refresh_in_small_hours, 600000);
 }
 

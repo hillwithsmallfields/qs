@@ -28,7 +28,10 @@ import physical.oura_reader
 import qsutils.trim_csv
 import qsutils.qsmerge
 import qsutils
+import channels.physical
 import channels.weather
+
+import backup
 
 my_projects = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 ensure_in_path(os.path.join(my_projects, "coimealta/contacts"))
@@ -49,14 +52,6 @@ CHART_SIZES = {'small': {'figsize': (5,4)},
 
 def file_newer_than_file(a, b):
     return os.path.getmtime(a) > os.path.getmtime(b)
-
-def backup(filename, archive_dir, template):
-    if os.path.isfile(filename):
-        print("backup", filename, archive_dir, template)
-        os.system("gzip --to-stdout %s > %s" % (
-            filename,
-            os.path.join(archive_dir,
-                         (template % datetime.datetime.now().isoformat()) + ".gz")))
 
 def latest_file_matching(template):
     files = glob.glob(template)
@@ -93,7 +88,7 @@ def update_finances(verbose):
                                         'verbose': verbose})
         merge_results_file = os.path.join(merge_results_dir, CONF('finance', 'merge-results-file'))
         if os.path.isfile(merge_results_file):
-            backup(main_account, FILECONF('backups', 'archive'), "finances-to-%s.csv")
+            backup.backup(main_account, FILECONF('backups', 'archive'), "finances-to-%s.csv")
             shutil.copy(merge_results_file, main_account)
             if verbose: print("Merged bank statement into account file")
     else:
@@ -114,26 +109,6 @@ def update_finances(verbose):
     if file_newer_than_file(main_account, FILECONF('finance', 'finances-completions')):
         if verbose: print("updating finances completions")
         financial.list_completions.list_completions()
-
-def update_physical(begin_date, end_date):
-
-    """Merge incoming health-related data from various files, into one central file."""
-
-    physical = FILECONF('physical', 'physical-filename')
-    phys_scratch = "/tmp/physical-tmp.csv"
-
-    physical_files = [FILECONF('physical', 'weight-filename')
-                     # TODO: merge the other physical files
-                    ]
-
-    qsutils.qsmerge.qsmerge(physical,
-                            physical_files, None, phys_scratch)
-
-    if qsutils.check_merged_row_dates.check_merged_row_dates(phys_scratch, physical, *physical_files):
-        backup(physical, FILECONF('backups', 'archive'), "physical-to-%s.csv")
-        shutil.copy(phys_scratch, physical)
-    else:
-        print("merge of physical data produced the wrong number of rows")
 
 def update_startpage():
 
@@ -160,7 +135,7 @@ def update_contacts():
         original_lines = len(confile.readlines())
         scratch_lines = len(conscratch.readlines())
         if original_lines == scratch_lines:
-            backup(contacts_file, FILECONF('backups', 'archive'), "contacts-%s.csv")
+            backup.backup(contacts_file, FILECONF('backups', 'archive'), "contacts-%s.csv")
             shutil.copy(contacts_scratch, contacts_file)
         else:
             print("wrong number of people after linking contacts, originally", original_lines, "but now", scratch_lines)
@@ -242,7 +217,7 @@ def merge_incoming_csv(main_file_key, incoming_key,
                               if matches(row, match_key, match_value)}
                 data.update(additional)
             if len(data) > original_length:
-                backup(main_filename, FILECONF('backups', 'archive'), "%s-to-%%s.csv" % os.path.splitext(os.path.basename(main_filename))[0])
+                backup.backup(main_filename, FILECONF('backups', 'archive'), "%s-to-%%s.csv" % os.path.splitext(os.path.basename(main_filename))[0])
                 with open(main_filename, 'w') as outstream:
                     writer = csv.DictWriter(outstream, header)
                     writer.writeheader()
@@ -275,7 +250,7 @@ def fetch_oura(begin_date, end_date, verbose):
     physical.oura_reader.oura_fetch(data, begin_date, end_date)
     if verbose: print("fetched data from oura")
     if len(data) > existing_rows:
-        backup(oura_filename, FILECONF('backups', 'archive'), "oura-to-%s.csv")
+        backup.backup(oura_filename, FILECONF('backups', 'archive'), "oura-to-%s.csv")
         physical.oura_reader.oura_write(data, oura_filename)
     elif len(data) < existing_rows:
         print("Warning: sleep data has shrunk on being fetched --- not writing it")
@@ -386,13 +361,13 @@ def updates(charts_dir,
             filename = FILECONF(*location_name)
             if force or last_update_at_least_about_a_day_ago(filename):
                 if verbose: print("updating", filename)
-                backup(filename, FILECONF('backups', 'archive'), archive_template)
+                backup.backup(filename, FILECONF('backups', 'archive'), archive_template)
                 fetcher(begin_date, end_date, verbose)
             else:
                 if verbose: print("not updating", filename, "as it is recent")
 
     update_finances(verbose)
-    update_physical(begin_date, end_date)
+    channels.physical.update_physical(begin_date, end_date)
     contacts_analysis = update_contacts()
     update_agenda()
     update_travel()
