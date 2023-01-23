@@ -138,27 +138,32 @@ def find_last_unfetched_date(dict_by_date):
     not for updating since the last run."""
     return min(dict_by_date.keys()) - datetime.timedelta(days=1)
 
-def update_mfp(sheet, verbose):
+class MFP:
 
-    with open(sheet) as instream:
-        rows = {datetime.date.fromisoformat(row['Date']): row
-                for row in csv.DictReader(instream)}
+    def __init__(self, sheet_name):
+        self.sheet_name = sheet_name
 
-    if verbose:
-        print("fetching data from myfitnesspal.com")
+    def update(self, verbose=False):
 
-    if fetch_streak_upto(datetime.date.today() - datetime.timedelta(days=1),
-                         None,
-                         sheet=rows,
-                         countdown=7,
-                         overlap=3,
-                         save_daily=None,
-                         verbose=verbose):
+        with open(self.sheet_name) as instream:
+            rows = {datetime.date.fromisoformat(row['Date']): row
+                    for row in csv.DictReader(instream)}
 
         if verbose:
-            print("finished fetching data from myfitnesspal.com")
+            print("fetching data from myfitnesspal.com")
 
-        save_data(sheet, rows)
+        if fetch_streak_upto(datetime.date.today() - datetime.timedelta(days=1),
+                             None,
+                             sheet=rows,
+                             countdown=7,
+                             overlap=3,
+                             save_daily=None,
+                             verbose=verbose):
+
+            if verbose:
+                print("finished fetching data from myfitnesspal.com")
+
+            save_data(sheet, rows)
 
 def main():
     parser = qsutils.program_argparser()

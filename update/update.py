@@ -233,7 +233,7 @@ def fetch_mfp(_begin_date, _end_date, verbose):
     """Fetch recent data from MyFitnessPal.com."""
 
     if verbose: print("Fetching data from myfitnesspal.com (may take a little while)")
-    physical.mfp_reader.update_mfp(FILECONF('physical', 'mfp-filename'), verbose)
+    physical.mfp_reader.MFP(FILECONF('physical', 'mfp-filename')).update(verbose)
     if verbose: print("Fetched data from myfitnesspal.com")
 
 def fetch_oura(begin_date, end_date, verbose):
