@@ -20,6 +20,7 @@ def ensure_in_path(directory):
 
 # other parts of this project group:
 ensure_in_path(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+import factotum
 import dashboard.dashboard
 import qsutils.check_merged_row_dates
 import financial.list_completions
@@ -335,7 +336,7 @@ def updates(charts_dir,
 
     """
 
-    lifehacking_config.load_config()
+    facto = factotum.Factotum(lifehacking_config.load_config())
 
     os.makedirs(FILECONF('general', 'charts'), exist_ok=True)
     # if end_date is None:
