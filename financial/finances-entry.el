@@ -1,6 +1,6 @@
 ;;; finances-entry.el --- enter finances tracking entries interactively  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2021  John Sturdy
+;; Copyright (C) 2021, 2023, 2023  John Sturdy
 
 ;; Author: John Sturdy <jsturdy@ccsl.com>
 ;; Keywords: convenience
@@ -188,7 +188,7 @@ Optional argument GIVEN-PAYEE, ITEM, and GIVEN-CATEGORY are the payee, item, and
 (defvar finances-transactions-file "$SYNCED/finances/finances.csv"
   "The file holding the transactions.")
 
-(defun finances-enter-from-shopping-list (payee item category)
+(defun finances-enter-from-shopping-list (payee item category &optional account currency)
   "Add a finances entry from PAYEE for ITEM in CATEGORY."
   (save-excursion
     (apply 'finances-enter (finances-read-entry payee item category t))))
@@ -224,7 +224,7 @@ as in the Financisto app."
                                  note)
                            ",")
                 "\n")))
-  (cons payee amount)))
+  (list payee amount account currency)))
 
 (defun finances-multi-enter ()
   "Read multiple entries."
