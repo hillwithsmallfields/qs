@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Time-stamp: <2022-12-19 20:03:23 jcgs>
+# Time-stamp: <2023-01-27 20:21:53 jcgs>
 
 # Program to merge my Quantified Self files.
 
@@ -126,6 +126,7 @@ def qsmerge(mainfile, incoming, type_given, output):
         for date in sorted_dates:
             writer.writerow({k: qsutils.qsutils.tidy_for_output(v)
                              for k,v in by_date[date].items()})
+    return by_date
 
 def get_args():
     parser = argparse.ArgumentParser()

@@ -516,9 +516,15 @@ def random_reflection(reflections_dir):
 
 def reflection_section():
     reflections_dir = FILECONF('general', 'reflections-dir')
+    first = random_reflection(reflections_dir)
+    second = random_reflection(reflections_dir)
+    countdown = 4               # in case there's only one reflection available
+    while second == first and countdown > 0:
+        second = random_reflection(reflections_dir)
+        countdown -= 1
     return T.div(class_='reflection')[
-        T.p[random_reflection(reflections_dir)],
-        T.p[random_reflection(reflections_dir)]]
+        T.p[first],
+        T.p[second]]
 
 def construct_dashboard_page(contacts_analysis):
     charts_dir = FILECONF('general', 'charts')
@@ -742,8 +748,9 @@ def make_dashboard_images(charts_dir,
         update_finances_charts(charts_dir, chart_sizes, begin, end_date, date_suffix, verbose)
         update_physical_charts(charts_dir, chart_sizes, begin, end_date, date_suffix, vlines=vlines if date_suffix == 'all_time' else None)
 
-def make_dashboard_page(charts_dir=None,
-                        contacts_analysis=None,
+def make_dashboard_page(facto,
+                        charts_dir=None,
+                        channel_data=None,
                         chart_sizes={'small': {'figsize': (5,4)},
                                      'large': {'figsize': (11,8)}},
                         begin_date=None, end_date=None,
@@ -763,7 +770,7 @@ def make_dashboard_page(charts_dir=None,
                           begin_date, end_date,
                           verbose)
     write_dashboard_page(charts_dir,
-                         contacts_analysis,
+                         (channel_data or {}).get("contacts"),
                          details_background_color=shading)
 
 def main():

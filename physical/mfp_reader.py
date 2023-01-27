@@ -164,6 +164,7 @@ class MFP:
                 print("finished fetching data from myfitnesspal.com")
 
             save_data(sheet, rows)
+        return rows
 
 def main():
     parser = qsutils.program_argparser()

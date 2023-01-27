@@ -29,29 +29,30 @@ from throw_out_your_templates_p3 import htmltags as T
 ensure_in_path(os.path.join(my_projects, "noticeboard"))
 
 import announce                 # https://github.com/hillwithsmallfields/noticeboard/blob/master/announce.py
-import lifehacking_config       # https://github.com/hillwithsmallfields/noticeboard/blob/master/lifehacking_config.py
 
 CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
 
 class Weather:
 
-    def __init__(self, _begin_date, _end_date, verbose):
+    def __init__(self, facto, _begin_date, _end_date, verbose):
 
         """Fetch the short-term forecast from openweathermap, saving hourly extracts from it into a CSV file, and
         the sunrise and sunset data into a JSON file."""
 
-        print("in Weather initializer")
+        self.facto = facto
+        self.verbose = verbose
 
+    def fetch(self):
         owm = pyowm.owm.OWM(decouple.config('OWM_API_KEY'))
         reg = owm.city_id_registry()
-        city = lifehacking_config.file_config('weather', 'weather-city')
-        country = lifehacking_config.file_config('weather', 'weather-country')
+        city = facto.file_config('weather', 'weather-city')
+        country = facto.file_config('weather', 'weather-country')
         loc_name = "%s,%s" % (city, country)
         list_of_locations = reg.locations_for(city, country)
         place = list_of_locations[0]
         weather_manager = owm.weather_manager()
         observation = weather_manager.weather_at_place(loc_name)
-        with open(lifehacking_config.file_config('weather', 'sunlight-times-file'), 'w') as outstream:
+        with open(facto.file_config('weather', 'sunlight-times-file'), 'w') as outstream:
             json.dump({'sunrise': datetime.datetime.fromtimestamp(observation.weather.sunrise_time()).time().isoformat(timespec='minutes'),
                        'sunset': datetime.datetime.fromtimestamp(observation.weather.sunset_time()).time().isoformat(timespec='minutes')},
                       outstream)
@@ -66,10 +67,11 @@ class Weather:
             'wind-direction': h.wnd['deg']
         } for h in weather.forecast_hourly]
 
-        with open(lifehacking_config.file_config('weather', 'weather-filename'), 'w') as outstream:
+        with open(facto.file_config('weather', 'weather-filename'), 'w') as outstream:
             writer = csv.DictWriter(outstream, ['time', 'status', 'precipitation', 'temperature', 'uvi', 'wind-speed', 'wind-direction'])
             writer.writeheader()
             for hour in forecast:
                 writer.writerow(hour)
 
         self.forecast = forecast
+        return self

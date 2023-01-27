@@ -18,25 +18,31 @@ import backup
 import qsutils.qsutils            # https://github.com/hillwithsmallfields/qs/blob/master/utils/qsutils.py
 from channels.panels import switchable_panel
 
-ensure_in_path(os.path.join(my_projects, "noticeboard"))
-import lifehacking_config       # https://github.com/hillwithsmallfields/noticeboard/blob/master/lifehacking_config.py
+class Physical:
 
-def update_physical(begin_date, end_date):
+    def __init__(self, facto, verbose):
+        self.facto = facto
+        self.verbose = verbose
 
-    """Merge incoming health-related data from various files, into one central file."""
+    def update(self):
 
-    physical = lifehacking_config.file_config('physical', 'physical-filename')
-    phys_scratch = "/tmp/physical-tmp.csv"
+        """Merge incoming health-related data from various files, into one central file."""
 
-    physical_files = [lifehacking_config.file_config('physical', 'weight-filename')
-                     # TODO: merge the other physical files
-                    ]
+        physical = self.facto.file_config('physical', 'physical-filename')
+        phys_scratch = "/tmp/physical-tmp.csv"
 
-    qsutils.qsmerge.qsmerge(physical,
-                            physical_files, None, phys_scratch)
+        physical_files = [self.facto.file_config('physical', 'weight-filename')
+                         # TODO: merge the other physical files
+                        ]
 
-    if qsutils.check_merged_row_dates.check_merged_row_dates(phys_scratch, physical, *physical_files):
-        backup.backup(physical, lifehacking_config.file_config('backups', 'archive'), "physical-to-%s.csv")
-        shutil.copy(phys_scratch, physical)
-    else:
-        print("merge of physical data produced the wrong number of rows")
+        by_date = qsutils.qsmerge.qsmerge(physical,
+                                physical_files, None, phys_scratch)
+
+        if qsutils.check_merged_row_dates.check_merged_row_dates(phys_scratch, physical, *physical_files):
+            backup.backup(physical, self.facto.file_config('backups', 'archive'), "physical-to-%s.csv")
+            shutil.copy(phys_scratch, physical)
+        else:
+            if self.verbose:
+                print("merge of physical data produced the wrong number of rows")
+
+        return by_date
