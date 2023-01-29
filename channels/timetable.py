@@ -32,7 +32,7 @@ CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Tra
 
 class Timetable:
 
-    def __init__(self):
+    def __init__(self, facto):
         self.day_after_tomorrow_name = qsutils.qsutils.forward_from(datetime.date.today(), None, None, 2).strftime("%A")
         self.day_names = [
             'today',
@@ -44,6 +44,9 @@ class Timetable:
             TimetableDay(qsutils.qsutils.forward_from(datetime.date.today(), None, None, 2)).html(),
         ]
         pass
+
+    def update(self, read_external, verbose):
+        return self
 
     def html(self):
         return T.div(class_='timetable')[

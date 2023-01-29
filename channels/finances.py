@@ -1,3 +1,4 @@
+import datetime
 import glob
 import os
 import sys
@@ -22,16 +23,16 @@ def latest_file_matching(template): # TODO: put in library
 
 class Finances:
 
-    def __init__(self, facto, verbose):
+    def __init__(self, facto):
         self.facto = facto
-        self.verbose = verbose
+        self.updated = None
 
-    def update(self):
+    def update(self, read_external, verbose):
 
         """Merge new transactions from my bank statement (if I've saved a new bank statement file) and prepare CSV
         files for making into charts, and HTML for incorporating into the dashboard page."""
 
-        config = qsutils.qsutils.load_config(self.verbose, None, None,
+        config = qsutils.qsutils.load_config(verbose, None, None,
                                              os.path.join(self.facto.file_config('finance', 'configdir'), self.facto.config('finance', 'accounts-config')),
                                              os.path.join(self.facto.file_config('finance', 'conversions-dir'), self.facto.config('finance', 'conversions-config')))
 
@@ -42,19 +43,19 @@ class Finances:
 
         if latest_bank_statement and file_newer_than_file(latest_bank_statement, main_account):
             qsutils.qsutils.ensure_directory_present_and_empty(merge_results_dir)
-            if self.verbose: print("Updating from latest bank statement", latest_bank_statement)
+            if verbose: print("Updating from latest bank statement", latest_bank_statement)
             # TODO: replace with new code
             # financial.finlisp.finlisp_main([os.path.join(my_projects, "qs/financial", "merge-latest-statement.lisp")],
             #                                merge_results_dir,
             #                                config,
-            #                                self.verbose,
+            #                                verbose,
             #                                {'incoming-statement': latest_bank_statement,
-            #                                 'self.verbose': self.verbose})
+            #                                 'verbose': verbose})
             merge_results_file = os.path.join(merge_results_dir, self.facto.config('finance', 'merge-results-file'))
             if os.path.isfile(merge_results_file):
                 backup.backup(main_account, self.facto.file_config('backups', 'archive'), "finances-to-%s.csv")
                 shutil.copy(merge_results_file, main_account)
-                if self.verbose: print("Merged bank statement into account file")
+                if verbose: print("Merged bank statement into account file")
         else:
             print("Bank statement not newer than account file, so not updating")
 
@@ -63,15 +64,15 @@ class Finances:
         # financial.finlisp.finlisp_main([os.path.join(my_projects, "qs/financial", "chart-categories.lisp")],
         #                                self.facto.file_config('general', 'charts'),
         #                                config,
-        #                                self.verbose,
+        #                                verbose,
         #                                {'input-file': main_account,
         #                                 'statements-file': self.facto.file_config('finance', 'accumulated-bank-statements-file'),
         #                                 'classifiers-file': self.facto.config('finance', 'budgeting-classes-file'),
         #                                 'thresholds-file': self.facto.config('finance', 'thresholds-file'),
-        #                                 'self.verbose': self.verbose})
+        #                                 'verbose': verbose})
 
         if file_newer_than_file(main_account, self.facto.file_config('finance', 'finances-completions')):
-            if self.verbose: print("updating finances completions")
+            if verbose: print("updating finances completions")
             financial.list_completions.list_completions()
 
-        return None             # TODO: return the transactions?
+        return self

@@ -1,13 +1,14 @@
+import datetime
 import os
 import sys
 
 class Agenda:
 
-    def __init__(self, facto, verbose):
+    def __init__(self, facto):
         self.facto = facto
-        self.verbose = verbose
+        self.updated = None
 
-    def update(self):
+    def update(self, read_external, verbose):
 
         """Also updates the parcels expected list.
         Files written:
@@ -19,4 +20,5 @@ class Agenda:
 
         # TODO: read something to return
 
-        return None
+        self.updated = datetime.datetime.now()
+        return self

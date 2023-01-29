@@ -34,44 +34,44 @@ CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Tra
 
 class Weather:
 
-    def __init__(self, facto, _begin_date, _end_date, verbose):
+    def __init__(self, facto):
 
         """Fetch the short-term forecast from openweathermap, saving hourly extracts from it into a CSV file, and
         the sunrise and sunset data into a JSON file."""
 
         self.facto = facto
-        self.verbose = verbose
 
-    def fetch(self):
-        owm = pyowm.owm.OWM(decouple.config('OWM_API_KEY'))
-        reg = owm.city_id_registry()
-        city = facto.file_config('weather', 'weather-city')
-        country = facto.file_config('weather', 'weather-country')
-        loc_name = "%s,%s" % (city, country)
-        list_of_locations = reg.locations_for(city, country)
-        place = list_of_locations[0]
-        weather_manager = owm.weather_manager()
-        observation = weather_manager.weather_at_place(loc_name)
-        with open(facto.file_config('weather', 'sunlight-times-file'), 'w') as outstream:
-            json.dump({'sunrise': datetime.datetime.fromtimestamp(observation.weather.sunrise_time()).time().isoformat(timespec='minutes'),
-                       'sunset': datetime.datetime.fromtimestamp(observation.weather.sunset_time()).time().isoformat(timespec='minutes')},
-                      outstream)
-        weather = weather_manager.one_call(lat=place.lat, lon=place.lon,units='metric')
-        forecast = [{
-            'time': datetime.datetime.fromtimestamp(h.ref_time).isoformat()[:16],
-            'status': h.detailed_status,
-            'precipitation': h.precipitation_probability,
-            'temperature': h.temp['temp'],
-            'uvi': h.uvi,
-            'wind-speed': h.wnd['speed'],
-            'wind-direction': h.wnd['deg']
-        } for h in weather.forecast_hourly]
+    def update(self, read_external, verbose):
+        if read_external:
+            owm = pyowm.owm.OWM(decouple.config('OWM_API_KEY'))
+            reg = owm.city_id_registry()
+            city = self.facto.file_config('weather', 'weather-city')
+            country = self.facto.file_config('weather', 'weather-country')
+            loc_name = "%s,%s" % (city, country)
+            list_of_locations = reg.locations_for(city, country)
+            place = list_of_locations[0]
+            weather_manager = owm.weather_manager()
+            observation = weather_manager.weather_at_place(loc_name)
+            with open(self.facto.file_config('weather', 'sunlight-times-file'), 'w') as outstream:
+                json.dump({'sunrise': datetime.datetime.fromtimestamp(observation.weather.sunrise_time()).time().isoformat(timespec='minutes'),
+                           'sunset': datetime.datetime.fromtimestamp(observation.weather.sunset_time()).time().isoformat(timespec='minutes')},
+                          outstream)
+            weather = weather_manager.one_call(lat=place.lat, lon=place.lon,units='metric')
+            forecast = [{
+                'time': datetime.datetime.fromtimestamp(h.ref_time).isoformat()[:16],
+                'status': h.detailed_status,
+                'precipitation': h.precipitation_probability,
+                'temperature': h.temp['temp'],
+                'uvi': h.uvi,
+                'wind-speed': h.wnd['speed'],
+                'wind-direction': h.wnd['deg']
+            } for h in weather.forecast_hourly]
 
-        with open(facto.file_config('weather', 'weather-filename'), 'w') as outstream:
-            writer = csv.DictWriter(outstream, ['time', 'status', 'precipitation', 'temperature', 'uvi', 'wind-speed', 'wind-direction'])
-            writer.writeheader()
-            for hour in forecast:
-                writer.writerow(hour)
+            with open(self.facto.file_config('weather', 'weather-filename'), 'w') as outstream:
+                writer = csv.DictWriter(outstream, ['time', 'status', 'precipitation', 'temperature', 'uvi', 'wind-speed', 'wind-direction'])
+                writer.writeheader()
+                for hour in forecast:
+                    writer.writerow(hour)
 
         self.forecast = forecast
         return self

@@ -1,3 +1,4 @@
+import datetime
 import os
 import shutil
 import sys
@@ -20,11 +21,11 @@ from channels.panels import switchable_panel
 
 class Physical:
 
-    def __init__(self, facto, verbose):
+    def __init__(self, facto):
         self.facto = facto
-        self.verbose = verbose
+        self.updated = None
 
-    def update(self):
+    def update(self, read_externals, verbose):
 
         """Merge incoming health-related data from various files, into one central file."""
 
@@ -42,7 +43,8 @@ class Physical:
             backup.backup(physical, self.facto.file_config('backups', 'archive'), "physical-to-%s.csv")
             shutil.copy(phys_scratch, physical)
         else:
-            if self.verbose:
+            if verbose:
                 print("merge of physical data produced the wrong number of rows")
 
-        return by_date
+        self.updated = datetime.datetime.now()
+        return self

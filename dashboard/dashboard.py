@@ -72,11 +72,6 @@ def make_remaining_cell(thresholds, spent_this_month, coi):
 def namify(x):
     return x.replace(' ', '_')
 
-def make_name_with_email(name, email):
-    return (T.a(href="email:"+email)[name]
-            if email and email != ""
-            else name)
-
 def row(*things):
     """Returns an untemplated table row for its arguments."""
     return T.table(width="100%")[T.tr[[T.td(valign="top")[thing] for thing in things]]]
@@ -271,21 +266,6 @@ def one_day_weather_section(day=None):
                         for hour in csv.DictReader(weatherstream)
                         if hour['time'].startswith(daystring)]]
 
-def birthdays_section():
-    people_by_id, _ = contacts_data.read_contacts(FILECONF('contacts', 'contacts-file'))
-    today = datetime.date.today()
-    this_year = today.year
-    return T.table(class_='birthdays')[
-        T.tr[T.th["Birthday"], T.th["Name"], T.th["Age"]],
-        [T.tr[T.td(class_='birthday')[str(contacts_data.birthday(person, this_year))],
-              T.td(class_='name')[make_name_with_email(contacts_data.make_name(person),
-                                                       person.get('Primary email', ""))],
-              T.td(class_='age')[contacts_data.age_string(person, this_year)]]
-         for person in sorted([person
-                              for person in people_by_id.values()
-                              if contacts_data.birthday_soon(person, this_year, today, within_days=31)],
-                              key=lambda person: contacts_data.birthday(person, this_year))]]
-
 def keep_in_touch_section():
     """List people who I mean to keep in touch with but haven't for a while."""
     people_by_id, _ = contacts_data.read_contacts(FILECONF('contacts', 'contacts-file'))
@@ -296,57 +276,7 @@ def keep_in_touch_section():
                         if contacts_data.contact_soon(person, today, days_since_last_contact=90)]
     if len(long_uncontacted) == 0:
         return T.p["No pending contacts."]
-    return T.table(class_='contact_soon')[
-        T.tr[T.th["Last contacted"], T.th["Name"]],
-        [T.tr[T.td(class_='last_contacted')[str(contacts_data.last_contacted(person))],
-              T.td(class_='name')[make_name_with_email(contacts_data.make_name(person),
-                                                       person.get('Primary email', ""))]]
-         for person in sorted(long_uncontacted,
-                              key=lambda person: contacts_data.last_contacted(person))]]
-
-def prayer_list_section():
-    return None
-
-def counts_table(caption, group):
-    pairs = [(name, len(members)) for name, members in group.items()]
-    s = sorted(pairs, key=lambda p: p[1])
-    r = reversed(s)
-    return T.div(class_='contacts_characteristics')[T.table[
-        T.caption[caption],
-        [T.tr[T.td[name], T.td[str(members)]]
-         for name, members in r]]]
-
-def contacts_section(contacts_analysis):
-    if contacts_analysis is None:
-        return None
-    n_people = contacts_analysis['n_people']
-    print("flagged:", contacts_analysis['flagged'])
-    return T.dl[
-        T.dt["Number of people"], T.dd[str(n_people)],
-        T.dt["By gender"],
-        T.dd["; ".join(["%s: %d" % (k, len(v))
-                        for k, v in contacts_analysis['by_gender'].items()])],
-        T.dt["Ordained"],
-        T.dd["%d (%d%% of total)" % (contacts_analysis['ordained'],
-                                     round(100*contacts_analysis['ordained']/n_people))],
-        T.dt["Dr/Prof"],
-        T.dd["%d (%d%% of total)" % (contacts_analysis['doctored'],
-                                     round(100*contacts_analysis['doctored']/n_people))],
-        T.dt["flagged"],
-        T.dd[T.dl[[[T.dt[flag], T.dd[[str(len(people))]]]
-                   for flag, people in contacts_analysis['flagged'].items()
-                  ]]]
-    ]
-
-def people_groups_section(contacts_analysis):
-    if contacts_analysis is None:
-        return None
-    return row(counts_table("By nationality",
-                            contacts_analysis['by_nationality']),
-               counts_table("By title",
-                            contacts_analysis['by_title']),
-               counts_table("By place met",
-                            contacts_analysis['by_place_met']))
+    return
 
 DAYNAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
@@ -526,7 +456,7 @@ def reflection_section():
         T.p[first],
         T.p[second]]
 
-def construct_dashboard_page(contacts_analysis):
+def construct_dashboard_page(channel_data):
     charts_dir = FILECONF('general', 'charts')
     page = SectionalPage()
     with open(FILECONF('dashboard', 'views')) as org_ql_stream:
@@ -546,12 +476,7 @@ def construct_dashboard_page(contacts_analysis):
         labelled_section("Sleep correlation", sleep_correlation_section()),
         labelled_section("Temperature", temperature_section())))
     page.add_section("Spending", transactions_section())
-    page.add_section("People", wrap_box(
-        labelled_section("Birthdays", birthdays_section()),
-        labelled_section("To contact", keep_in_touch_section()),
-        labelled_section("Prayer list", prayer_list_section()),
-        labelled_section("People in contacts file", contacts_section(contacts_analysis)),
-        labelled_section("People groups", people_groups_section(contacts_analysis))))
+    page.add_section("People", channel_data['contacts'].html())
     page.add_section("Agenda", wrap_box(
         labelled_section("Actions", actions_section(from_org_mode)),
         labelled_section("Shopping", shopping_section((from_org_mode)))))
@@ -566,7 +491,7 @@ def construct_dashboard_page(contacts_analysis):
                        perishables_section(),
                        T.h2["Parcels expected"],
                        parcels_section()],
-                 channels.timetable.Timetable().html(),
+                 channel_data['timetable'].html(),
                  weather_section()),
         page.sections()]]
 
@@ -701,7 +626,7 @@ def update_physical_charts(charts_dir,
     #                        chart_sizes)
 
 def write_dashboard_page(charts_dir,
-                         contacts_analysis,
+                         channel_data,
                          details_background_color="gold", inline=True):
     """Construct and save the dashboard page."""
     if not charts_dir:
@@ -709,7 +634,7 @@ def write_dashboard_page(charts_dir,
     with open(os.path.join(charts_dir, "index.html"), 'w') as page_stream:
         page_stream.write(
             qsutils.html_pages.page_text(
-                construct_dashboard_page(contacts_analysis),
+                construct_dashboard_page(channel_data),
                 ((qsutils.html_pages.tagged_file_contents("style", os.path.join(source_dir, "dashboard.css"))
                  + qsutils.qsutils.table_support_css(details_background_color))
                  if inline
@@ -770,7 +695,7 @@ def make_dashboard_page(facto,
                           begin_date, end_date,
                           verbose)
     write_dashboard_page(charts_dir,
-                         (channel_data or {}).get("contacts"),
+                         channel_data,
                          details_background_color=shading)
 
 def main():

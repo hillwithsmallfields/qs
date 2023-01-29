@@ -279,14 +279,15 @@ def updates(charts_dir,
         facto,
         charts_dir=charts_dir,
         channel_data={
-            name: handler(facto, verbose).update()
+            name: handler(facto).update(read_externals, verbose)
             for name, handler in {
-                "finances": channels.finances.Finances,
-                "physical": channels.physical.Physical,
-                "contacts": channels.contacts.Contacts,
-                "agenda": channels.agenda.Agenda,
-                "travel": channels.travel.Travel,
-                "startpage": channels.startpage.StartPage,
+                    'finances': channels.finances.Finances,
+                    'physical': channels.physical.Physical,
+                    'contacts': channels.contacts.Contacts,
+                    'agenda': channels.agenda.Agenda,
+                    'timetable': channels.timetable.Timetable,
+                    'travel': channels.travel.Travel,
+                    'startpage': channels.startpage.StartPage,
             }.items()},
         chart_sizes=CHART_SIZES)
 
