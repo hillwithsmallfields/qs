@@ -146,64 +146,6 @@ def peak_flow_section():
     # TODO: get peak flow data
     return None
 
-def weather_section():
-    day_after_tomorrow = qsutils.qsutils.forward_from(datetime.date.today(), None, None, 2)
-    day_after_tomorrow_name = day_after_tomorrow.strftime("%A")
-    with open(CONF('weather', 'sunlight-times-file')) as sunlight_stream:
-        sunlight_times = json.load(sunlight_stream)
-    return T.div(class_='weather')[
-        T.h2["Weather"],
-        switchable_panel('weather_switcher',
-                         {'today': one_day_weather_section(),
-                          'tomorrow': one_day_weather_section(
-                              qsutils.qsutils.forward_from(datetime.date.today(),
-                                                         None, None, 1)),
-                          # day_after_tomorrow_name: one_day_weather_section(
-                          #     day_after_tomorrow)
-                         },
-                         {'today': "Today",
-                          'tomorrow': "Tomorrow",
-                          # day_after_tomorrow_name: day_after_tomorrow_name
-                         },
-                         ['today', 'tomorrow',
-                          # day_after_tomorrow_name
-                         ],
-                         'today'),
-        T.h3["Daylight times"],
-        T.dl[T.dt["Sunrise:"], T.dd[sunlight_times['sunrise']],
-        T.dt["Sunset:"], T.dd[sunlight_times['sunset']]]]
-
-COMPASS_POINTS = ('N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW')
-
-def compass_point_name(deg):
-    return COMPASS_POINTS[int((int(deg) + (180 / len(COMPASS_POINTS))) // (360 / len(COMPASS_POINTS))) % len(COMPASS_POINTS)]
-
-def one_day_weather_section(day=None):
-    # https://pyowm.readthedocs.io/en/latest/v3/code-recipes.html
-    if day is None:
-        day = datetime.date.today()
-    day_of_week = day.strftime("%A")
-    daystring = day.isoformat()
-    with open(FILECONF('weather', 'weather-filename')) as weatherstream:
-        return T.table(id_='weather')[
-            T.caption["%s %s" % (day_of_week, daystring)],
-            T.tr[T.th["Time"],
-                 T.th["Temperature"],
-                 T.th["Precipitation"],
-                 T.th["Wind"],
-                 T.th["Weather"]],
-            [[T.tr(class_='inactive',
-                   name=hour['time'][11:16])[
-                       T.td(class_='weather weather_time')[hour['time'][11:19]],
-                       T.td(class_='weather weather_temp')[str(round(float(hour['temperature']), 1))],
-                       T.td(class_='weather weather_prec')[hour['precipitation']],
-                       T.td(class_='weather weather_wind')[str(round(float(hour['wind-speed'])))
-                            + " "
-                            + compass_point_name(hour['wind-direction'])],
-                       T.td(class_='weather weather_status')[hour['status']]]]
-                        for hour in csv.DictReader(weatherstream)
-                        if hour['time'].startswith(daystring)]]
-
 def keep_in_touch_section():
     """List people who I mean to keep in touch with but haven't for a while."""
     people_by_id, _ = contacts_data.read_contacts(FILECONF('contacts', 'contacts-file'))
@@ -430,7 +372,7 @@ def construct_dashboard_page(channel_data):
                        T.h2["Parcels expected"],
                        parcels_section()],
                  channel_data['timetable'].html(),
-                 weather_section()),
+                 channel_data['weather'].html()),
         page.sections()]]
 
 def update_finances_charts(charts_dir,

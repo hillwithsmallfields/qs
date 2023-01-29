@@ -288,6 +288,7 @@ def updates(charts_dir,
                     'timetable': channels.timetable.Timetable,
                     'travel': channels.travel.Travel,
                     'startpage': channels.startpage.StartPage,
+                    'weather': channels.weather.Weather,
             }.items()},
         chart_sizes=CHART_SIZES)
 

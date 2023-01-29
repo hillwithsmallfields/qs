@@ -50,6 +50,8 @@ def recent_transactions_table(filename, days_back):
                    T.td[transaction['item']]]
                   for transaction in reversed(recent_transactions)]]]]
 
+CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
+
 class Finances:
 
     def __init__(self, facto):
