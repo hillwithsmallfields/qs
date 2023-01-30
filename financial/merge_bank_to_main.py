@@ -7,6 +7,7 @@ from frozendict import frozendict
 import finutils
 
 def convert_bank_row(row, conversions):
+    """Convert a row from my bank statement format to my unified account format."""
     trimmed = finutils.without_numeric_tail(row['Details'])
     conversion = conversions.get(trimmed, {})
     amount = float(row.get('Money in') or 0) - float(row.get('Money out') or 0)
@@ -26,10 +27,13 @@ def convert_bank_row(row, conversions):
 def convert_bank_table(table, conversions):
     return set(convert_bank_row(row, conversions) for row in table)
 
+def merge_bank_to_main(base, incoming, conversions):
+    return base | convert_bank_table(incoming, conversions)
+
 def finances_update(base, incoming, output, conversions):
-    finutils.write_csv(finutils.read_csv(base)
-                       | convert_bank_table(finutils.read_csv(incoming),
-                                            finutils.read_yaml(conversions)['formats']['Default']['conversions']),
+    finutils.write_csv(merge_bank_to_main(utils.read_csv(base),
+                                          finutils.read_csv(incoming),
+                                          finutils.read_conversions(conversions)),
                        finutils.MAIN_HEADERS,
                        output,
                        lambda r: (r['date'], r['time'], r'[payee'))

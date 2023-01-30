@@ -12,15 +12,16 @@ MAIN_HEADERS = ('date', 'time', 'account', 'amount', 'currency',
                 'original_amount', 'original_currency', 'balance', 'statement',
                 'payee', 'category', 'project', 'item', 'message', 'combicount')
 
-BANK_BASE = "~/Sync/finances/handelsbanken/handelsbanken-base.csv"
-BANK_FULL = "~/Sync/finances/handelsbanken/handelsbanken-full.csv"
+BANK_BASE = os.path.expanduser("~/Sync/finances/handelsbanken/handelsbanken-base.csv")
+BANK_FULL = os.path.expanduser("~/Sync/finances/handelsbanken/handelsbanken-full.csv")
 BANK_COLUMNS = ('Date', 'Details', 'Money out', 'Money in', 'Balance')
 
-UPDATES_GLOB = "~/Downloads/Transactions*.csv"
+UPDATES_GLOB = os.path.expanduser("~/Downloads/Transactions*.csv")
 
-CONVERSIONS = "~/Sync/finances/conversions.yaml"
-CATPARENTS = "~/open-projects/github.com/hillwithsmallfields/qs/conf/cats.yaml"
-BUDGETCATS = "~/open-projects/github.com/hillwithsmallfields/qs/conf/budgetting-classes.yaml"
+CONVERSIONS = os.path.expanduser("~/Sync/finances/conversions.yaml")
+CONVERSION_TABLE = os.path.expanduser("~/Sync/finances/conversions.csv")
+CATPARENTS = os.path.expanduser("~/open-projects/github.com/hillwithsmallfields/qs/conf/cats.yaml")
+BUDGETCATS = os.path.expanduser("~/open-projects/github.com/hillwithsmallfields/qs/conf/budgetting-classes.yaml")
 
 def read_csv(filename,
              starting=None, ending=None):
@@ -39,10 +40,21 @@ def read_csv(filename,
 def write_csv(data, header, filename, sort_key):
     """Writes a CSV file using the given headers and sort key."""
     with open(os.path.expanduser(filename), 'w') as outstream:
-        writer = csv.DictWriter(outstream, fieldnames=header)
+        writer = csv.DictWriter(
+            outstream,
+            fieldnames=(header
+                        or list(frozenset().union(*[frozenset(row.keys())
+                                                    for row in data]))))
         writer.writeheader()
         for row in sorted(data, key=sort_key):
             writer.writerow(row)
+
+def read_conversions(filename=CONVERSIONS):
+    return (read_yaml(filename)['formats']['Default']['conversions']
+            if filename.endswith(".yaml")
+            else ({row['statement']: row for row in read_csv(filename)}
+                  if filename.endswith('.csv')
+                  else None))
 
 def datestring(date):
     """For comparing dates read from a CSV file, which will be strings."""

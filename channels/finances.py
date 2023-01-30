@@ -76,6 +76,9 @@ class Finances:
             qsutils.qsutils.ensure_directory_present_and_empty(merge_results_dir)
             if verbose: print("Updating from latest bank statement", latest_bank_statement)
             # TODO: replace with new code
+
+            # call merge_bank_downloads.merge_bank_downloads and merge_bank_to_main.merge_bank_to_main or merge_bank_to_main.finances_update; and get the results back directly
+
             # financial.finlisp.finlisp_main([os.path.join(my_projects, "qs/financial", "merge-latest-statement.lisp")],
             #                                merge_results_dir,
             #                                config,
