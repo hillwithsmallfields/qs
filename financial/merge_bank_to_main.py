@@ -8,12 +8,12 @@ import finutils
 
 def convert_bank_row(row, conversions):
     """Convert a row from my bank statement format to my unified account format."""
-    trimmed = finutils.without_numeric_tail(row['Details'])
+    trimmed = finutils.row_details(row)
     conversion = conversions.get(trimmed, {})
-    amount = float(row.get('Money in') or 0) - float(row.get('Money out') or 0)
+    amount = finutils.row_amount(row)
     return frozendict({
         'account': "Handelsbanken current account",
-        'date': row.get('Date'),
+        'date': finutils.row_date(row),
         'time': "00:00:01",
         'payee': conversion.get('payee', trimmed),
         'category': conversion.get('category', 'unknown category'),
@@ -30,9 +30,9 @@ def convert_bank_table(table, conversions):
 def merge_bank_to_main(base, incoming, conversions):
     return base | convert_bank_table(incoming, conversions)
 
-def finances_update(base, incoming, output, conversions):
-    finutils.write_csv(merge_bank_to_main(utils.read_csv(base),
-                                          finutils.read_csv(incoming),
+def finances_update(base, incoming, output, conversions, list_unknown_payees):
+    finutils.write_csv(merge_bank_to_main(finutils.read_transactions(base),
+                                          finutils.read_transactions(incoming),
                                           finutils.read_conversions(conversions)),
                        finutils.MAIN_HEADERS,
                        output,

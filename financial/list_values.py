@@ -8,7 +8,7 @@ def list_values(table, column):
     return set(row[column] for row in table)
 
 def list_values_in_file(incoming, column):
-    for v in sorted(list_values(finutils.read_csv(incoming), column)):
+    for v in sorted(list_values(finutils.read_transactions(incoming), column)):
         print(v)
 
 def get_args():

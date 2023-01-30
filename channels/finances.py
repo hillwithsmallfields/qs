@@ -123,7 +123,7 @@ class Finances:
 
         # Make the large chart that you get my clicking on the inline one:
         financial.spending_chart.spending_chart_to_file(
-            # financial.finutils.read_csv(self.facto.file_config('finance', 'main-account')),
+            # financial.finutils.read_transactions(self.facto.file_config('finance', 'main-account')),
             account_file,
             key='category', period='month',
             output=full_details_file,
@@ -136,7 +136,7 @@ class Finances:
             T.div[T.h3["Spending by category"],
                   T.a(class_='plainlink', href=full_details_file)[
                       financial.spending_chart.spending_chart(
-                          financial.finutils.read_csv(
+                          financial.finutils.read_transactions(
                               account_file,
                               datetime.date.today() - datetime.timedelta(days=365)),
                           key='category', period='month',

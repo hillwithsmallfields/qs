@@ -23,19 +23,46 @@ CONVERSION_TABLE = os.path.expanduser("~/Sync/finances/conversions.csv")
 CATPARENTS = os.path.expanduser("~/open-projects/github.com/hillwithsmallfields/qs/conf/cats.yaml")
 BUDGETCATS = os.path.expanduser("~/open-projects/github.com/hillwithsmallfields/qs/conf/budgetting-classes.yaml")
 
-def read_csv(filename,
-             starting=None, ending=None):
+def row_date(row):
+    return (row['date']
+            if 'date' in row
+            else (row['Date']
+                  if 'Date' in row
+                  else row['Value Date']
+                  if '"Value Date"' in row
+                  else ""))
+
+def get_either(row, a, b):
+    return (row[a]
+            if a in row
+            else row.get(b))
+
+def row_details(row):
+    return without_numeric_tail(get_either(row, 'Details', 'Narrative'))
+
+def row_amount(row):
+    return (float(get_either(row, 'Money in', 'Cr Amount') or 0)
+            - float(get_either(row, 'Money out', 'Dr Amount') or 0))
+
+def read_transactions(filename,
+                      starting=None, ending=None):
     """Returns the contents of a CSV file, as a set of frozendicts.
     If the starting or ending arguments are given, they are used to limit
     the rows returned to those with a 'date' field within those limits."""
     with open(os.path.expanduser(filename)) as instream:
         transactions = sorted(list(csv.DictReader(instream)),
-                              key=lambda r: r['date'])
+                              key=row_date)
         if starting:
             transactions = onwards(transactions, starting)
         if ending:
             transactions = until(transactions, ending)
         return set(frozendict(row) for row in transactions)
+
+def read_csv(filename):
+    """Returns the contents of a CSV file, as a set of frozendicts."""
+    with open(os.path.expanduser(filename)) as instream:
+        return set(frozendict(row)
+                   for row in csv.DictReader(instream))
 
 def write_csv(data, header, filename, sort_key):
     """Writes a CSV file using the given headers and sort key."""

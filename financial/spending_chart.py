@@ -102,7 +102,7 @@ def spending_chart_to_file(incoming, key, period, output,
         page_stream.write(
             qsutils.html_pages.page_text(
                 spending_chart(
-                    financial.finutils.read_csv(incoming, starting, ending),
+                    financial.finutils.read_transactions(incoming, starting, ending),
                     key, period,
                     sorted(list(set(category_mapping.values()))),
                     category_mapping,

@@ -31,8 +31,8 @@ def merge_bank_downloads(transactions, downloads, account):
 def merge_bank_download_files(base, account, output):
     """Add to a transactions file from more recent downloads files for an account."""
     bank_full_ts = os.path.getmtime(base)
-    finutils.write_csv(merge_bank_downloads(finutils.read_csv(base),
-                                            [finutils.read_csv(download)
+    finutils.write_csv(merge_bank_downloads(finutils.read_transactions(base),
+                                            [finutils.read_transactions(download)
                                              for download in glob.glob(os.path.expanduser(finutils.UPDATES_GLOB))
                                              if os.path.getmtime(download) > bank_full_ts
                                              ],

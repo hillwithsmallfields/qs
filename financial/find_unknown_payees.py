@@ -3,33 +3,30 @@
 import argparse
 from collections import defaultdict
 
-import titlecase
-
 import finutils
 
 def find_unknown_payees(incoming, conversions):
     unknowns = defaultdict(list)
     for row in incoming:
-        trimmed = finutils.without_numeric_tail(row['Details'])
-        print(trimmed)
+        trimmed = finutils.row_details(row)
         if trimmed not in conversions:
             unknowns[trimmed].append(row)
     return unknowns
 
 def find_unknown_payees_in_files(incoming, conversions, output, verbose):
-    unknowns = find_unknown_payees(finutils.read_csv(incoming),
-                                   finutils.read_yaml(conversions)['formats']['Default']['conversions'])
+    unknowns = find_unknown_payees(finutils.read_transactions(incoming),
+                                   finutils.read_conversions(conversions))
     if verbose or not output:
         for u in sorted(unknowns.keys()):
             print(u)
-            for d in sorted(unknowns[u], key=lambda r: r['Date']):
-                print("  ", d['Date'], float(d['Money in'] or 0) - float(d['Money out'] or 0))
+            for d in sorted(unknowns[u], key=finutils.row_date):
+                print("  ", finutils.row_date(d), finutils.row_amount(d))
     if output:
         with open(output, 'w') as outstream:
             for u in sorted(unknowns.keys()):
                 outstream.write("      {}:\n".format(u))
                 outstream.write("        category: \n")
-                outstream.write("        payee: {}:\n".format(titlecase.titlecase(u)))
+                outstream.write("        payee: {}:\n".format(u.title()))
 
 def get_args():
     parser = argparse.ArgumentParser()
