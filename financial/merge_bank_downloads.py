@@ -9,6 +9,11 @@ from frozendict import frozendict
 import finutils
 
 def merge_bank_downloads(transactions, downloads, account):
+    """Add transactions from downloads for an account.
+
+    The transactions are a list of dicts.
+
+    The downloads are a list of lists of dicts."""
     for download in downloads:
         transactions |= {
             frozendict({
@@ -24,6 +29,7 @@ def merge_bank_downloads(transactions, downloads, account):
     return transactions
 
 def merge_bank_download_files(base, account, output):
+    """Add to a transactions file from more recent downloads files for an account."""
     bank_full_ts = os.path.getmtime(base)
     finutils.write_csv(merge_bank_downloads(finutils.read_csv(base),
                                             [finutils.read_csv(download)
