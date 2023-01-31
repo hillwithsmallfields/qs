@@ -28,7 +28,7 @@ def find_unknown_payees_in_files(incoming, conversions, output, verbose):
                 writer = csv.writer(outstream)
                 writer.writerow(["statement", "payee", "category", "flags"])
                 for u in sorted(unknowns.keys()):
-                    writer.writerow([u, "", "", ""])
+                    writer.writerow([u, u.title(), "", ""])
             else:
                 for u in sorted(unknowns.keys()):
                     outstream.write("      {}:\n".format(u))
