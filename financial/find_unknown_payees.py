@@ -2,6 +2,7 @@
 
 import argparse
 from collections import defaultdict
+import csv
 
 import finutils
 
@@ -23,10 +24,16 @@ def find_unknown_payees_in_files(incoming, conversions, output, verbose):
                 print("  ", finutils.row_date(d), finutils.row_amount(d))
     if output:
         with open(output, 'w') as outstream:
-            for u in sorted(unknowns.keys()):
-                outstream.write("      {}:\n".format(u))
-                outstream.write("        category: \n")
-                outstream.write("        payee: {}:\n".format(u.title()))
+            if output.endswith(".csv"):
+                writer = csv.writer(outstream)
+                writer.writerow(["statement", "payee", "category", "flags"])
+                for u in sorted(unknowns.keys()):
+                    writer.writerow([u, "", "", ""])
+            else:
+                for u in sorted(unknowns.keys()):
+                    outstream.write("      {}:\n".format(u))
+                    outstream.write("        category: \n")
+                    outstream.write("        payee: {}:\n".format(u.title()))
 
 def get_args():
     parser = argparse.ArgumentParser()

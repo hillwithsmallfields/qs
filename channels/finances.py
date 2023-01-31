@@ -63,9 +63,12 @@ class Finances:
         """Merge new transactions from my bank statement (if I've saved a new bank statement file) and prepare CSV
         files for making into charts, and HTML for incorporating into the dashboard page."""
 
-        config = qsutils.qsutils.load_config(verbose, None, None,
-                                             os.path.join(self.facto.file_config('finance', 'configdir'), self.facto.config('finance', 'accounts-config')),
-                                             os.path.join(self.facto.file_config('finance', 'conversions-dir'), self.facto.config('finance', 'conversions-config')))
+        config = qsutils.qsutils.load_config(
+            verbose, None, None,
+            os.path.join(self.facto.file_config('finance', 'configdir'),
+                         self.facto.config('finance', 'accounts-config')),
+            os.path.join(self.facto.file_config('finance', 'conversions-dir'),
+                         self.facto.config('finance', 'conversions-config')))
 
         main_account = self.facto.file_config('finance', 'main-account')
         merge_results_dir = self.facto.file_config('finance', 'merge-results-dir')

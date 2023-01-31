@@ -38,7 +38,7 @@ def get_either(row, a, b):
             else row.get(b))
 
 def row_details(row):
-    return without_numeric_tail(get_either(row, 'Details', 'Narrative'))
+    return without_cruft(get_either(row, 'Details', 'Narrative'))
 
 def row_amount(row):
     return (float(get_either(row, 'Money in', 'Cr Amount') or 0)
@@ -110,12 +110,22 @@ def read_yaml(filename):
     with open(os.path.expanduser(filename)) as instream:
         return yaml.safe_load(instream)
 
-def without_numeric_tail(string):
+def without_cruft(string):
     """Returns a string trimmed of a trailing numeric part and leading spaces and stars.
+    Also of a few other things.
 
     This gets the useful part of the annotation strings from my bank statements."""
     matched = re.match("^[^-0-9]+", string)
-    return matched.group(0).strip().lstrip(" *") if matched else string
+    remaining = (matched.group(0) if matched else string).strip()
+    for cruft in ("*",          # deliberately in at the begining and the end
+                  "D.DR", "B/O", "SQ", "SumUp", "ZTL*", "iZ *",
+                  "*"):
+        if remaining.startswith(cruft):
+            remaining = remaining[len(cruft):].lstrip(" ")
+    for cruft in ("REF"):
+        if remaining.endswith(cruft):
+            remaining = remaining[:-len(cruft)].rstrip(" ")
+    return remaining.strip(" ")
 
 def headings(table):
     """Returns a set of the keys of all rows of a list of dicts."""
