@@ -14,9 +14,9 @@ MAIN_HEADERS = ('date', 'time', 'account', 'amount', 'currency',
 
 BANK_BASE = os.path.expanduser("~/Sync/finances/handelsbanken/handelsbanken-base.csv")
 BANK_FULL = os.path.expanduser("~/Sync/finances/handelsbanken/handelsbanken-full.csv")
-BANK_COLUMNS = ('Date', 'Details', 'Money out', 'Money in', 'Balance')
+BANK_COLUMNS = ('Account', 'Value Date', 'Narrative', 'Dr Amount', 'Cr Amount', 'Balance')
 
-UPDATES_GLOB = os.path.expanduser("~/Downloads/Transactions*.csv")
+UPDATES_GLOB = os.path.expanduser("~/Downloads/Transaction*.csv")
 
 CONVERSIONS = os.path.expanduser("~/Sync/finances/conversions.yaml")
 CONVERSION_TABLE = os.path.expanduser("~/Sync/finances/conversions.csv")
