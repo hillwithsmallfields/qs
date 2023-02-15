@@ -30,7 +30,7 @@ def convert_bank_table(table, conversions):
 def merge_bank_to_main(base, incoming, conversions):
     return base | convert_bank_table(incoming, conversions)
 
-def finances_update(base, incoming, output, conversions, list_unknown_payees):
+def finances_update(base, incoming, output, conversions):
     finutils.write_csv(merge_bank_to_main(finutils.read_transactions(base),
                                           finutils.read_transactions(incoming),
                                           finutils.read_conversions(conversions)),

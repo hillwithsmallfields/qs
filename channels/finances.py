@@ -64,7 +64,7 @@ class Finances:
 
     def update(self, read_external, verbose):
 
-        """Merge new transactions from my bank statement (if I've saved a new bank statement file) and prepare CSV
+        """Merge transactions from my bank statement (if I've saved a new bank statement file) and prepare CSV
         files for making into charts, and HTML for incorporating into the dashboard page."""
 
         config = qsutils.qsutils.load_config(
@@ -78,38 +78,34 @@ class Finances:
         merge_results_dir = self.facto.file_config('finance', 'merge-results-dir')
 
         if verbose: print("Updating from latest bank statements")
-        # TODO: replace with new code
-
-        # call merge_bank_downloads.merge_bank_downloads and merge_bank_to_main.merge_bank_to_main or merge_bank_to_main.finances_update; and get the results back directly
 
         bank_file = self.facto.file_config('finance', 'accumulated-bank-statements-file')
         bank_statement = merge_bank_download_files(bank_file,
-                                                   self.facto.config('finance', 'xmain-account-number'),
+                                                   self.facto.config('finance', 'main-account-number'),
                                                    bank_file,
                                                    self.facto.config('finance', 'bank-statement-template'))
 
         conversions = finutils.read_conversions(self.facto.file_config('conversions-dir', 'conversions-config'))
 
         merge_results_file = os.path.join(merge_results_dir, self.facto.config('finance', 'merge-results-file'))
-        merge_temp_file = os.path.join(merge_results_dir, self.facto.config('finance', 'merge-temp-file'))
 
-        merge_bank_downloads.merge_bank_download_files(
-            main_account, account,
-            merge_temp_file,
-            pattern=self.facto.file_config('finance', 'bank-statement-template'))
+        all_transactions = merge_bank_to_main(finutils.read_transactions(self.facto.file_config('finance', 'main-account-file')),
+                                              bank_statement,
+                                              finutils.read_conversions(conversions))
 
-        merge_bank_to_main.finances_update(main_account,
-                                           merge_temp_file, merge_results_file,
-                                           os.path.join(self.facto.file_config('conversions-dir', 'conversions-config')))
+        unknown_payees = find_unknown_payees.find_unknown_payees(bank_statement, conversions)
 
-        find_unknown_payees
+        print("Unknown payees are:", unknown_payees)
+
+        finutils.write_csv(all_transactions,
+                           finutils.MAIN_HEADERS,
+                           merge_results_file,
+                           lambda r: (r['date'], r['time'], r'[payee'))
 
         if os.path.isfile(merge_results_file):
             backup.backup(main_account, self.facto.file_config('backups', 'archive'), "finances-to-%s.csv")
             shutil.copy(merge_results_file, main_account)
             if verbose: print("Merged bank statement into account file")
-    else:
-        print("Bank statement not newer than account file, so not updating")
 
         print("calling charter on", main_account, "with merge results in", merge_results_dir)
 
