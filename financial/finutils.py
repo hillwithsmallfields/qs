@@ -75,6 +75,7 @@ def write_csv(data, header, filename, sort_key):
         writer.writeheader()
         for row in sorted(data, key=sort_key):
             writer.writerow(row)
+    return data
 
 def read_conversions(filename=CONVERSIONS):
     return (read_yaml(filename)['formats']['Default']['conversions']

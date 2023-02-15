@@ -28,12 +28,12 @@ def bank_downloads(pattern):
 
 def merge_bank_download_files(base, account, output, pattern=finutils.UPDATES_GLOB):
     """Add to a transactions file from more recent downloads files for an account."""
-    finutils.write_csv(merge_bank_downloads(finutils.read_transactions(base),
-                                            bank_downloads(pattern),
-                                            int(account)),
-                       finutils.BANK_COLUMNS,
-                       output,
-                       lambda r: (r['Value Date'], r['Narrative']))
+    return finutils.write_csv(merge_bank_downloads(finutils.read_transactions(base),
+                                                   bank_downloads(pattern),
+                                                   int(account)),
+                              finutils.BANK_COLUMNS,
+                              output,
+                              lambda r: (r['Value Date'], r['Narrative']))
 
 def get_args():
     parser = argparse.ArgumentParser()

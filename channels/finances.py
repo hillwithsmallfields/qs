@@ -15,6 +15,10 @@ ensure_in_path(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import qsutils
 import financial.list_completions
 
+import merge_bank_downloads
+import merge_bank_to_main
+import find_unknown_payees
+
 source_dir = os.path.dirname(os.path.realpath(__file__))
 
 import panels
@@ -73,28 +77,39 @@ class Finances:
         main_account = self.facto.file_config('finance', 'main-account')
         merge_results_dir = self.facto.file_config('finance', 'merge-results-dir')
 
-        latest_bank_statement = latest_file_matching(self.facto.file_config('finance', 'bank-statement-template'))
+        if verbose: print("Updating from latest bank statements")
+        # TODO: replace with new code
 
-        if latest_bank_statement and file_newer_than_file(latest_bank_statement, main_account):
-            qsutils.qsutils.ensure_directory_present_and_empty(merge_results_dir)
-            if verbose: print("Updating from latest bank statement", latest_bank_statement)
-            # TODO: replace with new code
+        # call merge_bank_downloads.merge_bank_downloads and merge_bank_to_main.merge_bank_to_main or merge_bank_to_main.finances_update; and get the results back directly
 
-            # call merge_bank_downloads.merge_bank_downloads and merge_bank_to_main.merge_bank_to_main or merge_bank_to_main.finances_update; and get the results back directly
+        bank_file = self.facto.file_config('finance', 'accumulated-bank-statements-file')
+        bank_statement = merge_bank_download_files(bank_file,
+                                                   self.facto.config('finance', 'xmain-account-number'),
+                                                   bank_file,
+                                                   self.facto.config('finance', 'bank-statement-template'))
 
-            # financial.finlisp.finlisp_main([os.path.join(my_projects, "qs/financial", "merge-latest-statement.lisp")],
-            #                                merge_results_dir,
-            #                                config,
-            #                                verbose,
-            #                                {'incoming-statement': latest_bank_statement,
-            #                                 'verbose': verbose})
-            merge_results_file = os.path.join(merge_results_dir, self.facto.config('finance', 'merge-results-file'))
-            if os.path.isfile(merge_results_file):
-                backup.backup(main_account, self.facto.file_config('backups', 'archive'), "finances-to-%s.csv")
-                shutil.copy(merge_results_file, main_account)
-                if verbose: print("Merged bank statement into account file")
-        else:
-            print("Bank statement not newer than account file, so not updating")
+        conversions = finutils.read_conversions(self.facto.file_config('conversions-dir', 'conversions-config'))
+
+        merge_results_file = os.path.join(merge_results_dir, self.facto.config('finance', 'merge-results-file'))
+        merge_temp_file = os.path.join(merge_results_dir, self.facto.config('finance', 'merge-temp-file'))
+
+        merge_bank_downloads.merge_bank_download_files(
+            main_account, account,
+            merge_temp_file,
+            pattern=self.facto.file_config('finance', 'bank-statement-template'))
+
+        merge_bank_to_main.finances_update(main_account,
+                                           merge_temp_file, merge_results_file,
+                                           os.path.join(self.facto.file_config('conversions-dir', 'conversions-config')))
+
+        find_unknown_payees
+
+        if os.path.isfile(merge_results_file):
+            backup.backup(main_account, self.facto.file_config('backups', 'archive'), "finances-to-%s.csv")
+            shutil.copy(merge_results_file, main_account)
+            if verbose: print("Merged bank statement into account file")
+    else:
+        print("Bank statement not newer than account file, so not updating")
 
         print("calling charter on", main_account, "with merge results in", merge_results_dir)
 
