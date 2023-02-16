@@ -21,7 +21,11 @@ class Factotum:
         self.config_data = config
 
     def config(self, *keys):
-        return lifehacking_config.config(*keys)
+        result = lifehacking_config.config(*keys)
+        if result is None:
+            print("failed to get config", keys)
+            print("entries", lifehacking_config.CONFIGURATION)
+        return result
 
     def file_config(self, *keys):
         return os.path.expanduser(os.path.expandvars(self.config(*keys)))

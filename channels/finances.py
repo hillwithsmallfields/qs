@@ -15,13 +15,16 @@ ensure_in_path(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import qsutils
 import financial.list_completions
 
+source_dir = os.path.dirname(os.path.realpath(__file__))
+ensure_in_path(os.path.join(os.path.dirname(source_dir), "financial"))
+
 import merge_bank_downloads
 import merge_bank_to_main
 import find_unknown_payees
 
-source_dir = os.path.dirname(os.path.realpath(__file__))
-
 import panels
+
+import finutils
 
 # This corresponds to https://github.com/hillwithsmallfields
 my_projects = os.path.dirname(os.path.dirname(source_dir))
@@ -80,22 +83,30 @@ class Finances:
         if verbose: print("Updating from latest bank statements")
 
         bank_file = self.facto.file_config('finance', 'accumulated-bank-statements-file')
-        bank_statement = merge_bank_download_files(bank_file,
-                                                   self.facto.config('finance', 'main-account-number'),
-                                                   bank_file,
-                                                   self.facto.config('finance', 'bank-statement-template'))
+        bank_statement = merge_bank_downloads.merge_bank_download_files(
+            bank_file,
+            self.facto.config('finance', 'main-account-number'),
+            bank_file,
+            self.facto.config('finance', 'bank-statement-template'))
 
-        conversions = finutils.read_conversions(self.facto.file_config('conversions-dir', 'conversions-config'))
+        conversions = finutils.read_conversions(os.path.join(self.facto.file_config('finance', 'conversions-dir'),
+                                                             self.facto.file_config('finance', 'conversions-config')))
 
         merge_results_file = os.path.join(merge_results_dir, self.facto.config('finance', 'merge-results-file'))
 
-        all_transactions = merge_bank_to_main(finutils.read_transactions(self.facto.file_config('finance', 'main-account-file')),
-                                              bank_statement,
-                                              finutils.read_conversions(conversions))
+        all_transactions = merge_bank_to_main.merge_bank_to_main(
+            finutils.read_transactions(self.facto.file_config('finance', 'main-account-file')),
+            bank_statement,
+            conversions)
 
         unknown_payees = find_unknown_payees.find_unknown_payees(bank_statement, conversions)
 
-        print("Unknown payees are:", unknown_payees)
+        # print("Unknown payees are:", sorted(list(set(unknown_payees.keys()))))
+
+        finutils.write_csv([{'statement': k} for k, row in unknown_payees.items()],
+                           ['statement', 'payee', 'category', 'flags'],
+                           self.facto.file_config('finance', 'for-categorization'),
+                           lambda r: r['statement'])
 
         finutils.write_csv(all_transactions,
                            finutils.MAIN_HEADERS,
@@ -103,9 +114,10 @@ class Finances:
                            lambda r: (r['date'], r['time'], r'[payee'))
 
         if os.path.isfile(merge_results_file):
-            backup.backup(main_account, self.facto.file_config('backups', 'archive'), "finances-to-%s.csv")
-            shutil.copy(merge_results_file, main_account)
-            if verbose: print("Merged bank statement into account file")
+            print("written merged finances to", merge_results_file)
+            # backup.backup(main_account, self.facto.file_config('backups', 'archive'), "finances-to-%s.csv")
+            # shutil.copy(merge_results_file, main_account)
+            # if verbose: print("Merged bank statement into account file")
 
         print("calling charter on", main_account, "with merge results in", merge_results_dir)
 
