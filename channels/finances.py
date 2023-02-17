@@ -73,9 +73,7 @@ class Finances:
         config = qsutils.qsutils.load_config(
             verbose, None, None,
             os.path.join(self.facto.file_config('finance', 'configdir'),
-                         self.facto.config('finance', 'accounts-config')),
-            os.path.join(self.facto.file_config('finance', 'conversions-dir'),
-                         self.facto.config('finance', 'conversions-config')))
+                         self.facto.config('finance', 'accounts-config')))
 
         main_account = self.facto.file_config('finance', 'main-account')
         merge_results_dir = self.facto.file_config('finance', 'merge-results-dir')
@@ -103,7 +101,8 @@ class Finances:
 
         # print("Unknown payees are:", sorted(list(set(unknown_payees.keys()))))
 
-        finutils.write_csv([{'statement': k} for k, row in unknown_payees.items()],
+        finutils.write_csv([{'statement': k.lower(), 'payee': k.title()}
+                            for k, row in unknown_payees.items()],
                            ['statement', 'payee', 'category', 'flags'],
                            self.facto.file_config('finance', 'for-categorization'),
                            lambda r: r['statement'])

@@ -10,7 +10,7 @@ def find_unknown_payees(incoming, conversions):
     unknowns = defaultdict(list)
     for row in incoming:
         trimmed = finutils.row_details(row)
-        if trimmed not in conversions:
+        if not finutils.longest_subtext_in_table(trimmed.lower(), conversions):
             unknowns[trimmed].append(row)
     return unknowns
 

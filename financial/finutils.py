@@ -128,6 +128,20 @@ def without_cruft(string):
             remaining = remaining[:-len(cruft)].rstrip(" ")
     return remaining.strip(" ")
 
+def longest_subtext_in_table(text, table):
+    """Returns the best matching entry for the text in the table.
+    First the whole string is tried, then successive words are
+    taken off the end."""
+    if text in table:
+        return table[text]
+    words = text.split()[:-1]
+    while words:
+        text = " ".join(words)
+        if text in table:
+            return table[text]
+        words = words[:-1]
+    return {}
+
 def headings(table):
     """Returns a set of the keys of all rows of a list of dicts."""
     return set().union(*(frozenset(row.keys()) for row in table))

@@ -9,7 +9,7 @@ import finutils
 def convert_bank_row(row, conversions):
     """Convert a row from my bank statement format to my unified account format."""
     trimmed = finutils.row_details(row)
-    conversion = conversions.get(trimmed, {})
+    conversion = finutils.longest_subtext_in_table(trimmed.lower(), conversions)
     amount = finutils.row_amount(row)
     return frozendict({
         'account': "Handelsbanken current account",
