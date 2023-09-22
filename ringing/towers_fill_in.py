@@ -3,6 +3,7 @@
 
 import csv
 import os
+from collections import defaultdict
 
 DOVE_FILE = os.path.expanduser("~/Downloads/dove.csv")
 
@@ -61,6 +62,31 @@ def towers_fill_in():
         writer.writeheader()
         for name in sorted(visits.keys()):
             writer.writerow(visits[name])
+
+    by_bells = defaultdict(int)
+    by_weight = defaultdict(int)
+    by_year = defaultdict(int)
+    for visit in visits.values():
+        by_weight[int(visit['Weight'].split('-')[0])] += 1
+        by_bells[int(visit['Bells'])] += 1
+        if visit['Date']:
+            by_year[int(visit['Date'].split('-')[0])] += 1
+
+    with open("/tmp/by-weight.csv", 'w') as bw_stream:
+        writer = csv.writer(bw_stream)
+        writer.writerow(['Hundredweight', 'Towers'])
+        for cwt in sorted(by_weight.keys(), reverse=True):
+            writer.writerow([cwt, by_weight[cwt]])
+    with open("/tmp/by-bells.csv", 'w') as bb_stream:
+        writer = csv.writer(bb_stream)
+        writer.writerow(['Bells', 'Towers'])
+        for bells in sorted(by_bells.keys(), reverse=True):
+            writer.writerow([bells, by_bells[bells]])
+    with open("/tmp/by-year.csv", 'w') as by_stream:
+        writer = csv.writer(by_stream)
+        writer.writerow(['Year', 'Towers'])
+        for year in sorted(by_year.keys(), reverse=True):
+            writer.writerow([year, by_year[year]])
 
 if __name__ == "__main__":
     towers_fill_in()
