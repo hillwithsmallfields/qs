@@ -40,7 +40,7 @@ transfer_keys = {
     'Wt': 'Lbs',
     }
 
-OUT_COLUMNS = ['Tower', 'Date', 'Bells', 'Lbs', 'Diocese', 'County', 'Latitude', 'Longitude']
+OUT_COLUMNS = ['Tower', 'Date', 'Bells', 'Weight', 'Lbs', 'Diocese', 'County', 'Latitude', 'Longitude']
 
 def towers_fill_in():
     dove = read_dove()
@@ -53,6 +53,9 @@ def towers_fill_in():
                 visit[visit_column] = extra_details[dove_column]
         else:
             print("No details for", name)
+        if 'Lbs' in visit and visit['Lbs']:
+            lbs = int(visit['Lbs'])
+            visit['Weight'] = "%d-%d-%d" % (lbs // 112, (lbs % 112) // 28, lbs % 28)
     with open("/tmp/towers.csv", 'w') as outstream:
         writer = csv.DictWriter(outstream, OUT_COLUMNS)
         writer.writeheader()
