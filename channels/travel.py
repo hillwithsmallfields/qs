@@ -1,6 +1,8 @@
 import datetime
 
-class Travel:
+import panels
+
+class TravelPanel(panels.DashboardPanel):
 
     def __init__(self, facto):
         self.facto = facto

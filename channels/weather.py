@@ -6,6 +6,8 @@ import os
 import pyowm
 import sys
 
+import panels
+
 def ensure_in_path(directory):
     if directory not in sys.path:
         sys.path.append(directory)
@@ -35,14 +37,15 @@ COMPASS_POINTS = ('N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 
 def compass_point_name(deg):
     return COMPASS_POINTS[int((int(deg) + (180 / len(COMPASS_POINTS))) // (360 / len(COMPASS_POINTS))) % len(COMPASS_POINTS)]
 
-class Weather:
+class WeatherPanel(panels.DashboardPanel):
 
-    def __init__(self, facto):
+    def __init__(self):
 
         """Fetch the short-term forecast from openweathermap, saving hourly extracts from it into a CSV file, and
         the sunrise and sunset data into a JSON file."""
 
-        self.facto = facto
+    def name(self):
+        return 'weather'
 
     def update(self, read_external, verbose):
         if read_external:

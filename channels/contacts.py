@@ -3,6 +3,8 @@ import os
 import sys
 import shutil
 
+import panels
+
 def ensure_in_path(directory):
     if directory not in sys.path:
         sys.path.append(directory)
@@ -36,7 +38,7 @@ def counts_table(caption, group):
         [T.tr[T.td[name], T.td[str(members)]]
          for name, members in r]]]
 
-class Contacts:
+class ContactsPanel(panels.DashboardPanel):
 
     def __init__(self, facto):
         self.facto = facto
@@ -44,6 +46,9 @@ class Contacts:
         self.people_by_id = None
         self.people_by_name = None
         self.updated = None
+
+    def name(self):
+        return 'contacts'
 
     def update(self, read_external, verbose):
 

@@ -3,6 +3,8 @@ import datetime
 import os
 import sys
 
+import panels
+
 def ensure_in_path(directory):
     if directory not in sys.path:
         sys.path.append(directory)
@@ -30,7 +32,7 @@ import lifehacking_config       # https://github.com/hillwithsmallfields/noticeb
 
 CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
 
-class Timetable:
+class TimetablePanel(panels.DashboardPanel):
 
     def __init__(self, facto):
         self.day_after_tomorrow_name = qsutils.qsutils.forward_from(datetime.date.today(), None, None, 2).strftime("%A")
@@ -44,6 +46,9 @@ class Timetable:
             TimetableDay(qsutils.qsutils.forward_from(datetime.date.today(), None, None, 2)).html(),
         ]
         pass
+
+    def name(self):
+        return 'timetable'
 
     def update(self, read_external, verbose):
         return self

@@ -2,11 +2,16 @@ import datetime
 import os
 import sys
 
-class Agenda:
+import panels
+
+class AgendaPanel(panels.DashboardPanel):
 
     def __init__(self, facto):
         self.facto = facto
         self.updated = None
+
+    def name(self):
+        return 'agenda'
 
     def update(self, read_external, verbose):
 

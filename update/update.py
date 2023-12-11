@@ -17,6 +17,11 @@ def ensure_in_path(directory):
     if directory not in sys.path:
         sys.path.append(directory)
 
+# my utils
+import dobishem.data as data
+import dobishem.storage as storage
+from dobishem.begin_end import BeginAndEndMessages
+
 # other parts of this project group:
 ensure_in_path(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import factotum
@@ -48,9 +53,6 @@ import lifehacking_config       # https://github.com/hillwithsmallfields/noticeb
 CHART_SIZES = {'small': {'figsize': (5,4)},
                'large': {'figsize': (11,8)}}
 
-def file_newer_than_file(a, b):
-    return os.path.getmtime(a) > os.path.getmtime(b)
-
 def last_update_at_least_about_a_day_ago(filename):
     return ((not os.path.isfile(filename))
             or ((datetime.datetime.fromtimestamp(os.path.getmtime(filename))
@@ -68,23 +70,6 @@ def update_covid():
                              COVID_UK_URL).text))}
     # TODO: write to file
     # TODO: include in charts
-
-def rename_columns(raw, column_renames):
-    """Returns a row dictionary or a header list with columns renamed."""
-    return ({column_renames.get(key, key): value for key, value in raw.items()}
-            if isinstance(raw, dict)
-            else [column_renames.get(key, key) for key in raw])
-
-def transform_cells(row, transformations):
-    """Returns a row dict with column-specific transformations applied."""
-    return {k: transformations.get(k, lambda a: a)(v)
-            for k, v in row.items()}
-
-def matches(row, match_key, match_value):
-    """Returns whether a row contains a given value in a given column.
-    If no column is given, returns True."""
-    return (match_key is None
-            or row.get(match_key) == match_value)
 
 def merge_incoming_csv(main_file_key, incoming_key,
                        begin_date, end_date,
@@ -104,11 +89,11 @@ def merge_incoming_csv(main_file_key, incoming_key,
         qsutils.qsutils.trim_csv.trim_csv(incoming_filename) # Remove leading guff bytes added by financisto
         if (os.path.isfile(incoming_filename)
             and ((not os.path.isfile(main_filename))
-                 or file_newer_than_file(incoming_filename, main_filename))):
+                 or storage.file_newer_than_file(incoming_filename, main_filename))):
             data = {}
             with open(incoming_filename) as instream:
                 for row in csv.reader(instream):
-                    header = rename_columns(row, column_renames)
+                    header = data.rename_columns(row, column_renames)
                     break           # just get the first row
             if os.path.isfile(main_filename):
                 with open(main_filename) as instream:
@@ -117,10 +102,10 @@ def merge_incoming_csv(main_file_key, incoming_key,
             original_length = len(data)
             with open(incoming_filename) as instream:
                 additional = {row['Date']: row
-                              for row in (transform_cells(rename_columns(raw, column_renames),
-                                                          transformations)
+                              for row in (data.transform_cells(data.rename_columns(raw, column_renames),
+                                                               transformations)
                                           for raw in csv.DictReader(instream))
-                              if matches(row, match_key, match_value)}
+                              if data.matches(row, match_key, match_value)}
                 data.update(additional)
             if len(data) > original_length:
                 backup.backup(main_filename, facto.file_config('backups', 'archive'), "%s-to-%%s.csv" % os.path.splitext(os.path.basename(main_filename))[0])
@@ -136,20 +121,6 @@ def merge_incoming_csv(main_file_key, incoming_key,
     else:
         print("could not find an incoming file matching", facto.file_config('physical', incoming_key), "for", incoming_key, "to merge into", main_filename)
         return None
-
-class BeginAndEndMessages:
-
-    def __init__(self, about, verbose):
-        self.verbose = verbose
-        self.about = about
-
-    def __enter__(self):
-        if self.verbose:
-            print("Beginning " + self.about)
-
-    def __enter__(self, exc_type, _exc_val, _exc_tb):
-        if self.verbose:
-            print(("Abandoned" if exc_type else "Finished ") + self.about)
 
 def fetch_mfp(facto, _begin_date, _end_date, verbose):
 
@@ -257,39 +228,57 @@ def updates(charts_dir,
     # if end_date is None:
     #     end_date = qsutils.qsutils.yesterday()
 
+    # if read_externals:
+    #     with BeginAndEndMessages("fetching external data", verbose):
+    #         weather = channels.weather.Weather(
+    #             facto, begin_date, end_date, verbose
+    #         ).fetch()
+    #         combined_data = [
+    #             fetch_data(facto, filename, begin_date, end_date, verbose)
+    #             for location_name, fetcher, archive_template in [
+    #                     # (('weather', 'weather-filename'), fetch_weather, "weather-to-%s.csv"),
+    #                     (('physical', 'mfp-filename'), fetch_mfp, "mfp-to-%s.csv"),
+    #                     (('travel', 'travel-filename'), fetch_travel, "travel-to-%s.csv"),
+    #                     # (('physical', 'oura-filename'), fetch_oura, "oura-to-%s.csv"),
+    #                     (('physical', 'omron-filename'), fetch_omron, "omron-to-%s.csv"),
+    #                     (('physical', 'cycling-filename'), fetch_cycling, "cycling-to-%s.csv"),
+    #                     (('physical', 'running-filename'), fetch_running, "running-to-%s.csv")
+    #                     # TODO: add elliptical trainer, planks
+    #                 ]]
+
+    handlers = {
+        handlers.name(): handler for handlers in [
+            panel_class()
+            for panel_class in [
+                     channels.finances.FinancesPanel,
+                     channels.physical.PhysicalPanel,
+                     channels.contacts.ContactsPanel,
+                     channels.agenda.AgendaPanel,
+                     channels.timetable.TimetablePanel,
+                     channels.travel.TravelPanel,
+                     channels.weather.WeatherPanel,
+            ]
+        ]
+    }
+
     if read_externals:
         with BeginAndEndMessages("fetching external data", verbose):
-            weather = channels.weather.Weather(
-                facto, begin_date, end_date, verbose
-            ).fetch()
-            combined_data = [
-                fetch_data(facto, filename, begin_date, end_date, verbose)
-                for location_name, fetcher, archive_template in [
-                        # (('weather', 'weather-filename'), fetch_weather, "weather-to-%s.csv"),
-                        (('physical', 'mfp-filename'), fetch_mfp, "mfp-to-%s.csv"),
-                        (('travel', 'travel-filename'), fetch_travel, "travel-to-%s.csv"),
-                        # (('physical', 'oura-filename'), fetch_oura, "oura-to-%s.csv"),
-                        (('physical', 'omron-filename'), fetch_omron, "omron-to-%s.csv"),
-                        (('physical', 'cycling-filename'), fetch_cycling, "cycling-to-%s.csv"),
-                        (('physical', 'running-filename'), fetch_running, "running-to-%s.csv")
-                        # TODO: add elliptical trainer, planks
-                    ]]
+            for name, handler in handlers.items():
+                with BeginAndEndMessages(f"fetching {name} data"):
+                    handler.fetch()
+
+    with BeginAndEndMessages("updating saved data", verbose):
+        for name, handler in handlers.items():
+            with BeginAndEndMessages(f"updating {name} data"):
+                handler.update()
 
     dashboard.dashboard.make_dashboard_page(
         facto,
         charts_dir=charts_dir,
         channel_data={
-            name: handler(facto).update(read_externals, verbose)
-            for name, handler in {
-                    'finances': channels.finances.Finances,
-                    'physical': channels.physical.Physical,
-                    'contacts': channels.contacts.Contacts,
-                    'agenda': channels.agenda.Agenda,
-                    'timetable': channels.timetable.Timetable,
-                    'travel': channels.travel.Travel,
-                    'startpage': channels.startpage.StartPage,
-                    'weather': channels.weather.Weather,
-            }.items()},
+            name: handler.html()
+            for name, handler in handlers.items()
+        },
         chart_sizes=CHART_SIZES)
 
 def main():

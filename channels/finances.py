@@ -6,43 +6,15 @@ import sys
 
 import yaml
 
-def ensure_in_path(directory):
-    if directory not in sys.path:
-        sys.path.append(directory)
-
-# other parts of this project group:
-ensure_in_path(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-import qsutils
-import financial.list_completions
-
-source_dir = os.path.dirname(os.path.realpath(__file__))
-ensure_in_path(os.path.join(os.path.dirname(source_dir), "financial"))
-
-import merge_bank_downloads
-import merge_bank_to_main
-import find_unknown_payees
+import dobishem.dates
+import dobishem.storage
 
 import panels
 
-import finutils
-
-# This corresponds to https://github.com/hillwithsmallfields
-my_projects = os.path.dirname(os.path.dirname(source_dir))
-
-ensure_in_path(os.path.join(my_projects, "makers", "untemplate"))
-
-import throw_out_your_templates_p3 as untemplate
-from throw_out_your_templates_p3 import htmltags as T
-
-def file_newer_than_file(a, b): # TODO: put in library
-    return os.path.getmtime(a) > os.path.getmtime(b)
-
-def latest_file_matching(template): # TODO: put in library
-    files = glob.glob(template)
-    return files and sorted(files, key=os.path.getmtime)[-1]
+# import finutils
 
 def recent_transactions_table(filename, days_back):
-    start_date = qsutils.qsutils.back_from(datetime.date.today(), None, None, days_back)
+    start_date = dobishem.dates.back_from(datetime.date.today(), None, None, days_back)
     with open(filename) as instream: # TODO: pass the latest transactions in memory
         recent_transactions = [transaction
                                for transaction in csv.DictReader(instream)
@@ -59,36 +31,57 @@ def recent_transactions_table(filename, days_back):
 
 CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
 
-class Finances:
+def merge_handelsbanken_statements(statements):
+    return None                 # TODO
 
-    def __init__(self, facto):
-        self.facto = facto
+def finances_merger(tables):
+    return None                 # TODO
+
+def spending_row_to_internal(raw):
+    return raw
+
+def handelsbanken_row_to_internal(raw):
+    return None                 # TODO
+
+def monzo_row_to_internal(raw):
+    return None                 # TODO
+
+class FinancesPanel(panels.DashboardPanel):
+
+    def __init__(self, top_dir):
         self.updated = None
+        self.accumulated_bank_statements_filename = "$SYNCED/finances/handelsbanken/handelsbanken-full.csv"
 
-    def update(self, read_external, verbose):
+    def name(self):
+        return 'finances'
 
-        """Merge transactions from my bank statement (if I've saved a new bank statement file) and prepare CSV
-        files for making into charts, and HTML for incorporating into the dashboard page."""
+    def fetch(self):
+        """Combine my downloaded bank statements into one file."""
+        dobishem.storage.combined(
+            self.accumulated_bank_statements_filename,
+            merge_handelsbanken_statements,
+            dobishem.storage.in_modification_order("~/Downloads/Transaction*.csv"))
 
-        config = qsutils.qsutils.load_config(
-            verbose, None, None,
-            os.path.join(self.facto.file_config('finance', 'configdir'),
-                         self.facto.config('finance', 'accounts-config')))
+    def update(self):
 
-        main_account = self.facto.file_config('finance', 'main-account')
-        merge_results_dir = self.facto.file_config('finance', 'merge-results-dir')
+        """Merge my accumulated financial data, bank statements, Monzo
+        statements, and manually recorded spending into the accumulated
+        file."""
 
-        if verbose: print("Updating from latest bank statements")
+        conversions = dobishem.storage.read_csv(
+            "$SYNCED/finances/conversions.csv",
+            result_type=dict,
+            key_column='statement')
 
-        bank_file = self.facto.file_config('finance', 'accumulated-bank-statements-file')
-        bank_statement = merge_bank_downloads.merge_bank_download_files(
-            bank_file,
-            self.facto.config('finance', 'main-account-number'),
-            bank_file,
-            self.facto.config('finance', 'bank-statement-template'))
-
-        conversions = finutils.read_conversions(os.path.join(self.facto.file_config('finance', 'conversions-dir'),
-                                                             self.facto.file_config('finance', 'conversions-config')))
+        transactions = dobishem.storage.combined(
+            "$SYNCED/finances/finances.csv"
+            finances_merger,
+            {
+                "$SYNCED/finances/spending.csv": spending_row_to_internal,
+                accumulated_bank_statements_filename: handelsbanken_row_to_internal,
+                "~/Downloads/Monzo Transactions - Monzo Transactions.csv": monzo_row_to_internal,
+            }
+        )
 
         merge_results_file = os.path.join(merge_results_dir, self.facto.config('finance', 'merge-results-file'))
 
@@ -117,18 +110,6 @@ class Finances:
             # backup.backup(main_account, self.facto.file_config('backups', 'archive'), "finances-to-%s.csv")
             # shutil.copy(merge_results_file, main_account)
             # if verbose: print("Merged bank statement into account file")
-
-        print("calling charter on", main_account, "with merge results in", merge_results_dir)
-
-        # financial.finlisp.finlisp_main([os.path.join(my_projects, "qs/financial", "chart-categories.lisp")],
-        #                                self.facto.file_config('general', 'charts'),
-        #                                config,
-        #                                verbose,
-        #                                {'input-file': main_account,
-        #                                 'statements-file': self.facto.file_config('finance', 'accumulated-bank-statements-file'),
-        #                                 'classifiers-file': self.facto.config('finance', 'budgeting-classes-file'),
-        #                                 'thresholds-file': self.facto.config('finance', 'thresholds-file'),
-        #                                 'verbose': verbose})
 
         if file_newer_than_file(main_account, self.facto.file_config('finance', 'finances-completions')):
             if verbose: print("updating finances completions")

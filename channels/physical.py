@@ -3,6 +3,8 @@ import os
 import shutil
 import sys
 
+import panels
+
 def ensure_in_path(directory):
     if directory not in sys.path:
         sys.path.append(directory)
@@ -19,11 +21,14 @@ import backup
 import qsutils.qsutils            # https://github.com/hillwithsmallfields/qs/blob/master/utils/qsutils.py
 from channels.panels import switchable_panel
 
-class Physical:
+class PhysicalPanel(panels.DashboardPanel):
 
     def __init__(self, facto):
         self.facto = facto
         self.updated = None
+
+    def name(self):
+        return 'physical'
 
     def update(self, read_externals, verbose):
 

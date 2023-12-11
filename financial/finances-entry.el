@@ -185,7 +185,7 @@ Optional argument GIVEN-PAYEE, ITEM, and GIVEN-CATEGORY are the payee, item, and
             "%.2f")
           amount))
 
-(defvar finances-transactions-file "$SYNCED/finances/finances.csv"
+(defvar finances-transactions-file "$SYNCED/finances/spending.csv"
   "The file holding the transactions.")
 
 (defun finances-enter-from-shopping-list (payee item category &optional account currency)
