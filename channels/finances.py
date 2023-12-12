@@ -74,7 +74,7 @@ class FinancesPanel(panels.DashboardPanel):
             key_column='statement')
 
         transactions = dobishem.storage.combined(
-            "$SYNCED/finances/finances.csv"
+            "$SYNCED/finances/finances.csv",
             finances_merger,
             {
                 "$SYNCED/finances/spending.csv": spending_row_to_internal,

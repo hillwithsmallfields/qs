@@ -20,7 +20,7 @@ my_projects = os.path.dirname(os.path.dirname(source_dir))
 ensure_in_path(os.path.dirname(source_dir))
 
 import qsutils.qsutils            # https://github.com/hillwithsmallfields/qs/blob/master/utils/qsutils.py
-from channels.panels import switchable_panel
+from expressionive.expridioms import switchable_panel
 import dashboard.dashboard
 
 ensure_in_path(os.path.join(my_projects, "makers", "untemplate"))

@@ -18,6 +18,7 @@ def ensure_in_path(directory):
 
 # my utils
 import dobishem.data as data
+import dobishem.dates as dates
 import dobishem.storage as storage
 from dobishem.begin_end import BeginAndEndMessages
 
@@ -201,9 +202,9 @@ def fetch_data(facto, filename, begin_date, end_date, verbose):
         if verbose: print("not updating", filename, "as it is recent")
         return None             # TODO: read the data instead
 
-def updates(charts_dir,
-            begin_date, end_date,
-            read_externals,
+def updates(charts,
+            begin, end,
+            no_externals,
             verbose=False,
             testing=False,
             force=False):
@@ -220,16 +221,16 @@ def updates(charts_dir,
 
     os.makedirs(os.path.expanduser("~/private_html/dashboard"), exist_ok=True)
 
-    if end_date is None:
-        end_date = qsutils.qsutils.yesterday()
+    if end is None:
+        end = dates.yesterday()
 
-    # if read_externals:
+    # if not no_externals:
     #     with BeginAndEndMessages("fetching external data", verbose):
     #         weather = channels.weather.Weather(
     #             facto, begin_date, end_date, verbose
     #         ).fetch()
     #         combined_data = [
-    #             fetch_data(facto, filename, begin_date, end_date, verbose)
+    #             fetch_data(facto, filename, begin, end, verbose)
     #             for location_name, fetcher, archive_template in [
     #                     # (('weather', 'weather-filename'), fetch_weather, "weather-to-%s.csv"),
     #                     (('physical', 'mfp-filename'), fetch_mfp, "mfp-to-%s.csv"),
@@ -254,7 +255,7 @@ def updates(charts_dir,
         ]
     ]
 
-    if read_externals:
+    if not no_externals:
         with BeginAndEndMessages("fetching external data", verbose):
             for handler in handlers:
                 with BeginAndEndMessages(f"fetching {handler.name()} data"):
@@ -274,8 +275,8 @@ def updates(charts_dir,
         },
         chart_sizes=CHART_SIZES)
 
-def main():
-    parser = qsutils.qsutils.program_argparser()
+def get_args():
+    parser = argparse.ArgumentParser()
     parser.add_argument("--charts", default=os.path.expanduser("~/private_html/dashboard"),
                         help="""Directory to write charts into.""")
     parser.add_argument("--begin",
@@ -289,14 +290,7 @@ def main():
                         within the last day.""")
     parser.add_argument("--testing", action='store_true',
                         help="""Use an alternate directory which can be reset.""")
-    args = parser.parse_args()
-
-    updates(args.begin,
-            args.end,
-            not args.no_externals,
-            verbose=args.verbose,
-            force=args.force,
-            testing=args.testing)
+    return vars(parser.parse_args())
 
 if __name__ == '__main__':
-    main()
+    updates(**get_args())

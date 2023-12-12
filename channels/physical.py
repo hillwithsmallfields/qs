@@ -19,7 +19,7 @@ ensure_in_path(os.path.dirname(source_dir))
 import backup
 
 import qsutils.qsutils            # https://github.com/hillwithsmallfields/qs/blob/master/utils/qsutils.py
-from channels.panels import switchable_panel
+from expressionive.expridioms import switchable_panel
 
 class PhysicalPanel(panels.DashboardPanel):
 
