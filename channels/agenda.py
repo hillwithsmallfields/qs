@@ -2,7 +2,7 @@ import datetime
 import os
 import sys
 
-import panels
+import channels.panels as panels
 
 class AgendaPanel(panels.DashboardPanel):
 

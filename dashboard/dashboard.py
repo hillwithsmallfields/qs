@@ -12,6 +12,9 @@ import sys
 
 import numpy as np
 
+from expressionive.expressionive import htmltags as T
+from expressionive.expridioms import wrap_box, labelled_section, SectionalPage
+
 def ensure_in_path(directory):
     if directory not in sys.path:
         sys.path.append(directory)
@@ -29,35 +32,19 @@ import qsutils.qschart
 import qsutils.html_pages
 
 import channels.timetable
-from channels.panels import switchable_panel, linked_image
+from expressionive.expridioms import switchable_panel, linked_image
 
 # This corresponds to https://github.com/hillwithsmallfields
 my_projects = os.path.dirname(os.path.dirname(source_dir))
 
-ensure_in_path(os.path.join(my_projects, "makers", "untemplate"))
-
-import throw_out_your_templates_p3 as untemplate
-from throw_out_your_templates_p3 import htmltags as T
-
-ensure_in_path(os.path.join(my_projects, "coimealta/contacts"))
-import contacts_data            # https://github.com/hillwithsmallfields/coimealta/blob/master/contacts/contacts_data.py
-
-ensure_in_path(os.path.join(my_projects, "coimealta/inventory"))
-import storage
+import coimealta.contacts.contacts_data as contacts_data
+import coimealta.inventory.storage as storage
+import coimealta.inventory.perishables as perishables
 
 ensure_in_path(os.path.join(my_projects, "noticeboard"))
 
 import announce                 # https://github.com/hillwithsmallfields/noticeboard/blob/master/announce.py
 import lifehacking_config       # https://github.com/hillwithsmallfields/noticeboard/blob/master/lifehacking_config.py
-
-ensure_in_path(os.path.join(my_projects, "coimealta/inventory"))
-import perishables              # https://github.com/hillwithsmallfields/coimealta/blob/master/inventory/perishables.py
-
-def CONF(*keys):
-    return lifehacking_config.lookup(lifehacking_config.CONFIGURATION, *keys)
-
-def FILECONF(*keys):
-    return os.path.expanduser(os.path.expandvars(CONF(*keys)))
 
 CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
 
@@ -71,45 +58,6 @@ def make_remaining_cell(thresholds, spent_this_month, coi):
 
 def namify(x):
     return x.replace(' ', '_')
-
-def row(*things):
-    """Returns an untemplated table row for its arguments."""
-    return T.table(width="100%")[T.tr[[T.td(valign="top")[thing] for thing in things]]]
-
-def wrap_box(*things):
-    """Returns a flex container box contains its arguments."""
-    return (T.div(class_='flex-container')[[T.div[thing]
-                                            for thing in things
-                                            if thing]]
-            if any(things)
-            else None)
-
-def labelled_section(title, body):
-    """Returns a titled version of the body."""
-    return T.div[T.h2[title], body] if body else None
-
-class SectionalPage(object):
-
-    """Holder for collecting section to make up a page.
-    Each section has an H2 heading, and these are used to make a table of contents.
-    Empty sections are not added."""
-
-    pass
-
-    def __init__(self):
-        self._sections = []
-
-    def add_section(self, title, body):
-        if body:
-            self._sections.append((title, body))
-
-    def toc(self):
-        return [T.h2["Table of contents"],
-                T.ul[[T.li[T.a(href="#"+namify(section[0]))[section[0]]] for section in self._sections]]]
-
-    def sections(self):
-        return [[T.div(class_='section')[T.h2[T.a(name=namify(section[0]))[section[0]]],
-                       T.div(class_='sectionbody')[section[1]]] for section in self._sections]]
 
 def dashboard_page_colours():
     """Return the foreground and background colours, and a shading colour, specified in the stylesheet."""

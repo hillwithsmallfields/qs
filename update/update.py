@@ -3,7 +3,6 @@
 import argparse
 import csv
 import datetime
-import decouple
 import io
 import json
 import os
@@ -24,14 +23,13 @@ from dobishem.begin_end import BeginAndEndMessages
 
 # other parts of this project group:
 ensure_in_path(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-import factotum
 import dashboard.dashboard
-import qsutils.check_merged_row_dates
-import financial.list_completions
-import physical.mfp_reader
-import physical.oura_reader
+# import qsutils.check_merged_row_dates
+# import financial.list_completions
+# import physical.mfp_reader
+# import physical.oura_reader
 import qsutils.trim_csv
-import qsutils.qsmerge
+# import qsutils.qsmerge
 import qsutils
 import channels.agenda
 import channels.contacts
@@ -47,8 +45,6 @@ my_projects = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(_
 ensure_in_path(os.path.join(my_projects, "coimealta/contacts"))
 
 ensure_in_path(os.path.join(my_projects, "noticeboard"))
-
-import lifehacking_config       # https://github.com/hillwithsmallfields/noticeboard/blob/master/lifehacking_config.py
 
 CHART_SIZES = {'small': {'figsize': (5,4)},
                'large': {'figsize': (11,8)}}
@@ -222,11 +218,10 @@ def updates(charts_dir,
 
     """
 
-    facto = factotum.Factotum(lifehacking_config.load_config())
+    os.makedirs(os.path.expanduser("~/private_html/dashboard"), exist_ok=True)
 
-    os.makedirs(facto.file_config('general', 'charts'), exist_ok=True)
-    # if end_date is None:
-    #     end_date = qsutils.qsutils.yesterday()
+    if end_date is None:
+        end_date = qsutils.qsutils.yesterday()
 
     # if read_externals:
     #     with BeginAndEndMessages("fetching external data", verbose):
@@ -246,38 +241,36 @@ def updates(charts_dir,
     #                     # TODO: add elliptical trainer, planks
     #                 ]]
 
-    handlers = {
-        handlers.name(): handler for handlers in [
-            panel_class()
-            for panel_class in [
-                     channels.finances.FinancesPanel,
-                     channels.physical.PhysicalPanel,
-                     channels.contacts.ContactsPanel,
-                     channels.agenda.AgendaPanel,
-                     channels.timetable.TimetablePanel,
-                     channels.travel.TravelPanel,
-                     channels.weather.WeatherPanel,
-            ]
+    handlers = [
+        panel_class()
+        for panel_class in [
+                channels.finances.FinancesPanel,
+                # channels.physical.PhysicalPanel,
+                # channels.contacts.ContactsPanel,
+                # channels.agenda.AgendaPanel,
+                # channels.timetable.TimetablePanel,
+                # channels.travel.TravelPanel,
+                # channels.weather.WeatherPanel,
         ]
-    }
+    ]
 
     if read_externals:
         with BeginAndEndMessages("fetching external data", verbose):
-            for name, handler in handlers.items():
-                with BeginAndEndMessages(f"fetching {name} data"):
+            for handler in handlers:
+                with BeginAndEndMessages(f"fetching {handler.name()} data"):
                     handler.fetch()
 
     with BeginAndEndMessages("updating saved data", verbose):
-        for name, handler in handlers.items():
-            with BeginAndEndMessages(f"updating {name} data"):
+        for handler in handlers:
+            with BeginAndEndMessages(f"updating {handler.name()} data"):
                 handler.update()
 
     dashboard.dashboard.make_dashboard_page(
         facto,
         charts_dir=charts_dir,
         channel_data={
-            name: handler.html()
-            for name, handler in handlers.items()
+            handler.name(): handler.html()
+            for handler in handlers
         },
         chart_sizes=CHART_SIZES)
 

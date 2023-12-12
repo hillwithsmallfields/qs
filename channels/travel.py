@@ -1,6 +1,6 @@
 import datetime
 
-import panels
+import channels.panels as panels
 
 class TravelPanel(panels.DashboardPanel):
 

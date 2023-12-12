@@ -9,7 +9,7 @@ import yaml
 import dobishem.dates
 import dobishem.storage
 
-import panels
+import channels.panels as panels
 
 # import finutils
 

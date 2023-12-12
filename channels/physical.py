@@ -3,7 +3,7 @@ import os
 import shutil
 import sys
 
-import panels
+import channels.panels as panels
 
 def ensure_in_path(directory):
     if directory not in sys.path:

@@ -3,7 +3,7 @@ import os
 import sys
 import shutil
 
-import panels
+import channels.panels as panels
 
 def ensure_in_path(directory):
     if directory not in sys.path:
@@ -11,18 +11,11 @@ def ensure_in_path(directory):
 
 ensure_in_path(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import backup
-ensure_in_path(os.path.dirname(os.path.realpath(__file__)))
-import panels
 
-my_projects = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+import coimealta.contacts.link_contacts as contacts
+import coimealta.contacts.contacts_data as contacts_data
 
-import link_contacts # https://github.com/hillwithsmallfields/coimealta/blob/master/contacts/link_contacts.py
-import contacts_data
-
-ensure_in_path(os.path.join(my_projects, "makers", "untemplate"))
-
-import throw_out_your_templates_p3 as untemplate
-from throw_out_your_templates_p3 import htmltags as T
+from expressionive.expressionive import htmltags as T
 
 def make_name_with_email(name, email):
     return (T.a(href="email:"+email)[name]
