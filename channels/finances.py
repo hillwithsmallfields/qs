@@ -3,6 +3,7 @@ import csv
 import datetime
 import glob
 import os
+import re
 import sys
 
 import yaml
@@ -31,6 +32,23 @@ def recent_transactions_table(filename, days_back):
                   for transaction in reversed(recent_transactions)]]]]
 
 CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
+
+def without_cruft(string):
+    """Returns a string trimmed of a trailing numeric part and leading spaces and stars.
+    Also of a few other things.
+
+    This gets the useful part of the annotation strings from my bank statements."""
+    matched = re.match("^[^-0-9]+", string)
+    remaining = (matched.group(0) if matched else string).strip()
+    for cruft in ("*",          # deliberately in at the begining and the end
+                  "D.DR", "B/O", "SQ", "SumUp", "ZTL*", "iZ *",
+                  "*"):
+        if remaining.startswith(cruft):
+            remaining = remaining[len(cruft):].lstrip(" ")
+    for cruft in ("REF"):
+        if remaining.endswith(cruft):
+            remaining = remaining[:-len(cruft)].rstrip(" ")
+    return remaining.strip(" ")
 
 def similar_date(a, b):
     return abs((a - b).days) <= 3
@@ -71,17 +89,67 @@ def merge_handelsbanken_statements(statements):
     ]
 
 def finances_merger(tables):
-    print("merging", len(tables), " finances tables")
-    return None                 # TODO
+    print("merging", len(tables), "finances tables")
+    return [
+        entry
+        for table in tables
+        for entry in table
+    ]
 
 def spending_row_to_internal(raw):
+    # This is already in our internal format
     return raw
 
-def handelsbanken_row_to_internal(raw):
-    return raw                 # TODO
+def handelsbanken_row_to_internal(raw, conversions):
+    item = raw.get('Details', raw.get('Narrative'))
+    matched = re.search(r"([A-Z]{3}) (\d*.\d+) @ \d*.\d+ incl.commission", item)
+    if matched:
+        orig_curr = matched.group(1)
+        orig_amount = float(matched.group(2))
+    else:
+        orig_curr = "GBP"
+        orig_amount = None
+    details = conversions.get(
+        without_cruft(item).lower(),
+        {
+            'payee': "unknown",
+            'category': "unknown"
+        })
+    amount = float(raw.get('Money in') or "0") - float(raw.get('Money out') or "0")
+    return {
+        'Date': raw['Date'],
+        'Time': "00:00:01",
+        'Account': raw['Account'],
+        'Amount':  amount,
+        'Currency': 'GBP',
+        'Original_Amount':  orig_amount,
+        'Original_Currency':  orig_curr,
+        'Balance':  raw['Balance'],
+        'Statement':  raw['Balance'],
+        'Payee':  details.get('payee', "unknown"),
+        'Category':  details.get('category', "unknown"),
+        'Project': "",
+        'Details': item,
+        'Message': "",
+    }
 
-def monzo_row_to_internal(raw):
-    return raw                  # TODO
+def monzo_row_to_internal(raw, conversions):
+    return {
+        'Date':  raw['Date'],
+        'Time':  raw['Time'],
+        'Account':  "Monzo",
+        'Amount':  raw['Amount'],
+        'Currency':  raw['Currency'],
+        'Original_Amount':  raw['Local amount'],
+        'Original_Currency':  raw['Local currency'],
+        # 'Balance':  raw[''],
+        # 'Statement':  raw[''],
+        'Payee':  raw['Name'],
+        'Category':  raw['Category'], # TODO: derive from payee
+        # 'Project':  raw[''],
+        # 'Details':  raw[''],
+        'Message':  raw['Notes and #tags'],
+    }
 
 def normalize_and_filter_opening_rows(raw):
     details = raw.get('Details', raw.get('Narrative'))
@@ -91,7 +159,7 @@ def normalize_and_filter_opening_rows(raw):
             else {
                     'Account': raw['Account'],
                     'Date': raw.get('Date', raw.get('Value Date')),
-                    'Item': details,
+                    'Details': details,
                     'Money in': raw.get('Money in', raw.get('Cr Amount')),
                     'Money out': raw.get('Money out', raw.get('Dr Amount')),
                     'Balance': raw['Balance'],
@@ -102,7 +170,7 @@ class FinancesPanel(panels.DashboardPanel):
 
     def __init__(self):
         self.updated = None
-        self.accumulated_bank_statements_filename = "$SYNCED/finances/handelsbanken/handelsbanken-full.csv"
+        self.accumulated_bank_statements_filename = "$SYNCED/finances/handelsbanken/handelsbanken-full-new.csv"
 
     def name(self):
         return 'finances'
@@ -126,43 +194,22 @@ class FinancesPanel(panels.DashboardPanel):
             result_type=dict,
             key_column='statement')
 
-        transactions = dobishem.storage.combined(
-            "$SYNCED/finances/finances.csv",
-            finances_merger,
-            {
-                "$SYNCED/finances/spending.csv": spending_row_to_internal,
-                self.accumulated_bank_statements_filename: handelsbanken_row_to_internal,
-                "~/Downloads/Monzo Transactions - Monzo Transactions.csv": monzo_row_to_internal,
-            }
-        )
-
-        merge_results_file = os.path.join(merge_results_dir, self.facto.config('finance', 'merge-results-file'))
-
-        all_transactions = merge_bank_to_main.merge_bank_to_main(
-            finutils.read_transactions(self.facto.file_config('finance', 'main-account-file')),
-            bank_statement,
-            conversions)
-
-        unknown_payees = find_unknown_payees.find_unknown_payees(bank_statement, conversions)
-
-        # print("Unknown payees are:", sorted(list(set(unknown_payees.keys()))))
-
-        finutils.write_csv([{'statement': k.lower(), 'payee': k.title()}
-                            for k, row in unknown_payees.items()],
-                           ['statement', 'payee', 'category', 'flags'],
-                           self.facto.file_config('finance', 'for-categorization'),
-                           lambda r: r['statement'])
-
-        finutils.write_csv(all_transactions,
-                           finutils.MAIN_HEADERS,
-                           merge_results_file,
-                           lambda r: (r['date'], r['time'], r'[payee'))
-
-        if os.path.isfile(merge_results_file):
-            print("written merged finances to", merge_results_file)
-            # backup.backup(main_account, self.facto.file_config('backups', 'archive'), "finances-to-%s.csv")
-            # shutil.copy(merge_results_file, main_account)
-            # if verbose: print("Merged bank statement into account file")
+        dobishem.storage.write_csv(
+            "$SYNCED/finances/unknown-payees.csv",
+            [
+                entry
+                for entry in dobishem.storage.combined(
+                    "$SYNCED/finances/finances-new.csv",
+                    finances_merger,
+                    {
+                        "$SYNCED/finances/spending.csv": spending_row_to_internal,
+                        self.accumulated_bank_statements_filename: lambda row: handelsbanken_row_to_internal(row, conversions),
+                        "~/Downloads/Monzo Transactions - Monzo Transactions.csv": lambda row: monzo_row_to_internal(row, conversions),
+                    }
+                )
+                if entry.get('category', "unknown") == "unknown"
+            ],
+            sort_columns=['payee'])
 
         if file_newer_than_file(main_account, self.facto.file_config('finance', 'finances-completions')):
             if verbose: print("updating finances completions")
