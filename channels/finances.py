@@ -1,3 +1,4 @@
+from collections import defaultdict
 import csv
 import datetime
 import glob
@@ -31,24 +32,75 @@ def recent_transactions_table(filename, days_back):
 
 CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
 
+def similar_date(a, b):
+    return abs((a - b).days) <= 3
+
+def already_got(entry, seen):
+    """Return whether we have already seen an entry.
+
+    This handles the overlap between bank statements, allowing for the
+    date of an entry to vary between the statements.
+    """
+    entry_date = datetime.date.fromisoformat(entry.get('Value Date', entry.get('Date')))
+    if entry_date is None:
+        return False
+    entry_record = (entry.get('Item'),
+                    entry.get('Money out'),
+                    entry.get('Money in'))
+    result = False
+    if entry_record in seen:
+        for possible in seen[entry_record]:
+            if similar_date(entry_date, possible):
+                result = True
+                break
+    seen[entry_record].add(entry_date)
+    return result
+
 def merge_handelsbanken_statements(statements):
-    return None                 # TODO
+    """Merge some bank statements.
+
+    They may overlap, and the dates may change between the overlapping
+    copies.
+    """
+    seen = defaultdict(set)
+    return [
+        entry
+        for statement in statements
+        for entry in statement
+        if not already_got(entry, seen)
+    ]
 
 def finances_merger(tables):
+    print("merging", len(tables), " finances tables")
     return None                 # TODO
 
 def spending_row_to_internal(raw):
     return raw
 
 def handelsbanken_row_to_internal(raw):
-    return None                 # TODO
+    return raw                 # TODO
 
 def monzo_row_to_internal(raw):
-    return None                 # TODO
+    return raw                  # TODO
+
+def normalize_and_filter_opening_rows(raw):
+    details = raw.get('Details', raw.get('Narrative'))
+    return (None
+            if (details.startswith("Opening Balance")
+                or details.startswith("D.DR PAYPAL PAYMENT"))
+            else {
+                    'Account': raw['Account'],
+                    'Date': raw.get('Date', raw.get('Value Date')),
+                    'Item': details,
+                    'Money in': raw.get('Money in', raw.get('Cr Amount')),
+                    'Money out': raw.get('Money out', raw.get('Dr Amount')),
+                    'Balance': raw['Balance'],
+            }
+            )
 
 class FinancesPanel(panels.DashboardPanel):
 
-    def __init__(self, top_dir):
+    def __init__(self):
         self.updated = None
         self.accumulated_bank_statements_filename = "$SYNCED/finances/handelsbanken/handelsbanken-full.csv"
 
@@ -60,7 +112,8 @@ class FinancesPanel(panels.DashboardPanel):
         dobishem.storage.combined(
             self.accumulated_bank_statements_filename,
             merge_handelsbanken_statements,
-            dobishem.storage.in_modification_order("~/Downloads/Transaction*.csv"))
+            {filename: normalize_and_filter_opening_rows
+             for filename in dobishem.storage.in_modification_order("~/Downloads/Transaction*.csv")})
 
     def update(self):
 
@@ -78,7 +131,7 @@ class FinancesPanel(panels.DashboardPanel):
             finances_merger,
             {
                 "$SYNCED/finances/spending.csv": spending_row_to_internal,
-                accumulated_bank_statements_filename: handelsbanken_row_to_internal,
+                self.accumulated_bank_statements_filename: handelsbanken_row_to_internal,
                 "~/Downloads/Monzo Transactions - Monzo Transactions.csv": monzo_row_to_internal,
             }
         )
