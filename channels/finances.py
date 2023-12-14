@@ -179,7 +179,9 @@ class FinancesPanel(panels.DashboardPanel):
         self.accumulated_bank_statements_filename = "$SYNCED/finances/handelsbanken/handelsbanken-full-new.csv"
         self.monzo_downloads_filename = "~/Downloads/Monzo Transactions - Monzo Transactions.csv"
         self.spending_filename = "$SYNCED/finances/spending.csv"
-
+        self.conversion_filename = "$SYNCED/finances/conversions.csv"
+        self.finances_main_filename = "$SYNCED/finances/finances-new.csv"
+        self.completions_filename = "$SYNCED/var/finances-completions-new.el"
     def name(self):
         return 'finances'
 
@@ -198,12 +200,12 @@ class FinancesPanel(panels.DashboardPanel):
         file."""
 
         conversions = dobishem.storage.read_csv(
-            "$SYNCED/finances/conversions.csv",
+            self.conversion_filename,
             result_type=dict,
             key_column='statement')
 
         transactions = dobishem.storage.combined(
-            "$SYNCED/finances/finances-new.csv",
+            self.finances_main_filename,
             finances_merger,
             {
                 self.spending_filename: spending_row_to_internal,
@@ -223,12 +225,14 @@ class FinancesPanel(panels.DashboardPanel):
             [
                 entry
                 for entry in transactions
-                if entry.get('category', "unknown") == "unknown"
+                if entry.get('Category', "unknown") == "unknown"
             ],
             sort_columns=['payee'])
 
-        if file_newer_than_file(main_account, self.facto.file_config('finance', 'finances-completions')):
-            if verbose: print("updating finances completions")
+        if ((not os.path.exists(self.completions_filename))
+            or dobishem.storage.file_newer_than_file(
+                self.finances_main_filename,
+                self.completions_filename)):
             financial.list_completions.list_completions()
 
         return self
