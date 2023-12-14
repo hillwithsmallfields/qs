@@ -89,7 +89,6 @@ def merge_handelsbanken_statements(statements):
     ]
 
 def finances_merger(tables):
-    print("merging", len(tables), "finances tables")
     return [
         entry
         for table in tables
@@ -97,7 +96,9 @@ def finances_merger(tables):
     ]
 
 def spending_row_to_internal(raw):
-    # This is already in our internal format
+    # This is already nearly in our internal format
+    raw['Details'] = raw['Item']
+    raw['Origin'] = 'Spending'
     return raw
 
 def handelsbanken_row_to_internal(raw, conversions):
@@ -117,6 +118,7 @@ def handelsbanken_row_to_internal(raw, conversions):
         })
     amount = float(raw.get('Money in') or "0") - float(raw.get('Money out') or "0")
     return {
+        'Origin': 'Handelsbanken',
         'Date': raw['Date'],
         'Time': "00:00:01",
         'Account': raw['Account'],
@@ -130,12 +132,15 @@ def handelsbanken_row_to_internal(raw, conversions):
         'Category':  details.get('category', "unknown"),
         'Project': "",
         'Details': item,
+        'Item': item,
         'Message': "",
     }
 
 def monzo_row_to_internal(raw, conversions):
+    date = raw['Date']
     return {
-        'Date':  raw['Date'],
+        'Origin': 'Monzo',
+        'Date':  f"{date[6:]}-{date[3:5]}-{date[0:2]}",
         'Time':  raw['Time'],
         'Account':  "Monzo",
         'Amount':  raw['Amount'],
@@ -147,7 +152,8 @@ def monzo_row_to_internal(raw, conversions):
         'Payee':  raw['Name'],
         'Category':  raw['Category'], # TODO: derive from payee
         # 'Project':  raw[''],
-        # 'Details':  raw[''],
+        'Details':  raw['Category'],
+        'Item':  raw['Category'],
         'Message':  raw['Notes and #tags'],
     }
 
@@ -171,6 +177,8 @@ class FinancesPanel(panels.DashboardPanel):
     def __init__(self):
         self.updated = None
         self.accumulated_bank_statements_filename = "$SYNCED/finances/handelsbanken/handelsbanken-full-new.csv"
+        self.monzo_downloads_filename = "~/Downloads/Monzo Transactions - Monzo Transactions.csv"
+        self.spending_filename = "$SYNCED/finances/spending.csv"
 
     def name(self):
         return 'finances'
@@ -194,19 +202,27 @@ class FinancesPanel(panels.DashboardPanel):
             result_type=dict,
             key_column='statement')
 
+        transactions = dobishem.storage.combined(
+            "$SYNCED/finances/finances-new.csv",
+            finances_merger,
+            {
+                self.spending_filename: spending_row_to_internal,
+                self.accumulated_bank_statements_filename: lambda row: handelsbanken_row_to_internal(row, conversions),
+                self.monzo_downloads_filename: lambda row: monzo_row_to_internal(row, conversions),
+            }
+        )
+
+        nt = len(transactions)
+        print(nt, "transactions:")
+        for i, transaction in enumerate(transactions):
+            if i < 12 or i > (nt - 12):
+                print(i, transaction)
+
         dobishem.storage.write_csv(
             "$SYNCED/finances/unknown-payees.csv",
             [
                 entry
-                for entry in dobishem.storage.combined(
-                    "$SYNCED/finances/finances-new.csv",
-                    finances_merger,
-                    {
-                        "$SYNCED/finances/spending.csv": spending_row_to_internal,
-                        self.accumulated_bank_statements_filename: lambda row: handelsbanken_row_to_internal(row, conversions),
-                        "~/Downloads/Monzo Transactions - Monzo Transactions.csv": lambda row: monzo_row_to_internal(row, conversions),
-                    }
-                )
+                for entry in transactions
                 if entry.get('category', "unknown") == "unknown"
             ],
             sort_columns=['payee'])
