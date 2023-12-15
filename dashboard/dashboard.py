@@ -12,6 +12,7 @@ import sys
 
 import numpy as np
 
+import dobishem.dates
 from expressionive.expressionive import htmltags as T
 from expressionive.expridioms import wrap_box, labelled_section, SectionalPage
 
@@ -331,7 +332,8 @@ def update_finances_charts(charts_dir,
     """Update the financial charts."""
 
     if not charts_dir:
-        charts_dir = FILECONF('general', 'charts')
+        charts_dir = os.path.expanduser("~/private_html/dashboard")
+
     qsutils.qschart.qscharts(os.path.join(charts_dir, "by-class.csv"),
                              'finances',
                              CATEGORIES_OF_INTEREST,
@@ -486,23 +488,19 @@ def make_dashboard_images(charts_dir,
     for param_set in chart_sizes.values():
         param_set['facecolor'] = background_colour
 
-    with open(os.path.expanduser("~/Sync/accomplishments/employment.csv")) as instream:
-        vlines = [datetime.datetime(year=int(row['From']), month=1, day=1) for row in csv.DictReader(instream)]
-
     periods = {'all_time': datetime.date(year=1973, month=1, day=1),
-               'past_week': qsutils.qsutils.back_from(today, None, None, 7),
-               'past_month': qsutils.qsutils.back_from(today, None, 1, None),
-               'past_quarter': qsutils.qsutils.back_from(today, None, 3, None),
-               'past_year': qsutils.qsutils.back_from(today, 1, None, None)}
+               'past_week': dobishem.dates.back_from(today, None, None, 7),
+               'past_month': dobishem.dates.back_from(today, None, 1, None),
+               'past_quarter': dobishem.dates.back_from(today, None, 3, None),
+               'past_year': dobishem.dates.back_from(today, 1, None, None)}
     for date_suffix, begin in ({'custom': begin_date}
                                if begin_date
                                else periods).items():
         begin = np.datetime64(datetime.datetime.combine(begin, datetime.time())) # .timestamp()
         update_finances_charts(charts_dir, chart_sizes, begin, end_date, date_suffix, verbose)
-        update_physical_charts(charts_dir, chart_sizes, begin, end_date, date_suffix, vlines=vlines if date_suffix == 'all_time' else None)
+        update_physical_charts(charts_dir, chart_sizes, begin, end_date, date_suffix, vlines=None)
 
-def make_dashboard_page(facto,
-                        charts_dir=None,
+def make_dashboard_page(charts_dir=None,
                         channel_data=None,
                         chart_sizes={'small': {'figsize': (5,4)},
                                      'large': {'figsize': (11,8)}},
@@ -511,10 +509,8 @@ def make_dashboard_page(facto,
 
     """Make the dashboard page, including refreshed images for it."""
 
-    lifehacking_config.load_config()
-
     if not charts_dir:
-        charts_dir = lifehacking_config.CONFIGURATION['general']['charts']
+        charts_dir = os.path.expanduser("~/private_html/dashboard")
 
     text_colour, background_colour, shading = dashboard_page_colours()
     make_dashboard_images(charts_dir,

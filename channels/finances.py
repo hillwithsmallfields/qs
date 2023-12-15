@@ -8,27 +8,27 @@ import sys
 
 import yaml
 
-import dobishem.dates
-import dobishem.storage
+import dobishem
+from expressionive.expressionive import htmltags as T
+import expressionive.expridioms
 
 import channels.panels as panels
+import financial.list_completions
 
 # import finutils
 
-def recent_transactions_table(filename, days_back):
-    start_date = dobishem.dates.back_from(datetime.date.today(), None, None, days_back)
-    with open(filename) as instream: # TODO: pass the latest transactions in memory
-        recent_transactions = [transaction
-                               for transaction in csv.DictReader(instream)
-                               if datetime.date.fromisoformat(transaction['date']) >= start_date]
+def recent_transactions_table(transactions, days_back):
+    end_date = datetime.date.today()
+    start_date = dobishem.dates.back_from(end_date, None, None, days_back)
+    recent_transactions = dobishem.dates.entries_between_dates(transactions, start_date, end_date)
     return T.div(class_='transactions_list')[
         T.table(class_='financial')[
             T.tr[T.th["Date"],T.th["Amount"],T.th["Payee"],T.th["Category"],T.th["Item"]],
-            [[T.tr[T.th[transaction['date']],
-                   T.td[transaction['amount']],
-                   T.td[transaction['payee']],
-                   T.td[transaction['category']],
-                   T.td[transaction['item']]]
+            [[T.tr[T.th[transaction['Date']],
+                   T.td[transaction['Amount']],
+                   T.td[transaction['Payee']],
+                   T.td[transaction['Category']],
+                   T.td[transaction['Item']]]
                   for transaction in reversed(recent_transactions)]]]]
 
 CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
@@ -182,6 +182,9 @@ class FinancesPanel(panels.DashboardPanel):
         self.conversion_filename = "$SYNCED/finances/conversions.csv"
         self.finances_main_filename = "$SYNCED/finances/finances-new.csv"
         self.completions_filename = "$SYNCED/var/finances-completions-new.el"
+        self.dashboard_dir = os.path.expanduser("~/private_html/dashboard/")
+        self.transactions = None
+
     def name(self):
         return 'finances'
 
@@ -204,7 +207,7 @@ class FinancesPanel(panels.DashboardPanel):
             result_type=dict,
             key_column='statement')
 
-        transactions = dobishem.storage.combined(
+        self.transactions = dobishem.storage.combined(
             self.finances_main_filename,
             finances_merger,
             {
@@ -214,17 +217,11 @@ class FinancesPanel(panels.DashboardPanel):
             }
         )
 
-        nt = len(transactions)
-        print(nt, "transactions:")
-        for i, transaction in enumerate(transactions):
-            if i < 12 or i > (nt - 12):
-                print(i, transaction)
-
         dobishem.storage.write_csv(
             "$SYNCED/finances/unknown-payees.csv",
             [
                 entry
-                for entry in transactions
+                for entry in self.transactions
                 if entry.get('Category', "unknown") == "unknown"
             ],
             sort_columns=['payee'])
@@ -243,29 +240,32 @@ class FinancesPanel(panels.DashboardPanel):
 
         some_columns = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
 
-        full_details_file = "by-class.html" # todo: place this in a specific directory
+        full_details_file = os.path.join(self.dashboard_dir, "by-class.html")
 
-        account_file = self.facto.file_config('finance', 'main-account')
+        today = datetime.date.today()
+        year_transactions = dobishem.dates.entries_between_dates(
+            self.transactions,
+            dobishem.dates.back_from(today, years_back=1, months_back=0, days_back=0),
+            today)
 
         # Make the large chart that you get my clicking on the inline one:
         financial.spending_chart.spending_chart_to_file(
-            # financial.finutils.read_transactions(self.facto.file_config('finance', 'main-account')),
-            account_file,
-            key='category', period='month',
+            year_transactions,
+            key='Category', period='month',
             output=full_details_file,
             inline=True)
-
-        return T.div[panels.wrap_box(
-            panels.linked_image("by-class", "transactions"),
+        return T.div[expressionive.expridioms.wrap_box(
+            expressionive.expridioms.linked_image(
+                charts_dir=self.dashboard_dir,
+                image_name="by-class",
+                label="transactions"),
             T.div[T.h3["Recent transactions"],
-                  recent_transactions_table(account_file, 14)],
+                  recent_transactions_table(self.transactions, 14)],
             T.div[T.h3["Spending by category"],
                   T.a(class_='plainlink', href=full_details_file)[
                       financial.spending_chart.spending_chart(
-                          financial.finutils.read_transactions(
-                              account_file,
-                              datetime.date.today() - datetime.timedelta(days=365)),
-                          key='category', period='month',
+                          year_transactions,
+                          key='Category', period='month',
                           columns=some_columns,
                           map_to_highlights = financial.parentage.read_budgetting_classes_table(
                               financial.finutils.BUDGETCATS))

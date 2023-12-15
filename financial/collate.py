@@ -12,7 +12,7 @@ def collate(incoming, key, period, column_mapping=None):
 
     """Returns a collation of a table.
 
-    The input is a table as returned by csv.DictReader, with a 'date'
+    The input is a table as returned by csv.DictReader, with a 'Date'
     column, with a row for each transaction.
 
     The output is a table with a row for each period (day, month,
@@ -32,10 +32,13 @@ def collate(incoming, key, period, column_mapping=None):
 
     result = defaultdict(lambda: defaultdict(list))
     for row in incoming:
-        result[period_fn(row['date'])][column_mapping[row[key]]
+        if key not in row:
+            print("row", row, "is missing key", key)
+            continue
+        result[period_fn(row['Date'])][column_mapping[row[key]]
                                        if column_mapping
                                        else row[key]].append(row)
-    return financial.finutils.with_key_as_column(result, 'date')
+    return financial.finutils.with_key_as_column(result, 'Date')
 
 def ize(table, izefn):
     """Returns a table containing the result of applying a function to each cell of the input.
@@ -52,8 +55,8 @@ def ize(table, izefn):
         {
             column: izefn(cell)
             for column, cell in row.items()
-            if column != 'date'
-        } | {'date': row['date']}
+            if column != 'Date'
+        } | {'Date': row['Date']}
         for row in table
     ]
 
@@ -67,7 +70,7 @@ def summarize(table):
 def textualize(table):
     """Return a table containing a textual representation of each cell of the input."""
     return ize(table,
-               lambda cell: "; ".join(("{} {} {}".format(item['date'],
+               lambda cell: "; ".join(("{} {} {}".format(item['Date'],
                                                          item['payee'],
                                                          item['amount'])
                                        for item in cell)))
@@ -84,31 +87,8 @@ def collate_in_files(incoming, key, period, summary, output,
 
     """
     result = collate(financial.finutils.read_csv(incoming, starting, ending), key, period)
-    headings = financial.finutils.bring_to_front(sorted(financial.finutils.headings(result)), {'date'})
+    headings = financial.finutils.bring_to_front(sorted(financial.finutils.headings(result)), {'Date'})
     if summary:
-        financial.finutils.write_csv(summarize(result), headings, summary, lambda r: r['date'])
+        financial.finutils.write_csv(summarize(result), headings, summary, lambda r: r['Date'])
     if output:
-        financial.finutils.write_csv(textualize(result), headings, output, lambda r: r['date'])
-
-def get_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--incoming", "-i", default=financial.finutils.MAIN_ACCOUNTING_FILE,
-                        help="""The input file, in my financisto-like format.""")
-    parser.add_argument("--key", "-k", default='category',
-                        help="""The field to group transactions by.
-                        'category' and 'payee' are probably the most useful.""")
-    parser.add_argument("--period", "-p", default='month',
-                        help="""The period to group transactions by.
-                        Must be one of 'day', 'month', 'year', or 'weekday'.""")
-    parser.add_argument("--starting",
-                        help="""Trim the transactions to start at this date.""")
-    parser.add_argument("--ending",
-                        help="""Trim the transactions to end at this date.""")
-    parser.add_argument("--output", "-o",
-                        help="""The full output file.""")
-    parser.add_argument("--summary", "-s",
-                        help="""The summary output file.""")
-    return vars(parser.parse_args())
-
-if __name__ == "__main__":
-    collate_in_files(**get_args())
+        financial.finutils.write_csv(textualize(result), headings, output, lambda r: r['Date'])

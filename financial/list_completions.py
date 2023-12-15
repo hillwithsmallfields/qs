@@ -4,22 +4,22 @@ import argparse
 import csv
 import os.path
 
-default_columns = ['account', 'currency', 'category', 'project']
+default_columns = ['Account', 'Currency', 'Category', 'Project']
 
-def list_completions(input_file=os.path.expandvars("$SYNCED/finances/finances.csv"),
-                     output_file=os.path.expandvars("$SYNCED/var/finances-completions.el"),
+def list_completions(input_file=os.path.expandvars("$SYNCED/finances/finances-new.csv"),
+                     output_file=os.path.expandvars("$SYNCED/var/finances-completions-new.el"),
                      columns=default_columns):
-    with open(input_file ) as instream:
+    with open(input_file) as instream:
         rows = [row for row in csv.DictReader(instream)]
-        payees = {p: [row['category']
+        payees = {p: [row['Category']
                       for row in rows
-                      if row['payee'] == p] for p in set([row['payee']
+                      if row['Payee'] == p] for p in set([row['Payee']
                                                           for row in rows
-                                                          if row['payee']])}
+                                                          if row['Payee']])}
         currencies_by_account = {}
         for row in rows:
-            account = row['account']
-            currency = row['currency']
+            account = row['Account']
+            currency = row['Currency']
             if account not in currencies_by_account:
                 currencies_by_account[account] = {}
             currencies_by_account[account][currency] = currencies_by_account[account].get(currency, 0) + 1
