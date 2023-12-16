@@ -39,15 +39,16 @@ def compass_point_name(deg):
 
 class WeatherPanel(panels.DashboardPanel):
 
-    def __init__(self):
-
-        """Fetch the short-term forecast from openweathermap, saving hourly extracts from it into a CSV file, and
-        the sunrise and sunset data into a JSON file."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args)
 
     def name(self):
         return 'weather'
 
     def update(self, read_external, verbose):
+
+        """Fetch the short-term forecast from openweathermap, saving hourly extracts from it into a CSV file, and
+        the sunrise and sunset data into a JSON file."""
         if read_external:
             owm = pyowm.owm.OWM(decouple.config('OWM_API_KEY'))
             reg = owm.city_id_registry()

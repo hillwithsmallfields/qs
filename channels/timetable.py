@@ -29,7 +29,8 @@ CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Tra
 
 class TimetablePanel(panels.DashboardPanel):
 
-    def __init__(self, facto):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args)
         self.day_after_tomorrow_name = qsutils.qsutils.forward_from(datetime.date.today(), None, None, 2).strftime("%A")
         self.day_names = [
             'today',

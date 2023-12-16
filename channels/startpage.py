@@ -3,8 +3,8 @@ import os
 
 class StartPage:
 
-    def __init__(self, facto):
-        self.facto = facto
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args)
         self.updated = None
 
     def update(self, read_externals, verbose):

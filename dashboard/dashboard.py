@@ -97,7 +97,7 @@ def peak_flow_section():
 
 def keep_in_touch_section():
     """List people who I mean to keep in touch with but haven't for a while."""
-    people_by_id, _ = contacts_data.read_contacts(FILECONF('contacts', 'contacts-file'))
+    people_by_id, _ = contacts_data.read_contacts("$SYNCED/org/contacts.csv")
     today = datetime.date.today()
     this_year = today.year
     long_uncontacted = [person
@@ -179,7 +179,8 @@ def temperature_section():
 def top_items(items):
     return sorted(items, key=lambda item: item['position-in-file'])[:12]
 
-def actions_section(from_org_mode):
+def actions_section(channels_data):
+    from_org_mode = channels_data['organizer']
     return wrap_box([T.h3["Mending"],
                      org_ql_list(top_items(from_org_mode["Mending"]))],
                     [T.h3["Physical making"],
@@ -191,25 +192,15 @@ def org_ql_list(items):
     # TODO: make this scrollable
     return T.div(class_='agenda_list')[T.ul[[T.li[item['title']] for item in items]]]
 
-def shopping_section(from_org_mode):
+def shopping_section(channels_data):
+    from_org_mode = channels_data['organizer']
     return wrap_box([T.h3["Supermarket"],
                      org_ql_list(from_org_mode["Supermarket"])],
                     [T.h3["Online"],
                      org_ql_list(from_org_mode["Online"])])
 
-def parcels_section():
-    with open(FILECONF('dashboard', 'parcels')) as parcels_stream:
-        parcels = json.load(parcels_stream)['expected']
-    dates = {}
-    for parcel in parcels:
-        date = datetime.date.fromisoformat(parcel[0])
-        if date not in dates:
-            dates[date] = []
-        dates[date].append(parcel[1])
-    return [T.dl[[[T.dt[date.isoformat() + " " + DAYNAMES[date.weekday()]],
-                   T.dd[T.ul[[[T.li[parcel]
-                               for parcel in sorted(dates[date])]]]]]
-                  for date in sorted(dates)]]]
+def parcels_section(channels_data):
+    parcels = channels_data['parcels']
 
 def items_table(items):
     items_by_type = {}
@@ -285,11 +276,10 @@ def reflection_section():
         T.p[first],
         T.p[second]]
 
-def construct_dashboard_page(channel_data):
-    charts_dir = FILECONF('general', 'charts')
+def construct_dashboard_page(charts_dir, channels_data):
     page = SectionalPage()
-    with open(FILECONF('dashboard', 'views')) as org_ql_stream:
-        from_org_mode = json.load(org_ql_stream)
+    # TODO: move into panels structure
+    # TODO: move into panels structure
     page.add_section("Health", wrap_box(
         labelled_section("Weight", weight_section()),
         labelled_section("Calories", calories_section()),
@@ -304,11 +294,9 @@ def construct_dashboard_page(channel_data):
         labelled_section("Sleep times", sleep_times_section()),
         labelled_section("Sleep correlation", sleep_correlation_section()),
         labelled_section("Temperature", temperature_section())))
-    page.add_section("Spending", channel_data['finances'].html())
-    page.add_section("People", channel_data['contacts'].html())
-    page.add_section("Agenda", wrap_box(
-        labelled_section("Actions", actions_section(from_org_mode)),
-        labelled_section("Shopping", shopping_section((from_org_mode)))))
+    page.add_section("Spending", channels_data['finances'].html())
+    page.add_section("People", channels_data['contacts'].html())
+    page.add_section("Agenda", channels_data['agenda'].html())
     page.add_section("Travel", travel_section())
     page.add_section("Inventory", inventory_section())
     page.add_section("Texts for reflection", reflection_section())
@@ -319,20 +307,18 @@ def construct_dashboard_page(channel_data):
                        T.h2["Perishable food to use up"],
                        perishables_section(),
                        T.h2["Parcels expected"],
-                       parcels_section()],
+                       channels_data['parcels'].html()],
                  channel_data['timetable'].html(),
                  channel_data['weather'].html()),
         page.sections()]]
 
 def update_finances_charts(charts_dir,
+                           channels_data,
                            chart_sizes,
                            begin_date, end_date, date_suffix,
                            verbose):
 
     """Update the financial charts."""
-
-    if not charts_dir:
-        charts_dir = os.path.expanduser("~/private_html/dashboard")
 
     qsutils.qschart.qscharts(os.path.join(charts_dir, "by-class.csv"),
                              'finances',
@@ -349,6 +335,7 @@ def update_finances_charts(charts_dir,
     #                        chart_sizes)
 
 def update_physical_charts(charts_dir,
+                           channels_data,
                            chart_sizes,
                            begin_date, end_date,
                            date_suffix,
@@ -356,10 +343,8 @@ def update_physical_charts(charts_dir,
 
     """Update the physical (health) charts."""
 
-    if not charts_dir:
-        charts_dir = FILECONF('general', 'charts')
-    physical = FILECONF('physical', 'physical-filename')
-    mfp_filename = FILECONF('physical', 'mfp-filename')
+    physical = "$SYNCED/health/physical.csv"
+    mfp_filename = "$SYNCED/health/mfp-accum.csv"
 
     split_by_DoW = False
 
@@ -390,15 +375,15 @@ def update_physical_charts(charts_dir,
             #   'file_type': 'sleep',
             #   'columns': ['Latency', 'Rem', 'Deep', 'Total']
             #   }, "sleep-split-%s-%%s.png"),
-            ({'mainfile': FILECONF('physical', 'omron-filename'),
+            ({'mainfile': "$SYNCED/health/blood-pressure.csv",
               'file_type': 'blood_pressure',
               'columns': ['systolic', 'diastolic', 'heart_rate']
               }, "blood-pressure-%s-%%s.png"),
-            ({'mainfile': FILECONF('physical', 'cycling-filename'),
+            ({'mainfile': "$SYNCED/health/garmin-cycling.csv",
               'file_type': 'cycling',
               'columns': ['Distance', 'Calories', 'Time']
               }, "cycling-%s-%%s.png"),
-            ({'mainfile': FILECONF('physical', 'running-filename'),
+            ({'mainfile': "$SYNCED/health/garmin-running.csv",
               'file_type': 'running',
               'columns': ['Distance', 'Calories', 'Time']
               }, "running-%s-%%s.png"),
@@ -406,22 +391,6 @@ def update_physical_charts(charts_dir,
             #   'file_type':,
             #   'columns':
             #   }, ),
-            # ({'mainfile':,
-            #   'file_type':,
-            #   'columns':
-            #   }, ),
-            # ({'mainfile':,
-            #   'file_type':,
-            #   'columns':
-            #   }, ),
-            # ({'mainfile':,
-            #   'file_type':,
-            #   'columns':
-            #   }, ),
-            # ({'mainfile':,
-            #   'file_type':,
-            #   'columns':
-            #   }, )
     ]:
         qsutils.qschart.qscharts(begin=begin_date, end=end_date,
                                  match=None,
@@ -456,15 +425,13 @@ def update_physical_charts(charts_dir,
     #                        chart_sizes)
 
 def write_dashboard_page(charts_dir,
-                         channel_data,
+                         channels_data,
                          details_background_color="gold", inline=True):
     """Construct and save the dashboard page."""
-    if not charts_dir:
-        charts_dir = FILECONF('general', 'charts')
     with open(os.path.join(charts_dir, "index.html"), 'w') as page_stream:
         page_stream.write(
             qsutils.html_pages.page_text(
-                construct_dashboard_page(channel_data),
+                construct_dashboard_page(charts_dir, channels_data),
                 ((qsutils.html_pages.tagged_file_contents("style", os.path.join(source_dir, "dashboard.css"))
                  + qsutils.qsutils.table_support_css(details_background_color))
                  if inline
@@ -479,6 +446,7 @@ def write_dashboard_page(charts_dir,
                         os.path.join(charts_dir, filename))
 
 def make_dashboard_images(charts_dir,
+                          channels_data,
                           chart_sizes,
                           background_colour,
                           begin_date=None, end_date=None,
@@ -497,11 +465,13 @@ def make_dashboard_images(charts_dir,
                                if begin_date
                                else periods).items():
         begin = np.datetime64(datetime.datetime.combine(begin, datetime.time())) # .timestamp()
-        update_finances_charts(charts_dir, chart_sizes, begin, end_date, date_suffix, verbose)
-        update_physical_charts(charts_dir, chart_sizes, begin, end_date, date_suffix, vlines=None)
+        update_finances_charts(charts_dir, channels_data, chart_sizes,
+                               begin, end_date, date_suffix, verbose)
+        update_physical_charts(charts_dir, channels_data, chart_sizes,
+                               begin, end_date, date_suffix, vlines=None)
 
 def make_dashboard_page(charts_dir=None,
-                        channel_data=None,
+                        channels_data=None,
                         chart_sizes={'small': {'figsize': (5,4)},
                                      'large': {'figsize': (11,8)}},
                         begin_date=None, end_date=None,
@@ -514,12 +484,13 @@ def make_dashboard_page(charts_dir=None,
 
     text_colour, background_colour, shading = dashboard_page_colours()
     make_dashboard_images(charts_dir,
+                          channels_data,
                           chart_sizes,
                           background_colour,
                           begin_date, end_date,
                           verbose)
     write_dashboard_page(charts_dir,
-                         channel_data,
+                         channels_data,
                          details_background_color=shading)
 
 def main():

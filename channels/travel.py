@@ -4,8 +4,8 @@ import channels.panels as panels
 
 class TravelPanel(panels.DashboardPanel):
 
-    def __init__(self, facto):
-        self.facto = facto
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args)
         self.updated = None
 
     def fetch_travel(begin_date, end_date):

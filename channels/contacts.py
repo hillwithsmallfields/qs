@@ -33,8 +33,8 @@ def counts_table(caption, group):
 
 class ContactsPanel(panels.DashboardPanel):
 
-    def __init__(self, facto):
-        self.facto = facto
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args)
         self.contacts_analysis = None
         self.people_by_id = None
         self.people_by_name = None

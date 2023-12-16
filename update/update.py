@@ -268,8 +268,8 @@ def updates(charts,
 
     dashboard.dashboard.make_dashboard_page(
         charts_dir=os.path.expanduser("~/private_html/dashboard"),
-        channel_data={
-            handler.name(): handler.html()
+        channels_data={
+            handler.name(): handler
             for handler in handlers
         },
         chart_sizes=CHART_SIZES)

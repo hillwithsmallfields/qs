@@ -23,8 +23,8 @@ from expressionive.expridioms import switchable_panel
 
 class PhysicalPanel(panels.DashboardPanel):
 
-    def __init__(self, facto):
-        self.facto = facto
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args)
         self.updated = None
 
     def name(self):

@@ -174,7 +174,8 @@ def normalize_and_filter_opening_rows(raw):
 
 class FinancesPanel(panels.DashboardPanel):
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args)
         self.updated = None
         self.accumulated_bank_statements_filename = "$SYNCED/finances/handelsbanken/handelsbanken-full-new.csv"
         self.monzo_downloads_filename = "~/Downloads/Monzo Transactions - Monzo Transactions.csv"
@@ -233,6 +234,22 @@ class FinancesPanel(panels.DashboardPanel):
             financial.list_completions.list_completions()
 
         return self
+
+    def prepare_page_images(self, **kwargs):
+        """Prepare any images used by the output of the `html` method."""
+        qsutils.qschart.qscharts(os.path.join(charts_dir, "by-class.csv"),
+                                 'finances',
+                                 CATEGORIES_OF_INTEREST,
+                                 begin_date, end_date, None, False,
+                                 os.path.join(charts_dir, "by-class-%s-%%s.png" % date_suffix),
+                                 chart_sizes)
+        # TODO: split main file into running balances for each account (tracking as needed), take the end of each month for each account, and put them all in a file to display here (and get that shown in the resulting page)
+        # qsutils.qschart.qscharts(FILECONF('finance', 'account-balances'), 'finances',
+        #                        [FILECONF('finance', 'main-current-account'),
+        #                         FILECONF('finance', 'main-savings-account')],
+        #                        begin, end, None, False,
+        #                        os.path.join(charts_dir, "balances-%s-%%s.png" % date_suffix),
+        #                        chart_sizes)
 
     def html(self):
         """Returns various listings of my financial transactions."""
