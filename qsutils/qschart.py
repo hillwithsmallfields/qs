@@ -14,6 +14,8 @@ from typing import List
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from dobishem.begin_end import BeginAndEndMessages
+
 import qsutils.file_types
 import qsutils.qsutils
 
@@ -103,7 +105,7 @@ def normalize_column_name(unit_name):
 def parsetime(timestr):
     return datetime.datetime.strptime(timestr, "%Y-%m-%d") if isinstance(timestr, str) else timestr
 
-def qscharts(mainfile, file_type,
+def qscharts(data:pd.DataFrame, file_type,
              columns, begin, end, match, by_day_of_week,
              outfile_template,
              plot_param_sets,
@@ -118,13 +120,14 @@ def qscharts(mainfile, file_type,
         {'small': {'figsize': (5,4)},
          'large': {'figsize': (11,8)}}
     """
-    print("charting", mainfile)
-    for name_suffix, params in plot_param_sets.items():
-        print("charting into", outfile_template % name_suffix)
-        if not qschart(mainfile, file_type,
-                       columns, begin, end, match, by_day_of_week,
-                       outfile_template % name_suffix, params, bar=bar, vlines=vlines):
-            print("TODO: output instructions for fetching missing data for", mainfile, file_type, name_suffix)
+    with BeginAndEndMessages(f"charting {file_type}"):
+        data.set_index("Date")
+        for name_suffix, params in plot_param_sets.items():
+            print("charting into", outfile_template % name_suffix)
+            if not qschart(data, timestamp, file_type,
+                           columns, begin, end, match, by_day_of_week,
+                           outfile_template % name_suffix, params, bar=bar, vlines=vlines):
+                print("TODO: output instructions for fetching missing data for", mainfile, file_type, name_suffix)
 
 def plot_column_set(axs, data, columns, prefix, bar=False):
     for column in columns:
@@ -144,7 +147,8 @@ def plot_column_set(axs, data, columns, prefix, bar=False):
             # TODO: it's not including the prefix (which I'm using for the day of the week)
             plt.ylabel(prefix + column_label(column))
 
-def qschart(mainfile: str,
+def qschart(data: pd.DataFrame,
+            timestamp,
             file_type: str, # one of 'weight', 'calories', 'finances', 'sleep'
             columns: List[str],
             begin: datetime.datetime, end: datetime.datetime,
@@ -165,13 +169,8 @@ def qschart(mainfile: str,
     # TODO: rolling averages, as in http://jonathansoma.com/lede/foundations-2018/pandas/rolling-averages-in-pandas/
     # TODO: filter by day of week
 
-    if not os.path.exists(mainfile):
-        return False
-
-    if os.path.exists(outfile) and os.path.getmtime(outfile) > os.path.getmtime(mainfile):
+    if timestamp and os.path.exists(outfile) and os.path.getmtime(outfile) >= timestampe:
         return True
-
-    data = pd.read_csv(mainfile, parse_dates=['Date'])
 
     # do this before trimming to 'begin' and 'end', as this may create
     # the date column they need:
@@ -187,8 +186,6 @@ def qschart(mainfile: str,
 
     if data.empty:
         return False
-
-    data.set_index("Date")
 
     min_date = data['Date'].min()
 

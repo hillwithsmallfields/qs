@@ -320,7 +320,9 @@ def update_finances_charts(charts_dir,
 
     """Update the financial charts."""
 
-    qsutils.qschart.qscharts(os.path.join(charts_dir, "by-class.csv"),
+
+    qsutils.qschart.qscharts(data,
+                             None,
                              'finances',
                              CATEGORIES_OF_INTEREST,
                              begin_date, end_date, None, False,

@@ -243,7 +243,7 @@ def updates(charts,
     #                 ]]
 
     handlers = [
-        panel_class()
+        panel_class(charts)
         for panel_class in [
                 channels.finances.FinancesPanel,
                 # channels.physical.PhysicalPanel,

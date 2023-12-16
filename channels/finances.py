@@ -237,7 +237,10 @@ class FinancesPanel(panels.DashboardPanel):
 
     def prepare_page_images(self, **kwargs):
         """Prepare any images used by the output of the `html` method."""
-        qsutils.qschart.qscharts(os.path.join(charts_dir, "by-class.csv"),
+        data = pd.read_csv(os.path.join(charts_dir, "by-class.csv"))
+        data['Date'] = pd.to_datetime(data['Date'])
+        qsutils.qschart.qscharts(data,
+                                 None,
                                  'finances',
                                  CATEGORIES_OF_INTEREST,
                                  begin_date, end_date, None, False,
