@@ -14,7 +14,7 @@ from typing import List
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from dobishem.begin_end import BeginAndEndMessages
+from dobishem.nested_messages import BeginAndEndMessages
 
 import qsutils.file_types
 import qsutils.qsutils
@@ -106,6 +106,7 @@ def parsetime(timestr):
     return datetime.datetime.strptime(timestr, "%Y-%m-%d") if isinstance(timestr, str) else timestr
 
 def qscharts(data:pd.DataFrame, file_type,
+             timestamp,
              columns, begin, end, match, by_day_of_week,
              outfile_template,
              plot_param_sets,
@@ -165,6 +166,12 @@ def qschart(data: pd.DataFrame,
 
     If it returns False, the data probably needs to be fetched.
     """
+
+    print("qschart beginning at", begin, type(begin))
+    print("qschart ending at", end, type(end))
+    date_col = data['Date'].tolist()
+    types = {type(cell) for cell in date_col}
+    print("date types are", types)
 
     # TODO: rolling averages, as in http://jonathansoma.com/lede/foundations-2018/pandas/rolling-averages-in-pandas/
     # TODO: filter by day of week

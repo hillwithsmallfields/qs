@@ -1,6 +1,7 @@
 import datetime
 
 import channels.panels as panels
+from dobishem.nested_messages import BeginAndEndMessages
 
 class TravelPanel(panels.DashboardPanel):
 

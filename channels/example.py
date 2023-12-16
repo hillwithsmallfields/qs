@@ -1,13 +1,13 @@
 """Example panel to copy and base new ones on."""
 
-import panels
+import channels.panels as panels
 from expressionive.expressionive import htmltags as T
 from expressionive.expridioms import wrap_box, labelled_section, SectionalPage
 
-class ExamplePanel(panel.DashboardPanel):
+class ExamplePanel(panels.DashboardPanel):
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def fetch(self, **kwargs):
         """Fetch data from external sources."""
@@ -16,6 +16,8 @@ class ExamplePanel(panel.DashboardPanel):
     def update(self, **kwargs):
         """Update the cached data."""
         self.examples = make_examples()
+        self.updated = datetime.datetime.now()
+        return self
 
     def prepare_page_images(self, **kwargs):
         """Prepare any images used by the output of the `html` method."""
@@ -31,7 +33,6 @@ class ExamplePanel(panel.DashboardPanel):
             T.div[T.h3["Recent examples"],
                   recent_examples_table(self.examples, 14)],
             )]
-
 
     def name(self):
         return "example"

@@ -16,6 +16,7 @@ class DashboardPanel(ABC):
 
     def __init__(self, charts_dir):
         self.charts_dir = charts_dir
+        self.updated = None
 
     def fetch(self, **kwargs):
         """Fetch data from external sources."""
@@ -23,7 +24,8 @@ class DashboardPanel(ABC):
 
     def update(self, **kwargs):
         """Update the cached data."""
-        pass
+        self.updated = datetime.datetime.now()
+        return self
 
     def prepare_page_images(self, **kwargs):
         """Prepare any images used by the output of the `html` method."""

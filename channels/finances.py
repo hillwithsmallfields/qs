@@ -175,7 +175,7 @@ def normalize_and_filter_opening_rows(raw):
 class FinancesPanel(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args)
+        super().__init__(*args, **kwargs)
         self.updated = None
         self.accumulated_bank_statements_filename = "$SYNCED/finances/handelsbanken/handelsbanken-full-new.csv"
         self.monzo_downloads_filename = "~/Downloads/Monzo Transactions - Monzo Transactions.csv"
@@ -185,6 +185,7 @@ class FinancesPanel(panels.DashboardPanel):
         self.completions_filename = "$SYNCED/var/finances-completions-new.el"
         self.dashboard_dir = os.path.expanduser("~/private_html/dashboard/")
         self.transactions = None
+        self.by_categories = None
 
     def name(self):
         return 'finances'
@@ -233,26 +234,33 @@ class FinancesPanel(panels.DashboardPanel):
                 self.completions_filename)):
             financial.list_completions.list_completions()
 
+        # eventually this will be produced inline (and cached in this file);
+        # it used to come from the old Lisp part of the system
+        filename = os.path.join(self.charts_dir, "by-class.csv")
+        if os.path.exists(filename):
+            self.by_categories = pd.read_csv(filename)
+            self.by_categories['Date'] = pd.to_datetime(self.by_categories['Date'])
+
         return self
 
-    def prepare_page_images(self, **kwargs):
+    def prepare_page_images(self, begin_date, end_date, chart_sizes, date_suffix):
         """Prepare any images used by the output of the `html` method."""
-        data = pd.read_csv(os.path.join(charts_dir, "by-class.csv"))
-        data['Date'] = pd.to_datetime(data['Date'])
-        qsutils.qschart.qscharts(data,
-                                 None,
-                                 'finances',
-                                 CATEGORIES_OF_INTEREST,
-                                 begin_date, end_date, None, False,
-                                 os.path.join(charts_dir, "by-class-%s-%%s.png" % date_suffix),
-                                 chart_sizes)
-        # TODO: split main file into running balances for each account (tracking as needed), take the end of each month for each account, and put them all in a file to display here (and get that shown in the resulting page)
-        # qsutils.qschart.qscharts(FILECONF('finance', 'account-balances'), 'finances',
-        #                        [FILECONF('finance', 'main-current-account'),
-        #                         FILECONF('finance', 'main-savings-account')],
-        #                        begin, end, None, False,
-        #                        os.path.join(charts_dir, "balances-%s-%%s.png" % date_suffix),
-        #                        chart_sizes)
+        if self.by_categories:
+            qsutils.qschart.qscharts(data=self.by_categories,
+                                     file_type='finances',
+                                     timestamp=None,
+                                     columns=CATEGORIES_OF_INTEREST,
+                                     begin=begin_date, end=end_date, match=None, by_day_of_week=False,
+                                     outfile_template=os.path.join(
+                                         self.charts_dir, "by-class-%s-%%s.png" % date_suffix),
+                                     plot_param_sets=chart_sizes)
+            # TODO: split main file into running balances for each account (tracking as needed), take the end of each month for each account, and put them all in a file to display here (and get that shown in the resulting page)
+            # qsutils.qschart.qscharts(FILECONF('finance', 'account-balances'), 'finances',
+            #                        [FILECONF('finance', 'main-current-account'),
+            #                         FILECONF('finance', 'main-savings-account')],
+            #                        begin, end, None, False,
+            #                        os.path.join(charts_dir, "balances-%s-%%s.png" % date_suffix),
+            #                        chart_sizes)
 
     def html(self):
         """Returns various listings of my financial transactions."""

@@ -20,7 +20,7 @@ def ensure_in_path(directory):
 import dobishem.data as data
 import dobishem.dates as dates
 import dobishem.storage as storage
-from dobishem.begin_end import BeginAndEndMessages
+from dobishem.nested_messages import BeginAndEndMessages
 
 # other parts of this project group:
 ensure_in_path(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
@@ -36,6 +36,7 @@ import channels.agenda
 import channels.contacts
 import channels.finances
 import channels.physical
+import channels.weight
 import channels.startpage
 import channels.travel
 import channels.weather
@@ -123,7 +124,7 @@ def fetch_mfp(facto, _begin_date, _end_date, verbose):
 
     """Fetch recent data from MyFitnessPal.com."""
 
-    with BeginAndEndMessages("fetching data from myfitnesspal.com", verbose):
+    with BeginAndEndMessages("fetching data from myfitnesspal.com", verbose=verbose):
         return physical.mfp_reader.MFP(facto.file_config('physical', 'mfp-filename')).update(verbose)
 
 def fetch_oura(facto, begin_date, end_date, verbose):
@@ -136,7 +137,7 @@ def fetch_oura(facto, begin_date, end_date, verbose):
     existing_rows = len(data)
     if begin_date is None:
         begin_date = qsutils.qsutils.earliest_unfetched(data)
-    with BeginAndEndMessages("fetching data from oura", verbose):
+    with BeginAndEndMessages("fetching data from oura", verbose=verbose):
         physical.oura_reader.oura_fetch(data, begin_date, end_date)
     if len(data) > existing_rows:
         backup.backup(oura_filename, facto.file_config('backups', 'archive'), "oura-to-%s.csv")
@@ -172,7 +173,7 @@ def fetch_running(facto, begin_date, end_date, verbose):
 
     # There may be some movement on this: https://support.garmin.com/en-US/?faq=W1TvTPW8JZ6LfJSfK512Q8
 
-    with BeginAndEndMessages("updating running data", verbose):
+    with BeginAndEndMessages("updating running data", verbose=verbose):
         return merge_incoming_csv('running-filename', 'garmin-incoming-pattern',
                                   begin_date, end_date,
                                   match_key='Activity Type', match_value='Running',
@@ -185,7 +186,7 @@ def fetch_cycling(facto, begin_date, end_date, verbose):
     individuals, so for now I'm saving the file manually from their web page --- automatic button pusher
     possibly to follow."""
 
-    with BeginAndEndMessages("updating cycling data", verbose):
+    with BeginAndEndMessages("updating cycling data", verbose=verbose):
         merge_incoming_csv('cycling-filename', 'garmin-incoming-pattern',
                            begin_date, end_date,
                            match_key='Activity Type', match_value='Cycling',
@@ -195,7 +196,7 @@ def fetch_cycling(facto, begin_date, end_date, verbose):
 def fetch_data(facto, filename, begin_date, end_date, verbose):
     filename = facto.file_config(*location_name)
     if force or last_update_at_least_about_a_day_ago(filename):
-        with BeginAndEndMessages("updating " + filename, verbose):
+        with BeginAndEndMessages("updating " + filename, verbose=verbose):
             backup.backup(filename, facto.file_config('backups', 'archive'), archive_template)
             return fetcher(facto, begin_date, end_date, verbose)
     else:
@@ -225,7 +226,7 @@ def updates(charts,
         end = dates.yesterday()
 
     # if not no_externals:
-    #     with BeginAndEndMessages("fetching external data", verbose):
+    #     with BeginAndEndMessages("fetching external data", verbose=verbose):
     #         weather = channels.weather.Weather(
     #             facto, begin_date, end_date, verbose
     #         ).fetch()
@@ -246,6 +247,7 @@ def updates(charts,
         panel_class(charts)
         for panel_class in [
                 channels.finances.FinancesPanel,
+                channels.weight.WeightPanel,
                 # channels.physical.PhysicalPanel,
                 # channels.contacts.ContactsPanel,
                 # channels.agenda.AgendaPanel,
@@ -255,24 +257,26 @@ def updates(charts,
         ]
     ]
 
-    if not no_externals:
-        with BeginAndEndMessages("fetching external data", verbose):
+    with BeginAndEndMessages("updating data and refreshing dashboard", verbose=verbose):
+        if not no_externals:
+            with BeginAndEndMessages("fetching external data", verbose=verbose):
+                for handler in handlers:
+                    with BeginAndEndMessages(f"fetching {handler.name()} data"):
+                        handler.fetch()
+
+        with BeginAndEndMessages("updating saved data", verbose=verbose):
             for handler in handlers:
-                with BeginAndEndMessages(f"fetching {handler.name()} data"):
-                    handler.fetch()
+                with BeginAndEndMessages(f"updating {handler.name()} data"):
+                    handler.update()
 
-    with BeginAndEndMessages("updating saved data", verbose):
-        for handler in handlers:
-            with BeginAndEndMessages(f"updating {handler.name()} data"):
-                handler.update()
-
-    dashboard.dashboard.make_dashboard_page(
-        charts_dir=os.path.expanduser("~/private_html/dashboard"),
-        channels_data={
-            handler.name(): handler
-            for handler in handlers
-        },
-        chart_sizes=CHART_SIZES)
+        with BeginAndEndMessages("refreshing dashboard", verbose=verbose):
+            dashboard.dashboard.make_dashboard_page(
+                charts_dir=os.path.expanduser("~/private_html/dashboard"),
+                channels_data={
+                    handler.name(): handler
+                    for handler in handlers
+                },
+                chart_sizes=CHART_SIZES)
 
 def get_args():
     parser = argparse.ArgumentParser()

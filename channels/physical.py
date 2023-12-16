@@ -34,15 +34,15 @@ class PhysicalPanel(panels.DashboardPanel):
 
         """Merge incoming health-related data from various files, into one central file."""
 
-        physical = self.facto.file_config('physical', 'physical-filename')
+        physical = os.path.expandvars("$SYNCED/health/physical.csv")
         phys_scratch = "/tmp/physical-tmp.csv"
 
-        physical_files = [self.facto.file_config('physical', 'weight-filename')
+        physical_files = [os.path.expandvars("$SYNCED/health/weight.csv")
                          # TODO: merge the other physical files
                         ]
 
         by_date = qsutils.qsmerge.qsmerge(physical,
-                                physical_files, None, phys_scratch)
+                                          physical_files, None, phys_scratch)
 
         if qsutils.check_merged_row_dates.check_merged_row_dates(phys_scratch, physical, *physical_files):
             backup.backup(physical, self.facto.file_config('backups', 'archive'), "physical-to-%s.csv")

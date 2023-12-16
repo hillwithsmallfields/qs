@@ -15,6 +15,7 @@ import numpy as np
 import dobishem.dates
 from expressionive.expressionive import htmltags as T
 from expressionive.expridioms import wrap_box, labelled_section, SectionalPage
+import expressionive.exprpages as exprpages
 
 def ensure_in_path(directory):
     if directory not in sys.path:
@@ -87,9 +88,6 @@ def dashboard_page_colours():
             break
 
     return foreground, background, shading
-
-def weight_section():
-    return linked_image("weight-stone", "weight")
 
 def peak_flow_section():
     # TODO: get peak flow data
@@ -281,19 +279,20 @@ def construct_dashboard_page(charts_dir, channels_data):
     # TODO: move into panels structure
     # TODO: move into panels structure
     page.add_section("Health", wrap_box(
-        labelled_section("Weight", weight_section()),
-        labelled_section("Calories", calories_section()),
-        labelled_section("Meals", meals_section()),
-        labelled_section("By day of week", calories_per_day_of_week()),
-        labelled_section("Food groups", foods_section()),
-        labelled_section("Running", running_section()),
-        labelled_section("Cycling", cycling_section()),
-        labelled_section("Blood pressure", blood_pressure_section()),
-        labelled_section("Peak flow", peak_flow_section()),
-        labelled_section("Sleep split", sleep_split_section()),
-        labelled_section("Sleep times", sleep_times_section()),
-        labelled_section("Sleep correlation", sleep_correlation_section()),
-        labelled_section("Temperature", temperature_section())))
+        channels_data['weight'].html()
+        # labelled_section("Calories", calories_section()),
+        # labelled_section("Meals", meals_section()),
+        # labelled_section("By day of week", calories_per_day_of_week()),
+        # labelled_section("Food groups", foods_section()),
+        # labelled_section("Running", running_section()),
+        # labelled_section("Cycling", cycling_section()),
+        # labelled_section("Blood pressure", blood_pressure_section()),
+        # labelled_section("Peak flow", peak_flow_section()),
+        # labelled_section("Sleep split", sleep_split_section()),
+        # labelled_section("Sleep times", sleep_times_section()),
+        # labelled_section("Sleep correlation", sleep_correlation_section()),
+        # labelled_section("Temperature", temperature_section())
+    ))
     page.add_section("Spending", channels_data['finances'].html())
     page.add_section("People", channels_data['contacts'].html())
     page.add_section("Agenda", channels_data['agenda'].html())
@@ -308,104 +307,80 @@ def construct_dashboard_page(charts_dir, channels_data):
                        perishables_section(),
                        T.h2["Parcels expected"],
                        channels_data['parcels'].html()],
-                 channel_data['timetable'].html(),
-                 channel_data['weather'].html()),
+                 channels_data['timetable'].html(),
+                 channels_data['weather'].html()),
         page.sections()]]
 
-def update_finances_charts(charts_dir,
-                           channels_data,
-                           chart_sizes,
-                           begin_date, end_date, date_suffix,
-                           verbose):
+# def update_physical_charts(charts_dir,
+#                            channels_data,
+#                            chart_sizes,
+#                            begin_date, end_date,
+#                            date_suffix,
+#                            vlines=None):
 
-    """Update the financial charts."""
+#     """Update the physical (health) charts."""
 
+#     physical = "$SYNCED/health/physical.csv"
+#     mfp_filename = "$SYNCED/health/mfp-accum.csv"
 
-    qsutils.qschart.qscharts(data,
-                             None,
-                             'finances',
-                             CATEGORIES_OF_INTEREST,
-                             begin_date, end_date, None, False,
-                             os.path.join(charts_dir, "by-class-%s-%%s.png" % date_suffix),
-                             chart_sizes)
-    # TODO: split main file into running balances for each account (tracking as needed), take the end of each month for each account, and put them all in a file to display here (and get that shown in the resulting page)
-    # qsutils.qschart.qscharts(FILECONF('finance', 'account-balances'), 'finances',
-    #                        [FILECONF('finance', 'main-current-account'),
-    #                         FILECONF('finance', 'main-savings-account')],
-    #                        begin, end, None, False,
-    #                        os.path.join(charts_dir, "balances-%s-%%s.png" % date_suffix),
-    #                        chart_sizes)
+#     split_by_DoW = False
 
-def update_physical_charts(charts_dir,
-                           channels_data,
-                           chart_sizes,
-                           begin_date, end_date,
-                           date_suffix,
-                           vlines=None):
+#     # TODO: rolling averages
+#     for units in ('stone', 'kilogram', 'pound'):
+#         qsutils.qschart.qscharts(physical,
+#                                  'weight',
+#                                  [units],
+#                                  begin_date, end_date, None, split_by_DoW,
+#                                  os.path.join(charts_dir, "weight-%s-%s-%%s.png" % (units, date_suffix)),
+#                                  chart_sizes,
+#                                  vlines=vlines)
 
-    """Update the physical (health) charts."""
+#     for chartdef, template in [
+#             ({'mainfile': mfp_filename,
+#               'file_type': 'calories',
+#               'columns': ['calories']},
+#              "total_calories-%s-%%s.png"),
+#             ({'mainfile': mfp_filename,
+#               'file_type': 'meals',
+#               'columns': ['breakfast', 'lunch', 'dinner', 'snacks']},
+#              "meal_calories-%s-%%s.png"),
+#             ({'mainfile': mfp_filename,
+#               'file_type': 'food_groups',
+#               'columns': ['carbohydrates', 'fat', 'protein', 'sugar']
+#               }, "origin_calories-%s-%%s.png"),
+#             # ({'mainfile': FILECONF('physical', 'oura-filename'),
+#             #   'file_type': 'sleep',
+#             #   'columns': ['Latency', 'Rem', 'Deep', 'Total']
+#             #   }, "sleep-split-%s-%%s.png"),
+#             ({'mainfile': "$SYNCED/health/blood-pressure.csv",
+#               'file_type': 'blood_pressure',
+#               'columns': ['systolic', 'diastolic', 'heart_rate']
+#               }, "blood-pressure-%s-%%s.png"),
+#             ({'mainfile': "$SYNCED/health/garmin-cycling.csv",
+#               'file_type': 'cycling',
+#               'columns': ['Distance', 'Calories', 'Time']
+#               }, "cycling-%s-%%s.png"),
+#             ({'mainfile': "$SYNCED/health/garmin-running.csv",
+#               'file_type': 'running',
+#               'columns': ['Distance', 'Calories', 'Time']
+#               }, "running-%s-%%s.png"),
+#             # ({'mainfile':,
+#             #   'file_type':,
+#             #   'columns':
+#             #   }, ),
+#     ]:
+#         qsutils.qschart.qscharts(begin=begin_date, end=end_date,
+#                                  match=None,
+#                                  by_day_of_week=split_by_DoW,
+#                                  plot_param_sets=chart_sizes,
+#                                  outfile_template=os.path.join(charts_dir,
+#                                                                template % date_suffix),
+#                                  bar=False,
+#                                  **chartdef)
 
-    physical = "$SYNCED/health/physical.csv"
-    mfp_filename = "$SYNCED/health/mfp-accum.csv"
-
-    split_by_DoW = False
-
-    # TODO: rolling averages
-    for units in ('stone', 'kilogram', 'pound'):
-        qsutils.qschart.qscharts(physical,
-                                 'weight',
-                                 [units],
-                                 begin_date, end_date, None, split_by_DoW,
-                                 os.path.join(charts_dir, "weight-%s-%s-%%s.png" % (units, date_suffix)),
-                                 chart_sizes,
-                                 vlines=vlines)
-
-    for chartdef, template in [
-            ({'mainfile': mfp_filename,
-              'file_type': 'calories',
-              'columns': ['calories']},
-             "total_calories-%s-%%s.png"),
-            ({'mainfile': mfp_filename,
-              'file_type': 'meals',
-              'columns': ['breakfast', 'lunch', 'dinner', 'snacks']},
-             "meal_calories-%s-%%s.png"),
-            ({'mainfile': mfp_filename,
-              'file_type': 'food_groups',
-              'columns': ['carbohydrates', 'fat', 'protein', 'sugar']
-              }, "origin_calories-%s-%%s.png"),
-            # ({'mainfile': FILECONF('physical', 'oura-filename'),
-            #   'file_type': 'sleep',
-            #   'columns': ['Latency', 'Rem', 'Deep', 'Total']
-            #   }, "sleep-split-%s-%%s.png"),
-            ({'mainfile': "$SYNCED/health/blood-pressure.csv",
-              'file_type': 'blood_pressure',
-              'columns': ['systolic', 'diastolic', 'heart_rate']
-              }, "blood-pressure-%s-%%s.png"),
-            ({'mainfile': "$SYNCED/health/garmin-cycling.csv",
-              'file_type': 'cycling',
-              'columns': ['Distance', 'Calories', 'Time']
-              }, "cycling-%s-%%s.png"),
-            ({'mainfile': "$SYNCED/health/garmin-running.csv",
-              'file_type': 'running',
-              'columns': ['Distance', 'Calories', 'Time']
-              }, "running-%s-%%s.png"),
-            # ({'mainfile':,
-            #   'file_type':,
-            #   'columns':
-            #   }, ),
-    ]:
-        qsutils.qschart.qscharts(begin=begin_date, end=end_date,
-                                 match=None,
-                                 by_day_of_week=split_by_DoW,
-                                 plot_param_sets=chart_sizes,
-                                 outfile_template=os.path.join(charts_dir,
-                                                               template % date_suffix),
-                                 bar=False,
-                                 **chartdef)
-
-    sleep_chart_params = {suffix: chart.copy() for suffix, chart in chart_sizes.items()}
-    for scp in sleep_chart_params.values():
-        scp['subplot_kw'] = {'ylim': (0, 24.0)}
+#     sleep_chart_params = {suffix: chart.copy() for suffix, chart in chart_sizes.items()}
+#     for scp in sleep_chart_params.values():
+#         scp['subplot_kw'] = {'ylim': (0, 24.0)}
     # qsutils.qschart.qscharts(FILECONF('physical',
     #                                   'oura-filename'
     #                                   ), 'sleep',
@@ -432,13 +407,15 @@ def write_dashboard_page(charts_dir,
     """Construct and save the dashboard page."""
     with open(os.path.join(charts_dir, "index.html"), 'w') as page_stream:
         page_stream.write(
-            qsutils.html_pages.page_text(
+            exprpages.page_text(
                 construct_dashboard_page(charts_dir, channels_data),
-                ((qsutils.html_pages.tagged_file_contents("style", os.path.join(source_dir, "dashboard.css"))
+                ((exprpages.tagged_file_contents(
+                    "style", os.path.join(source_dir, "dashboard.css"))
                  + qsutils.qsutils.table_support_css(details_background_color))
                  if inline
                  else ""),
-                (qsutils.html_pages.tagged_file_contents("script", os.path.join(source_dir, "dashboard.js"))
+                (exprpages.tagged_file_contents(
+                    "script", os.path.join(source_dir, "dashboard.js"))
                  if inline
                  else "")))
     if not inline:
@@ -454,7 +431,8 @@ def make_dashboard_images(charts_dir,
                           begin_date=None, end_date=None,
                           verbose=False):
     """Make all the images for the dashboard."""
-    today = datetime.date.today()
+    now = datetime.datetime.now()
+    today = now.date()
     for param_set in chart_sizes.values():
         param_set['facecolor'] = background_colour
 
@@ -463,14 +441,15 @@ def make_dashboard_images(charts_dir,
                'past_month': dobishem.dates.back_from(today, None, 1, None),
                'past_quarter': dobishem.dates.back_from(today, None, 3, None),
                'past_year': dobishem.dates.back_from(today, 1, None, None)}
-    for date_suffix, begin in ({'custom': begin_date}
-                               if begin_date
-                               else periods).items():
-        begin = np.datetime64(datetime.datetime.combine(begin, datetime.time())) # .timestamp()
-        update_finances_charts(charts_dir, channels_data, chart_sizes,
-                               begin, end_date, date_suffix, verbose)
-        update_physical_charts(charts_dir, channels_data, chart_sizes,
-                               begin, end_date, date_suffix, vlines=None)
+    for channel in channels_data.values():
+        for date_suffix, begin in ({'custom': begin_date}
+                                   if begin_date
+                                   else periods).items():
+            channel.prepare_page_images(
+                date_suffix=date_suffix,
+                begin_date=np.datetime64(datetime.datetime.combine(begin, now.time())),
+                end_date=np.datetime64(now),
+                chart_sizes=chart_sizes)
 
 def make_dashboard_page(charts_dir=None,
                         channels_data=None,
