@@ -16,14 +16,14 @@ my_projects = os.path.dirname(os.path.dirname(source_dir))
 
 ensure_in_path(os.path.dirname(source_dir))
 
-import qsutils.qsutils            # https://github.com/hillwithsmallfields/qs/blob/master/utils/qsutils.py
+from expressionive.expressionive import htmltags as T
 from expressionive.expridioms import switchable_panel
 import dashboard.dashboard
+import dobishem.dates
 
 ensure_in_path(os.path.join(my_projects, "noticeboard"))
 
 import announce                 # https://github.com/hillwithsmallfields/noticeboard/blob/master/announce.py
-import lifehacking_config       # https://github.com/hillwithsmallfields/noticeboard/blob/master/lifehacking_config.py
 
 CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
 
@@ -31,22 +31,22 @@ class TimetablePanel(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
-        self.day_after_tomorrow_name = qsutils.qsutils.forward_from(datetime.date.today(), None, None, 2).strftime("%A")
+        self.day_after_tomorrow_name = dobishem.dates.forward_from(datetime.date.today(), None, None, 2).strftime("%A")
         self.day_names = [
             'today',
             'tomorrow',
             self.day_after_tomorrow_name]
         self.days = [
             TimetableDay().html(with_form=True),
-            TimetableDay(qsutils.qsutils.forward_from(datetime.date.today(), None, None, 1)).html(),
-            TimetableDay(qsutils.qsutils.forward_from(datetime.date.today(), None, None, 2)).html(),
+            TimetableDay(dobishem.dates.forward_from(datetime.date.today(), None, None, 1)).html(),
+            TimetableDay(dobishem.dates.forward_from(datetime.date.today(), None, None, 2)).html(),
         ]
         pass
 
     def name(self):
         return 'timetable'
 
-    def update(self, read_external, verbose):
+    def update(self):
         return self
 
     def html(self):
@@ -73,15 +73,14 @@ class TimetableDay:
     def __init__(self, day=None):
         self.day = day or datetime.date.today()
         self.day_of_week = self.day.strftime("%A")
-        with open(lifehacking_config.file_config('weather', 'weather-filename')) as weatherstream:
+        with open(os.path.expandvars("$SYNCED/var/weather.csv")) as weatherstream:
             self.weather = {row['time']: row for row in csv.DictReader(weatherstream)}
+        timetables_dir = os.path.expandvars("$SYNCED/timetables")
         self.slots = announce.get_day_announcer(
-            os.path.join(lifehacking_config.file_config('timetables', 'timetables-dir'),
-                         lifehacking_config.config('timetables', 'default-timetable')),
+            os.path.join(timetables_dir, "timetable.csv"),
             [day_full_file
              for day_full_file in [
-                     os.path.join(lifehacking_config.file_config('timetables', 'timetables-dir'),
-                                  day_name)
+                     os.path.join(timetables_dir, day_name)
                      for day_name in (
                              "%s.csv" % self.day_of_week,
                              "%s-%s.csv" % (self.day_of_week,

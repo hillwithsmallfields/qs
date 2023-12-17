@@ -250,12 +250,12 @@ def updates(charts,
                 channels.finances.FinancesPanel,
                 channels.weight.WeightPanel,
                 channels.parcels.ParcelsPanel,
+                channels.timetable.TimetablePanel,
                 # channels.physical.PhysicalPanel,
                 # channels.contacts.ContactsPanel,
-                # channels.agenda.AgendaPanel,
-                # channels.timetable.TimetablePanel,
                 # channels.travel.TravelPanel,
                 # channels.weather.WeatherPanel,
+                # channels.agenda.AgendaPanel,
         ]
     ]
 
