@@ -6,6 +6,7 @@ import os
 import pyowm
 import sys
 
+import dobishem.dates
 import channels.panels as panels
 
 def ensure_in_path(directory):
@@ -20,13 +21,9 @@ my_projects = os.path.dirname(os.path.dirname(source_dir))
 ensure_in_path(os.path.dirname(source_dir))
 
 import qsutils.qsutils            # https://github.com/hillwithsmallfields/qs/blob/master/utils/qsutils.py
+from expressionive.expressionive import htmltags as T
 from expressionive.expridioms import switchable_panel
 import dashboard.dashboard
-
-ensure_in_path(os.path.join(my_projects, "makers", "untemplate"))
-
-import throw_out_your_templates_p3 as untemplate
-from throw_out_your_templates_p3 import htmltags as T
 
 ensure_in_path(os.path.join(my_projects, "noticeboard"))
 
@@ -41,51 +38,73 @@ class WeatherPanel(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
+        self.weather_table_file = os.path.expandvars("$SYNCED/var/weather.csv")
+        self.sunlight_file = os.path.expandvars("$SYNCED/var/sunlight-times.json")
+        self.forecast = None
+        self.fetched = None
 
     def name(self):
         return 'weather'
 
-    def update(self, read_external, verbose):
+    def fetch(self):
 
-        """Fetch the short-term forecast from openweathermap, saving hourly extracts from it into a CSV file, and
+        """Fetch the short-term forecast from openweathermap,
+        saving hourly extracts from it into a CSV file, and
         the sunrise and sunset data into a JSON file."""
-        if read_external:
-            owm = pyowm.owm.OWM(decouple.config('OWM_API_KEY'))
-            reg = owm.city_id_registry()
-            city = self.facto.file_config('weather', 'weather-city')
-            country = self.facto.file_config('weather', 'weather-country')
-            loc_name = "%s,%s" % (city, country)
-            list_of_locations = reg.locations_for(city, country)
-            place = list_of_locations[0]
-            weather_manager = owm.weather_manager()
-            observation = weather_manager.weather_at_place(loc_name)
-            with open(self.facto.file_config('weather', 'sunlight-times-file'), 'w') as outstream:
-                json.dump({'sunrise': datetime.datetime.fromtimestamp(observation.weather.sunrise_time()).time().isoformat(timespec='minutes'),
-                           'sunset': datetime.datetime.fromtimestamp(observation.weather.sunset_time()).time().isoformat(timespec='minutes')},
-                          outstream)
-            weather = weather_manager.one_call(lat=place.lat, lon=place.lon,units='metric')
-            self.forecast = [{
-                'time': datetime.datetime.fromtimestamp(h.ref_time).isoformat()[:16],
-                'status': h.detailed_status,
-                'precipitation': h.precipitation_probability,
-                'temperature': h.temp['temp'],
-                'uvi': h.uvi,
-                'wind-speed': h.wnd['speed'],
-                'wind-direction': h.wnd['deg']
-            } for h in weather.forecast_hourly]
 
-            with open(self.facto.file_config('weather', 'weather-filename'), 'w') as outstream:
-                writer = csv.DictWriter(outstream, ['time', 'status', 'precipitation', 'temperature', 'uvi', 'wind-speed', 'wind-direction'])
-                writer.writeheader()
-                for hour in forecast:
-                    writer.writerow(hour)
-        else:
-            with open(self.facto.file_config('weather', 'weather-filename')) as weatherstream:
-               self.forecast=list(csv.DictReader(weatherstream))
+        try:
+            owm_key = decouple.config('OWM_API_KEY')
+        except:
+            print("No OWM_API_KEY.  Define it as an envvar.")
+            return
+        try:
+            owm = pyowm.owm.OWM(owm_key)
+        except:
+            print("Could not log in to OWM")
+            return
+        reg = owm.city_id_registry()
+        city = "Cambridge"
+        country = "GB"
+        loc_name = "%s,%s" % (city, country)
+        list_of_locations = reg.locations_for(city, country)
+        place = list_of_locations[0]
+        weather_manager = owm.weather_manager()
+        observation = weather_manager.weather_at_place(loc_name)
+        print("weather observation is", observation)
+        with open(self.sunlight_file, 'w') as outstream:
+            json.dump({'sunrise': (datetime.datetime.fromtimestamp(observation.weather.sunrise_time())
+                                   .time().isoformat(timespec='minutes')),
+                       'sunset': (datetime.datetime.fromtimestamp(observation.weather.sunset_time())
+                                  .time().isoformat(timespec='minutes'))},
+                      outstream)
+        weather = weather_manager.one_call(lat=place.lat, lon=place.lon,units='metric')
+        self.forecast = [{
+            'time': datetime.datetime.fromtimestamp(h.ref_time).isoformat()[:16],
+            'status': h.detailed_status,
+            'precipitation': h.precipitation_probability,
+            'temperature': h.temp['temp'],
+            'uvi': h.uvi,
+            'wind-speed': h.wnd['speed'],
+            'wind-direction': h.wnd['deg']
+        } for h in weather.forecast_hourly]
 
+        with open(self.weather_table_file, 'w') as outstream:
+            writer = csv.DictWriter(outstream, ['time', 'status', 'precipitation', 'temperature', 'uvi', 'wind-speed', 'wind-direction'])
+            writer.writeheader()
+            for hour in self.forecast:
+                writer.writerow(hour)
+        self.fetched = datetime.datetime.now()
+
+    def update(self):
+        if self.forecast is None:
+            if os.path.exists(self.weather_table_file):
+                with open(self.weather_table_file) as weatherstream:
+                    self.forecast=list(csv.DictReader(weatherstream))
         return self
 
     def one_day_weather_section(self, day=None):
+        if self.forecast is None:
+            return T.p["Could not read weather data."]
         # https://pyowm.readthedocs.io/en/latest/v3/code-recipes.html
         if day is None:
             day = datetime.date.today()
@@ -111,16 +130,16 @@ class WeatherPanel(panels.DashboardPanel):
                             if hour['time'].startswith(daystring)]]
 
     def html(self):
-        day_after_tomorrow = qsutils.qsutils.forward_from(datetime.date.today(), None, None, 2)
+        day_after_tomorrow = dobishem.dates.forward_from(datetime.date.today(), None, None, 2)
         day_after_tomorrow_name = day_after_tomorrow.strftime("%A")
-        with open(self.facto.file_config('weather', 'sunlight-times-file')) as sunlight_stream:
+        with open(self.sunlight_file) as sunlight_stream:
             sunlight_times = json.load(sunlight_stream)
         return T.div(class_='weather')[
             T.h2["Weather"],
             switchable_panel('weather_switcher',
                              {'today': self.one_day_weather_section(),
                               'tomorrow': self.one_day_weather_section(
-                                  qsutils.qsutils.forward_from(datetime.date.today(),
+                                  dobishem.dates.forward_from(datetime.date.today(),
                                                              None, None, 1)),
                               # day_after_tomorrow_name: one_day_weather_section(
                               #     day_after_tomorrow)
