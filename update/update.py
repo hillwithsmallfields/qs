@@ -33,6 +33,7 @@ import qsutils.trim_csv
 # import qsutils.qsmerge
 import qsutils
 import channels.agenda
+import channels.parcels
 import channels.contacts
 import channels.finances
 import channels.physical
@@ -248,6 +249,7 @@ def updates(charts,
         for panel_class in [
                 channels.finances.FinancesPanel,
                 channels.weight.WeightPanel,
+                channels.parcels.ParcelsPanel,
                 # channels.physical.PhysicalPanel,
                 # channels.contacts.ContactsPanel,
                 # channels.agenda.AgendaPanel,

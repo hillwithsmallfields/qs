@@ -121,14 +121,14 @@ def qscharts(data:pd.DataFrame, file_type,
         {'small': {'figsize': (5,4)},
          'large': {'figsize': (11,8)}}
     """
-    with BeginAndEndMessages(f"charting {file_type}"):
+    with BeginAndEndMessages(f"charting {file_type}") as msgs:
         data.set_index("Date")
         for name_suffix, params in plot_param_sets.items():
-            print("charting into", outfile_template % name_suffix)
+            msgs.print(f"charting into {outfile_template % name_suffix}")
             if not qschart(data, timestamp, file_type,
                            columns, begin, end, match, by_day_of_week,
                            outfile_template % name_suffix, params, bar=bar, vlines=vlines):
-                print("TODO: output instructions for fetching missing data for", mainfile, file_type, name_suffix)
+                msgs.print(f"TODO: output instructions for fetching missing data for {mainfile}, {file_type}, {name_suffix}")
 
 def plot_column_set(axs, data, columns, prefix, bar=False):
     for column in columns:
@@ -166,12 +166,6 @@ def qschart(data: pd.DataFrame,
 
     If it returns False, the data probably needs to be fetched.
     """
-
-    print("qschart beginning at", begin, type(begin))
-    print("qschart ending at", end, type(end))
-    date_col = data['Date'].tolist()
-    types = {type(cell) for cell in date_col}
-    print("date types are", types)
 
     # TODO: rolling averages, as in http://jonathansoma.com/lede/foundations-2018/pandas/rolling-averages-in-pandas/
     # TODO: filter by day of week

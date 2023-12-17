@@ -3,11 +3,12 @@ import json
 import os
 import sys
 
-from expressionive.expridioms import wrap_box, labelled_section, SectionalPage
+from expressionive.expressionive import htmltags as T
+from expressionive.expridioms import wrap_box, labelled_section
 
 import channels.panels as panels
 
-class AgendaPanel(panels.DashboardPanel):
+class ParcelsPanel(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
@@ -17,7 +18,7 @@ class AgendaPanel(panels.DashboardPanel):
     def name(self):
         return 'parcels'
 
-    def update(self, read_external, verbose):
+    def update(self, **kwargs):
         with open(os.path.expandvars("$SYNCED/var/parcels-expected.json")) as parcels_stream:
             self.parcels = json.load(parcels_stream)['expected']
         self.updated = datetime.datetime.now()
@@ -30,7 +31,7 @@ class AgendaPanel(panels.DashboardPanel):
             if date not in dates:
                 dates[date] = []
             dates[date].append(parcel[1])
-        return [T.dl[[[T.dt[date.isoformat() + " " + DAYNAMES[date.weekday()]],
+        return [T.dl[[[T.dt[date.strftime("%Y-%m-%d %d")],
                        T.dd[T.ul[[[T.li[parcel]
                                    for parcel in sorted(dates[date])]]]]]
                       for date in sorted(dates)]]]

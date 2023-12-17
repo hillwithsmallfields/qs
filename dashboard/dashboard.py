@@ -105,8 +105,6 @@ def keep_in_touch_section():
         return T.p["No pending contacts."]
     return
 
-DAYNAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-
 def perishables_section():
     """List things to use up from the fridge, in order of expiry date."""
     items = perishables.get_perishables()
@@ -127,7 +125,7 @@ def perishables_section():
                                          # TODO: convert near days to names
                                          else "use_later")))[
                                                  T.td[row['Best before'].isoformat()],
-                                                 T.td[DAYNAMES[row['Best before'].weekday()]],
+                                                 T.td[row['Best before'].strftime("%d")],
                                                  T.td(class_="days_left")[(row['Best before'] - today).days],
                                                  T.td[row['Product']],
                                                  T.td[str(row['Quantity'])]]
@@ -294,11 +292,11 @@ def construct_dashboard_page(charts_dir, channels_data):
         # labelled_section("Temperature", temperature_section())
     ))
     page.add_section("Spending", channels_data['finances'].html())
-    page.add_section("People", channels_data['contacts'].html())
-    page.add_section("Agenda", channels_data['agenda'].html())
-    page.add_section("Travel", travel_section())
-    page.add_section("Inventory", inventory_section())
-    page.add_section("Texts for reflection", reflection_section())
+    # page.add_section("People", channels_data['contacts'].html())
+    # page.add_section("Agenda", channels_data['agenda'].html())
+    # page.add_section("Travel", travel_section())
+    # page.add_section("Inventory", inventory_section())
+    # page.add_section("Texts for reflection", reflection_section())
     return [T.body(onload="init_dashboard()")[
         T.script(src="dashboard.js"),
         T.h1["Personal dashboard"],
