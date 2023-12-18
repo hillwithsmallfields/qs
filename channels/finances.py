@@ -190,6 +190,9 @@ class FinancesPanel(panels.DashboardPanel):
     def name(self):
         return 'finances'
 
+    def label(self):
+        return "Spending"
+
     def fetch(self):
         """Combine my downloaded bank statements into one file."""
         dobishem.storage.combined(

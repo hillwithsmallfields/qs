@@ -18,6 +18,9 @@ class ParcelsPanel(panels.DashboardPanel):
     def name(self):
         return 'parcels'
 
+    def label(self):
+        return 'Parcels expected'
+
     def update(self, **kwargs):
         with open(os.path.expandvars("$SYNCED/var/parcels-expected.json")) as parcels_stream:
             self.parcels = json.load(parcels_stream)['expected']

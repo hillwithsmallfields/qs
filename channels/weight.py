@@ -78,3 +78,6 @@ class WeightPanel(panels.DashboardPanel):
 
     def name(self):
         return "weight"
+
+    def label(self):
+        return "Weight"

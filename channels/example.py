@@ -9,6 +9,12 @@ class ExamplePanel(panels.DashboardPanel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    def name(self):
+        return "example"
+
+    def label(self):
+        return "Example panel"
+
     def fetch(self, **kwargs):
         """Fetch data from external sources."""
         pass
@@ -33,6 +39,3 @@ class ExamplePanel(panels.DashboardPanel):
             T.div[T.h3["Recent examples"],
                   recent_examples_table(self.examples, 14)],
             )]
-
-    def name(self):
-        return "example"

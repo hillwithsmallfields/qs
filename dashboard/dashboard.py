@@ -277,7 +277,12 @@ def construct_dashboard_page(charts_dir, channels_data):
     # TODO: move into panels structure
     # TODO: move into panels structure
     page.add_section("Health", wrap_box(
-        channels_data['weight'].html()
+        *[
+            channels_data[key].html()
+            for key in [
+                    'weight',
+            ]
+        ]
         # labelled_section("Calories", calories_section()),
         # labelled_section("Meals", meals_section()),
         # labelled_section("By day of week", calories_per_day_of_week()),
@@ -291,8 +296,12 @@ def construct_dashboard_page(charts_dir, channels_data):
         # labelled_section("Sleep correlation", sleep_correlation_section()),
         # labelled_section("Temperature", temperature_section())
     ))
-    page.add_section("Spending", channels_data['finances'].html())
-    page.add_section("People", channels_data['contacts'].html())
+    for panel_key in [
+            'finances',
+            'contacts',
+    ]:
+        handler = channels_data[panel_key]
+        page.add_section(handler.label(), handler.html())
     # page.add_section("Agenda", channels_data['agenda'].html())
     # page.add_section("Travel", travel_section())
     # page.add_section("Inventory", inventory_section())

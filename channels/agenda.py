@@ -17,7 +17,10 @@ class AgendaPanel(panels.DashboardPanel):
     def name(self):
         return 'agenda'
 
-    def update(self, read_external, verbose):
+    def label(self):
+        return "Things to do"
+
+    def update(self):
 
         """Also updates the parcels expected list.
         Files written:

@@ -226,24 +226,6 @@ def updates(charts,
     if end is None:
         end = dates.yesterday()
 
-    # if not no_externals:
-    #     with BeginAndEndMessages("fetching external data", verbose=verbose):
-    #         weather = channels.weather.Weather(
-    #             facto, begin_date, end_date, verbose
-    #         ).fetch()
-    #         combined_data = [
-    #             fetch_data(facto, filename, begin, end, verbose)
-    #             for location_name, fetcher, archive_template in [
-    #                     # (('weather', 'weather-filename'), fetch_weather, "weather-to-%s.csv"),
-    #                     (('physical', 'mfp-filename'), fetch_mfp, "mfp-to-%s.csv"),
-    #                     (('travel', 'travel-filename'), fetch_travel, "travel-to-%s.csv"),
-    #                     # (('physical', 'oura-filename'), fetch_oura, "oura-to-%s.csv"),
-    #                     (('physical', 'omron-filename'), fetch_omron, "omron-to-%s.csv"),
-    #                     (('physical', 'cycling-filename'), fetch_cycling, "cycling-to-%s.csv"),
-    #                     (('physical', 'running-filename'), fetch_running, "running-to-%s.csv")
-    #                     # TODO: add elliptical trainer, planks
-    #                 ]]
-
     handlers = [
         panel_class(charts)
         for panel_class in [

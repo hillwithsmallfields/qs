@@ -9,13 +9,19 @@ class TravelPanel(panels.DashboardPanel):
         super().__init__(*args)
         self.updated = None
 
+    def name(self):
+        return "travel"
+
+    def label(self):
+        return "Travel"
+
     def fetch_travel(begin_date, end_date):
         # TODO: fetch from Google, updating facto.file_config('travel', 'travel-filename') and facto.file_config('travel', 'places-filename')
 
         with BeginAndEndMessages("fetching travel data"):
             return None
 
-    def update(self, read_external, verbose):
+    def update(self):
         # TODO: write travel section of QS code
         # travel_main(facto.file_config('travel', 'travel-filename'), facto.file_config('travel', 'places-filename'))
         # TODO: calculate distances

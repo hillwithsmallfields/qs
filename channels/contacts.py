@@ -44,6 +44,9 @@ class ContactsPanel(panels.DashboardPanel):
     def name(self):
         return 'contacts'
 
+    def label(self):
+        return "People"
+
     def update(self):
 
         """Preen my contacts file.  This checks for links between contacts, and does some analysis, which it returns

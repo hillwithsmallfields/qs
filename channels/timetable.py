@@ -46,6 +46,9 @@ class TimetablePanel(panels.DashboardPanel):
     def name(self):
         return 'timetable'
 
+    def label(self):
+        return 'Timetable'
+
     def update(self):
         return self
 

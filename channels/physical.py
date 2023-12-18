@@ -30,7 +30,10 @@ class PhysicalPanel(panels.DashboardPanel):
     def name(self):
         return 'physical'
 
-    def update(self, read_externals, verbose):
+    def label(self):
+        return 'Health'
+
+    def update(self, **kwargs):
 
         """Merge incoming health-related data from various files, into one central file."""
 

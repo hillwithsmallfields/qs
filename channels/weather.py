@@ -46,6 +46,9 @@ class WeatherPanel(panels.DashboardPanel):
     def name(self):
         return 'weather'
 
+    def label(self):
+        return 'Weather'
+
     def fetch(self):
 
         """Fetch the short-term forecast from openweathermap,
