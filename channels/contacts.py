@@ -12,10 +12,11 @@ def ensure_in_path(directory):
 ensure_in_path(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import backup
 
-import coimealta.contacts.link_contacts as contacts
+import coimealta.contacts.link_contacts as link_contacts
 import coimealta.contacts.contacts_data as contacts_data
 
 from expressionive.expressionive import htmltags as T
+from expressionive.expridioms import wrap_box, labelled_section, row
 
 def make_name_with_email(name, email):
     return (T.a(href="email:"+email)[name]
@@ -35,7 +36,7 @@ class ContactsPanel(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
-        self.contacts_analysis = None
+        self.contacts_summary = None
         self.people_by_id = None
         self.people_by_name = None
         self.updated = None
@@ -43,79 +44,84 @@ class ContactsPanel(panels.DashboardPanel):
     def name(self):
         return 'contacts'
 
-    def update(self, read_external, verbose):
+    def update(self):
 
         """Preen my contacts file.  This checks for links between contacts, and does some analysis, which it returns
         as the result."""
 
-        contacts_file = self.facto.file_config('contacts', 'contacts-file')
+        contacts_file = os.path.expandvars("$SYNCED/org/contacts.csv")
         contacts_scratch = "/tmp/contacts_scratch.csv"
-        self.people_by_id, self.people_by_name = contacts_data.read_contacts(self.facto.file_config('contacts', 'contacts-file'))
-        self.contacts_analysis = link_contacts.analyze_contacts(self.people_by_id)
+        self.people_by_id, self.people_by_name = contacts_data.read_contacts(contacts_file)
+        self.contacts_summary = link_contacts.analyze_contacts(self.people_by_id)
         link_contacts.link_contacts(self.people_by_id, self.people_by_name)
         contacts_data.write_contacts(contacts_scratch, self.people_by_name)
         with open(contacts_file) as confile, open(contacts_scratch) as conscratch:
             original_lines = len(confile.readlines())
             scratch_lines = len(conscratch.readlines())
             if original_lines == scratch_lines:
-                backup.backup(contacts_file, self.facto.file_config('backups', 'archive'), "contacts-%s.csv")
+                backup.backup(contacts_file, "$HOME/archive", "contacts-%s.csv")
                 shutil.copy(contacts_scratch, contacts_file)
             else:
                 print("wrong number of people after linking contacts, originally", original_lines, "but now", scratch_lines)
 
         self.updated = datetime.datetime.now()
+        print("End of updating contacts")
         return self
 
     def html(self):
-        if self.contacts_analysis is None:
+        if self.contacts_summary is None:
             return None
-        n_people = self.contacts_analysis['n_people']
+        n_people = self.contacts_summary['n_people']
         today = datetime.date.today()
         this_year = today.year
         long_uncontacted = [person
                             for person in self.people_by_id.values()
                             if contacts_data.contact_soon(person, today, days_since_last_contact=90)]
-        return panels.wrap_box(
-            panels.labelled_section("Birthdays",
-                                    T.table(class_='birthdays')[
-                                        T.tr[T.th["Birthday"], T.th["Name"], T.th["Age"]],
-                                        [T.tr[T.td(class_='birthday')[str(contacts_data.birthday(person, this_year))],
-                                              T.td(class_='name')[make_name_with_email(contacts_data.make_name(person),
-                                                                                       person.get('Primary email', ""))],
-                                              T.td(class_='age')[contacts_data.age_string(person, this_year)]]
+        return wrap_box(
+            labelled_section(
+                "Birthdays",
+                T.table(class_='birthdays')[
+                    T.tr[T.th["Birthday"], T.th["Name"], T.th["Age"]],
+                    [T.tr[T.td(class_='birthday')[str(contacts_data.birthday(person, this_year))],
+                          T.td(class_='name')[make_name_with_email(contacts_data.make_name(person),
+                                                                   person.get('Primary email', ""))],
+                          T.td(class_='age')[contacts_data.age_string(person, this_year)]]
                                          for person in sorted([person
                                                                for person in self.people_by_id.values()
                                                                if contacts_data.birthday_soon(person, this_year, today, within_days=31)],
                                                               key=lambda person: contacts_data.birthday(person, this_year))]]),
-            panels.labelled_section("To contact",
-                                    T.table(class_='contact_soon')[
-                                        T.tr[T.th["Last contacted"], T.th["Name"]],
-                                        [T.tr[T.td(class_='last_contacted')[str(contacts_data.last_contacted(person))],
-                                              T.td(class_='name')[make_name_with_email(contacts_data.make_name(person),
-                                                                                       person.get('Primary email', ""))]]
+            labelled_section(
+                "To contact",
+                T.table(class_='contact_soon')[
+                    T.tr[T.th["Last contacted"], T.th["Name"]],
+                    [T.tr[T.td(class_='last_contacted')[str(contacts_data.last_contacted(person))],
+                          T.td(class_='name')[make_name_with_email(contacts_data.make_name(person),
+                                                                   person.get('Primary email', ""))]]
                                   for person in sorted(long_uncontacted,
                                                        key=lambda person: contacts_data.last_contacted(person))]]),
-            panels.labelled_section("People in contacts file",
-                                    T.dl[
-                                        T.dt["Number of people"], T.dd[str(n_people)],
-                                        T.dt["By gender"],
-                                        T.dd["; ".join(["%s: %d" % (k, len(v))
-                                                        for k, v in self.contacts_analysis['by_gender'].items()])],
-                                        T.dt["Ordained"],
-                                        T.dd["%d (%d%% of total)" % (self.contacts_analysis['ordained'],
-                                                                     round(100*self.contacts_analysis['ordained']/n_people))],
-                                        T.dt["Dr/Prof"],
-                                        T.dd["%d (%d%% of total)" % (self.contacts_analysis['doctored'],
-                                                                     round(100*self.contacts_analysis['doctored']/n_people))],
-                                        T.dt["flagged"],
-                                        T.dd[T.dl[[[T.dt[flag], T.dd[[str(len(people))]]]
-                                                   for flag, people in self.contacts_analysis['flagged'].items()
-                                                   ]]]
-                                    ]),
-            panels.labelled_section("People groups",
-                                    panels.row(counts_table("By nationality",
-                                                            self.contacts_analysis['by_nationality']),
-                                               counts_table("By title",
-                                                            self.contacts_analysis['by_title']),
-                                               counts_table("By place met",
-                                                            self.contacts_analysis['by_place_met']))))
+            labelled_section(
+                "People in contacts file",
+                T.dl[
+                    T.dt["Number of people"], T.dd[str(n_people)],
+                    T.dt["By gender"],
+                    T.dd["; ".join(["%s: %d" % (k, len(v))
+                                                        for k, v in self.contacts_summary['by_gender'].items()])],
+                    T.dt["Ordained"],
+                    T.dd["%d (%d%% of total)" % (self.contacts_summary['ordained'],
+                                                 round(100*self.contacts_summary['ordained']/n_people))],
+                    T.dt["Dr/Prof"],
+                    T.dd["%d (%d%% of total)" % (self.contacts_summary['doctored'],
+                                                 round(100*self.contacts_summary['doctored']/n_people))],
+                    T.dt["flagged"],
+                    T.dd[T.dl[[[T.dt[flag], T.dd[[str(len(people))]]]
+                                                   for flag, people in self.contacts_summary['flagged'].items()
+                               ]]]
+                ]),
+            labelled_section(
+                "People groups",
+                row(counts_table("By nationality",
+                                                          self.contacts_summary['by_nationality']),
+                                             counts_table("By title",
+                                                          self.contacts_summary['by_title']),
+                                             counts_table("By place met",
+                                                          self.contacts_summary['by_place_met']))))

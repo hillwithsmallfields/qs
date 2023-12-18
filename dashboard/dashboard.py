@@ -292,7 +292,7 @@ def construct_dashboard_page(charts_dir, channels_data):
         # labelled_section("Temperature", temperature_section())
     ))
     page.add_section("Spending", channels_data['finances'].html())
-    # page.add_section("People", channels_data['contacts'].html())
+    page.add_section("People", channels_data['contacts'].html())
     # page.add_section("Agenda", channels_data['agenda'].html())
     # page.add_section("Travel", travel_section())
     # page.add_section("Inventory", inventory_section())
