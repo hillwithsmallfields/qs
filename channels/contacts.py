@@ -12,6 +12,8 @@ def ensure_in_path(directory):
 ensure_in_path(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import backup
 
+import dobishem.storage as storage
+
 import coimealta.contacts.link_contacts as link_contacts
 import coimealta.contacts.contacts_data as contacts_data
 
@@ -80,6 +82,10 @@ class ContactsPanel(panels.DashboardPanel):
         long_uncontacted = [person
                             for person in self.people_by_id.values()
                             if contacts_data.contact_soon(person, today, days_since_last_contact=90)]
+        flag_labels = {flag['Flag']: flag['Label']
+                       for flag in storage.read_csv("$SYNCED/org/flags.csv")}
+        by_flags = {flag_labels.get(k, k): v
+                    for k, v in self.contacts_summary['flagged'].items()}
         return wrap_box(
             labelled_section(
                 "Birthdays",
@@ -116,9 +122,16 @@ class ContactsPanel(panels.DashboardPanel):
                     T.dd["%d (%d%% of total)" % (self.contacts_summary['doctored'],
                                                  round(100*self.contacts_summary['doctored']/n_people))],
                     T.dt["flagged"],
-                    T.dd[T.dl[[[T.dt[flag], T.dd[[str(len(people))]]]
-                                                   for flag, people in self.contacts_summary['flagged'].items()
-                               ]]]
+                    T.table[
+                        [
+                            T.tr[
+                                T.th[flag],
+                                T.td[str(len(by_flags[flag]))]
+                            ]
+                            for flag in sorted(by_flags.keys())
+                        ]
+                    ],
+
                 ]),
             labelled_section(
                 "People groups",
