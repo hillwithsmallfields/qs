@@ -121,8 +121,8 @@ class ContactsPanel(panels.DashboardPanel):
                     T.dt["Dr/Prof"],
                     T.dd["%d (%d%% of total)" % (self.contacts_summary['doctored'],
                                                  round(100*self.contacts_summary['doctored']/n_people))],
-                    T.dt["flagged"],
                     T.table[
+                        T.tr[T.th(colspan="2")["Flagged"]],
                         [
                             T.tr[
                                 T.th[flag],
