@@ -276,6 +276,16 @@ def construct_dashboard_page(charts_dir, channels_data):
     page = SectionalPage()
     # TODO: move into panels structure
     # TODO: move into panels structure
+
+    page.add_section(None,
+                     # "Immediate",
+                     wrap_box(T.div[T.h2["Perishable food to use up"],
+                                    perishables_section(),
+                                    T.h2["Parcels expected"],
+                                    channels_data['parcels'].html()],
+                              channels_data['timetable'].html(),
+                              channels_data['weather'].html()),)
+
     page.add_section("Health", wrap_box(
         *[
             channels_data[key].html()
@@ -302,20 +312,13 @@ def construct_dashboard_page(charts_dir, channels_data):
     ]:
         handler = channels_data[panel_key]
         page.add_section(handler.label(), handler.html())
-    # page.add_section("Agenda", channels_data['agenda'].html())
     # page.add_section("Travel", travel_section())
     # page.add_section("Inventory", inventory_section())
     # page.add_section("Texts for reflection", reflection_section())
     return [T.body(onload="init_dashboard()")[
         T.script(src="dashboard.js"),
         T.h1["Personal dashboard"],
-        wrap_box(T.div[page.toc(),
-                       T.h2["Perishable food to use up"],
-                       perishables_section(),
-                       T.h2["Parcels expected"],
-                       channels_data['parcels'].html()],
-                 channels_data['timetable'].html(),
-                 channels_data['weather'].html()),
+        page.toc(),
         page.sections()]]
 
 # def update_physical_charts(charts_dir,

@@ -235,9 +235,9 @@ def updates(charts,
                 channels.timetable.TimetablePanel,
                 channels.weather.WeatherPanel,
                 channels.contacts.ContactsPanel,
+                channels.agenda.AgendaPanel,
                 # channels.physical.PhysicalPanel,
                 # channels.travel.TravelPanel,
-                # channels.agenda.AgendaPanel,
         ]
     ]
 

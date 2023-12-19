@@ -80,7 +80,7 @@ def spending_chart(transactions, key, period, columns, map_to_highlights, thresh
                for column in columns]]
          for row in sorted(result, key=lambda r: r['Date'])],
         T.tr[T.th["Total"],
-             [T.td[column_total(result, column)] for column in columns]],
+             [T.td["%.2f" % column_total(result, column)] for column in columns]],
     ]
 
 def spending_chart_to_file(incoming, key, period, output,
