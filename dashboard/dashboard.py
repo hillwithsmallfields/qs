@@ -198,60 +198,6 @@ def shopping_section(channels_data):
 def parcels_section(channels_data):
     parcels = channels_data['parcels']
 
-def items_table(items):
-    items_by_type = {}
-    for item in items.values():
-        key = "%s (%s)" % (item['Type'], item.get('Subtype', '?'))
-        if key in items_by_type:
-            items_by_type[key].append(item)
-        else:
-            items_by_type[key] = [item]
-    return T.div(class_='inventory_list')[
-        T.table[[T.tr[T.td[T.span(class_='overview')[key,
-                                                     T.div(class_='details')[T.ul[[[T.li[x['Item']]]
-                                                                                   for x in items_by_type[key]]]]]],
-                      T.td[len(items_by_type[key])]]
-                 for key in sorted(items_by_type.keys(),
-                                   reverse=True,
-                                   key=lambda k: len(items_by_type[k]))]]]
-
-def inventory_section():
-
-    locations = storage.read_locations(FILECONF('inventory', 'storage-file'))
-    items = storage.read_inventory(FILECONF('inventory', 'inventory-file'))
-    stock = storage.read_inventory(FILECONF('inventory', 'stock-file'))
-    project_parts = storage.read_inventory(FILECONF('inventory', 'project-parts-file'))
-    media = storage.read_books(FILECONF('inventory', 'books-file'))
-
-    media_by_type = {}
-    for medium in media.values():
-        mediatype = medium['MediaType']
-        if mediatype in media_by_type:
-            media_by_type[mediatype].append(medium)
-        else:
-            media_by_type[mediatype] = [medium]
-
-    books_with_acquisition_date = sorted([book
-                                          for book in media_by_type['Book']
-                                          if book.get('Acquired', None) is not None],
-                                         key=lambda b: b['Acquired'])
-    latest_book = books_with_acquisition_date[-1]
-
-    _, volume, bookshelf_length, other_length, area = storage.calculate_capacities(locations)
-
-    return T.div(class_='inventory')[
-        T.div[wrap_box(T.div[T.h3["Media"],
-                             T.div(class_='inventory_list')[
-                                 T.dl[[T.div[T.dt[mtype],
-                                             T.dd[str(len(media_by_type[mtype]))]] for mtype in sorted(media_by_type)]]]],
-                       T.div[T.h3["General possessions"], items_table(items)],
-                       T.div[T.h3["Project parts"], items_table(project_parts)],
-                       T.div[T.h3["Stock"], items_table(stock)],
-                       T.div[T.h3["Storage"],
-                             T.div(class_='inventory_list')[T.dl[T.dt["Container volume"], T.dd["%g litres" % volume],
-                                                                 T.dt["Bookshelf length"], T.dd["%g metres" % bookshelf_length],
-                                                                 T.dt["Other shelf length"], T.dd["%g metres" % other_length]]]])]]
-
 def travel_section():
     # TODO: read travel.csv and a journeys file generated from Google
     return None
@@ -309,6 +255,7 @@ def construct_dashboard_page(charts_dir, channels_data):
     for panel_key in [
             'finances',
             'contacts',
+            'inventory',
     ]:
         handler = channels_data[panel_key]
         page.add_section(handler.label(), handler.html())

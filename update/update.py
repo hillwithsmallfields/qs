@@ -36,6 +36,7 @@ import channels.agenda
 import channels.parcels
 import channels.contacts
 import channels.finances
+import channels.inventory
 import channels.physical
 import channels.weight
 import channels.startpage
@@ -236,6 +237,7 @@ def updates(charts,
                 channels.weather.WeatherPanel,
                 channels.contacts.ContactsPanel,
                 channels.agenda.AgendaPanel,
+                channels.inventory.InventoryPanel
                 # channels.physical.PhysicalPanel,
                 # channels.travel.TravelPanel,
         ]
