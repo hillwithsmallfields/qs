@@ -33,15 +33,17 @@ import qsutils.trim_csv
 # import qsutils.qsmerge
 import qsutils
 import channels.agenda
-import channels.parcels
 import channels.contacts
 import channels.finances
 import channels.inventory
+import channels.parcels
+import channels.perishables
 import channels.physical
-import channels.weight
+import channels.reflections
 import channels.startpage
 import channels.travel
 import channels.weather
+import channels.weight
 
 import backup
 
@@ -237,7 +239,9 @@ def updates(charts,
                 channels.weather.WeatherPanel,
                 channels.contacts.ContactsPanel,
                 channels.agenda.AgendaPanel,
-                channels.inventory.InventoryPanel
+                channels.inventory.InventoryPanel,
+                channels.reflections.ReflectionsPanel,
+                channels.perishables.PerishablesPanel,
                 # channels.physical.PhysicalPanel,
                 # channels.travel.TravelPanel,
         ]
