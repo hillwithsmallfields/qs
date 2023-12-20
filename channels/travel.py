@@ -2,6 +2,8 @@ import datetime
 
 import channels.panels as panels
 from dobishem.nested_messages import BeginAndEndMessages
+from expressionive.expressionive import htmltags as T
+import expressionive.expridioms
 
 class TravelPanel(panels.DashboardPanel):
 
@@ -27,3 +29,7 @@ class TravelPanel(panels.DashboardPanel):
         # TODO: calculate distances
         self.updated = datetime.datetime.now()
         return self
+
+    def html(self):
+        return T.div[
+            expressionive.expridioms.wrap_box(T.h2["Travel data to go here"])]

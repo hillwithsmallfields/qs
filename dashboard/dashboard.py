@@ -90,18 +90,6 @@ def peak_flow_section():
     # TODO: get peak flow data
     return None
 
-def keep_in_touch_section():
-    """List people who I mean to keep in touch with but haven't for a while."""
-    people_by_id, _ = contacts_data.read_contacts("$SYNCED/org/contacts.csv")
-    today = datetime.date.today()
-    this_year = today.year
-    long_uncontacted = [person
-                        for person in people_by_id.values()
-                        if contacts_data.contact_soon(person, today, days_since_last_contact=90)]
-    if len(long_uncontacted) == 0:
-        return T.p["No pending contacts."]
-    return
-
 def calories_section():
     return linked_image("total_calories", "total_calories")
 
@@ -143,9 +131,6 @@ def blood_pressure_section():
 def temperature_section():
     return linked_image("temperature", "temperature")
 
-def parcels_section(channels_data):
-    parcels = channels_data['parcels']
-
 def travel_section():
     # TODO: read travel.csv and a journeys file generated from Google
     return None
@@ -184,6 +169,7 @@ def construct_dashboard_page(charts_dir, channels_data):
             'agenda',
             'finances',
             'contacts',
+            'travel',
             'inventory',
             'reflections',
     ]:

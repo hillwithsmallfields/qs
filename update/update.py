@@ -242,8 +242,8 @@ def updates(charts,
                 channels.inventory.InventoryPanel,
                 channels.reflections.ReflectionsPanel,
                 channels.perishables.PerishablesPanel,
+                channels.travel.TravelPanel,
                 # channels.physical.PhysicalPanel,
-                # channels.travel.TravelPanel,
         ]
     ]
 

@@ -80,12 +80,16 @@ class InventoryPanel(panels.DashboardPanel):
             T.div[wrap_box(
                 T.div[T.h3["Media"],
                       T.div(class_='inventory_list')[
-                          T.dl[[T.div[T.dt[mtype],
-                                      T.dd[str(len(self.media_by_type[mtype]))]] for mtype in sorted(self.media_by_type)]]]],
+                          T.table[
+                              [T.tr[
+                                  T.td[mtype],
+                                  T.td[str(len(self.media_by_type[mtype]))]]
+                               for mtype in sorted(self.media_by_type)]]]],
                 T.div[T.h3["General possessions"], items_table(self.items)],
                 T.div[T.h3["Project parts"], items_table(self.project_parts)],
                 T.div[T.h3["Stock"], items_table(self.stock)],
                 T.div[T.h3["Storage"],
-                      T.div(class_='inventory_list')[T.dl[T.dt["Container volume"], T.dd["%g litres" % self.volume],
-                                                          T.dt["Bookshelf length"], T.dd["%g metres" % self.bookshelf_length],
-                                                          T.dt["Other shelf length"], T.dd["%g metres" % self.other_length]]]])]]
+                      T.div(class_='inventory_list')[T.table[
+                          T.tr[T.td["Container volume"], T.td["%g litres" % self.volume]],
+                          T.tr[T.td["Bookshelf length"], T.td["%g metres" % self.bookshelf_length]],
+                          T.tr[T.td["Other shelf length"], T.td["%g metres" % self.other_length]]]]])]]
