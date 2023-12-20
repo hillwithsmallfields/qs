@@ -121,6 +121,7 @@ class ContactsPanel(panels.DashboardPanel):
                     T.dt["Dr/Prof"],
                     T.dd["%d (%d%% of total)" % (self.contacts_summary['doctored'],
                                                  round(100*self.contacts_summary['doctored']/n_people))],
+                    T.span(class_="overview")[T.p["."], T.div(class_="details")[
                     T.table[
                         T.tr[T.th(colspan="2")["Flagged"]],
                         [
@@ -129,10 +130,7 @@ class ContactsPanel(panels.DashboardPanel):
                                 T.td[str(len(by_flags[flag]))]
                             ]
                             for flag in sorted(by_flags.keys())
-                        ]
-                    ],
-
-                ]),
+                        ]]]]]),
             labelled_section(
                 "People groups",
                 row(counts_table("By nationality",
