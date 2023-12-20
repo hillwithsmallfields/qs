@@ -143,29 +143,6 @@ def blood_pressure_section():
 def temperature_section():
     return linked_image("temperature", "temperature")
 
-def top_items(items):
-    return sorted(items, key=lambda item: item['position-in-file'])[:12]
-
-def actions_section(channels_data):
-    from_org_mode = channels_data['organizer']
-    return wrap_box([T.h3["Mending"],
-                     org_ql_list(top_items(from_org_mode["Mending"]))],
-                    [T.h3["Physical making"],
-                     org_ql_list(top_items(from_org_mode["Physical making"]))],
-                    [T.h3["Programming"],
-                     org_ql_list(top_items(from_org_mode["Programming"]))])
-
-def org_ql_list(items):
-    # TODO: make this scrollable
-    return T.div(class_='agenda_list')[T.ul[[T.li[item['title']] for item in items]]]
-
-def shopping_section(channels_data):
-    from_org_mode = channels_data['organizer']
-    return wrap_box([T.h3["Supermarket"],
-                     org_ql_list(from_org_mode["Supermarket"])],
-                    [T.h3["Online"],
-                     org_ql_list(from_org_mode["Online"])])
-
 def parcels_section(channels_data):
     parcels = channels_data['parcels']
 
@@ -204,6 +181,7 @@ def construct_dashboard_page(charts_dir, channels_data):
         # labelled_section("Temperature", temperature_section())
     ))
     for panel_key in [
+            'agenda',
             'finances',
             'contacts',
             'inventory',
