@@ -58,9 +58,6 @@ def make_remaining_cell(thresholds, spent_this_month, coi):
     spent = 0 if spent_string == "" else float(spent_string)
     return T.td(class_='ok' if spent <= available else "overspent")[str(available + spent)]
 
-def namify(x):
-    return x.replace(' ', '_')
-
 def dashboard_page_colours():
     """Return the foreground and background colours, and a shading colour, specified in the stylesheet."""
 
@@ -104,32 +101,6 @@ def keep_in_touch_section():
     if len(long_uncontacted) == 0:
         return T.p["No pending contacts."]
     return
-
-def perishables_section():
-    """List things to use up from the fridge, in order of expiry date."""
-    items = perishables.get_perishables()
-    now = datetime.datetime.now()
-    today = now.date()
-    week_ahead = (now + datetime.timedelta(days=7)).date()
-    return (T.p["No items on record."]
-            if len(items) == 0
-            else T.table[
-                    [T.tr[T.th(colspan="2")["Use by"],
-                          T.th["Days left"],
-                          T.th["Item"],
-                          T.th["Quantity"]]],
-                    [[T.tr(class_=("out_of_date"
-                                   if row['Best before'] < today
-                                   else ("use_soon"
-                                         if row['Best before'] < week_ahead
-                                         # TODO: convert near days to names
-                                         else "use_later")))[
-                                                 T.td[row['Best before'].isoformat()],
-                                                 T.td[row['Best before'].strftime("%d")],
-                                                 T.td(class_="days_left")[(row['Best before'] - today).days],
-                                                 T.td[row['Product']],
-                                                 T.td[str(row['Quantity'])]]
-                      for row in items]]])
 
 def calories_section():
     return linked_image("total_calories", "total_calories")
@@ -202,36 +173,15 @@ def travel_section():
     # TODO: read travel.csv and a journeys file generated from Google
     return None
 
-def random_reflection(reflections_dir):
-    with open(random.choice(glob.glob(os.path.join(reflections_dir, "*.txt")))) as instream:
-        return random.choice([line.strip() for line in instream if line != "\n"])
-
-def reflection_section():
-    reflections_dir = FILECONF('general', 'reflections-dir')
-    first = random_reflection(reflections_dir)
-    second = random_reflection(reflections_dir)
-    countdown = 4               # in case there's only one reflection available
-    while second == first and countdown > 0:
-        second = random_reflection(reflections_dir)
-        countdown -= 1
-    return T.div(class_='reflection')[
-        T.p[first],
-        T.p[second]]
-
 def construct_dashboard_page(charts_dir, channels_data):
     page = SectionalPage()
-    # TODO: move into panels structure
-    # TODO: move into panels structure
-
     page.add_section(None,
-                     # "Immediate",
                      wrap_box(T.div[T.h2["Perishable food to use up"],
-                                    perishables_section(),
+                                    channels_data['perishables'].html(),
                                     T.h2["Parcels expected"],
                                     channels_data['parcels'].html()],
                               channels_data['timetable'].html(),
                               channels_data['weather'].html()),)
-
     page.add_section("Health", wrap_box(
         *[
             channels_data[key].html()
@@ -245,6 +195,7 @@ def construct_dashboard_page(charts_dir, channels_data):
         # labelled_section("Food groups", foods_section()),
         # labelled_section("Running", running_section()),
         # labelled_section("Cycling", cycling_section()),
+        # labelled_section("Walking", walking_section()),
         # labelled_section("Blood pressure", blood_pressure_section()),
         # labelled_section("Peak flow", peak_flow_section()),
         # labelled_section("Sleep split", sleep_split_section()),
@@ -256,6 +207,7 @@ def construct_dashboard_page(charts_dir, channels_data):
             'finances',
             'contacts',
             'inventory',
+            'reflections',
     ]:
         handler = channels_data[panel_key]
         page.add_section(handler.label(), handler.html())
@@ -267,96 +219,6 @@ def construct_dashboard_page(charts_dir, channels_data):
         T.h1["Personal dashboard"],
         page.toc(),
         page.sections()]]
-
-# def update_physical_charts(charts_dir,
-#                            channels_data,
-#                            chart_sizes,
-#                            begin_date, end_date,
-#                            date_suffix,
-#                            vlines=None):
-
-#     """Update the physical (health) charts."""
-
-#     physical = "$SYNCED/health/physical.csv"
-#     mfp_filename = "$SYNCED/health/mfp-accum.csv"
-
-#     split_by_DoW = False
-
-#     # TODO: rolling averages
-#     for units in ('stone', 'kilogram', 'pound'):
-#         qsutils.qschart.qscharts(physical,
-#                                  'weight',
-#                                  [units],
-#                                  begin_date, end_date, None, split_by_DoW,
-#                                  os.path.join(charts_dir, "weight-%s-%s-%%s.png" % (units, date_suffix)),
-#                                  chart_sizes,
-#                                  vlines=vlines)
-
-#     for chartdef, template in [
-#             ({'mainfile': mfp_filename,
-#               'file_type': 'calories',
-#               'columns': ['calories']},
-#              "total_calories-%s-%%s.png"),
-#             ({'mainfile': mfp_filename,
-#               'file_type': 'meals',
-#               'columns': ['breakfast', 'lunch', 'dinner', 'snacks']},
-#              "meal_calories-%s-%%s.png"),
-#             ({'mainfile': mfp_filename,
-#               'file_type': 'food_groups',
-#               'columns': ['carbohydrates', 'fat', 'protein', 'sugar']
-#               }, "origin_calories-%s-%%s.png"),
-#             # ({'mainfile': FILECONF('physical', 'oura-filename'),
-#             #   'file_type': 'sleep',
-#             #   'columns': ['Latency', 'Rem', 'Deep', 'Total']
-#             #   }, "sleep-split-%s-%%s.png"),
-#             ({'mainfile': "$SYNCED/health/blood-pressure.csv",
-#               'file_type': 'blood_pressure',
-#               'columns': ['systolic', 'diastolic', 'heart_rate']
-#               }, "blood-pressure-%s-%%s.png"),
-#             ({'mainfile': "$SYNCED/health/garmin-cycling.csv",
-#               'file_type': 'cycling',
-#               'columns': ['Distance', 'Calories', 'Time']
-#               }, "cycling-%s-%%s.png"),
-#             ({'mainfile': "$SYNCED/health/garmin-running.csv",
-#               'file_type': 'running',
-#               'columns': ['Distance', 'Calories', 'Time']
-#               }, "running-%s-%%s.png"),
-#             # ({'mainfile':,
-#             #   'file_type':,
-#             #   'columns':
-#             #   }, ),
-#     ]:
-#         qsutils.qschart.qscharts(begin=begin_date, end=end_date,
-#                                  match=None,
-#                                  by_day_of_week=split_by_DoW,
-#                                  plot_param_sets=chart_sizes,
-#                                  outfile_template=os.path.join(charts_dir,
-#                                                                template % date_suffix),
-#                                  bar=False,
-#                                  **chartdef)
-
-#     sleep_chart_params = {suffix: chart.copy() for suffix, chart in chart_sizes.items()}
-#     for scp in sleep_chart_params.values():
-#         scp['subplot_kw'] = {'ylim': (0, 24.0)}
-    # qsutils.qschart.qscharts(FILECONF('physical',
-    #                                   'oura-filename'
-    #                                   ), 'sleep',
-    #                        ['Start', 'End'],
-    #                        begin_date, end_date, None, split_by_DoW,
-    #                        os.path.join(charts_dir, "sleep-times-%s-%%s.png" % date_suffix),
-    #                        sleep_chart_params
-    #                        # TODO: plt.ylim(0, 24) in the charting code
-    # )
-    # qsutils.qschart.qscharts(smart_one_filename, 'peak_flow',
-    #                        ['Peak flow'],
-    #                        begin_date, end_date, None,
-    #                        os.path.join(charts_dir, "peak-flow-%s-%%s.png" % date_suffix),
-    #                        chart_sizes)
-    # qsutils.qschart.qscharts(FILECONF('physical', 'temperature-file'), 'temperature',
-    #                        ['Temperature'],
-    #                        begin_date, end_date, None,
-    #                        os.path.join(charts_dir, "temperature-%s-%%s.png" % date_suffix),
-    #                        chart_sizes)
 
 def write_dashboard_page(charts_dir,
                          channels_data,
