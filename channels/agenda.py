@@ -45,21 +45,15 @@ class AgendaPanel(panels.DashboardPanel):
         self.updated = datetime.datetime.now()
         return self
 
-    def actions_section(self):
-        return wrap_box([T.h3["Mending"],
-                         org_ql_list(top_items(self.from_org["Mending"]))],
-                        [T.h3["Physical making"],
-                         org_ql_list(top_items(self.from_org["Physical making"]))],
-                        [T.h3["Programming"],
-                         org_ql_list(top_items(self.from_org["Programming"]))])
-
-    def shopping_section(self):
-        return wrap_box([T.h3["Supermarket"],
-                         org_ql_list(self.from_org["Supermarket"])],
-                        [T.h3["Online"],
-                         org_ql_list(self.from_org["Online"])])
+    def agenda_subsections(self, keys):
+        return wrap_box([[T.h3[key],
+                          org_ql_list(top_items(self.from_org[key]))]
+                         for key in keys])
 
     def html(self):
         return wrap_box(
-            labelled_section("Actions", self.actions_section()),
-            labelled_section("Shopping", self.shopping_section()))
+            labelled_section("Actions", self.agenda_subsections(["Mending",
+                                                                 "Physical making",
+                                                                 "Programming"])),
+            labelled_section("Shopping", self.agenda_subsections(["Supermarket",
+                                                                  "Online"])))
