@@ -79,9 +79,10 @@ class ContactsPanel(panels.DashboardPanel):
         n_people = self.contacts_summary['n_people']
         today = datetime.date.today()
         this_year = today.year
-        long_uncontacted = [person
-                            for person in self.people_by_id.values()
-                            if contacts_data.contact_soon(person, today, days_since_last_contact=90)]
+        long_uncontacted = [
+            person
+            for person in self.people_by_id.values()
+            if contacts_data.contact_soon(person, today, days_since_last_contact=90)]
         flag_labels = {flag['Flag']: flag['Label']
                        for flag in storage.read_csv("$SYNCED/org/flags.csv")}
         by_flags = {flag_labels.get(k, k): v
@@ -92,35 +93,43 @@ class ContactsPanel(panels.DashboardPanel):
                 T.table(class_='birthdays')[
                     T.tr[T.th["Birthday"], T.th["Name"], T.th["Age"]],
                     [T.tr[T.td(class_='birthday')[str(contacts_data.birthday(person, this_year))],
-                          T.td(class_='name')[make_name_with_email(contacts_data.make_name(person),
-                                                                   person.get('Primary email', ""))],
-                          T.td(class_='age')[contacts_data.age_string(person, this_year)]]
-                                         for person in sorted([person
-                                                               for person in self.people_by_id.values()
-                                                               if contacts_data.birthday_soon(person, this_year, today, within_days=31)],
-                                                              key=lambda person: contacts_data.birthday(person, this_year))]]),
+                          T.td(class_='name')[
+                              make_name_with_email(contacts_data.make_name(person),
+                                                   person.get('Primary email', ""))],
+                          T.td(class_='age')[
+                              contacts_data.age_string(person, this_year)]]
+                     for person in sorted([person
+                                           for person in self.people_by_id.values()
+                                           if contacts_data.birthday_soon(
+                                                   person, this_year, today, within_days=31)],
+                                          key=lambda person: contacts_data.birthday(
+                                              person, this_year))]]),
             labelled_section(
                 "To contact",
                 T.table(class_='contact_soon')[
                     T.tr[T.th["Last contacted"], T.th["Name"]],
-                    [T.tr[T.td(class_='last_contacted')[str(contacts_data.last_contacted(person))],
+                    [T.tr[T.td(class_='last_contacted')[
+                        str(contacts_data.last_contacted(person))],
                           T.td(class_='name')[make_name_with_email(contacts_data.make_name(person),
                                                                    person.get('Primary email', ""))]]
-                                  for person in sorted(long_uncontacted,
-                                                       key=lambda person: contacts_data.last_contacted(person))]]),
+                     for person in sorted(long_uncontacted,
+                                          key=lambda person: contacts_data.last_contacted(person))]]),
             labelled_section(
                 "People in contacts file",
                 T.dl[
                     T.dt["Number of people"], T.dd[str(n_people)],
                     T.dt["By gender"],
-                    T.dd["; ".join(["%s: %d" % (k, len(v))
-                                                        for k, v in self.contacts_summary['by_gender'].items()])],
+                    T.dd["; ".join(
+                        ["%s: %d" % (k, len(v))
+                         for k, v in self.contacts_summary['by_gender'].items()])],
                     T.dt["Ordained"],
-                    T.dd["%d (%d%% of total)" % (self.contacts_summary['ordained'],
-                                                 round(100*self.contacts_summary['ordained']/n_people))],
+                    T.dd["%d (%d%% of total)" % (
+                        self.contacts_summary['ordained'],
+                        round(100*self.contacts_summary['ordained']/n_people))],
                     T.dt["Dr/Prof"],
-                    T.dd["%d (%d%% of total)" % (self.contacts_summary['doctored'],
-                                                 round(100*self.contacts_summary['doctored']/n_people))],
+                    T.dd["%d (%d%% of total)" % (
+                        self.contacts_summary['doctored'],
+                        round(100*self.contacts_summary['doctored']/n_people))],
                     T.span(class_="overview")[T.p["."], T.div(class_="details")[
                     T.table[
                         T.tr[T.th(colspan="2")["Flagged"]],
