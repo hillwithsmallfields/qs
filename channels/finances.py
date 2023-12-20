@@ -17,21 +17,11 @@ import financial.list_completions
 
 # import finutils
 
-def recent_transactions_table(transactions, days_back):
-    end_date = datetime.date.today()
-    start_date = dobishem.dates.back_from(end_date, None, None, days_back)
-    recent_transactions = dobishem.dates.entries_between_dates(transactions, start_date, end_date)
-    return T.div(class_='transactions_list')[
-        T.table(class_='financial')[
-            T.tr[T.th["Date"],T.th["Amount"],T.th["Payee"],T.th["Category"],T.th["Item"]],
-            [[T.tr[T.th[transaction['Date']],
-                   T.td[transaction['Amount']],
-                   T.td[transaction['Payee']],
-                   T.td[transaction['Category']],
-                   T.td[transaction['Item']]]
-                  for transaction in reversed(recent_transactions)]]]]
-
 CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
+
+LUNCHTIME_START = datetime.time(hour=11)
+LUNCHTIME_END = datetime.time(hour=14)
+SUPPERTIME_START = datetime.time(hour=17)
 
 def without_cruft(string):
     """Returns a string trimmed of a trailing numeric part and leading spaces and stars.
@@ -101,6 +91,11 @@ def spending_row_to_internal(raw):
     raw['Origin'] = 'Spending'
     return raw
 
+normalized_accounts = {}
+
+def normalize_account(acct):
+    return normalized_accounts.get(acct, "unrecognized " + acct)
+
 def handelsbanken_row_to_internal(raw, conversions):
     item = raw.get('Details', raw.get('Narrative'))
     matched = re.search(r"([A-Z]{3}) (\d*.\d+) @ \d*.\d+ incl.commission", item)
@@ -121,7 +116,7 @@ def handelsbanken_row_to_internal(raw, conversions):
         'Origin': 'Handelsbanken',
         'Date': raw['Date'],
         'Time': "00:00:01",
-        'Account': raw['Account'],
+        'Account': normalize_account(raw['Account']),
         'Amount':  amount,
         'Currency': 'GBP',
         'Original_Amount':  orig_amount,
@@ -138,7 +133,24 @@ def handelsbanken_row_to_internal(raw, conversions):
 
 def monzo_row_to_internal(raw, conversions):
     date = raw['Date']
-    return {
+    derived_details = conversions.get(
+        without_cruft(raw['Name']).lower(),
+        {
+            'payee': "undetected-" + raw['Name'],
+            'category': 'unknown', # raw['Category']
+    })
+    if derived_details['category'] == "Eating out":
+        when = datetime.time.fromisoformat(raw['Time'])
+        derived_details['category'] = (
+            "Breakfast"
+            if when < LUNCHTIME_START
+            else ("Lunch"
+                  if when < LUNCHTIME_END
+                  else ("Snacks"
+                        if when < SUPPERTIME_START
+                        else "Supper")))
+        print("classified meal at", when, "as", derived_details['category'])
+    row = {
         'Origin': 'Monzo',
         'Date':  f"{date[6:]}-{date[3:5]}-{date[0:2]}",
         'Time':  raw['Time'],
@@ -149,13 +161,15 @@ def monzo_row_to_internal(raw, conversions):
         'Original_Currency':  raw['Local currency'],
         # 'Balance':  raw[''],
         # 'Statement':  raw[''],
-        'Payee':  raw['Name'],
-        'Category':  raw['Category'], # TODO: derive from payee
+        'Payee':  derived_details['name'],
+        'Category': derived_details['category'],
         # 'Project':  raw[''],
         'Details':  raw['Category'],
         'Item':  raw['Category'],
         'Message':  raw['Notes and #tags'],
     }
+    # print("monzo", raw, "===>", row)
+    return row
 
 def normalize_and_filter_opening_rows(raw):
     details = raw.get('Details', raw.get('Narrative'))
@@ -186,6 +200,8 @@ class FinancesPanel(panels.DashboardPanel):
         self.dashboard_dir = os.path.expanduser("~/private_html/dashboard/")
         self.transactions = None
         self.by_categories = None
+        global normalized_accounts
+        normalized_accounts = dobishem.storage.load("$SYNCED/finances/normalize_accounts.json")
 
     def name(self):
         return 'finances'
@@ -222,14 +238,17 @@ class FinancesPanel(panels.DashboardPanel):
             }
         )
 
-        dobishem.storage.write_csv(
-            "$SYNCED/finances/unknown-payees.csv",
-            [
-                entry
+        known_unknowns = [
+            {'stripped': without_cruft(entry['Details'].lower())} | entry
                 for entry in self.transactions
                 if entry.get('Category', "unknown") == "unknown"
-            ],
+        ]
+        dobishem.storage.write_csv(
+            "$SYNCED/finances/unknown-payees.csv",
+            known_unknowns,
             sort_columns=['payee'])
+        dobishem.storage.save("$SYNCED/finances/unknown-payees.yaml",
+                              sorted(set([row['stripped'] for row in known_unknowns])))
 
         if ((not os.path.exists(self.completions_filename))
             or dobishem.storage.file_newer_than_file(
@@ -265,6 +284,26 @@ class FinancesPanel(panels.DashboardPanel):
             #                        os.path.join(charts_dir, "balances-%s-%%s.png" % date_suffix),
             #                        chart_sizes)
 
+    def recent_transactions_table(self, days_back):
+        end_date = datetime.date.today()
+        return T.div(class_='transactions_list')[
+            T.table(class_='financial')[
+                T.tr[T.th["Date"],
+                     T.th["Amount"],
+                     T.th["Payee"],
+                     T.th["Category"],
+                     T.th["Item"]],
+                [[T.tr[T.th[transaction['Date']],
+                       T.td[transaction['Amount']],
+                       T.td[transaction['Payee']],
+                       T.td[transaction['Category']],
+                       T.td[transaction['Item']]]
+                      for transaction in reversed(
+                              dobishem.dates.entries_between_dates(
+                                  self.transactions,
+                                  dobishem.dates.back_from(end_date, None, None, days_back),
+                                  end_date))]]]]
+
     def html(self):
         """Returns various listings of my financial transactions."""
         # TODO: spending per category per day of month/week
@@ -291,7 +330,7 @@ class FinancesPanel(panels.DashboardPanel):
                 image_name="by-class",
                 label="transactions"),
             T.div[T.h3["Recent transactions"],
-                  recent_transactions_table(self.transactions, 14)],
+                  self.recent_transactions_table(14)],
             T.div[T.h3["Spending by category"],
                   T.a(class_='plainlink', href=full_details_file)[
                       financial.spending_chart.spending_chart(
