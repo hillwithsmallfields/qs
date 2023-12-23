@@ -10,11 +10,17 @@ from dobishem.nested_messages import BeginAndEndMessages
 from expressionive.expressionive import htmltags as T
 import expressionive.expridioms
 
+NO_TIME = datetime.timedelta(seconds=0)
+
 def parse_duration(dur):
-    return datetime.timedelta(
-        hours=int(dur[:2]),
-        minutes=int(dur[3:5]),
-        seconds=int(dur[6:]))
+    return (datetime.timedelta(hours=int(dur[:2]),
+                               minutes=int(dur[3:5]),
+                               seconds=float(dur[6:]))
+            if dur
+            else NO_TIME)
+
+def parse_date(when):
+    return datetime.date.fromisoformat(when[:10])
 
 CELL_CONVERSIONS = {
     'Activity Type': str,
@@ -29,7 +35,7 @@ CELL_CONVERSIONS = {
     'Cycle max speed': float,
     'Cycle moving time': parse_duration,
     'Date number': int,
-    'Date': lambda date_and_time: date.fromisoformat(date_and_time['Date'][:10]),
+    'Date': parse_date,
     'Diastolic (a.m.)': int,
     'Diastolic (p.m.)': int,
     'Distance': float,
@@ -166,7 +172,10 @@ def merge_garmin_downloads(downloads):
     activities_by_timestamp = dict()
     with BeginAndEndMessages("Merging Garmin downloads"):
         for download in downloads:
+            print("download of type", type(download), "and length", len(download))
             for activity in download:
+                if 'Date' not in activity:
+                    print("Garmin activity with missing date:", activity)
                 activities_by_timestamp[activity['Date']] = activity
         return [
             activities_by_timestamp[when]
@@ -186,20 +195,25 @@ def convert_weight(raw):
     return {
         'Date': datetime.date.fromisoformat(raw['Date']),
         'Stone': st,
-        'Lbs', lbs,
+        'Lbs': lbs,
         'Lbs total': total_lbs,
-        'St total' total_lbs / 14,
+        'St total': total_lbs / 14,
         'Kg': total_lbs * 0.453592,
     }
 
-def convert_garmin(raw):
+def convert_garmin0(raw):
     return apply_conversions(raw, GARMIN_CONVERSIONS)
+
+def convert_garmin(raw):
+    result = convert_garmin0(raw)
+    print("garmin:", raw, "==>", result)
+    return result
 
 def convert_isometric(raw):
     return {
         'Date': datetime.date.fromisoformat(raw['Date']),
-        'Plank longest': int(raw['Plank longest mins']) * 60 + int(raw[',Plank longest secs']),
-        'Plank total': int(raw['Plank totat mins']) * 60 + int(raw[',Plank totat secs']),
+        'Plank longest': int(raw.get('Plank longest mins', 0) or 0) * 60 + int(raw.get('Plank longest secs', 0)) or 0,
+        'Plank total': int(raw.get('Plank total mins', 0) or 0) * 60 + int(raw.get('Plank total secs', 0) or 0),
     }
 
 def combine_exercise_data(incoming_lists):
@@ -209,30 +223,34 @@ def combine_exercise_data(incoming_lists):
             for entry in list_in:
                 existing = by_date[entry['Date']]
                 # existing['Avg HR'] # TODO: calculate this
-                existing['Max HR'] = max(existing.get('Max HR', 0), entry['Max HR'])
-                existing['Calories'] = existing.get('Calories', 0) + entry['Calories']
-                match entry.get('Activity Type'):
-                    case 'Cycling':
-                        existing['Cycle distance'] = existing.get('Cycle distance', 0) + entry['Distance']
-                        existing['Cycle moving time'] = existing.get('Cycle moving time', 0) + entry['Moving Time']
-                        existing['Cycle elapsed time'] = existing.get('Cycle elapsed time', 0) + entry['Elapsed Time']
-                    case 'Running' | 'Trail Running'::
-                        existing['Run distance'] = existing.get('Run distance', 0) + entry['Distance']
-                        existing['Run moving time'] = existing.get('Run moving time', 0) + entry['Moving Time']
-                        existing['Run elapsed time'] = existing.get('Run elapsed time', 0) + entry['Elapsed Time']
-                    case 'Walking':
-                        existing['Walk distance'] = existing.get('Walk distance', 0) + entry['Distance']
-                        existing['Walk moving time'] = existing.get('Walk moving time', 0) + entry['Moving Time']
-                        existing['Walk elapsed time'] = existing.get('Walk elapsed time', 0) + entry['Elapsed Time']
-                    case 'Open Water Swimming':
-                        existing['Swim distance'] = existing.get('Swim distance', 0) + entry['Distance']
-                        existing['Swim time'] = existing.get('Swim time', 0) + entry['Moving Time']
-                        pass
-                    # case 'Other':
-                    #     if entry.get('Title', "").startswith("Elliptical Trainer"):
-                    #         pass
-                    case _:
-                        pass
+                existing['Max HR'] = max(existing.get('Max HR', 0), entry.get('Max HR', 0) or 0)
+                existing['Calories'] = existing.get('Calories', 0) + (entry.get('Calories', 0) or 0)
+                if entry.get('Distance'): # avoid malformed imports from MyFitnessPal
+                    match entry.get('Activity Type'):
+                        case 'Cycling':
+                            existing['Cycle distance'] = existing.get('Cycle distance', 0) + entry.get('Distance', 0)
+                            existing['Cycle moving time'] = (existing.get('Cycle moving time') or NO_TIME) + entry['Moving Time']
+                            existing['Cycle elapsed time'] = (existing.get('Cycle elapsed time') or NO_TIME) + entry['Elapsed Time']
+                        case 'Running' | 'Trail Running':
+                            print("running merge")
+                            print("existing", existing)
+                            print("entry", entry)
+                            existing['Run distance'] = existing.get('Run distance', 0) + entry.get('Distance', 0)
+                            existing['Run moving time'] = (existing.get('Run moving time') or NO_TIME) + entry.get('Moving Time')
+                            existing['Run elapsed time'] = (existing.get('Run elapsed time') or NO_TIME) + entry.get('Elapsed Time')
+                        case 'Walking':
+                            existing['Walk distance'] = existing.get('Walk distance', 0) + entry.get('Distance', 0)
+                            existing['Walk moving time'] = (existing.get('Walk moving time') or NO_TIME) + entry.get('Moving Time')
+                            existing['Walk elapsed time'] = (existing.get('Walk elapsed time') or NO_TIME) + entry.get('Elapsed Time')
+                        case 'Open Water Swimming':
+                            existing['Swim distance'] = existing.get('Swim distance', 0) + entry['Distance']
+                            existing['Swim time'] = (existing.get('Swim time') or NO_TIME) + entry.get('Moving Time', NO_TIME)
+                            pass
+                        # case 'Other':
+                        #     if entry.get('Title', "").startswith("Elliptical Trainer"):
+                        #         pass
+                        case _:
+                            pass
         return [by_date[date] for date in sorted(by_date.keys())]
         # TODO: stringify everything for writing
 
@@ -251,6 +269,7 @@ class PhysicalPanel(panels.DashboardPanel):
         super().__init__(*args)
         self.accumulated_garmin_downloads_filename = os.path.expandvars("$SYNCED/health/garmin-downloads.csv")
         self.combined_exercise_filename = os.path.expandvars("$SYNCED/health/exercise.csv")
+        self.combined_measurement_filename = os.path.expandvars("$SYNCED/health/measurements.csv")
         self.exercise_data = None
         self.measurement_data = None
         self.updated = None
@@ -266,8 +285,8 @@ class PhysicalPanel(panels.DashboardPanel):
         dobishem.storage.combined(
             self.accumulated_garmin_downloads_filename,
             merge_garmin_downloads,
-            {filename: process_raw_garmin_file
-             for filename in dobishem.in_modification_order("~/Downloads/Activities*.csv")})
+            {filename: lambda raw: raw
+             for filename in dobishem.storage.in_modification_order("~/Downloads/Activities*.csv")})
 
     def update(self, **kwargs):
 
@@ -303,4 +322,4 @@ class PhysicalPanel(panels.DashboardPanel):
             ],
             T.div(class_="exercise")[
                 T.p["There are %d exercise rows." % len(self.exercise_data)]
-            ]
+            ])]

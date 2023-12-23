@@ -243,7 +243,7 @@ def updates(charts,
                 channels.reflections.ReflectionsPanel,
                 channels.perishables.PerishablesPanel,
                 channels.travel.TravelPanel,
-                # channels.physical.PhysicalPanel,
+                channels.physical.PhysicalPanel,
         ]
     ]
 

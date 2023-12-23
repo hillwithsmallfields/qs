@@ -167,6 +167,7 @@ def construct_dashboard_page(charts_dir, channels_data):
     ))
     for panel_key in [
             'agenda',
+            'physical',
             'finances',
             'contacts',
             'travel',
