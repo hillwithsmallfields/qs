@@ -56,8 +56,8 @@ CELL_CONVERSIONS = {
     'Peak flow (a.m.)': int,
     'Peak flow (p.m.)': int,
     'Percent lost in week': float,
-    'Plank longest': int,
-    'Plank total': int,
+    'Plank longest': parse_duration,
+    'Plank total': parse_duration,
     'Resting pulse': int,
     'Right calf': float,
     'Right forearm': float,
@@ -186,7 +186,9 @@ def merge_garmin_downloads(downloads):
         ]
 
 def convert_exercise(raw):
-    return apply_conversions(raw, EXERCISE_CONVERSIONS)
+    result = apply_conversions(raw, EXERCISE_CONVERSIONS)
+    print("exercise:", raw, "==>", result)
+    return result
 
 def convert_measurement(raw):
     return apply_conversions(raw, MEASUREMENT_CONVERSIONS)
@@ -209,7 +211,7 @@ def convert_garmin0(raw):
 
 def convert_garmin(raw):
     result = convert_garmin0(raw)
-    print("garmin:", raw, "==>", result)
+    # print("garmin:", raw, "==>", result)
     return result
 
 def convert_isometric(raw):
@@ -224,10 +226,15 @@ def combine_exercise_data(incoming_lists):
     with BeginAndEndMessages("Combining exercise data"):
         for list_in in incoming_lists:
             for entry in list_in:
-                existing = by_date[entry['Date']]
+                entry_date = entry['Date']
+                existing = by_date[entry_date]
+                existing['Date'] = datetime.date.fromisoformat(entry_date) if isinstance(entry_date, str) else entry_date
                 # existing['Avg HR'] # TODO: calculate this
-                existing['Max HR'] = max(existing.get('Max HR', 0), entry.get('Max HR', 0) or 0)
-                existing['Calories'] = existing.get('Calories', 0) + (entry.get('Calories', 0) or 0)
+                existing['Max HR'] = (max((existing.get('Max HR', 0) or 0), (entry.get('Max HR', 0) or 0))) or None
+                existing['Calories'] = ((existing.get('Calories', 0) or 0) + (entry.get('Calories', 0) or 0)) or None
+                for field in ['Calories at gym', 'Plank longest', 'Plank total', 'Comment']:
+                    if field in entry and entry[field]:
+                        existing[field] = entry[field]
                 if entry.get('Distance'): # avoid malformed imports from MyFitnessPal
                     match entry.get('Activity Type'):
                         case 'Cycling':
@@ -335,6 +342,17 @@ class PhysicalPanel(panels.DashboardPanel):
                     self.charts_dir, "weight-%s-%s-%%s.png" % (units, date_suffix)),
                 plot_param_sets=chart_sizes,
                 vlines=None)
+        qsutils.qschart.qscharts(
+            data=self.dataframe,
+            file_type='BP',
+            timestamp=None,
+            columns=['systolic', 'diastolic', 'heart_rate'],
+            begin=begin_date, end=end_date, match=None,
+            by_day_of_week=False, # split_by_DoW
+            outfile_template=os.path.join(
+                self.charts_dir, "bp-%s-%%s.png" % (date_suffix)),
+            plot_param_sets=chart_sizes,
+            vlines=None)
 
     def html(self):
         return T.div(class_="physical")[wrap_box(
@@ -345,7 +363,11 @@ class PhysicalPanel(panels.DashboardPanel):
                     linked_image(
                         charts_dir=self.charts_dir,
                         image_name="weight-stone",
-                        label="weight")),
+                        label="weight"),
+                    linked_image(
+                        charts_dir=self.charts_dir,
+                        image_name="bp",
+                        label="BP")),
             ],
             T.div(class_="exercise")[
                 T.h3["Exercise"],

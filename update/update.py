@@ -43,7 +43,6 @@ import channels.reflections
 import channels.startpage
 import channels.travel
 import channels.weather
-import channels.weight
 
 import backup
 

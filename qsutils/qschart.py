@@ -49,9 +49,9 @@ def column_label(column):
 COLUMN_HEADERS = {'stone': 'St total',
                   'pound': 'Lbs total',
                   'kilogram': 'Kg',
-                  'systolic': 'SYS',
-                  'diastolic': 'DIA',
-                  'heart_rate': 'Pulse',
+                  'systolic': 'Systolic (a.m.)',
+                  'diastolic': 'Diastolic (a.m.)',
+                  'heart_rate': 'Resting pulse',
                   'calories': 'calories',
                   'breakfast': 'breakfast_cals',
                   'lunch': 'lunch_cals',
@@ -67,9 +67,10 @@ def column_header(column):
     return COLUMN_HEADERS.get(column, column)
 
 def munge_weights(data):
-    data['Lbs total'] = pd.to_numeric(data['Stone']) * 14 + data['Lbs']
-    data['St total'] = data['Lbs total'] / 14
-    data['Kg'] = data['Lbs total'] * 0.453592
+    # data['Lbs total'] = pd.to_numeric(data['Stone']) * 14 + data['Lbs']
+    # data['St total'] = data['Lbs total'] / 14
+    # data['Kg'] = data['Lbs total'] * 0.453592
+    pass
 
 def munge_finances(data):
     # data['Date'] = data['timestamp']
