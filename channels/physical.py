@@ -4,11 +4,14 @@ import os
 import shutil
 import sys
 
+import pandas as pd
+
+import qsutils
 import channels.panels as panels
 import dobishem
 from dobishem.nested_messages import BeginAndEndMessages
 from expressionive.expressionive import htmltags as T
-import expressionive.expridioms
+from expressionive.expridioms import wrap_box, labelled_section, linked_image
 
 NO_TIME = datetime.timedelta(seconds=0)
 
@@ -190,7 +193,7 @@ def convert_measurement(raw):
 
 def convert_weight(raw):
     st = int(raw['Stone'])
-    lbs = int(row['Lbs'])
+    lbs = int(raw['Lbs'])
     total_lbs =  st * 14 + lbs
     return {
         'Date': datetime.date.fromisoformat(raw['Date']),
@@ -315,11 +318,36 @@ class PhysicalPanel(panels.DashboardPanel):
         self.updated = datetime.datetime.now()
         return self
 
+    def prepare_page_images(self, date_suffix, begin_date, end_date, chart_sizes):
+        """Prepare any images used by the output of the `html` method."""
+        # TODO: rolling averages
+        self.dataframe = pd.read_csv(self.combined_measurement_filename)
+        self.dataframe['Date'] = pd.to_datetime(self.dataframe['Date'])
+        for units in ('stone', 'kilogram', 'pound'):
+            qsutils.qschart.qscharts(
+                data=self.dataframe,
+                file_type='weight',
+                timestamp=None,
+                columns=[units],
+                begin=begin_date, end=end_date, match=None,
+                by_day_of_week=False, # split_by_DoW
+                outfile_template=os.path.join(
+                    self.charts_dir, "weight-%s-%s-%%s.png" % (units, date_suffix)),
+                plot_param_sets=chart_sizes,
+                vlines=None)
+
     def html(self):
-        return T.div(class_="physical")[expressionive.expridioms.wrap_box(
+        return T.div(class_="physical")[wrap_box(
             T.div(class_="measurements")[
-                T.p["There are %d measurement rows." % len(self.measurement_data)]
+                T.h3["Measurements"],
+                T.p["There are %d measurement rows." % len(self.measurement_data)],
+                wrap_box(
+                    linked_image(
+                        charts_dir=self.charts_dir,
+                        image_name="weight-stone",
+                        label="weight")),
             ],
             T.div(class_="exercise")[
+                T.h3["Exercise"],
                 T.p["There are %d exercise rows." % len(self.exercise_data)]
             ])]

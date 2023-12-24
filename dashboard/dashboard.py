@@ -144,27 +144,27 @@ def construct_dashboard_page(charts_dir, channels_data):
                                     channels_data['parcels'].html()],
                               channels_data['timetable'].html(),
                               channels_data['weather'].html()),)
-    page.add_section("Health", wrap_box(
-        *[
-            channels_data[key].html()
-            for key in [
-                    'weight',
-            ]
-        ]
-        # labelled_section("Calories", calories_section()),
-        # labelled_section("Meals", meals_section()),
-        # labelled_section("By day of week", calories_per_day_of_week()),
-        # labelled_section("Food groups", foods_section()),
-        # labelled_section("Running", running_section()),
-        # labelled_section("Cycling", cycling_section()),
-        # labelled_section("Walking", walking_section()),
-        # labelled_section("Blood pressure", blood_pressure_section()),
-        # labelled_section("Peak flow", peak_flow_section()),
-        # labelled_section("Sleep split", sleep_split_section()),
-        # labelled_section("Sleep times", sleep_times_section()),
-        # labelled_section("Sleep correlation", sleep_correlation_section()),
-        # labelled_section("Temperature", temperature_section())
-    ))
+    # page.add_section("Health", wrap_box(
+    #     *[
+    #         channels_data[key].html()
+    #         for key in [
+    #                 'weight',
+    #         ]
+    #     ]
+    #     # labelled_section("Calories", calories_section()),
+    #     # labelled_section("Meals", meals_section()),
+    #     # labelled_section("By day of week", calories_per_day_of_week()),
+    #     # labelled_section("Food groups", foods_section()),
+    #     # labelled_section("Running", running_section()),
+    #     # labelled_section("Cycling", cycling_section()),
+    #     # labelled_section("Walking", walking_section()),
+    #     # labelled_section("Blood pressure", blood_pressure_section()),
+    #     # labelled_section("Peak flow", peak_flow_section()),
+    #     # labelled_section("Sleep split", sleep_split_section()),
+    #     # labelled_section("Sleep times", sleep_times_section()),
+    #     # labelled_section("Sleep correlation", sleep_correlation_section()),
+    #     # labelled_section("Temperature", temperature_section())
+    # ))
     for panel_key in [
             'agenda',
             'physical',

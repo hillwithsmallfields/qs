@@ -233,17 +233,17 @@ def updates(charts,
         panel_class(charts)
         for panel_class in [
                 channels.finances.FinancesPanel,
-                channels.weight.WeightPanel,
+                # channels.weight.WeightPanel,
                 channels.parcels.ParcelsPanel,
                 channels.timetable.TimetablePanel,
                 channels.weather.WeatherPanel,
-                channels.contacts.ContactsPanel,
                 channels.agenda.AgendaPanel,
-                channels.inventory.InventoryPanel,
+                channels.physical.PhysicalPanel,
+                channels.contacts.ContactsPanel,
                 channels.reflections.ReflectionsPanel,
                 channels.perishables.PerishablesPanel,
                 channels.travel.TravelPanel,
-                channels.physical.PhysicalPanel,
+                channels.inventory.InventoryPanel,
         ]
     ]
 
