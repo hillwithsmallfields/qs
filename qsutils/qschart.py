@@ -112,7 +112,8 @@ def qscharts(data:pd.DataFrame, file_type,
              outfile_template,
              plot_param_sets,
              bar=False,
-             vlines=None):
+             vlines=None,
+             verbose=False):
     """Plot a set of related charts.
 
     The charts in the set use the same data but different plot params.
@@ -122,7 +123,7 @@ def qscharts(data:pd.DataFrame, file_type,
         {'small': {'figsize': (5,4)},
          'large': {'figsize': (11,8)}}
     """
-    with BeginAndEndMessages(f"charting {file_type}") as msgs:
+    with BeginAndEndMessages(f"charting {file_type}", verbose=verbose) as msgs:
         data.set_index("Date")
         for name_suffix, params in plot_param_sets.items():
             msgs.print(f"charting into {outfile_template % name_suffix}")

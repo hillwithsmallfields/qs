@@ -21,11 +21,11 @@ class ParcelsPanel(panels.DashboardPanel):
     def label(self):
         return 'Parcels expected'
 
-    def fetch(self):
+    def fetch(self, verbose=False):
         # The "fetch" operation for this is done by agenda.py
         pass
 
-    def update(self, **kwargs):
+    def update(self, verbose=False, **kwargs):
         with open(os.path.expandvars("$SYNCED/var/parcels-expected.json")) as parcels_stream:
             self.parcels = json.load(parcels_stream)['expected']
         self.updated = datetime.datetime.now()

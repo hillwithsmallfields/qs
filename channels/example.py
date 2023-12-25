@@ -15,17 +15,17 @@ class ExamplePanel(panels.DashboardPanel):
     def label(self):
         return "Example panel"
 
-    def fetch(self, **kwargs):
+    def fetch(self, verbose=False, **kwargs):
         """Fetch data from external sources."""
         pass
 
-    def update(self, **kwargs):
+    def update(self, verbose=False, **kwargs):
         """Update the cached data."""
         self.examples = make_examples()
         self.updated = datetime.datetime.now()
         return self
 
-    def prepare_page_images(self, **kwargs):
+    def prepare_page_images(self, verbose=False, **kwargs):
         """Prepare any images used by the output of the `html` method."""
         render_example_images(self.examples)
 

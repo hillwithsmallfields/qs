@@ -209,7 +209,7 @@ class FinancesPanel(panels.DashboardPanel):
     def label(self):
         return "Spending"
 
-    def fetch(self):
+    def fetch(self, verbose=False):
         """Combine my downloaded bank statements into one file."""
         dobishem.storage.combined(
             self.accumulated_bank_statements_filename,
@@ -217,7 +217,7 @@ class FinancesPanel(panels.DashboardPanel):
             {filename: normalize_and_filter_opening_rows
              for filename in dobishem.storage.in_modification_order("~/Downloads/Transaction*.csv")})
 
-    def update(self):
+    def update(self, verbose=False):
 
         """Merge my accumulated financial data, bank statements, Monzo
         statements, and manually recorded spending into the accumulated
@@ -265,7 +265,7 @@ class FinancesPanel(panels.DashboardPanel):
 
         return self
 
-    def prepare_page_images(self, begin_date, end_date, chart_sizes, date_suffix):
+    def prepare_page_images(self, begin_date, end_date, chart_sizes, date_suffix, verbose=False):
         """Prepare any images used by the output of the `html` method."""
         if self.by_categories:
             qsutils.qschart.qscharts(data=self.by_categories,

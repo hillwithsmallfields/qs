@@ -7,7 +7,7 @@ class StartPage:
         super().__init__(*args)
         self.updated = None
 
-    def update(self, read_externals, verbose):
+    def update(self, verbose=False):
 
         """Update my personal start page, for which the master is a YAML file."""
 

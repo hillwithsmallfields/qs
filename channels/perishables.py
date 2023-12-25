@@ -18,7 +18,7 @@ class PerishablesPanel(panels.DashboardPanel):
     def label(self):
         return "Perishables"
 
-    def update(self, **kwargs):
+    def update(self, verbose=False, **kwargs):
         """Update the cached data."""
         self.perishables = coimealta.inventory.perishables.get_perishables()
         self.updated = datetime.datetime.now()

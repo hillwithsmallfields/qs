@@ -49,7 +49,7 @@ class TimetablePanel(panels.DashboardPanel):
     def label(self):
         return 'Timetable'
 
-    def update(self):
+    def update(self, verbose=False):
         return self
 
     def html(self):

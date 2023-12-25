@@ -29,7 +29,7 @@ class AgendaPanel(panels.DashboardPanel):
     def label(self):
         return "Things to do"
 
-    def update(self):
+    def update(self, verbose=False):
 
         """Also updates the parcels expected list.
         Files written:

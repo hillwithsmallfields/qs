@@ -49,7 +49,7 @@ class ContactsPanel(panels.DashboardPanel):
     def label(self):
         return "People"
 
-    def update(self):
+    def update(self, verbose=False):
 
         """Preen my contacts file.  This checks for links between contacts, and does some analysis, which it returns
         as the result."""

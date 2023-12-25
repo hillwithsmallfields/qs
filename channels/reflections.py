@@ -25,7 +25,7 @@ class ReflectionsPanel(panels.DashboardPanel):
     def label(self):
         return "Reflections"
 
-    def update(self, **kwargs):
+    def update(self, verbose=False, **kwargs):
         """Update the cached data."""
         self.first = random_reflection(reflections_dir)
         self.second = random_reflection(reflections_dir)

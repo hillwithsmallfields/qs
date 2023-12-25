@@ -250,13 +250,13 @@ def updates(charts,
         if not no_externals:
             with BeginAndEndMessages("fetching external data", verbose=verbose):
                 for handler in handlers:
-                    with BeginAndEndMessages(f"fetching {handler.name()} data"):
-                        handler.fetch()
+                    with BeginAndEndMessages(f"fetching {handler.name()} data", verbose=verbose):
+                        handler.fetch(verbose=verbose)
 
         with BeginAndEndMessages("updating saved data", verbose=verbose):
             for handler in handlers:
                 with BeginAndEndMessages(f"updating {handler.name()} data"):
-                    handler.update()
+                    handler.update(verbose=verbose)
 
         with BeginAndEndMessages("refreshing dashboard", verbose=verbose):
             dashboard.dashboard.make_dashboard_page(
@@ -265,7 +265,8 @@ def updates(charts,
                     handler.name(): handler
                     for handler in handlers
                 },
-                chart_sizes=CHART_SIZES)
+                chart_sizes=CHART_SIZES,
+                verbose=verbose)
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -282,6 +283,8 @@ def get_args():
                         within the last day.""")
     parser.add_argument("--testing", action='store_true',
                         help="""Use an alternate directory which can be reset.""")
+    parser.add_argument("--verbose", action='store_true',
+                        help="""Output more progress messages.""")
     return vars(parser.parse_args())
 
 if __name__ == '__main__':

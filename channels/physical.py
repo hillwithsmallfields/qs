@@ -229,7 +229,7 @@ def convert_isometric(raw):
 
 def combine_exercise_data(incoming_lists):
     by_date = defaultdict(dict)
-    with BeginAndEndMessages("Combining exercise data"):
+    with BeginAndEndMessages("Combining exercise data", verbose=False):
         for list_in in incoming_lists:
             for entry in list_in:
                 entry_date = entry['Date']
@@ -295,7 +295,7 @@ class PhysicalPanel(panels.DashboardPanel):
     def label(self):
         return 'Health'
 
-    def fetch(self):
+    def fetch(self, verbose=False):
         """Fetch health-related downloads such as Garmin, and merge them into an accumulated file."""
         dobishem.storage.combined(
             self.accumulated_garmin_downloads_filename,
@@ -303,7 +303,7 @@ class PhysicalPanel(panels.DashboardPanel):
             {filename: lambda raw: raw
              for filename in dobishem.storage.in_modification_order("~/Downloads/Activities*.csv")})
 
-    def update(self, **kwargs):
+    def update(self, verbose=False, **kwargs):
 
         """Merge incoming health-related data from various files, into two central files,
         one for exercise and one for measurements."""
@@ -332,7 +332,7 @@ class PhysicalPanel(panels.DashboardPanel):
         self.updated = datetime.datetime.now()
         return self
 
-    def prepare_page_images(self, date_suffix, begin_date, end_date, chart_sizes):
+    def prepare_page_images(self, date_suffix, begin_date, end_date, chart_sizes, verbose=False):
         """Prepare any images used by the output of the `html` method."""
         # TODO: rolling averages
         # TODO: convert existing data variables if not empty
@@ -340,7 +340,7 @@ class PhysicalPanel(panels.DashboardPanel):
         self.measurement_dataframe['Date'] = pd.to_datetime(self.measurement_dataframe['Date'])
         self.exercise_dataframe = pd.read_csv(self.combined_exercise_filename)
         self.exercise_dataframe['Date'] = pd.to_datetime(self.exercise_dataframe['Date'])
-        with BeginAndEndMessages("plotting physical charts"):
+        with BeginAndEndMessages("plotting physical charts", verbose=verbose):
             for units in ('stone', 'kilogram', 'pound'):
                 qsutils.qschart.qscharts(
                     data=self.measurement_dataframe,
@@ -352,7 +352,8 @@ class PhysicalPanel(panels.DashboardPanel):
                     outfile_template=os.path.join(
                         self.charts_dir, "weight-%s-%s-%%s.png" % (units, date_suffix)),
                     plot_param_sets=chart_sizes,
-                    vlines=None)
+                    vlines=None,
+                    verbose=verbose)
             qsutils.qschart.qscharts(
                 data=self.measurement_dataframe,
                 file_type='BP',
@@ -363,7 +364,8 @@ class PhysicalPanel(panels.DashboardPanel):
                 outfile_template=os.path.join(
                     self.charts_dir, "bp-%s-%%s.png" % (date_suffix)),
                 plot_param_sets=chart_sizes,
-                vlines=None)
+                vlines=None,
+                verbose=verbose)
             for activity, activity_label in ACTIVITIES:
                 qsutils.qschart.qscharts(
                     data=self.exercise_dataframe,
@@ -382,7 +384,8 @@ class PhysicalPanel(panels.DashboardPanel):
                     outfile_template=os.path.join(
                         self.charts_dir, "%s-%s-%%s.png" % (activity, date_suffix)),
                     plot_param_sets=chart_sizes,
-                    vlines=None)
+                    vlines=None,
+                    verbose=verbose)
 
     def html(self):
         with BeginAndEndMessages("preparing physical HTML"):

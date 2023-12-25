@@ -47,7 +47,7 @@ class InventoryPanel(panels.DashboardPanel):
     def label(self):
         return "Inventory"
 
-    def update(self, **kwargs):
+    def update(self, verbose=False, **kwargs):
         """Update the cached data."""
         self.locations = storage.read_locations("$SYNCED/org/storage.csv")
         self.items = storage.read_inventory("$SYNCED/org/inventory.csv")

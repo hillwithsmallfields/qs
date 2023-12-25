@@ -23,7 +23,7 @@ class TravelPanel(panels.DashboardPanel):
         with BeginAndEndMessages("fetching travel data"):
             return None
 
-    def update(self):
+    def update(self, verbose=False):
         # TODO: write travel section of QS code
         # travel_main(facto.file_config('travel', 'travel-filename'), facto.file_config('travel', 'places-filename'))
         # TODO: calculate distances

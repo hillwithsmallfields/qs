@@ -234,13 +234,14 @@ def make_dashboard_images(charts_dir,
                 for date_suffix, begin in ({'custom': begin_date}
                                            if begin_date
                                            else periods).items():
-                    with BeginAndEndMessages("preparing %s images for %s" % (channel_name, date_suffix),
+                    with BeginAndEndMessages("preparing %s images for %s" % (channel_name, date_suffix.replace('_', ' ')),
                                              verbose=verbose):
                         channel.prepare_page_images(
                             date_suffix=date_suffix,
                             begin_date=np.datetime64(datetime.datetime.combine(begin, now.time())),
                             end_date=np.datetime64(now),
-                            chart_sizes=chart_sizes)
+                            chart_sizes=chart_sizes,
+                            verbose=verbose)
 
 def make_dashboard_page(charts_dir=None,
                         channels_data=None,
@@ -260,7 +261,7 @@ def make_dashboard_page(charts_dir=None,
                           chart_sizes,
                           background_colour,
                           begin_date, end_date,
-                          verbose)
+                          verbose=verbose)
     write_dashboard_page(charts_dir,
                          channels_data,
                          details_background_color=shading)

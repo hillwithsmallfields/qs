@@ -49,7 +49,7 @@ class WeatherPanel(panels.DashboardPanel):
     def label(self):
         return 'Weather'
 
-    def fetch(self):
+    def fetch(self, verbose=False):
 
         """Fetch the short-term forecast from openweathermap,
         saving hourly extracts from it into a CSV file, and
@@ -98,7 +98,7 @@ class WeatherPanel(panels.DashboardPanel):
                 writer.writerow(hour)
         self.fetched = datetime.datetime.now()
 
-    def update(self):
+    def update(self, verbose=False):
         if self.forecast is None:
             if os.path.exists(self.weather_table_file):
                 with open(self.weather_table_file) as weatherstream:

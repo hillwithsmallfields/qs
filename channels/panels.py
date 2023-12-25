@@ -18,11 +18,11 @@ class DashboardPanel(ABC):
         self.charts_dir = charts_dir
         self.updated = None
 
-    def fetch(self, **kwargs):
+    def fetch(self, verbose=False, **kwargs):
         """Fetch data from external sources."""
         pass
 
-    def update(self, **kwargs):
+    def update(self, verbose=False, **kwargs):
         """Update the cached data."""
         self.updated = datetime.datetime.now()
         return self
