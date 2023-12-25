@@ -13,6 +13,7 @@ import sys
 import numpy as np
 
 import dobishem.dates
+from dobishem.nested_messages import BeginAndEndMessages
 from expressionive.expressionive import htmltags as T
 from expressionive.expridioms import wrap_box, labelled_section, SectionalPage
 import expressionive.exprpages as exprpages
@@ -225,15 +226,21 @@ def make_dashboard_images(charts_dir,
                'past_month': dobishem.dates.back_from(today, None, 1, None),
                'past_quarter': dobishem.dates.back_from(today, None, 3, None),
                'past_year': dobishem.dates.back_from(today, 1, None, None)}
-    for channel in channels_data.values():
-        for date_suffix, begin in ({'custom': begin_date}
-                                   if begin_date
-                                   else periods).items():
-            channel.prepare_page_images(
-                date_suffix=date_suffix,
-                begin_date=np.datetime64(datetime.datetime.combine(begin, now.time())),
-                end_date=np.datetime64(now),
-                chart_sizes=chart_sizes)
+    with BeginAndEndMessages("preparing images",
+                             verbose=verbose):
+        for channel_name, channel in channels_data.items():
+            with BeginAndEndMessages("preparing %s images" % channel_name,
+                                     verbose=verbose):
+                for date_suffix, begin in ({'custom': begin_date}
+                                           if begin_date
+                                           else periods).items():
+                    with BeginAndEndMessages("preparing %s images for %s" % (channel_name, date_suffix),
+                                             verbose=verbose):
+                        channel.prepare_page_images(
+                            date_suffix=date_suffix,
+                            begin_date=np.datetime64(datetime.datetime.combine(begin, now.time())),
+                            end_date=np.datetime64(now),
+                            chart_sizes=chart_sizes)
 
 def make_dashboard_page(charts_dir=None,
                         channels_data=None,

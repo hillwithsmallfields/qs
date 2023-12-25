@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Time-stamp: <2023-01-27 20:21:53 jcgs>
+# Time-stamp: <2023-12-25 09:29:33 jcgs>
 
 # Program to merge my Quantified Self files.
 
@@ -29,25 +29,25 @@ def weight_tracker_parser(raw):
 def given(row, name):
     return row.get(name, '') not in (None, '')
 
-def weight_tracker_complete_row(row):
-    if not given(row, 'Lbs total'):
-        if given(row, 'Kg'):
-            row['Lbs total'] = float(row['Kg']) * 2.20462
-        elif given(row, 'Stone') and given(row, 'Lbs'):
-            row['Lbs total'] = math.floor(float(row['Stone'])) * 14 + float(row['Lbs'])
-    if not given(row, 'Kg'):
-        if given(row, 'Lbs total'):
-            row['Kg'] = float(row['Lbs total']) / 2.20462
-    if (not given(row, 'Lbs')) and given(row, 'Lbs total'):
-            row['Lbs'] = int(row['Lbs total']) % 14
-    if (not given(row, 'Stone')) and given(row, 'Lbs total'):
-        row['Stone'] = math.floor(float(row['Lbs total']) / 14)
-    if given(row, 'Date number'):
-        row['Date number'] = int(float(row['Date number']))
-    else:
-        row['Date number'] = excel_date(row['Date'])
-    if (not given(row, 'St total')) and given(row, 'Lbs total'):
-            row['St total'] = float(row['Lbs total']) / 14
+# def weight_tracker_complete_row(row):
+#     if not given(row, 'Lbs total'):
+#         if given(row, 'Kg'):
+#             row['Lbs total'] = float(row['Kg']) * 2.20462
+#         elif given(row, 'Stone') and given(row, 'Lbs'):
+#             row['Lbs total'] = math.floor(float(row['Stone'])) * 14 + float(row['Lbs'])
+#     if not given(row, 'Kg'):
+#         if given(row, 'Lbs total'):
+#             row['Kg'] = float(row['Lbs total']) / 2.20462
+#     if (not given(row, 'Lbs')) and given(row, 'Lbs total'):
+#             row['Lbs'] = int(row['Lbs total']) % 14
+#     if (not given(row, 'Stone')) and given(row, 'Lbs total'):
+#         row['Stone'] = math.floor(float(row['Lbs total']) / 14)
+#     if given(row, 'Date number'):
+#         row['Date number'] = int(float(row['Date number']))
+#     else:
+#         row['Date number'] = excel_date(row['Date'])
+#     if (not given(row, 'St total')) and given(row, 'Lbs total'):
+#             row['St total'] = float(row['Lbs total']) / 14
     # print(row)
 
 def iso8601_date_time(timestamp):
@@ -55,12 +55,6 @@ def iso8601_date_time(timestamp):
 
 def iso8601_date_only(timestamp):
     return timestamp.replace('/', '-')[0:10]
-
-def excel_date(date1):          # from http://stackoverflow.com/questions/9574793/how-to-convert-a-python-datetime-datetime-to-excel-serial-date-number
-    temp = datetime.datetime(1899, 12, 31)
-    parts = [int(x) for x in date1.split('-')]
-    delta = datetime.datetime(parts[0], parts[1], parts[2]) - temp
-    return float(delta.days) + (float(delta.seconds) / 86400)
 
 file_type_handlers = {
     'weight': {

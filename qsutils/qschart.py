@@ -128,14 +128,20 @@ def qscharts(data:pd.DataFrame, file_type,
             msgs.print(f"charting into {outfile_template % name_suffix}")
             if not qschart(data, timestamp, file_type,
                            columns, begin, end, match, by_day_of_week,
-                           outfile_template % name_suffix, params, bar=bar, vlines=vlines):
-                msgs.print(f"TODO: output instructions for fetching missing data for {mainfile}, {file_type}, {name_suffix}")
+                           outfile_template % name_suffix, params,
+                           bar=bar, vlines=vlines,
+                           messager=msgs,
+                           ):
+                msgs.print(f"TODO: output instructions for fetching missing data for {file_type}")
 
-def plot_column_set(axs, data, columns, prefix, bar=False):
+def plot_column_set(axs, data, columns, prefix, bar=False, messager=None):
     for column in columns:
         col_header = column_header(column)
         if col_header not in data:
-            print("Column", col_header, "not present")
+            if messager:
+                messager.print("Column %s not present" % col_header)
+            else:
+                print("Column", col_header, "not present")
             continue
         column_data = data.loc[data[col_header] != 0,
                                ['Date', column_header(column)]]
@@ -159,7 +165,8 @@ def qschart(data: pd.DataFrame,
             outfile,
             plot_params,
             bar=False,
-            vlines=None):
+            vlines=None,
+            messager=None):
 
     """Plot a chart, if it needs updating.
 
@@ -208,7 +215,8 @@ def qschart(data: pd.DataFrame,
 
     plot_column_set(axs, data, columns,
                     "All " if by_day_of_week else "",
-                    bar=bar)
+                    bar=bar,
+                    messager=messager)
 
     if by_day_of_week:
         for dow in range(7):

@@ -12,6 +12,12 @@ import pprint
 import re
 import yaml
 
+def excel_date(date1):          # from http://stackoverflow.com/questions/9574793/how-to-convert-a-python-datetime-datetime-to-excel-serial-date-number
+    temp = datetime.datetime(1899, 12, 31)
+    parts = [int(x) for x in date1.split('-')]
+    delta = datetime.datetime(parts[0], parts[1], parts[2]) - temp
+    return float(delta.days) + (float(delta.seconds) / 86400)
+
 def tidy_for_output(val):
     """Make a value more neatly printable."""
     return (("%.2F" % val)

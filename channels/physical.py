@@ -14,6 +14,9 @@ from expressionive.expressionive import htmltags as T
 from expressionive.expridioms import wrap_box, labelled_section, linked_image
 
 NO_TIME = datetime.timedelta(seconds=0)
+EXCEL_EPOCH = datetime.date(1899, 12, 31)
+
+ACTIVITIES = (('cycling', 'Cycle'), ('running', 'Run'), ('walking', 'Walk'), ('swimming', 'Swim'))
 
 def parse_duration(dur):
     return (datetime.timedelta(hours=int(dur[:2]),
@@ -24,6 +27,12 @@ def parse_duration(dur):
 
 def parse_date(when):
     return datetime.date.fromisoformat(when[:10])
+
+def ensure_numeric_dates(table):
+    for row in table:
+        date = row['Date']
+        row['Date number'] = ((datetime.date.fromisoformat(date) if isinstance(date, str) else date) - EXCEL_EPOCH).days
+    return table
 
 CELL_CONVERSIONS = {
     'Activity Type': str,
@@ -175,7 +184,6 @@ def merge_garmin_downloads(downloads):
     activities_by_timestamp = dict()
     with BeginAndEndMessages("Merging Garmin downloads"):
         for download in downloads:
-            print("download of type", type(download), "and length", len(download))
             for activity in download:
                 if 'Date' not in activity:
                     print("Garmin activity with missing date:", activity)
@@ -186,9 +194,7 @@ def merge_garmin_downloads(downloads):
         ]
 
 def convert_exercise(raw):
-    result = apply_conversions(raw, EXERCISE_CONVERSIONS)
-    print("exercise:", raw, "==>", result)
-    return result
+    return apply_conversions(raw, EXERCISE_CONVERSIONS)
 
 def convert_measurement(raw):
     return apply_conversions(raw, MEASUREMENT_CONVERSIONS)
@@ -242,9 +248,6 @@ def combine_exercise_data(incoming_lists):
                             existing['Cycle moving time'] = (existing.get('Cycle moving time') or NO_TIME) + entry['Moving Time']
                             existing['Cycle elapsed time'] = (existing.get('Cycle elapsed time') or NO_TIME) + entry['Elapsed Time']
                         case 'Running' | 'Trail Running':
-                            print("running merge")
-                            print("existing", existing)
-                            print("entry", entry)
                             existing['Run distance'] = existing.get('Run distance', 0) + entry.get('Distance', 0)
                             existing['Run moving time'] = (existing.get('Run moving time') or NO_TIME) + entry.get('Moving Time')
                             existing['Run elapsed time'] = (existing.get('Run elapsed time') or NO_TIME) + entry.get('Elapsed Time')
@@ -262,7 +265,7 @@ def combine_exercise_data(incoming_lists):
                         case _:
                             pass
         return [by_date[date] for date in sorted(by_date.keys())]
-        # TODO: stringify everything for writing
+        # TODO: stringify everything for writing?
 
 def combine_measurement_data(incoming_lists):
     by_date = defaultdict(dict)
@@ -281,7 +284,9 @@ class PhysicalPanel(panels.DashboardPanel):
         self.combined_exercise_filename = os.path.expandvars("$SYNCED/health/exercise.csv")
         self.combined_measurement_filename = os.path.expandvars("$SYNCED/health/measurements.csv")
         self.exercise_data = None
+        self.exercise_dataframe = None
         self.measurement_data = None
+        self.measurement_dataframe = None
         self.updated = None
 
     def name(self):
@@ -303,24 +308,26 @@ class PhysicalPanel(panels.DashboardPanel):
         """Merge incoming health-related data from various files, into two central files,
         one for exercise and one for measurements."""
 
-        self.exercise_data = dobishem.storage.combined(
-            self.combined_exercise_filename,
-            combine_exercise_data,
-            {
-                self.combined_exercise_filename: convert_exercise,
-                self.accumulated_garmin_downloads_filename: convert_garmin,
-                os.path.expandvars("$SYNCED/health/isometric.csv"): convert_isometric,
-            })
-        self.measurement_data = dobishem.storage.combined(
-            self.combined_measurement_filename,
-            combine_measurement_data,
-            {
-                self.combined_measurement_filename: convert_measurement,
-                os.path.expandvars("$SYNCED/health/weight.csv"): convert_weight,
-                # TODO: add blood pressure readings
-                # TODO: add thermometer readings
-                # TODO: add peak flow readings
-            })
+        self.exercise_data = ensure_numeric_dates(
+            dobishem.storage.combined(
+                self.combined_exercise_filename,
+                combine_exercise_data,
+                {
+                    self.combined_exercise_filename: convert_exercise,
+                    self.accumulated_garmin_downloads_filename: convert_garmin,
+                    os.path.expandvars("$SYNCED/health/isometric.csv"): convert_isometric,
+                }))
+        self.measurement_data = ensure_numeric_dates(
+            dobishem.storage.combined(
+                self.combined_measurement_filename,
+                combine_measurement_data,
+                {
+                    self.combined_measurement_filename: convert_measurement,
+                    os.path.expandvars("$SYNCED/health/weight.csv"): convert_weight,
+                    # TODO: add blood pressure readings
+                    # TODO: add thermometer readings
+                    # TODO: add peak flow readings
+            }))
 
         self.updated = datetime.datetime.now()
         return self
@@ -328,48 +335,89 @@ class PhysicalPanel(panels.DashboardPanel):
     def prepare_page_images(self, date_suffix, begin_date, end_date, chart_sizes):
         """Prepare any images used by the output of the `html` method."""
         # TODO: rolling averages
-        self.dataframe = pd.read_csv(self.combined_measurement_filename)
-        self.dataframe['Date'] = pd.to_datetime(self.dataframe['Date'])
-        for units in ('stone', 'kilogram', 'pound'):
+        # TODO: convert existing data variables if not empty
+        self.measurement_dataframe = pd.read_csv(self.combined_measurement_filename)
+        self.measurement_dataframe['Date'] = pd.to_datetime(self.measurement_dataframe['Date'])
+        self.exercise_dataframe = pd.read_csv(self.combined_exercise_filename)
+        self.exercise_dataframe['Date'] = pd.to_datetime(self.exercise_dataframe['Date'])
+        with BeginAndEndMessages("plotting physical charts"):
+            for units in ('stone', 'kilogram', 'pound'):
+                qsutils.qschart.qscharts(
+                    data=self.measurement_dataframe,
+                    file_type='weight',
+                    timestamp=None,
+                    columns=[units],
+                    begin=begin_date, end=end_date, match=None,
+                    by_day_of_week=False, # split_by_DoW
+                    outfile_template=os.path.join(
+                        self.charts_dir, "weight-%s-%s-%%s.png" % (units, date_suffix)),
+                    plot_param_sets=chart_sizes,
+                    vlines=None)
             qsutils.qschart.qscharts(
-                data=self.dataframe,
-                file_type='weight',
+                data=self.measurement_dataframe,
+                file_type='BP',
                 timestamp=None,
-                columns=[units],
+                columns=['systolic', 'diastolic', 'heart_rate'],
                 begin=begin_date, end=end_date, match=None,
                 by_day_of_week=False, # split_by_DoW
                 outfile_template=os.path.join(
-                    self.charts_dir, "weight-%s-%s-%%s.png" % (units, date_suffix)),
+                    self.charts_dir, "bp-%s-%%s.png" % (date_suffix)),
                 plot_param_sets=chart_sizes,
                 vlines=None)
-        qsutils.qschart.qscharts(
-            data=self.dataframe,
-            file_type='BP',
-            timestamp=None,
-            columns=['systolic', 'diastolic', 'heart_rate'],
-            begin=begin_date, end=end_date, match=None,
-            by_day_of_week=False, # split_by_DoW
-            outfile_template=os.path.join(
-                self.charts_dir, "bp-%s-%%s.png" % (date_suffix)),
-            plot_param_sets=chart_sizes,
-            vlines=None)
+            for activity, activity_label in ACTIVITIES:
+                qsutils.qschart.qscharts(
+                    data=self.exercise_dataframe,
+                    file_type=activity_label,
+                    timestamp=None,
+                    columns=['%s %s' % (activity_label, factor)
+                             for factor in (
+                                     'distance',
+                                     # 'elapsed time',
+                                     # 'moving time',
+                                     'max speed',
+                                     'average speed')],
+                    begin=begin_date, end=end_date, match=None,
+                    bar=True,
+                    by_day_of_week=False, # split_by_DoW
+                    outfile_template=os.path.join(
+                        self.charts_dir, "%s-%s-%%s.png" % (activity, date_suffix)),
+                    plot_param_sets=chart_sizes,
+                    vlines=None)
 
     def html(self):
-        return T.div(class_="physical")[wrap_box(
-            T.div(class_="measurements")[
-                T.h3["Measurements"],
-                T.p["There are %d measurement rows." % len(self.measurement_data)],
-                wrap_box(
-                    linked_image(
-                        charts_dir=self.charts_dir,
-                        image_name="weight-stone",
-                        label="weight"),
-                    linked_image(
-                        charts_dir=self.charts_dir,
-                        image_name="bp",
-                        label="BP")),
-            ],
-            T.div(class_="exercise")[
-                T.h3["Exercise"],
-                T.p["There are %d exercise rows." % len(self.exercise_data)]
-            ])]
+        with BeginAndEndMessages("preparing physical HTML"):
+            return T.div(class_="physical")[wrap_box(
+                T.div(class_="measurements")[
+                    T.h3["Measurements"],
+                    T.p["There are %d measurement rows." % len(self.measurement_data)],
+                    wrap_box(
+                        linked_image(
+                            charts_dir=self.charts_dir,
+                            image_name="weight-stone",
+                            label="weight"),
+                        linked_image(
+                            charts_dir=self.charts_dir,
+                            image_name="bp",
+                            label="BP")),
+                ],
+                T.div(class_="exercise")[
+                    T.h3["Exercise"],
+                    T.p["There are %d exercise rows." % len(self.exercise_data)],
+                    wrap_box(
+                        linked_image(
+                            charts_dir=self.charts_dir,
+                            image_name="cycling",
+                            label="Cycling"),
+                        linked_image(
+                            charts_dir=self.charts_dir,
+                            image_name="running",
+                            label="Running"),
+                        linked_image(
+                            charts_dir=self.charts_dir,
+                            image_name="walking",
+                            label="Walking"),
+                        linked_image(
+                            charts_dir=self.charts_dir,
+                            image_name="swimming",
+                            label="Swimming")),
+                ])]
