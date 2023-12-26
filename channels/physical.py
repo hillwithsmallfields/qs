@@ -14,7 +14,6 @@ from expressionive.expressionive import htmltags as T
 from expressionive.expridioms import wrap_box, labelled_section, linked_image
 
 NO_TIME = datetime.timedelta(seconds=0)
-EXCEL_EPOCH = datetime.date(1899, 12, 31)
 
 ACTIVITIES = (('cycling', 'Cycle'), ('running', 'Run'), ('walking', 'Walk'), ('swimming', 'Swim'))
 
@@ -27,12 +26,6 @@ def parse_duration(dur):
 
 def parse_date(when):
     return datetime.date.fromisoformat(when[:10])
-
-def ensure_numeric_dates(table):
-    for row in table:
-        date = row['Date']
-        row['Date number'] = ((datetime.date.fromisoformat(date) if isinstance(date, str) else date) - EXCEL_EPOCH).days
-    return table
 
 CELL_CONVERSIONS = {
     'Activity Type': str,
@@ -308,7 +301,7 @@ class PhysicalPanel(panels.DashboardPanel):
         """Merge incoming health-related data from various files, into two central files,
         one for exercise and one for measurements."""
 
-        self.exercise_data = ensure_numeric_dates(
+        self.exercise_data = qsutils.qsutils.ensure_numeric_dates(
             dobishem.storage.combined(
                 self.combined_exercise_filename,
                 combine_exercise_data,
@@ -317,7 +310,7 @@ class PhysicalPanel(panels.DashboardPanel):
                     self.accumulated_garmin_downloads_filename: convert_garmin,
                     os.path.expandvars("$SYNCED/health/isometric.csv"): convert_isometric,
                 }))
-        self.measurement_data = ensure_numeric_dates(
+        self.measurement_data = qsutils.qsutils.ensure_numeric_dates(
             dobishem.storage.combined(
                 self.combined_measurement_filename,
                 combine_measurement_data,

@@ -12,11 +12,19 @@ import pprint
 import re
 import yaml
 
+EXCEL_EPOCH = datetime.date(1899, 12, 31)
+
 def excel_date(date1):          # from http://stackoverflow.com/questions/9574793/how-to-convert-a-python-datetime-datetime-to-excel-serial-date-number
     temp = datetime.datetime(1899, 12, 31)
     parts = [int(x) for x in date1.split('-')]
     delta = datetime.datetime(parts[0], parts[1], parts[2]) - temp
     return float(delta.days) + (float(delta.seconds) / 86400)
+
+def ensure_numeric_dates(table):
+    for row in table:
+        date = row['Date']
+        row['Date number'] = ((datetime.date.fromisoformat(date) if isinstance(date, str) else date) - EXCEL_EPOCH).days
+    return table
 
 def tidy_for_output(val):
     """Make a value more neatly printable."""
