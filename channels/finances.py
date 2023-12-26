@@ -8,6 +8,7 @@ import sys
 
 import yaml
 
+import numpy as np
 import pandas as pd
 
 import dobishem
@@ -84,16 +85,24 @@ def merge_handelsbanken_statements(statements):
     ]
 
 def finances_merger(tables):
+    for i, table in enumerate(tables):
+        print("table", i, "amount types", set(type(entry['Amount']) for entry in table))
     return [
         entry
         for table in tables
         for entry in table
     ]
 
+def fixup_reload_row(raw):
+    """Fix the amount type on re-reading the accumulated finances table."""
+    raw['Amount'] = float(raw['Amount'])
+    return raw
+
 def spending_row_to_internal(raw):
     # This is already nearly in our internal format
     raw['Details'] = raw['Item']
     raw['Origin'] = 'Spending'
+    raw['Amount'] = float(raw['Amount'])
     return raw
 
 normalized_accounts = {}
@@ -122,7 +131,7 @@ def handelsbanken_row_to_internal(raw, conversions):
         'Date': raw['Date'],
         'Time': "00:00:01",
         'Account': normalize_account(raw['Account']),
-        'Amount':  amount,
+        'Amount':  float(amount),
         'Currency': 'GBP',
         'Original_Amount':  orig_amount,
         'Original_Currency':  orig_curr,
@@ -141,12 +150,12 @@ def monzo_row_to_internal(raw, conversions):
     derived_details = conversions.get(
         without_cruft(raw['Name']).lower(),
         {
-            'payee': "undetected-" + raw['Name'],
-            'category': 'unknown', # raw['Category']
+            'Payee': "undetected-" + raw['Name'],
+            'Category': 'unknown', # raw['Category']
     })
-    if derived_details['category'] == "Eating out":
+    if derived_details['Category'] == "Eating out":
         when = datetime.time.fromisoformat(raw['Time'])
-        derived_details['category'] = (
+        derived_details['Category'] = (
             "Breakfast"
             if when < LUNCHTIME_START
             else ("Lunch"
@@ -160,14 +169,14 @@ def monzo_row_to_internal(raw, conversions):
         'Date':  f"{date[6:]}-{date[3:5]}-{date[0:2]}",
         'Time':  raw['Time'],
         'Account':  "Monzo",
-        'Amount':  raw['Amount'],
+        'Amount':  float(raw['Amount']),
         'Currency':  raw['Currency'],
-        'Original_Amount':  raw['Local amount'],
+        'Original_Amount':  float(raw['Local amount']),
         'Original_Currency':  raw['Local currency'],
         # 'Balance':  raw[''],
         # 'Statement':  raw[''],
-        'Payee':  derived_details['name'],
-        'Category': derived_details['category'],
+        'Payee':  derived_details['Payee'],
+        'Category': derived_details['Category'],
         # 'Project':  raw[''],
         'Details':  raw['Category'],
         'Item':  raw['Category'],
@@ -233,7 +242,7 @@ class FinancesPanel(panels.DashboardPanel):
         conversions = dobishem.storage.read_csv(
             self.conversion_filename,
             result_type=dict,
-            key_column='statement')
+            key_column='Statement')
 
         self.transactions = qsutils.qsutils.ensure_numeric_dates(
             dobishem.storage.combined(
@@ -243,7 +252,8 @@ class FinancesPanel(panels.DashboardPanel):
                     self.spending_filename: spending_row_to_internal,
                     self.accumulated_bank_statements_filename: lambda row: handelsbanken_row_to_internal(row, conversions),
                     self.monzo_downloads_filename: lambda row: monzo_row_to_internal(row, conversions),
-                }
+                },
+                fixup_reload_row
             ))
 
         financial.categorise.add_top_ancestor(self.transactions)
@@ -268,24 +278,22 @@ class FinancesPanel(panels.DashboardPanel):
 
         # eventually this will be produced inline (and cached in this file);
         # it used to come from the old Lisp part of the system
-        self.by_categories = financial.categorise.spread(self.transactions, "Class", "Amount")
-        self.by_categories_df = pd.DataFrame(self.by_categories).abs()
+        self.by_categories = qsutils.qsutils.ensure_numeric_dates(
+            financial.categorise.spread(self.transactions, "Class", "Amount"))
+        self.by_categories_df = pd.DataFrame(self.by_categories)
         self.by_categories_df['Date'] = pd.to_datetime(self.by_categories_df['Date'])
         self.by_categories_df.fillna(0, inplace=True)
-        print("Categories df")
-        print(self.by_categories_df.head(12))
-        # filename = os.path.join(self.charts_dir, "by-class.csv")
-        # if os.path.exists(filename):
-        #     self.by_categories = pd.read_csv(filename)
-        #     self.by_categories['Date'] = pd.to_datetime(self.by_categories['Date'])
+        self.by_categories_df.to_csv(os.path.join(self.charts_dir, "by-class.csv"))
 
         return self
 
     def prepare_page_images(self, begin_date, end_date, chart_sizes, date_suffix, verbose=False):
         """Prepare any images used by the output of the `html` method."""
-        if self.by_categories:
-            print("CATEGORIES_OF_INTEREST", CATEGORIES_OF_INTEREST)
-            print("Existing columns", self.by_categories_df.columns)
+        if self.by_categories_df is not None:
+            print("CATEGORIES_OF_INTEREST", sorted(set(CATEGORIES_OF_INTEREST)))
+            print("Existing columns", sorted(set(self.by_categories_df.columns)))
+            print("In both:", sorted(set(CATEGORIES_OF_INTEREST) & set(self.by_categories_df.columns)))
+            print("begin:", begin_date, "end:", end_date)
             qsutils.qschart.qscharts(data=self.by_categories_df,
                                      file_type='finances',
                                      timestamp=None,
