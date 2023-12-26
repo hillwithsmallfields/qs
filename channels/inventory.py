@@ -54,12 +54,6 @@ class InventoryPanel(panels.DashboardPanel):
         self.stock = storage.read_inventory("$SYNCED/org/stock.csv")
         self.project_parts = storage.read_inventory("$SYNCED/org/project-parts.csv")
         self.media = storage.read_books("$SYNCED/org/books.csv")
-
-        print(len(self.items), "items")
-        print(len(self.stock), "stock")
-        print(len(self.media), "media")
-        print(len(self.project_parts), "project_parts")
-
         self.media_by_type = defaultdict(list)
         for medium in self.media.values():
             self.media_by_type[medium['MediaType']].append(medium)
