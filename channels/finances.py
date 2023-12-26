@@ -8,12 +8,17 @@ import sys
 
 import yaml
 
+import pandas as pd
+
 import dobishem
 from expressionive.expressionive import htmltags as T
 import expressionive.expridioms
 
 import channels.panels as panels
 import financial.list_completions
+import financial.categorise
+
+import qsutils
 
 # import finutils
 
@@ -193,8 +198,10 @@ class FinancesPanel(panels.DashboardPanel):
         self.updated = None
         self.accumulated_bank_statements_filename = "$SYNCED/finances/handelsbanken/handelsbanken-full-new.csv"
         self.monzo_downloads_filename = "~/Downloads/Monzo Transactions - Monzo Transactions.csv"
+        # manually recorded spending:
         self.spending_filename = "$SYNCED/finances/spending.csv"
         self.conversion_filename = "$SYNCED/finances/conversions.csv"
+        self.hierarchy_filename = "$SYNCED/finances/cats.yaml"
         self.finances_main_filename = "$SYNCED/finances/finances-new.csv"
         self.completions_filename = "$SYNCED/var/finances-completions-new.el"
         self.dashboard_dir = os.path.expanduser("~/private_html/dashboard/")
@@ -228,15 +235,18 @@ class FinancesPanel(panels.DashboardPanel):
             result_type=dict,
             key_column='statement')
 
-        self.transactions = dobishem.storage.combined(
-            self.finances_main_filename,
-            finances_merger,
-            {
-                self.spending_filename: spending_row_to_internal,
-                self.accumulated_bank_statements_filename: lambda row: handelsbanken_row_to_internal(row, conversions),
-                self.monzo_downloads_filename: lambda row: monzo_row_to_internal(row, conversions),
-            }
-        )
+        self.transactions = qsutils.qsutils.ensure_numeric_dates(
+            dobishem.storage.combined(
+                self.finances_main_filename,
+                finances_merger,
+                {
+                    self.spending_filename: spending_row_to_internal,
+                    self.accumulated_bank_statements_filename: lambda row: handelsbanken_row_to_internal(row, conversions),
+                    self.monzo_downloads_filename: lambda row: monzo_row_to_internal(row, conversions),
+                }
+            ))
+
+        financial.categorise.add_top_ancestor(self.transactions)
 
         known_unknowns = [
             {'stripped': without_cruft(entry['Details'].lower())} | entry
@@ -258,17 +268,25 @@ class FinancesPanel(panels.DashboardPanel):
 
         # eventually this will be produced inline (and cached in this file);
         # it used to come from the old Lisp part of the system
-        filename = os.path.join(self.charts_dir, "by-class.csv")
-        if os.path.exists(filename):
-            self.by_categories = pd.read_csv(filename)
-            self.by_categories['Date'] = pd.to_datetime(self.by_categories['Date'])
+        self.by_categories = financial.categorise.spread(self.transactions, "Class", "Amount")
+        self.by_categories_df = pd.DataFrame(self.by_categories).abs()
+        self.by_categories_df['Date'] = pd.to_datetime(self.by_categories_df['Date'])
+        self.by_categories_df.fillna(0, inplace=True)
+        print("Categories df")
+        print(self.by_categories_df.head(12))
+        # filename = os.path.join(self.charts_dir, "by-class.csv")
+        # if os.path.exists(filename):
+        #     self.by_categories = pd.read_csv(filename)
+        #     self.by_categories['Date'] = pd.to_datetime(self.by_categories['Date'])
 
         return self
 
     def prepare_page_images(self, begin_date, end_date, chart_sizes, date_suffix, verbose=False):
         """Prepare any images used by the output of the `html` method."""
         if self.by_categories:
-            qsutils.qschart.qscharts(data=self.by_categories,
+            print("CATEGORIES_OF_INTEREST", CATEGORIES_OF_INTEREST)
+            print("Existing columns", self.by_categories_df.columns)
+            qsutils.qschart.qscharts(data=self.by_categories_df,
                                      file_type='finances',
                                      timestamp=None,
                                      columns=CATEGORIES_OF_INTEREST,
