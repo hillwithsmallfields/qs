@@ -385,7 +385,6 @@ class PhysicalPanel(panels.DashboardPanel):
             return T.div(class_="physical")[wrap_box(
                 T.div(class_="measurements")[
                     T.h3["Measurements"],
-                    T.p["There are %d measurement rows." % len(self.measurement_data)],
                     wrap_box(
                         linked_image(
                             charts_dir=self.charts_dir,
@@ -398,7 +397,6 @@ class PhysicalPanel(panels.DashboardPanel):
                 ],
                 T.div(class_="exercise")[
                     T.h3["Exercise"],
-                    T.p["There are %d exercise rows." % len(self.exercise_data)],
                     wrap_box(
                         linked_image(
                             charts_dir=self.charts_dir,
