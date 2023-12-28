@@ -29,13 +29,12 @@ def collate(incoming, key, period, column_mapping=None):
         'year': lambda isodate: isodate[:4],
         'weekday': lambda isodate: str(datetime.date.fromisoformat(isodate).weekday()),
     }[period]
-
     result = defaultdict(lambda: defaultdict(list))
     for row in incoming:
         if key not in row:
-            print("row", row, "is missing key", key)
+            print("    row", row, "is missing key", key)
             continue
-        result[period_fn(row['Date'])][column_mapping[row[key]]
+        result[period_fn(row['Date'])][column_mapping.get(row[key], row[key])
                                        if column_mapping
                                        else row[key]].append(row)
     return financial.finutils.with_key_as_column(result, 'Date')
