@@ -117,12 +117,14 @@ def handelsbanken_row_to_internal(raw, conversions):
     else:
         orig_curr = "GBP"
         orig_amount = None
+    key = without_cruft(item).lower()
     details = conversions.get(
-        without_cruft(item).lower(),
+        key,
         {
-            'payee': "unknown",
-            'category': "unknown"
+            'Payee': "unknown",
+            'Category': "unknown"
         })
+    print("item", item, "key", key, "known", key in conversions, "details", details)
     amount = float(raw.get('Money in') or "0") - float(raw.get('Money out') or "0")
     return {
         'Origin': 'Handelsbanken',
@@ -135,8 +137,8 @@ def handelsbanken_row_to_internal(raw, conversions):
         'Original_Currency':  orig_curr,
         'Balance':  raw['Balance'],
         'Statement':  raw['Balance'],
-        'Payee':  details.get('payee', "unknown"),
-        'Category':  details.get('category', "unknown"),
+        'Payee':  details.get('Payee', "unknown"),
+        'Category':  details.get('Category', "unknown"),
         'Project': "",
         'Details': item,
         'Item': item,
@@ -148,8 +150,8 @@ def monzo_row_to_internal(raw, conversions):
     derived_details = conversions.get(
         without_cruft(raw['Name']).lower(),
         {
-            'Payee': "undetected-" + raw['Name'],
-            'Category': 'unknown', # raw['Category']
+            'Payee': raw['Name'],
+            'Category': raw['Category'],
     })
     if derived_details['Category'] == "Eating out":
         when = datetime.time.fromisoformat(raw['Time'])
@@ -161,7 +163,7 @@ def monzo_row_to_internal(raw, conversions):
                   else ("Snacks"
                         if when < SUPPERTIME_START
                         else "Supper")))
-        print("classified meal at", when, "as", derived_details['category'])
+        print("classified meal at", when, "as", derived_details['Category'])
     row = {
         'Origin': 'Monzo',
         'Date':  f"{date[6:]}-{date[3:5]}-{date[0:2]}",
