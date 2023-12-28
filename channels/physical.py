@@ -333,7 +333,7 @@ class PhysicalPanel(panels.DashboardPanel):
         self.measurement_dataframe['Date'] = pd.to_datetime(self.measurement_dataframe['Date'])
         self.exercise_dataframe = pd.read_csv(self.combined_exercise_filename)
         self.exercise_dataframe['Date'] = pd.to_datetime(self.exercise_dataframe['Date'])
-        with BeginAndEndMessages("plotting physical charts", verbose=verbose):
+        with BeginAndEndMessages("plotting physical charts", verbose=verbose) as msgs:
             for units in ('stone', 'kilogram', 'pound'):
                 qsutils.qschart.qscharts(
                     data=self.measurement_dataframe,
@@ -345,7 +345,8 @@ class PhysicalPanel(panels.DashboardPanel):
                         self.charts_dir, "weight-%s-%s-%%s.png" % (units, date_suffix)),
                     plot_param_sets=chart_sizes,
                     vlines=None,
-                    verbose=verbose)
+                    verbose=verbose,
+                    messager=msgs)
             qsutils.qschart.qscharts(
                 data=self.measurement_dataframe,
                 timestamp=None,
@@ -356,7 +357,8 @@ class PhysicalPanel(panels.DashboardPanel):
                     self.charts_dir, "bp-%s-%%s.png" % (date_suffix)),
                 plot_param_sets=chart_sizes,
                 vlines=None,
-                verbose=verbose)
+                verbose=verbose,
+            messager=msgs)
             for activity, activity_label in ACTIVITIES:
                 qsutils.qschart.qscharts(
                     data=self.exercise_dataframe,
@@ -369,13 +371,14 @@ class PhysicalPanel(panels.DashboardPanel):
                                      'max speed',
                                      'average speed')],
                     begin=begin_date, end=end_date, match=None,
-                    bar=True,
+                    bar=False,
                     by_day_of_week=False, # split_by_DoW
                     outfile_template=os.path.join(
                         self.charts_dir, "%s-%s-%%s.png" % (activity, date_suffix)),
                     plot_param_sets=chart_sizes,
                     vlines=None,
-                    verbose=verbose)
+                    verbose=verbose,
+                    messager=msgs)
 
     def html(self):
         with BeginAndEndMessages("preparing physical HTML"):

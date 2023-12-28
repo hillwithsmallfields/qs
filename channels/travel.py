@@ -49,7 +49,6 @@ class TravelPanel(panels.DashboardPanel):
         """Prepare any images used by the output of the `html` method."""
         qsutils.qschart.qscharts(
             data=self.refuelling,
-            file_type="fuel",
             timestamp=None,
             columns=['Miles', 'MilesPerLitre', 'PoundsPerMile'],
             begin=begin_date, end=end_date, match=None,

@@ -14,6 +14,7 @@ import pandas as pd
 import dobishem
 from expressionive.expressionive import htmltags as T
 from expressionive.expridioms import wrap_box, labelled_subsection, linked_image
+from dobishem.nested_messages import BeginAndEndMessages
 
 import channels.panels as panels
 import financial.list_completions
@@ -162,7 +163,6 @@ def monzo_row_to_internal(raw, conversions):
                   else ("Snacks"
                         if when < SUPPERTIME_START
                         else "Supper")))
-        print("classified meal at", when, "as", derived_details['Category'])
     row = {
         'Origin': 'Monzo',
         'Date':  f"{date[6:]}-{date[3:5]}-{date[0:2]}",
@@ -293,21 +293,23 @@ class FinancesPanel(panels.DashboardPanel):
 
     def prepare_page_images(self, begin_date, end_date, chart_sizes, date_suffix, verbose=False):
         """Prepare any images used by the output of the `html` method."""
-        if self.by_categories_df is not None:
-            qsutils.qschart.qscharts(data=self.by_categories_df,
-                                     timestamp=None,
-                                     columns=CATEGORIES_OF_INTEREST,
-                                     begin=begin_date, end=end_date, match=None, by_day_of_week=False,
-                                     outfile_template=os.path.join(
-                                         self.charts_dir, "by-class-%s-%%s.png" % date_suffix),
-                                     plot_param_sets=chart_sizes)
-            # TODO: split main file into running balances for each account (tracking as needed), take the end of each month for each account, and put them all in a file to display here (and get that shown in the resulting page)
-            # qsutils.qschart.qscharts(FILECONF('finance', 'account-balances'), 'finances',
-            #                        [FILECONF('finance', 'main-current-account'),
-            #                         FILECONF('finance', 'main-savings-account')],
-            #                        begin, end, None, False,
-            #                        os.path.join(charts_dir, "balances-%s-%%s.png" % date_suffix),
-            #                        chart_sizes)
+        with BeginAndEndMessages("Plotting financial charts") as msgs:
+            if self.by_categories_df is not None:
+                qsutils.qschart.qscharts(data=self.by_categories_df,
+                                         timestamp=None,
+                                         columns=CATEGORIES_OF_INTEREST,
+                                         begin=begin_date, end=end_date, match=None, by_day_of_week=False,
+                                         outfile_template=os.path.join(
+                                             self.charts_dir, "by-class-%s-%%s.png" % date_suffix),
+                                         plot_param_sets=chart_sizes,
+                                         messager=msgs)
+                # TODO: split main file into running balances for each account (tracking as needed), take the end of each month for each account, and put them all in a file to display here (and get that shown in the resulting page)
+                # qsutils.qschart.qscharts(FILECONF('finance', 'account-balances'), 'finances',
+                #                        [FILECONF('finance', 'main-current-account'),
+                #                         FILECONF('finance', 'main-savings-account')],
+                #                        begin, end, None, False,
+                #                        os.path.join(charts_dir, "balances-%s-%%s.png" % date_suffix),
+                #                        chart_sizes)
 
     def recent_transactions_table(self, days_back):
         end_date = datetime.date.today()

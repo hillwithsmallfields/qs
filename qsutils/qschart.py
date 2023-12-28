@@ -16,9 +16,6 @@ import matplotlib.pyplot as plt
 
 from dobishem.nested_messages import BeginAndEndMessages
 
-import qsutils.file_types
-import qsutils.qsutils
-
 POSSIBLE_COLUMN_NAMES = {'stones': 'stone',
                          'pounds': 'pound',
                          'lbs': 'pound',
@@ -73,7 +70,8 @@ def qscharts(data:pd.DataFrame,
              plot_param_sets,
              bar=False,
              vlines=None,
-             verbose=False):
+             verbose=False,
+             messager=None):
     """Plot a set of related charts.
 
     The charts in the set use the same data but different plot params.
@@ -85,14 +83,20 @@ def qscharts(data:pd.DataFrame,
     """
     data.set_index("Date")
     for name_suffix, params in plot_param_sets.items():
-        msgs.print(f"charting into {outfile_template % name_suffix}")
-        if not qschart(data, timestamp, file_type,
+        if messager:
+            messager.print(f"charting into {outfile_template % name_suffix}")
+        else:
+            print(f"charting into {outfile_template % name_suffix}")
+        if not qschart(data, timestamp,
                        columns, begin, end, match, by_day_of_week,
                        outfile_template % name_suffix, params,
                        bar=bar, vlines=vlines,
-                       messager=msgs,
+                       messager=messager,
                        ):
-            msgs.print(f"TODO: output instructions for fetching missing data for {file_type}")
+            if messager:
+                messager.print(f"TODO: output instructions for fetching missing data for {outfile_template}")
+            else:
+                print(f"TODO: output instructions for fetching missing data for {outfile_template}")
 
 def plot_column_set(axs, data, columns, prefix, bar=False, messager=None):
     for column in columns:
