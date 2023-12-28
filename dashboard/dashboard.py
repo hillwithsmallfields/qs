@@ -156,10 +156,6 @@ def construct_dashboard_page(charts_dir, channels_data):
     #     # labelled_section("Meals", meals_section()),
     #     # labelled_section("By day of week", calories_per_day_of_week()),
     #     # labelled_section("Food groups", foods_section()),
-    #     # labelled_section("Running", running_section()),
-    #     # labelled_section("Cycling", cycling_section()),
-    #     # labelled_section("Walking", walking_section()),
-    #     # labelled_section("Blood pressure", blood_pressure_section()),
     #     # labelled_section("Peak flow", peak_flow_section()),
     #     # labelled_section("Sleep split", sleep_split_section()),
     #     # labelled_section("Sleep times", sleep_times_section()),
@@ -177,9 +173,6 @@ def construct_dashboard_page(charts_dir, channels_data):
     ]:
         handler = channels_data[panel_key]
         page.add_section(handler.label(), handler.html())
-    # page.add_section("Travel", travel_section())
-    # page.add_section("Inventory", inventory_section())
-    # page.add_section("Texts for reflection", reflection_section())
     return [T.body(onload="init_dashboard()")[
         T.script(src="dashboard.js"),
         T.h1["Personal dashboard"],
