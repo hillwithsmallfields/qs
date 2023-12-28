@@ -13,7 +13,7 @@ import pandas as pd
 
 import dobishem
 from expressionive.expressionive import htmltags as T
-import expressionive.expridioms
+from expressionive.expridioms import wrap_box, labelled_subsection, linked_image
 
 import channels.panels as panels
 import financial.list_completions
@@ -85,8 +85,6 @@ def merge_handelsbanken_statements(statements):
     ]
 
 def finances_merger(tables):
-    for i, table in enumerate(tables):
-        print("table", i, "amount types", set(type(entry['Amount']) for entry in table))
     return [
         entry
         for table in tables
@@ -216,6 +214,9 @@ class FinancesPanel(panels.DashboardPanel):
         self.dashboard_dir = os.path.expanduser("~/private_html/dashboard/")
         self.transactions = None
         self.by_categories = None
+        self.known_unknowns = None
+        self.categories = None
+        self.parentage = financial.categorise.parentages(dobishem.storage.load("$SYNCED/finances/cats.yaml"))
         global normalized_accounts
         normalized_accounts = dobishem.storage.load("$SYNCED/finances/normalize_accounts.json")
 
@@ -256,7 +257,8 @@ class FinancesPanel(panels.DashboardPanel):
                 fixup_reload_row
             ))
 
-        financial.categorise.add_top_ancestor(self.transactions)
+        for row in self.transactions:
+            row["Class"] = financial.categorise.nearest_ancestor_in_selection(row['Category'], self.parentage, CATEGORIES_OF_INTEREST)
 
         known_unknowns = [
             {'stripped': without_cruft(entry['Details'].lower())} | entry
@@ -267,8 +269,9 @@ class FinancesPanel(panels.DashboardPanel):
             "$SYNCED/finances/unknown-payees.csv",
             known_unknowns,
             sort_columns=['payee'])
+        self.known_unknowns = sorted(set([row['stripped'] for row in known_unknowns]))
         dobishem.storage.save("$SYNCED/finances/unknown-payees.yaml",
-                              sorted(set([row['stripped'] for row in known_unknowns])))
+                              self.known_unknowns)
 
         if ((not os.path.exists(self.completions_filename))
             or dobishem.storage.file_newer_than_file(
@@ -290,10 +293,6 @@ class FinancesPanel(panels.DashboardPanel):
     def prepare_page_images(self, begin_date, end_date, chart_sizes, date_suffix, verbose=False):
         """Prepare any images used by the output of the `html` method."""
         if self.by_categories_df is not None:
-            print("CATEGORIES_OF_INTEREST", sorted(set(CATEGORIES_OF_INTEREST)))
-            print("Existing columns", sorted(set(self.by_categories_df.columns)))
-            print("In both:", sorted(set(CATEGORIES_OF_INTEREST) & set(self.by_categories_df.columns)))
-            print("begin:", begin_date, "end:", end_date)
             qsutils.qschart.qscharts(data=self.by_categories_df,
                                      file_type='finances',
                                      timestamp=None,
@@ -334,8 +333,6 @@ class FinancesPanel(panels.DashboardPanel):
         """Returns various listings of my financial transactions."""
         # TODO: spending per category per day of month/week
 
-        some_columns = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
-
         full_details_file = os.path.join(self.dashboard_dir, "by-class.html")
 
         today = datetime.date.today()
@@ -344,28 +341,42 @@ class FinancesPanel(panels.DashboardPanel):
             dobishem.dates.back_from(today, years_back=1, months_back=0, days_back=0),
             today)
 
-        # Make the large chart that you get my clicking on the inline one:
+        # Make the large chart that you get by clicking on the inline one:
         financial.spending_chart.spending_chart_to_file(
             year_transactions,
             key='Category', period='month',
             output=full_details_file,
             inline=True)
-        return T.div[expressionive.expridioms.wrap_box(
-            expressionive.expridioms.linked_image(
+
+        return T.div[wrap_box(
+            linked_image(
                 charts_dir=self.dashboard_dir,
                 image_name="by-class",
                 label="transactions"),
-            T.div[T.h3["Recent transactions"],
-                  self.recent_transactions_table(14)],
-            T.div[T.h3["Spending by category"],
+            labelled_subsection("Recent transactions",
+                             self.recent_transactions_table(28)),
+            labelled_subsection("Spending by category",
                   T.a(class_='plainlink', href=full_details_file)[
                       financial.spending_chart.spending_chart(
-                          year_transactions,
+                          show_transactions(year_transactions),
                           key='Category', period='month',
-                          columns=some_columns,
-                          map_to_highlights = financial.parentage.read_budgetting_classes_table(
-                              financial.finutils.BUDGETCATS))
-                  ]],
+                          columns=CATEGORIES_OF_INTEREST,
+                          map_to_highlights=
+                          # financial.parentage.read_budgetting_classes_table(financial.finutils.BUDGETCATS)
+                          show_map(
+                              financial.categorise.make_map_to_selection(
+                                  self.parentage,
+                                  CATEGORIES_OF_INTEREST))
+                      )
+                  ]),
+            labelled_subsection("Unrecognized payees",
+                                [T.p["Listed in ",
+                                     os.path.expandvars("$SYNCED/finances/unknown-payees.yaml"),
+                                     "; please add to ",
+                                     os.path.expandvars("$SYNCED/finances/conversions.csv")]
+                                 T.div(class_='transactions_list')[T.ul[
+                                     [T.li[payee]
+                                      for payee in self.known_unknowns]]]]),
             # T.div[T.h3["Automatic Spending by day of month"],
             #       untemplate.safe_unicode(qsutils.html_pages.file_contents(os.path.join(self.facto.file_config('finance', 'merge-results-dir'),
             #                                                          "auto-by-day-of-month.html")))],
@@ -379,3 +390,15 @@ class FinancesPanel(panels.DashboardPanel):
             #       untemplate.safe_unicode(qsutils.html_pages.file_contents(os.path.join(self.facto.file_config('finance', 'merge-results-dir'),
             #                                                          "unmatched-non-auto.html")))]
         )]
+
+def show_map(map):
+    print("category map:")
+    for k in sorted(map.keys()):
+        print("  ", k, "-->", map[k])
+    return map
+
+def show_transactions(transactions):
+    print("transactions:")
+    for row in transactions:
+        print("  ", row['Date'], ":", row['Category'], "@", row['Payee'], "£", row['Amount'])
+    return transactions
