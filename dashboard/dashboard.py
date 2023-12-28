@@ -26,13 +26,11 @@ source_dir = os.path.dirname(os.path.realpath(__file__))
 
 # other parts of this project group
 ensure_in_path(os.path.dirname(source_dir))
-import financial.classify       # https://github.com/hillwithsmallfields/qs/blob/master/financial/classify.py
 import financial.spending_chart
 import financial.parentage
 import financial.finutils
 import qsutils.qsutils            # https://github.com/hillwithsmallfields/qs/blob/master/utils/qsutils.py
 import qsutils.qschart
-import qsutils.html_pages
 
 import channels.timetable
 from expressionive.expridioms import switchable_panel, linked_image
