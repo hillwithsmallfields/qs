@@ -46,9 +46,9 @@ class AgendaPanel(panels.DashboardPanel):
         return self
 
     def agenda_subsections(self, keys):
-        return wrap_box([labelled_subsection(key,
-                                             org_ql_list(top_items(self.from_org[key])))
-                        for key in keys])
+        return wrap_box(*[labelled_subsection(key,
+                                              org_ql_list(top_items(self.from_org[key])))
+                          for key in keys])
 
     def html(self):
         return wrap_box(
