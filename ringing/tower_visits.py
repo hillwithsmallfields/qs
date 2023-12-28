@@ -21,8 +21,11 @@ def read_dove():
         download = requests.get(DOVE_URL)
         if download.status_code == 200:
             print("Saving Dove data")
+            start = 0
+            while ord(download.text[start]) & 0x80:
+                start += 1
             with open(DOVE_FILE, 'w') as dove_save:
-                dove_save.write(download.text)
+                dove_save.write(download.text[start:])
         else:
             print("Failed to fetch Dove data")
     with open(DOVE_FILE) as dovestream:
@@ -30,6 +33,7 @@ def read_dove():
             name: tower
             for tower in csv.DictReader(dovestream)
             for name in tower_names(tower)
+            if tower['RingType'] == 'Full-circle ring'
         }
 
 def read_visits():
@@ -75,8 +79,11 @@ def classify_towers(visits):
     by_weight = defaultdict(int)
     by_year = defaultdict(int)
     for visit in visits.values():
-        by_weight[int(visit['Weight'].split('-')[0])] += 1
-        by_bells[int(visit['Bells'])] += 1
-        if visit['Date']:
-            by_year[int(visit['Date'].split('-')[0])] += 1
+        try:
+            by_weight[int(visit['Weight'].split('-')[0])] += 1
+            by_bells[int(visit['Bells'])] += 1
+            if visit['Date']:
+                by_year[int(visit['Date'].split('-')[0])] += 1
+        except:
+            print("Problem with tower visit", visit)
     return by_bells, by_weight, by_year
