@@ -337,7 +337,6 @@ class PhysicalPanel(panels.DashboardPanel):
             for units in ('stone', 'kilogram', 'pound'):
                 qsutils.qschart.qscharts(
                     data=self.measurement_dataframe,
-                    file_type='weight',
                     timestamp=None,
                     columns=[units],
                     begin=begin_date, end=end_date, match=None,
@@ -349,7 +348,6 @@ class PhysicalPanel(panels.DashboardPanel):
                     verbose=verbose)
             qsutils.qschart.qscharts(
                 data=self.measurement_dataframe,
-                file_type='BP',
                 timestamp=None,
                 columns=['systolic', 'diastolic', 'heart_rate'],
                 begin=begin_date, end=end_date, match=None,
@@ -362,7 +360,6 @@ class PhysicalPanel(panels.DashboardPanel):
             for activity, activity_label in ACTIVITIES:
                 qsutils.qschart.qscharts(
                     data=self.exercise_dataframe,
-                    file_type=activity_label,
                     timestamp=None,
                     columns=['%s %s' % (activity_label, factor)
                              for factor in (

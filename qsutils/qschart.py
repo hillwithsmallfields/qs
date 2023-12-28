@@ -66,7 +66,7 @@ COLUMN_HEADERS = {'stone': 'St total',
 def column_header(column):
     return COLUMN_HEADERS.get(column, column)
 
-def qscharts(data:pd.DataFrame, file_type,
+def qscharts(data:pd.DataFrame,
              timestamp,
              columns, begin, end, match, by_day_of_week,
              outfile_template,
@@ -83,17 +83,16 @@ def qscharts(data:pd.DataFrame, file_type,
         {'small': {'figsize': (5,4)},
          'large': {'figsize': (11,8)}}
     """
-    with BeginAndEndMessages(f"charting {file_type}", verbose=verbose) as msgs:
-        data.set_index("Date")
-        for name_suffix, params in plot_param_sets.items():
-            msgs.print(f"charting into {outfile_template % name_suffix}")
-            if not qschart(data, timestamp, file_type,
-                           columns, begin, end, match, by_day_of_week,
-                           outfile_template % name_suffix, params,
-                           bar=bar, vlines=vlines,
-                           messager=msgs,
-                           ):
-                msgs.print(f"TODO: output instructions for fetching missing data for {file_type}")
+    data.set_index("Date")
+    for name_suffix, params in plot_param_sets.items():
+        msgs.print(f"charting into {outfile_template % name_suffix}")
+        if not qschart(data, timestamp, file_type,
+                       columns, begin, end, match, by_day_of_week,
+                       outfile_template % name_suffix, params,
+                       bar=bar, vlines=vlines,
+                       messager=msgs,
+                       ):
+            msgs.print(f"TODO: output instructions for fetching missing data for {file_type}")
 
 def plot_column_set(axs, data, columns, prefix, bar=False, messager=None):
     for column in columns:
@@ -118,7 +117,6 @@ def plot_column_set(axs, data, columns, prefix, bar=False, messager=None):
 
 def qschart(data: pd.DataFrame,
             timestamp,
-            file_type: str, # one of 'weight', 'calories', 'finances', 'sleep'
             columns: List[str],
             begin: datetime.datetime, end: datetime.datetime,
             match,

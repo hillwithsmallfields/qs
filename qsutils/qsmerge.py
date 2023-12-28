@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Time-stamp: <2023-12-25 09:29:33 jcgs>
+# Time-stamp: <2023-12-28 18:32:57 jcgs>
 
 # Program to merge my Quantified Self files.
 
@@ -55,7 +55,7 @@ def iso8601_date_time(timestamp):
 
 def iso8601_date_only(timestamp):
     return timestamp.replace('/', '-')[0:10]
-
+]
 file_type_handlers = {
     'weight': {
         'row_parsers': {

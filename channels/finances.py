@@ -295,7 +295,6 @@ class FinancesPanel(panels.DashboardPanel):
         """Prepare any images used by the output of the `html` method."""
         if self.by_categories_df is not None:
             qsutils.qschart.qscharts(data=self.by_categories_df,
-                                     file_type='finances',
                                      timestamp=None,
                                      columns=CATEGORIES_OF_INTEREST,
                                      begin=begin_date, end=end_date, match=None, by_day_of_week=False,
