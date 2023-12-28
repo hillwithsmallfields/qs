@@ -29,20 +29,6 @@ def make_map_to_selection(parentage, selection):
     return {category: nearest_ancestor_in_selection(category, parentage, selection)
             for category in parentage.keys()} | {x: x for x in selection}
 
-# No longer used
-# def earliest_ancestor(cat, parentage):
-#     return (earliest_ancestor(parentage[cat], parentage)
-#             if (cat in parentage and parentage[cat])
-#             else cat)
-
-# No longer used
-# def add_top_ancestor(table):
-#     with open(os.path.expandvars("$SYNCED/finances/cats.yaml")) as ystream:
-#         parentage = parentages(yaml.safe_load(ystream))
-#     for row in table:
-#         row["Class"] = earliest_ancestor(row["Category"], parentage)
-#     return table
-
 def abs_if_num(x):
     return abs(x) if isinstance(x, numbers.Number) else x
 
