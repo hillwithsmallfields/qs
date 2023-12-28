@@ -359,17 +359,14 @@ class FinancesPanel(panels.DashboardPanel):
             labelled_subsection("Spending by category",
                   T.a(class_='plainlink', href=full_details_file)[
                       financial.spending_chart.spending_chart(
-                          show_transactions(year_transactions),
+                          year_transactions,
                           key='Category', period='month',
                           columns=CATEGORIES_OF_INTEREST,
                           map_to_highlights=
                           # financial.parentage.read_budgetting_classes_table(financial.finutils.BUDGETCATS)
-                          show_map(
-                              financial.categorise.make_map_to_selection(
-                                  self.parentage,
-                                  CATEGORIES_OF_INTEREST))
-                      )
-                  ]),
+                          financial.categorise.make_map_to_selection(
+                              self.parentage,
+                              CATEGORIES_OF_INTEREST))]),
             labelled_subsection("Unrecognized payees",
                                 [T.p["Listed in ",
                                      os.path.expandvars("$SYNCED/finances/unknown-payees.yaml"),
@@ -391,15 +388,3 @@ class FinancesPanel(panels.DashboardPanel):
             #       untemplate.safe_unicode(qsutils.html_pages.file_contents(os.path.join(self.facto.file_config('finance', 'merge-results-dir'),
             #                                                          "unmatched-non-auto.html")))]
         )]
-
-def show_map(map):
-    print("category map:")
-    for k in sorted(map.keys()):
-        print("  ", k, "-->", map[k])
-    return map
-
-def show_transactions(transactions):
-    print("transactions:")
-    for row in transactions:
-        print("  ", row['Date'], ":", row['Category'], "@", row['Payee'], "£", row['Amount'])
-    return transactions
