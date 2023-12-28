@@ -124,7 +124,6 @@ def handelsbanken_row_to_internal(raw, conversions):
             'Payee': "unknown",
             'Category': "unknown"
         })
-    print("item", item, "key", key, "known", key in conversions, "details", details)
     amount = float(raw.get('Money in') or "0") - float(raw.get('Money out') or "0")
     return {
         'Origin': 'Handelsbanken',
