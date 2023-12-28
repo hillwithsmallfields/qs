@@ -134,17 +134,11 @@ class ContactsPanel(panels.DashboardPanel):
                     T.table[
                         T.tr[T.th(colspan="2")["Flagged"]],
                         [
-                            T.tr[
-                                T.th[flag],
-                                T.td[str(len(by_flags[flag]))]
-                            ]
+                            T.tr[T.th[flag], T.td[str(len(by_flags[flag]))]]
                             for flag in sorted(by_flags.keys())
                         ]]]]]),
             labelled_subsection(
                 "People groups",
-                row(counts_table("By nationality",
-                                                          self.contacts_summary['by_nationality']),
-                                             counts_table("By title",
-                                                          self.contacts_summary['by_title']),
-                                             counts_table("By place met",
-                                                          self.contacts_summary['by_place_met']))))
+                row(counts_table("By nationality", self.contacts_summary['by_nationality']),
+                    counts_table("By title", self.contacts_summary['by_title']),
+                    counts_table("By place met", self.contacts_summary['by_place_met']))))
