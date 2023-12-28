@@ -4,7 +4,7 @@ import os
 import sys
 
 from expressionive.expressionive import htmltags as T
-from expressionive.expridioms import wrap_box, labelled_section
+from expressionive.expridioms import wrap_box, labelled_subsection
 
 import channels.panels as panels
 
@@ -46,14 +46,17 @@ class AgendaPanel(panels.DashboardPanel):
         return self
 
     def agenda_subsections(self, keys):
-        return wrap_box([[T.h3[key],
-                          org_ql_list(top_items(self.from_org[key]))]
-                         for key in keys])
+        return wrap_box([labelled_subsection(key,
+                                             org_ql_list(top_items(self.from_org[key])))
+                        for key in keys])
 
     def html(self):
         return wrap_box(
-            labelled_section("Actions", self.agenda_subsections(["Mending",
-                                                                 "Physical making",
-                                                                 "Programming"])),
-            labelled_section("Shopping", self.agenda_subsections(["Supermarket",
-                                                                  "Online"])))
+            labelled_subsection("Actions",
+                                self.agenda_subsections(["Mending",
+                                                         "Physical making",
+                                                         "Programming"])),
+            labelled_subsection("Shopping",
+                                self.agenda_subsections(["Supermarket",
+                                                         "Mackays",
+                                                         "Online"])))

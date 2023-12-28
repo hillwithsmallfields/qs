@@ -11,7 +11,7 @@ import channels.panels as panels
 import dobishem
 from dobishem.nested_messages import BeginAndEndMessages
 from expressionive.expressionive import htmltags as T
-from expressionive.expridioms import wrap_box, labelled_section, linked_image
+from expressionive.expridioms import wrap_box, labelled_subsection, linked_image
 
 NO_TIME = datetime.timedelta(seconds=0)
 
@@ -383,8 +383,8 @@ class PhysicalPanel(panels.DashboardPanel):
     def html(self):
         with BeginAndEndMessages("preparing physical HTML"):
             return T.div(class_="physical")[wrap_box(
-                T.div(class_="measurements")[
-                    T.h3["Measurements"],
+                T.div(class_="measurements")[labelled_subsection(
+                    "Measurements",
                     wrap_box(
                         linked_image(
                             charts_dir=self.charts_dir,
@@ -394,24 +394,15 @@ class PhysicalPanel(panels.DashboardPanel):
                             charts_dir=self.charts_dir,
                             image_name="bp",
                             label="BP")),
-                ],
-                T.div(class_="exercise")[
-                    T.h3["Exercise"],
+                )],
+                T.div(class_="exercise")[labelled_subsection(
+                    "Exercise",
                     wrap_box(
-                        linked_image(
-                            charts_dir=self.charts_dir,
-                            image_name="cycling",
-                            label="Cycling"),
-                        linked_image(
-                            charts_dir=self.charts_dir,
-                            image_name="running",
-                            label="Running"),
-                        linked_image(
-                            charts_dir=self.charts_dir,
-                            image_name="walking",
-                            label="Walking"),
-                        linked_image(
-                            charts_dir=self.charts_dir,
-                            image_name="swimming",
-                            label="Swimming")),
-                ])]
+                        [
+                            linked_image(
+                                charts_dir=self.charts_dir,
+                                image_name=activity.lower(),
+                                label=activity)
+                            for activity in ("Cycling", "Running", "Walking", "Swimming")
+                        ]
+                    ))])]

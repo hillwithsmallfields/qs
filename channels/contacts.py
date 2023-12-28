@@ -18,7 +18,7 @@ import coimealta.contacts.link_contacts as link_contacts
 import coimealta.contacts.contacts_data as contacts_data
 
 from expressionive.expressionive import htmltags as T
-from expressionive.expridioms import wrap_box, labelled_section, row
+from expressionive.expridioms import wrap_box, labelled_subsection, row
 
 def make_name_with_email(name, email):
     return (T.a(href="email:"+email)[name]
@@ -88,7 +88,7 @@ class ContactsPanel(panels.DashboardPanel):
         by_flags = {flag_labels.get(k, k): v
                     for k, v in self.contacts_summary['flagged'].items()}
         return wrap_box(
-            labelled_section(
+            labelled_subsection(
                 "Birthdays",
                 T.table(class_='birthdays')[
                     T.tr[T.th["Birthday"], T.th["Name"], T.th["Age"]],
@@ -104,7 +104,7 @@ class ContactsPanel(panels.DashboardPanel):
                                                    person, this_year, today, within_days=31)],
                                           key=lambda person: contacts_data.birthday(
                                               person, this_year))]]),
-            labelled_section(
+            labelled_subsection(
                 "To contact",
                 T.table(class_='contact_soon')[
                     T.tr[T.th["Last contacted"], T.th["Name"]],
@@ -114,7 +114,7 @@ class ContactsPanel(panels.DashboardPanel):
                                                                    person.get('Primary email', ""))]]
                      for person in sorted(long_uncontacted,
                                           key=lambda person: contacts_data.last_contacted(person))]]),
-            labelled_section(
+            labelled_subsection(
                 "People in contacts file",
                 T.dl[
                     T.dt["Number of people"], T.dd[str(n_people)],
@@ -140,7 +140,7 @@ class ContactsPanel(panels.DashboardPanel):
                             ]
                             for flag in sorted(by_flags.keys())
                         ]]]]]),
-            labelled_section(
+            labelled_subsection(
                 "People groups",
                 row(counts_table("By nationality",
                                                           self.contacts_summary['by_nationality']),
