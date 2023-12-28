@@ -6,10 +6,8 @@ import yaml
 
 def parentages(cats):
     parents = dict()
-    print("setting up parentage")
     def descend(parent, these, pars):
         for item, subtree in these.items():
-            print("  parent of", item, "is", parent)
             parents[item] = parent
             descend(item, subtree, pars)
     descend(None, cats, parents)
