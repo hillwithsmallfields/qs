@@ -167,6 +167,7 @@ def construct_dashboard_page(charts_dir, channels_data):
             'physical',
             'finances',
             'contacts',
+            'ringing',
             'travel',
             'inventory',
             'reflections',

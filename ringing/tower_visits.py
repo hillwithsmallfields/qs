@@ -15,7 +15,7 @@ def tower_names(tower):
             "%s (%s)" % (tower['Place'], tower['County']),
             ]
 
-def read_dove():
+def download_dove():
     if not os.path.exists(DOVE_FILE):
         print("Downloading tower data from Dove's Guide")
         download = requests.get(DOVE_URL)
@@ -28,6 +28,8 @@ def read_dove():
                 dove_save.write(download.text[start:])
         else:
             print("Failed to fetch Dove data")
+
+def read_dove():
     with open(DOVE_FILE) as dovestream:
         return {
             name: tower

@@ -5,6 +5,7 @@ import csv
 import tower_visits
 
 def towers_fill_in_main():
+    tower_visits.download_dove()
     dove = tower_visits.read_dove()
     visits = tower_visits.read_visits()
 

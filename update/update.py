@@ -42,6 +42,7 @@ import channels.physical
 import channels.reflections
 import channels.startpage
 import channels.travel
+import channels.ringing
 import channels.weather
 
 import backup
@@ -243,6 +244,7 @@ def updates(charts,
                 channels.perishables.PerishablesPanel,
                 channels.travel.TravelPanel,
                 channels.inventory.InventoryPanel,
+                channels.ringing.RingingPanel,
         ]
     ]
 
