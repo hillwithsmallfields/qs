@@ -373,7 +373,7 @@ class FinancesPanel(panels.DashboardPanel):
                                 [T.p["Listed in ",
                                      os.path.expandvars("$SYNCED/finances/unknown-payees.yaml"),
                                      "; please add to ",
-                                     os.path.expandvars("$SYNCED/finances/conversions.csv")]
+                                     os.path.expandvars("$SYNCED/finances/conversions.csv")],
                                  T.div(class_='transactions_list')[T.ul[
                                      [T.li[payee]
                                       for payee in self.known_unknowns]]]]),
