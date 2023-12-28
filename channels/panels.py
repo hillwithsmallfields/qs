@@ -18,6 +18,13 @@ class DashboardPanel(ABC):
         self.charts_dir = charts_dir
         self.updated = None
 
+    def name(self):
+        return self.label().lower()
+
+    @abstractmethod
+    def label(self):
+        return None
+
     def fetch(self, verbose=False, **kwargs):
         """Fetch data from external sources."""
         pass
@@ -34,8 +41,4 @@ class DashboardPanel(ABC):
     @abstractmethod
     def html(self):
         """Generate an expressionive HTML structure from the cached data."""
-        return None
-
-    @abstractmethod
-    def name(self):
         return None
