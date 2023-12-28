@@ -25,12 +25,9 @@ from dobishem.nested_messages import BeginAndEndMessages
 # other parts of this project group:
 ensure_in_path(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import dashboard.dashboard
-# import qsutils.check_merged_row_dates
-# import financial.list_completions
 # import physical.mfp_reader
 # import physical.oura_reader
 import qsutils.trim_csv
-# import qsutils.qsmerge
 import qsutils
 import channels.agenda
 import channels.contacts
