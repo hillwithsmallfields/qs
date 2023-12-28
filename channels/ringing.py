@@ -86,6 +86,8 @@ class RingingPanel(panels.DashboardPanel):
                     "Methods rung",
                     T.table[T.tr[T.th["Stage"], T.th["Methods"]],
                             [T.tr[T.th[STAGE_NAMES[stage]],
-                                  T.td[str(len(self.by_stage[stage]))]]
+                                  T.td[T.span(class_='overview')[str(len(self.by_stage[stage])),
+                                                                 T.span(class_='details')[", ".join(sorted(self.by_stage[stage]))]
+                                                                 ]]]
                              for stage in sorted(self.by_stage.keys())],
                             T.tr[T.th["Total"], T.td[str(len(self.methods_rung))]],]))]
