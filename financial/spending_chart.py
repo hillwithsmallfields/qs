@@ -29,7 +29,8 @@ def entry_as_html(entry, row, column, total):
                     T.td(clas='detamt')["{:.2f}".format(float(item['Amount']))],
                     T.td(clas='detdate')[item['Date']],
                     T.td(clas='detpay')[item['Payee']],
-                    T.td(clas='detcat')[item['Category']]
+                    T.td(clas='detcat')[item['Category']],
+                    T.td(clas='detcat')[item['Item']], # TODO: suppress if this is one of the categories?
                 ]
                 for item in cell]
             ]
