@@ -217,9 +217,7 @@ class FinancesPanel(panels.DashboardPanel):
         self.by_categories = None
         self.known_unknowns = None
         self.categories = None
-        self.parentage = financial.categorise.parentages(dobishem.storage.load("$SYNCED/finances/cats.yaml"))
-        global normalized_accounts
-        normalized_accounts = dobishem.storage.load("$SYNCED/finances/normalize_accounts.json")
+        self.parentage = None
 
     def name(self):
         return 'finances'
@@ -227,15 +225,26 @@ class FinancesPanel(panels.DashboardPanel):
     def label(self):
         return "Spending"
 
-    def fetch(self, verbose=False):
+    def fetch(self, verbose=False, messager=None):
         """Combine my downloaded bank statements into one file."""
         dobishem.storage.combined(
             self.accumulated_bank_statements_filename,
             merge_handelsbanken_statements,
             {filename: normalize_and_filter_opening_rows
-             for filename in dobishem.storage.in_modification_order("~/Downloads/Transaction*.csv")})
+             for filename in dobishem.storage.in_modification_order("~/Downloads/Transaction*.csv")},
+            verbose=verbose, messager=messager)
+        self.parentage = financial.categorise.parentages(dobishem.storage.load("$SYNCED/finances/cats.yaml",
+                                                                               verbose=verbose, messager=messager))
+        global normalized_accounts
+        normalized_accounts = dobishem.storage.load("$SYNCED/finances/normalize_accounts.json",
+                                                    verbose=verbose, messager=messager)
 
-    def update(self, verbose=False):
+    def files_to_write(self):
+        return [self.accumulated_bank_statements_filename,
+                self.finances_main_filename,
+                self.completions_filename]
+
+    def update(self, verbose=False, messager=None):
 
         """Merge my accumulated financial data, bank statements, Monzo
         statements, and manually recorded spending into the accumulated
@@ -255,7 +264,8 @@ class FinancesPanel(panels.DashboardPanel):
                     self.accumulated_bank_statements_filename: lambda row: handelsbanken_row_to_internal(row, conversions),
                     self.monzo_downloads_filename: lambda row: monzo_row_to_internal(row, conversions),
                 },
-                fixup_reload_row
+                fixup_reload_row,
+                verbose=verbose, messager=messager
             ))
 
         for row in self.transactions:
@@ -272,7 +282,8 @@ class FinancesPanel(panels.DashboardPanel):
             sort_columns=['payee'])
         self.known_unknowns = sorted(set([row['stripped'] for row in known_unknowns]))
         dobishem.storage.save("$SYNCED/finances/unknown-payees.yaml",
-                              self.known_unknowns)
+                              self.known_unknowns,
+                              verbose=verbose, messager=messager)
 
         if ((not os.path.exists(self.completions_filename))
             or dobishem.storage.file_newer_than_file(

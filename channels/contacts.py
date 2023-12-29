@@ -13,6 +13,7 @@ ensure_in_path(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import backup
 
 import dobishem.storage as storage
+from dobishem.nested_messages import BeginAndEndMessages
 
 import coimealta.contacts.link_contacts as link_contacts
 import coimealta.contacts.contacts_data as contacts_data
@@ -49,28 +50,24 @@ class ContactsPanel(panels.DashboardPanel):
     def label(self):
         return "People"
 
-    def update(self, verbose=False):
+    def files_to_write(self):
+        return [os.path.expandvars("$SYNCED/org/contacts.csv")]
 
-        """Preen my contacts file.  This checks for links between contacts, and does some analysis, which it returns
-        as the result."""
+    # TODO: fetch method to merge data from Google contacts?
 
+    def update(self, verbose=False, messager=None):
+
+        """Preen my contacts file.
+
+        This checks for links between contacts, and does some
+        analysis, which it returns as the result.
+        """
         contacts_file = os.path.expandvars("$SYNCED/org/contacts.csv")
-        contacts_scratch = "/tmp/contacts_scratch.csv"
         self.people_by_id, self.people_by_name = contacts_data.read_contacts(contacts_file)
         self.contacts_summary = link_contacts.analyze_contacts(self.people_by_id)
         link_contacts.link_contacts(self.people_by_id, self.people_by_name)
-        contacts_data.write_contacts(contacts_scratch, self.people_by_name)
-        with open(contacts_file) as confile, open(contacts_scratch) as conscratch:
-            original_lines = len(confile.readlines())
-            scratch_lines = len(conscratch.readlines())
-            if original_lines == scratch_lines:
-                backup.backup(contacts_file, "$HOME/archive", "contacts-%s.csv")
-                shutil.copy(contacts_scratch, contacts_file)
-            else:
-                print("wrong number of people after linking contacts, originally", original_lines, "but now", scratch_lines)
-
+        contacts_data.write_contacts(contacts_file, self.people_by_name)
         self.updated = datetime.datetime.now()
-        print("End of updating contacts")
         return self
 
     def html(self):

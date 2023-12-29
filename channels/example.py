@@ -15,11 +15,16 @@ class ExamplePanel(panels.DashboardPanel):
     def label(self):
         return "Example panel"
 
-    def fetch(self, verbose=False, **kwargs):
+    def files_to_write(self):
+        """Returns a list of files that the update methods is expected to write.
+        Used to back up the old versions before an update."""
+        return ["$SYNCED/example/example-accum.csv"]
+
+    def fetch(self, verbose=False, messager=None, **kwargs):
         """Fetch data from external sources."""
         pass
 
-    def update(self, verbose=False, **kwargs):
+    def update(self, verbose=False, messager=None, **kwargs):
         """Update the cached data."""
         self.examples = make_examples()
         self.updated = datetime.datetime.now()

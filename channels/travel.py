@@ -30,7 +30,7 @@ class TravelPanel(panels.DashboardPanel):
         with BeginAndEndMessages("fetching travel data"):
             return None
 
-    def update(self, verbose=False):
+    def update(self, verbose=False, messager=None):
         # TODO: write travel section of QS code
         # travel_main(facto.file_config('travel', 'travel-filename'), facto.file_config('travel', 'places-filename'))
         # TODO: calculate distances
@@ -47,19 +47,21 @@ class TravelPanel(panels.DashboardPanel):
 
     def prepare_page_images(self, date_suffix, begin_date, end_date, chart_sizes, verbose=False):
         """Prepare any images used by the output of the `html` method."""
-        qsutils.qschart.qscharts(
-            data=self.refuelling,
-            timestamp=None,
-            columns=['Miles', 'MilesPerLitre', 'PoundsPerMile'],
-            begin=begin_date, end=end_date, match=None,
-            bar=False,
-            by_day_of_week=False, # split_by_DoW
-            outfile_template=os.path.join(
-                self.charts_dir, "fuel-%s-%%s.png" % date_suffix),
-            plot_param_sets=chart_sizes,
-            vlines=None,
-            verbose=verbose
-        )
+        with BeginAndEndMessages("Charting travel") as msgs:
+            qsutils.qschart.qscharts(
+                data=self.refuelling,
+                timestamp=None,
+                columns=['Miles', 'MilesPerLitre', 'PoundsPerMile'],
+                begin=begin_date, end=end_date, match=None,
+                bar=False,
+                by_day_of_week=False, # split_by_DoW
+                outfile_template=os.path.join(
+                    self.charts_dir, "fuel-%s-%%s.png" % date_suffix),
+                plot_param_sets=chart_sizes,
+                vlines=None,
+                verbose=verbose,
+                messager=msgs,
+            )
 
     def html(self):
         return T.div[

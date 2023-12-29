@@ -25,16 +25,21 @@ class DashboardPanel(ABC):
     def label(self):
         return None
 
-    def fetch(self, verbose=False, **kwargs):
+    def fetch(self, verbose=False, messager=None, **kwargs):
         """Fetch data from external sources."""
         pass
 
-    def update(self, verbose=False, **kwargs):
+    def files_to_write(self):
+        """Returns a list of files that the update methods is expected to write.
+        Used to back up the old versions before an update."""
+        return []
+
+    def update(self, verbose=False, messager=None, **kwargs):
         """Update the cached data."""
         self.updated = datetime.datetime.now()
         return self
 
-    def prepare_page_images(self, **kwargs):
+    def prepare_page_images(self, verbose=False, **kwargs):
         """Prepare any images used by the output of the `html` method."""
         pass
 

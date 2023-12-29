@@ -29,7 +29,7 @@ class AgendaPanel(panels.DashboardPanel):
     def label(self):
         return "Things to do"
 
-    def update(self, verbose=False):
+    def update(self, verbose=False, messager=None):
 
         """Also updates the parcels expected list.
         Files written:
@@ -41,7 +41,8 @@ class AgendaPanel(panels.DashboardPanel):
 
         with open(os.path.expandvars("$SYNCED/var/views.json")) as org_ql_stream:
             self.from_org = json.load(org_ql_stream)
-        print("sections from org are", self.from_org.keys())
+        if verbose:
+            messager.print(f"sections from org are {self.from_org.keys()}")
         self.updated = datetime.datetime.now()
         return self
 

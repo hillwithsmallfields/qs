@@ -49,7 +49,7 @@ class WeatherPanel(panels.DashboardPanel):
     def label(self):
         return 'Weather'
 
-    def fetch(self, verbose=False):
+    def fetch(self, verbose=False, messager=None):
 
         """Fetch the short-term forecast from openweathermap,
         saving hourly extracts from it into a CSV file, and
@@ -73,7 +73,11 @@ class WeatherPanel(panels.DashboardPanel):
         place = list_of_locations[0]
         weather_manager = owm.weather_manager()
         observation = weather_manager.weather_at_place(loc_name)
-        print("weather observation is", observation)
+        if verbose:
+            if messager:
+                messager.print(f"weather observation is {observation}")
+            else:
+                print("weather observation is", observation)
         with open(self.sunlight_file, 'w') as outstream:
             json.dump({'sunrise': (datetime.datetime.fromtimestamp(observation.weather.sunrise_time())
                                    .time().isoformat(timespec='minutes')),
@@ -98,7 +102,7 @@ class WeatherPanel(panels.DashboardPanel):
                 writer.writerow(hour)
         self.fetched = datetime.datetime.now()
 
-    def update(self, verbose=False):
+    def update(self, verbose=False, messager=None):
         if self.forecast is None:
             if os.path.exists(self.weather_table_file):
                 with open(self.weather_table_file) as weatherstream:

@@ -1,5 +1,6 @@
 import collections
 import datetime
+import os
 
 import dobishem.storage
 from expressionive.expressionive import htmltags as T
@@ -44,9 +45,17 @@ class RingingPanel(panels.DashboardPanel):
     def label(self):
         return "Ringing"
 
-    def fetch(self, verbose=False, **kwargs):
+    def fetch(self, verbose=False, messager=None, **kwargs):
         if datetime.date.today().day == 1:
+            if verbose:
+                if messager:
+                    messager.print("Downloading Dove data")
+                else:
+                    print("Downloading Dove data")
             towers.download_dove()
+
+    def files_to_write(self):
+        return [os.path.expandvars("$SYNCED/ringing/towers.csv")]
 
     def update(self, verbose=False, **kwargs):
         self.dove = towers.read_dove()

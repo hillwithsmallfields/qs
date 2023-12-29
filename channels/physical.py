@@ -13,6 +13,9 @@ from dobishem.nested_messages import BeginAndEndMessages
 from expressionive.expressionive import htmltags as T
 from expressionive.expridioms import wrap_box, labelled_subsection, linked_image
 
+# import physical.mfp_reader
+# import physical.oura_reader
+
 NO_TIME = datetime.timedelta(seconds=0)
 
 ACTIVITIES = (('cycling', 'Cycle'), ('running', 'Run'), ('walking', 'Walk'), ('swimming', 'Swim'))
@@ -169,17 +172,111 @@ def safe_call(fn, arg):
     except:
         return None
 
+def merge_incoming_csv(main_file_key, incoming_key,
+                       begin_date, end_date,
+                       match_key=None, match_value=None,
+                       column_renames={},
+                       transformations={}):
+
+    """Merge a CSV of new (typically daily) readings into a long-term history, by date.  The incoming data may
+    overlap with the data already in the file, in which case the new data takes precedence; it won't make
+    duplicate rows.  Columns may be renamed between the two files, and the data may transformed, according
+    to the argument dictionaries 'column_renames' and 'transformations'."""
+
+    main_filename = facto.file_config('physical', main_file_key)
+    incoming_filename = latest_file_matching(facto.file_config('physical', incoming_key))
+    if incoming_filename:
+        print("merging", incoming_filename, "into", main_filename, "with column_renames", column_renames, "and matches", match_key, match_value)
+        qsutils.qsutils.trim_csv.trim_csv(incoming_filename) # Remove leading guff bytes added by financisto
+        if (os.path.isfile(incoming_filename)
+            and ((not os.path.isfile(main_filename))
+                 or storage.file_newer_than_file(incoming_filename, main_filename))):
+            data = {}
+            with open(incoming_filename) as instream:
+                for row in csv.reader(instream):
+                    header = data.rename_columns(row, column_renames)
+                    break           # just get the first row
+            if os.path.isfile(main_filename):
+                with open(main_filename) as instream:
+                    data = {row['Date']: row
+                            for row in csv.DictReader(instream)}
+            original_length = len(data)
+            with open(incoming_filename) as instream:
+                additional = {row['Date']: row
+                              for row in (data.transform_cells(data.rename_columns(raw, column_renames),
+                                                               transformations)
+                                          for raw in csv.DictReader(instream))
+                              if data.matches(row, match_key, match_value)}
+                data.update(additional)
+            if len(data) > original_length:
+                with open(main_filename, 'w') as outstream:
+                    writer = csv.DictWriter(outstream, header)
+                    writer.writeheader()
+                    for date in sorted(data.keys()):
+                        writer.writerow(data[date])
+            return data
+        else:
+            print("Latest incoming file", incoming_filename, "older than main file", main_filename)
+            return None
+    else:
+        print("could not find an incoming file matching", facto.file_config('physical', incoming_key), "for", incoming_key, "to merge into", main_filename)
+        return None
+
+def fetch_omron(facto, begin_date, end_date, verbose):
+
+    """Extract data from a manually saved Omron file.
+
+    Automatic fetcher or scraper possibly to come."""
+
+    with BeginAndEndMessages("updating blood pressure data"):
+        merge_incoming_csv('omron-filename', 'omron-incoming-pattern',
+                           begin_date, end_date,
+                           column_renames={'Measurement Date': 'Date',
+                                           'Time Zone': 'Timezone',
+                                           'SYS(mmHg)': 'SYS',
+                                           'DIA(mmHg)': 'DIA',
+                                           'Pulse(bpm)': 'Pulse',
+                                           'Device': 'Device Model Name'},
+                           transformations={'Irregular heartbeat detected': qsutils.qsutils.string_to_bool,
+                                            'Body Movement': qsutils.qsutils.string_to_bool,
+                                            'Date': qsutils.qsutils.normalize_date})
+
+def fetch_oura(facto, begin_date, end_date, verbose):
+
+    """Update my Oura records by fetching updates from Oura's cloud system."""
+
+    oura_filename = facto.file_config('physical', 'oura-filename')
+    data = {}
+    physical.oura_reader.oura_read_existing(data, oura_filename)
+    existing_rows = len(data)
+    if begin_date is None:
+        begin_date = qsutils.qsutils.earliest_unfetched(data)
+    with BeginAndEndMessages("fetching data from oura", verbose=verbose):
+        physical.oura_reader.oura_fetch(data, begin_date, end_date)
+    if len(data) > existing_rows:
+        physical.oura_reader.oura_write(data, oura_filename)
+    elif len(data) < existing_rows:
+        print("Warning: sleep data has shrunk on being fetched --- not writing it")
+    return data
+
+def fetch_mfp(facto, _begin_date, _end_date, verbose):
+
+    """Fetch recent data from MyFitnessPal.com."""
+
+    with BeginAndEndMessages("fetching data from myfitnesspal.com", verbose=verbose):
+        return physical.mfp_reader.MFP(facto.file_config('physical', 'mfp-filename')).update(verbose)
+
 def merge_garmin_downloads(downloads):
     """Merge the downloads.
     They will come in file modification order, and we want to keep
     only the latest if the files overlap.
     """
     activities_by_timestamp = dict()
-    with BeginAndEndMessages("Merging Garmin downloads"):
+    with BeginAndEndMessages("Merging Garmin downloads") as msgs:
         for download in downloads:
             for activity in download:
                 if 'Date' not in activity:
-                    print("Garmin activity with missing date:", activity)
+                    msgs.print(f"Garmin activity with missing date: {activity}")
                 activities_by_timestamp[activity['Date']] = activity
         return [
             activities_by_timestamp[when]
@@ -205,13 +302,8 @@ def convert_weight(raw):
         'Kg': total_lbs * 0.453592,
     }
 
-def convert_garmin0(raw):
-    return apply_conversions(raw, GARMIN_CONVERSIONS)
-
 def convert_garmin(raw):
-    result = convert_garmin0(raw)
-    # print("garmin:", raw, "==>", result)
-    return result
+    return apply_conversions(raw, GARMIN_CONVERSIONS)
 
 def convert_isometric(raw):
     return {
@@ -272,7 +364,7 @@ def combine_measurement_data(incoming_lists):
 class PhysicalPanel(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args)
+        super().__init__(*args, **kwargs)
         self.accumulated_garmin_downloads_filename = os.path.expandvars("$SYNCED/health/garmin-downloads.csv")
         self.combined_exercise_filename = os.path.expandvars("$SYNCED/health/exercise.csv")
         self.combined_measurement_filename = os.path.expandvars("$SYNCED/health/measurements.csv")
@@ -288,15 +380,21 @@ class PhysicalPanel(panels.DashboardPanel):
     def label(self):
         return 'Health'
 
-    def fetch(self, verbose=False):
+    def fetch(self, verbose=False, messager=None):
         """Fetch health-related downloads such as Garmin, and merge them into an accumulated file."""
         dobishem.storage.combined(
             self.accumulated_garmin_downloads_filename,
             merge_garmin_downloads,
             {filename: lambda raw: raw
-             for filename in dobishem.storage.in_modification_order("~/Downloads/Activities*.csv")})
+             for filename in dobishem.storage.in_modification_order("~/Downloads/Activities*.csv")},
+            verbose=verbose, messager=messager)
 
-    def update(self, verbose=False, **kwargs):
+    def files_to_write(self):
+        return [self.accumulated_garmin_downloads_filename,
+                self.combined_exercise_filename,
+                self.combined_measurement_filename]
+
+    def update(self, verbose=False, messager=None, **kwargs):
 
         """Merge incoming health-related data from various files, into two central files,
         one for exercise and one for measurements."""
@@ -309,7 +407,8 @@ class PhysicalPanel(panels.DashboardPanel):
                     self.combined_exercise_filename: convert_exercise,
                     self.accumulated_garmin_downloads_filename: convert_garmin,
                     os.path.expandvars("$SYNCED/health/isometric.csv"): convert_isometric,
-                }))
+                },
+                verbose=verbose, messager=messager))
         self.measurement_data = qsutils.qsutils.ensure_numeric_dates(
             dobishem.storage.combined(
                 self.combined_measurement_filename,
@@ -320,7 +419,8 @@ class PhysicalPanel(panels.DashboardPanel):
                     # TODO: add blood pressure readings
                     # TODO: add thermometer readings
                     # TODO: add peak flow readings
-            }))
+                },
+                verbose=verbose, messager=messager))
 
         self.updated = datetime.datetime.now()
         return self
