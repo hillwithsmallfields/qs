@@ -1,3 +1,4 @@
+from collections import defaultdict
 import datetime
 from math import acos, cos, sin, radians
 import os
@@ -64,6 +65,11 @@ class TravelPanel(panels.DashboardPanel):
                     lat1 = lat2
                     lon1 = lon2
         storage.write_csv(self.travel_filename, self.travel)
+        self.distance_by_year = defaultdict(int)
+        for journey in self.travel:
+            self.distance_by_year[journey['Date'].year] += int(journey.get('Distance', 0) or 0)
+        for year in sorted(self.distance_by_year.keys()):
+            messager.print(f"{year}: {self.distance_by_year[year]}")
         self.refuelling = pd.read_csv(os.path.expandvars("$SYNCED/org/fuel.csv"))
         self.refuelling['Date'] = pd.to_datetime(self.refuelling['Date'])
         self.refuelling['Miles'] = self.refuelling['Mileage'].diff()
@@ -89,6 +95,7 @@ class TravelPanel(panels.DashboardPanel):
                 verbose=verbose,
                 messager=msgs,
             )
+            # TODO: make a chart of distance travelled per year
 
     def html(self):
         return T.div[
