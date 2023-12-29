@@ -11,7 +11,8 @@ from expressionive.expridioms import wrap_box, labelled_section, SectionalPage
 def items_table(items):
     items_by_type = dict()
     for item in items.values():
-        key = "%s (%s)" % (item['Type'], item.get('Subtype', '?'))
+        subtype = item.get('Subtype')
+        key = ("%s (%s)" % (item['Type'], subtype)) if subtype else (item['Type'])
         if key in items_by_type:
             items_by_type[key].append(item)
         else:
