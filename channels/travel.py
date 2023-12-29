@@ -1,10 +1,12 @@
 import datetime
+from math import acos, cos, sin, radians
 import os
 
 import pandas as pd
 
 import qsutils
 import channels.panels as panels
+import dobishem.storage as storage
 from dobishem.nested_messages import BeginAndEndMessages
 from expressionive.expressionive import htmltags as T
 from expressionive.expridioms import wrap_box, labelled_subsection, linked_image
@@ -13,6 +15,8 @@ class TravelPanel(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
+        self.places_filename = "$SYNCED/travel/places/places.csv"
+        self.travel_filename = "$SYNCED/travel/travel.csv"
         self.places = None
         self.travel = None
         self.refuelling = None
@@ -24,6 +28,11 @@ class TravelPanel(panels.DashboardPanel):
     def label(self):
         return "Travel"
 
+    def files_to_write(self):
+        """Returns a list of files that the update methods is expected to write.
+        Used to back up the old versions before an update."""
+        return [self.travel_filename]
+
     def fetch_travel(begin_date, end_date):
         # TODO: fetch from Google, updating facto.file_config('travel', 'travel-filename') and facto.file_config('travel', 'places-filename')
 
@@ -33,10 +42,28 @@ class TravelPanel(panels.DashboardPanel):
     def update(self, verbose=False, messager=None):
         # TODO: write travel section of QS code
         # travel_main(facto.file_config('travel', 'travel-filename'), facto.file_config('travel', 'places-filename'))
-        # TODO: calculate distances
-        self.places = pd.read_csv(os.path.expandvars("$SYNCED/travel/places/places.csv"))
-        self.travel = pd.read_csv(os.path.expandvars("$SYNCED/travel/travel.csv"))
-        self.travel['Date'] = pd.to_datetime(self.travel['Date'])
+        self.places = storage.read_csv(self.places_filename,
+                                       result_type=dict,
+                                       key_column='Place')
+        self.travel = storage.read_csv(self.travel_filename)
+        for journey in self.travel:
+            journey['Date'] = datetime.date.fromisoformat(journey['Date'])
+        prev_place = None
+        for destination in self.travel:
+            place = self.places.get(destination['Destination'])
+            if place:
+                placename = place['Place']
+                if placename in self.places:
+                    lat2 = destination['Latitude'] = float(place['Latitude'])
+                    lon2 = destination['Longitude'] = float(place['Longitude'])
+                    if prev_place:
+                        destination['Distance'] = int(acos((sin(radians(lat1)) * sin(radians(lat2)))
+                                                           + (cos(radians(lat1)) * cos(radians(lat2)))
+                                                           * (cos(radians(lon2) - radians(lon1)))) * 3959)
+                    prev_place = place
+                    lat1 = lat2
+                    lon1 = lon2
+        storage.write_csv(self.travel_filename, self.travel)
         self.refuelling = pd.read_csv(os.path.expandvars("$SYNCED/org/fuel.csv"))
         self.refuelling['Date'] = pd.to_datetime(self.refuelling['Date'])
         self.refuelling['Miles'] = self.refuelling['Mileage'].diff()
