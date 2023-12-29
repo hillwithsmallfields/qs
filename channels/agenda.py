@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import subprocess
 import sys
 
 from expressionive.expressionive import htmltags as T
@@ -36,14 +37,31 @@ class AgendaPanel(panels.DashboardPanel):
         * $SYNCED/var/views.json
         * $SYNCED/var/parcels-expected.json"""
 
-        os.system("emacs -q --script " +
-                  os.path.expandvars("$MY_ELISP/special-setups/dashboard/dashboard-emacs-query.el"))
-
-        with open(os.path.expandvars("$SYNCED/var/views.json")) as org_ql_stream:
-            self.from_org = json.load(org_ql_stream)
-        if verbose:
-            messager.print(f"sections from org are {self.from_org.keys()}")
-        self.updated = datetime.datetime.now()
+        messager.print("running emacs subprocess for agenda queries")
+        result = subprocess.run(["emacs",
+                                 "--no-init-file",
+                                 "--batch",
+                                 "--script",
+                                 os.path.expandvars("$MY_ELISP/special-setups/dashboard/dashboard-emacs-query.el")],
+                                encoding='utf8',
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                text=True)
+        if result.returncode == 0:
+            if verbose:
+                if result.stdout:
+                    messager.print("emacs stdout:")
+                    for line in result.stdout.split("\n"):
+                        messager.print("    "+ line)
+                else:
+                    messager.print("Nothing on emacs stdout")
+            with open(os.path.expandvars("$SYNCED/var/views.json")) as org_ql_stream:
+                self.from_org = json.load(org_ql_stream)
+            if verbose:
+                messager.print(f"sections from org are {self.from_org.keys()}")
+            self.updated = datetime.datetime.now()
+        else:
+            messager.print("Emacs run for org query failed")
         return self
 
     def agenda_subsections(self, keys):
