@@ -1,4 +1,5 @@
 import datetime
+import subprocess
 import os
 
 def backup(filenames, archive_dir, messager=None):
@@ -7,4 +8,13 @@ def backup(filenames, archive_dir, messager=None):
         messager.print("backing up to " + backup_filename)
     else:
         print("backing up to" ,backup_filename)
-    os.system("tar czf %s %s" % (backup_filename, " ".join(filenames)))
+    result = subprocess.run(["tar", "cvzf", backup_filename] + filenames,
+                            encoding='utf8',
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            text=True)
+    if result.returncode == 0:
+        for line in result.stdout.split("\n"):
+            messager.print("    " + line)
+    else:
+        messager.print("Failed to back files up")
