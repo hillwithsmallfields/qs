@@ -16,34 +16,20 @@ from expressionive.expressionive import htmltags as T
 from expressionive.expridioms import wrap_box, labelled_section, SectionalPage
 import expressionive.exprpages as exprpages
 
-def ensure_in_path(directory):
-    if directory not in sys.path:
-        sys.path.append(directory)
-
-source_dir = os.path.dirname(os.path.realpath(__file__))
-
-# other parts of this project group
-ensure_in_path(os.path.dirname(source_dir))
 import financial.spending_chart
 import financial.parentage
 import financial.finutils
-import qsutils.qsutils            # https://github.com/hillwithsmallfields/qs/blob/master/utils/qsutils.py
+import qsutils.qsutils
 import qsutils.qschart
 
 import channels.timetable
 from expressionive.expridioms import switchable_panel, linked_image
 
-# This corresponds to https://github.com/hillwithsmallfields
-my_projects = os.path.dirname(os.path.dirname(source_dir))
-
 import coimealta.contacts.contacts_data as contacts_data
 import coimealta.inventory.storage as storage
 import coimealta.inventory.perishables as perishables
 
-ensure_in_path(os.path.join(my_projects, "noticeboard"))
-
-import announce                 # https://github.com/hillwithsmallfields/noticeboard/blob/master/announce.py
-import lifehacking_config       # https://github.com/hillwithsmallfields/noticeboard/blob/master/lifehacking_config.py
+SOURCE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
 
@@ -58,7 +44,7 @@ def make_remaining_cell(thresholds, spent_this_month, coi):
 def dashboard_page_colours():
     """Return the foreground and background colours, and a shading colour, specified in the stylesheet."""
 
-    sheet = cssutils.parseFile(os.path.join(source_dir, "dashboard.css"))
+    sheet = cssutils.parseFile(os.path.join(SOURCE_DIR, "dashboard.css"))
 
     foreground = None
     shading = None
@@ -185,18 +171,18 @@ def write_dashboard_page(charts_dir,
             exprpages.page_text(
                 construct_dashboard_page(charts_dir, channels_data),
                 ((exprpages.tagged_file_contents(
-                    "style", os.path.join(source_dir, "dashboard.css"))
+                    "style", os.path.join(SOURCE_DIR, "dashboard.css"))
                  + qsutils.qsutils.table_support_css(details_background_color))
                  if inline
                  else ""),
                 (exprpages.tagged_file_contents(
-                    "script", os.path.join(source_dir, "dashboard.js"))
+                    "script", os.path.join(SOURCE_DIR, "dashboard.js"))
                  if inline
                  else "")))
     if not inline:
         for filename in ("dashboard.css",
                          "dashboard.js"):
-            shutil.copy(os.path.join(source_dir, filename),
+            shutil.copy(os.path.join(SOURCE_DIR, filename),
                         os.path.join(charts_dir, filename))
 
 def make_channel_images(channel,

@@ -5,25 +5,12 @@ import sys
 
 import channels.panels as panels
 
-def ensure_in_path(directory):
-    if directory not in sys.path:
-        sys.path.append(directory)
-
-source_dir = os.path.dirname(os.path.realpath(__file__))
-
-# This corresponds to https://github.com/hillwithsmallfields
-my_projects = os.path.dirname(os.path.dirname(source_dir))
-
-ensure_in_path(os.path.dirname(source_dir))
-
 from expressionive.expressionive import htmltags as T
 from expressionive.expridioms import switchable_panel
 import dashboard.dashboard
 import dobishem.dates
 
-ensure_in_path(os.path.join(my_projects, "noticeboard"))
-
-import announce                 # https://github.com/hillwithsmallfields/noticeboard/blob/master/announce.py
+import timetable.announce as announce
 
 CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
 
