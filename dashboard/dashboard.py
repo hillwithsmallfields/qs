@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import cssutils
 import csv
 import datetime
@@ -260,14 +258,3 @@ def make_dashboard_page(charts_dir=None,
     write_dashboard_page(charts_dir,
                          channels_data,
                          details_background_color=shading)
-
-def main():
-    parser = qsutils.qsutils.program_argparser()
-    parser.add_argument("--charts", default=os.path.expanduser("~/private_html/dashboard"),
-                        help="""Directory to write charts into.""")
-    args = parser.parse_args()
-
-    make_dashboard_page(charts_dir=args.charts)
-
-if __name__ == '__main__':
-    main()
