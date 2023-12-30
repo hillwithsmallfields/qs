@@ -201,6 +201,21 @@ def write_dashboard_page(charts_dir,
             shutil.copy(os.path.join(source_dir, filename),
                         os.path.join(charts_dir, filename))
 
+def make_channel_images(channel, now, periods, chart_sizes, begin_date, end_date, verbose):
+    with BeginAndEndMessages("preparing %s images" % channel.name(),
+                             verbose=verbose):
+        for date_suffix, begin in ({'custom': begin_date}
+                                   if begin_date
+                                   else periods).items():
+            with BeginAndEndMessages("preparing %s images for %s" % (channel.name(), date_suffix.replace('_', ' ')),
+                                     verbose=verbose):
+                channel.prepare_page_images(
+                    date_suffix=date_suffix,
+                    begin_date=np.datetime64(datetime.datetime.combine(begin, now.time())),
+                    end_date=end_date or np.datetime64(now),
+                    chart_sizes=chart_sizes,
+                    verbose=verbose)
+
 def make_dashboard_images(charts_dir,
                           channels_data,
                           chart_sizes,
@@ -220,20 +235,8 @@ def make_dashboard_images(charts_dir,
                'past_year': dobishem.dates.back_from(today, 1, None, None)}
     with BeginAndEndMessages("preparing images",
                              verbose=verbose):
-        for channel_name, channel in channels_data.items():
-            with BeginAndEndMessages("preparing %s images" % channel_name,
-                                     verbose=verbose):
-                for date_suffix, begin in ({'custom': begin_date}
-                                           if begin_date
-                                           else periods).items():
-                    with BeginAndEndMessages("preparing %s images for %s" % (channel_name, date_suffix.replace('_', ' ')),
-                                             verbose=verbose):
-                        channel.prepare_page_images(
-                            date_suffix=date_suffix,
-                            begin_date=np.datetime64(datetime.datetime.combine(begin, now.time())),
-                            end_date=np.datetime64(now),
-                            chart_sizes=chart_sizes,
-                            verbose=verbose)
+        for channel in channels_data.values():
+            make_channel_images(channel, now, periods, chart_sizes, begin_date, end_date, verbose)
 
 def make_dashboard_page(charts_dir=None,
                         channels_data=None,
