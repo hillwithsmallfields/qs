@@ -199,7 +199,11 @@ def write_dashboard_page(charts_dir,
             shutil.copy(os.path.join(source_dir, filename),
                         os.path.join(charts_dir, filename))
 
-def make_channel_images(channel, now, periods, chart_sizes, begin_date, end_date, verbose):
+def make_channel_images(channel,
+                        when, periods,
+                        chart_sizes, foreground_colour, background_colour,
+                        begin_date, end_date,
+                        verbose):
     with BeginAndEndMessages("preparing %s images" % channel.name(),
                              verbose=verbose):
         for date_suffix, begin in ({'custom': begin_date}
@@ -209,15 +213,19 @@ def make_channel_images(channel, now, periods, chart_sizes, begin_date, end_date
                                      verbose=verbose):
                 channel.prepare_page_images(
                     date_suffix=date_suffix,
-                    begin_date=np.datetime64(datetime.datetime.combine(begin, now.time())),
-                    end_date=end_date or np.datetime64(now),
+                    begin_date=np.datetime64(datetime.datetime.combine(begin, when.time())),
+                    end_date=end_date or np.datetime64(when),
                     chart_sizes=chart_sizes,
+                    background_colour=background_colour,
+                    foreground_colour=foreground_colour,
                     verbose=verbose)
 
 def make_dashboard_images(charts_dir,
                           channels_data,
                           chart_sizes,
+                          text_colour,
                           background_colour,
+                          foreground_colour,
                           begin_date=None, end_date=None,
                           verbose=False):
     """Make all the images for the dashboard."""
@@ -234,7 +242,13 @@ def make_dashboard_images(charts_dir,
     with BeginAndEndMessages("preparing images",
                              verbose=verbose):
         for channel in channels_data.values():
-            make_channel_images(channel, now, periods, chart_sizes, begin_date, end_date, verbose)
+            make_channel_images(channel=channel,
+                                when=now, periods=periods,
+                                chart_sizes=chart_sizes,
+                                background_colour=background_colour,
+                                foreground_colour=foreground_colour,
+                                begin_date=begin_date, end_date=end_date,
+                                verbose=verbose)
 
 def make_dashboard_page(charts_dir=None,
                         channels_data=None,
@@ -249,11 +263,15 @@ def make_dashboard_page(charts_dir=None,
         charts_dir = os.path.expanduser("~/private_html/dashboard")
 
     text_colour, background_colour, shading = dashboard_page_colours()
-    make_dashboard_images(charts_dir,
-                          channels_data,
-                          chart_sizes,
-                          background_colour,
-                          begin_date, end_date,
+    if verbose:
+        print(f"text_colour: {text_colour}; background_colour: {background_colour}; shading: {shading}")
+    make_dashboard_images(charts_dir=charts_dir,
+                          channels_data=channels_data,
+                          chart_sizes=chart_sizes,
+                          begin_date=begin_date, end_date=end_date,
+                          text_colour=text_colour,
+                          background_colour=background_colour,
+                          foreground_colour=text_colour,
                           verbose=verbose)
     write_dashboard_page(charts_dir,
                          channels_data,

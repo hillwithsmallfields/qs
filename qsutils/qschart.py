@@ -65,7 +65,8 @@ def column_header(column):
 
 def qscharts(data:pd.DataFrame,
              timestamp,
-             columns, begin, end, match, by_day_of_week,
+             columns, foreground_colour,
+             begin, end, match, by_day_of_week,
              outfile_template,
              plot_param_sets,
              bar=False,
@@ -88,7 +89,8 @@ def qscharts(data:pd.DataFrame,
         else:
             print(f"charting into {outfile_template % name_suffix}")
         if not qschart(data, timestamp,
-                       columns, begin, end, match, by_day_of_week,
+                       columns, foreground_colour,
+                       begin, end, match, by_day_of_week,
                        outfile_template % name_suffix, params,
                        bar=bar, vlines=vlines,
                        messager=messager,
@@ -98,7 +100,7 @@ def qscharts(data:pd.DataFrame,
             else:
                 print(f"TODO: output instructions for fetching missing data for {outfile_template}")
 
-def plot_column_set(axs, data, columns, prefix, bar=False, messager=None):
+def plot_column_set(axs, data, columns, prefix, foreground_colour, bar=False, messager=None):
     for column in columns:
         col_header = column_header(column)
         if col_header not in data:
@@ -113,7 +115,7 @@ def plot_column_set(axs, data, columns, prefix, bar=False, messager=None):
             if bar:
                 # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.plot.bar.html
                 # for how to set the colour
-                column_data.plot.bar(ax=axs, x="Date", y=column_header(column))
+                column_data.plot.bar(ax=axs, x="Date", y=column_header(column), color=foreground_colour)
             else:
                 column_data.plot(ax=axs, x="Date", y=column_header(column))
             # TODO: it's not including the prefix (which I'm using for the day of the week)
@@ -122,6 +124,7 @@ def plot_column_set(axs, data, columns, prefix, bar=False, messager=None):
 def qschart(data: pd.DataFrame,
             timestamp,
             columns: List[str],
+            foreground_colour,
             begin: datetime.datetime, end: datetime.datetime,
             match,
             by_day_of_week,
@@ -173,6 +176,7 @@ def qschart(data: pd.DataFrame,
 
     plot_column_set(axs, data, columns,
                     "All " if by_day_of_week else "",
+                    foreground_colour=foreground_colour,
                     bar=bar,
                     messager=messager)
 

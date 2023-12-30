@@ -302,13 +302,17 @@ class FinancesPanel(panels.DashboardPanel):
 
         return self
 
-    def prepare_page_images(self, begin_date, end_date, chart_sizes, date_suffix, verbose=False):
+    def prepare_page_images(self,
+                            date_suffix, begin_date, end_date,
+                            chart_sizes, background_colour, foreground_colour,
+                            verbose=False):
         """Prepare any images used by the output of the `html` method."""
         with BeginAndEndMessages("Plotting financial charts") as msgs:
             if self.by_categories_df is not None:
                 qsutils.qschart.qscharts(data=self.by_categories_df,
                                          timestamp=None,
                                          columns=CATEGORIES_OF_INTEREST,
+                                         foreground_colour=foreground_colour,
                                          begin=begin_date, end=end_date, match=None, by_day_of_week=False,
                                          outfile_template=os.path.join(
                                              self.charts_dir, "by-class-%s-%%s.png" % date_suffix),

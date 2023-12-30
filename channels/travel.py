@@ -78,13 +78,17 @@ class TravelPanel(panels.DashboardPanel):
         self.updated = datetime.datetime.now()
         return self
 
-    def prepare_page_images(self, date_suffix, begin_date, end_date, chart_sizes, verbose=False):
+    def prepare_page_images(self,
+                            date_suffix, begin_date, end_date,
+                            chart_sizes, background_colour, foreground_colour,
+                            verbose=False):
         """Prepare any images used by the output of the `html` method."""
         with BeginAndEndMessages("Charting travel") as msgs:
             qsutils.qschart.qscharts(
                 data=self.refuelling,
                 timestamp=None,
                 columns=['Miles', 'MilesPerLitre', 'PoundsPerMile'],
+                foreground_colour=foreground_colour,
                 begin=begin_date, end=end_date, match=None,
                 bar=False,
                 by_day_of_week=False, # split_by_DoW

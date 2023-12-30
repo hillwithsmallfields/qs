@@ -425,7 +425,10 @@ class PhysicalPanel(panels.DashboardPanel):
         self.updated = datetime.datetime.now()
         return self
 
-    def prepare_page_images(self, date_suffix, begin_date, end_date, chart_sizes, verbose=False):
+    def prepare_page_images(self,
+                            date_suffix, begin_date, end_date,
+                            chart_sizes, background_colour, foreground_colour,
+                            verbose=False):
         """Prepare any images used by the output of the `html` method."""
         # TODO: rolling averages
         # TODO: convert existing data variables if not empty
@@ -439,6 +442,7 @@ class PhysicalPanel(panels.DashboardPanel):
                     data=self.measurement_dataframe,
                     timestamp=None,
                     columns=[units],
+                    foreground_colour=foreground_colour,
                     begin=begin_date, end=end_date, match=None,
                     by_day_of_week=False, # split_by_DoW
                     outfile_template=os.path.join(
@@ -451,6 +455,7 @@ class PhysicalPanel(panels.DashboardPanel):
                 data=self.measurement_dataframe,
                 timestamp=None,
                 columns=['systolic', 'diastolic', 'heart_rate'],
+                foreground_colour=foreground_colour,
                 begin=begin_date, end=end_date, match=None,
                 by_day_of_week=False, # split_by_DoW
                 outfile_template=os.path.join(
@@ -470,8 +475,9 @@ class PhysicalPanel(panels.DashboardPanel):
                                      # 'moving time',
                                      'max speed',
                                      'average speed')],
+                    foreground_colour=foreground_colour,
                     begin=begin_date, end=end_date, match=None,
-                    bar=False,
+                    bar=True,
                     by_day_of_week=False, # split_by_DoW
                     outfile_template=os.path.join(
                         self.charts_dir, "%s-%s-%%s.png" % (activity, date_suffix)),
