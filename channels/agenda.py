@@ -73,7 +73,10 @@ class AgendaPanel(panels.DashboardPanel):
     def html(self):
         return wrap_box(
             labelled_subsection("Actions",
-                                self.agenda_subsections(["Mending",
+                                self.agenda_subsections(["Today",
+                                                         "Imminent",
+                                                         "Weekend",
+                                                         "Mending",
                                                          "Physical making",
                                                          "Programming"])),
             labelled_subsection("Shopping",
