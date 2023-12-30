@@ -73,6 +73,7 @@ def spending_chart(transactions, key, period, columns, map_to_highlights, thresh
     for row in result:
         if 'Other' in row:
             del row['Other']
+    totals = {column: column_total(result, column) for column in columns}
     return T.table[
         T.tr[T.th["Date"],
              [T.th[column] for column in columns]],
@@ -81,7 +82,9 @@ def spending_chart(transactions, key, period, columns, map_to_highlights, thresh
                for column in columns]]
          for row in sorted(result, key=lambda r: r['Date'])],
         T.tr[T.th["Total"],
-             [T.td["%.2f" % column_total(result, column)] for column in columns]],
+             [T.td["%.2f" % totals[column]] for column in columns]],
+        T.tr[T.th["Daily"],
+             [T.td["%.2f" % (totals[column]/365)] for column in columns]],
     ]
 
 def spending_chart_to_file(incoming, key, period, output,
