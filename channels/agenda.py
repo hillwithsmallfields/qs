@@ -47,14 +47,14 @@ class AgendaPanel(panels.DashboardPanel):
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT,
                                 text=True)
+        if verbose:
+            if result.stdout:
+                messager.print("emacs stdout:")
+                for line in result.stdout.split("\n"):
+                    messager.print("    "+ line)
+            else:
+                messager.print("Nothing on emacs stdout")
         if result.returncode == 0:
-            if verbose:
-                if result.stdout:
-                    messager.print("emacs stdout:")
-                    for line in result.stdout.split("\n"):
-                        messager.print("    "+ line)
-                else:
-                    messager.print("Nothing on emacs stdout")
             with open(os.path.expandvars("$SYNCED/var/views.json")) as org_ql_stream:
                 self.from_org = json.load(org_ql_stream)
             if verbose:
