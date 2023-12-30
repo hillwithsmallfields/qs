@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import concurrent.futures
 import csv
 import datetime
 import io
@@ -115,15 +116,15 @@ def updates(charts,
                           messager=msgs)
     with BeginAndEndMessages("updating data and refreshing dashboard", verbose=verbose):
         if not no_externals:
-            with BeginAndEndMessages("fetching external data", verbose=verbose):
-                for handler in handlers:
-                    with BeginAndEndMessages(f"fetching {handler.name()} data", verbose=verbose) as msgs:
-                        handler.fetch(verbose=verbose, messager=msgs)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=len(handlers)) as ex:
+                with BeginAndEndMessages("fetching external data", verbose=verbose) as msgs:
+                    ex.map(lambda handler: handler.fetch(verbose=verbose, messager=msgs),
+                           handlers)
 
         with BeginAndEndMessages("updating saved data", verbose=verbose):
-            for handler in handlers:
-                with BeginAndEndMessages(f"updating {handler.name()} data") as msgs:
-                    handler.update(verbose=verbose, messager=msgs)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=len(handlers)) as ex:
+                ex.map(lambda handler: handler.update(verbose=verbose, messager=msgs),
+                       handlers)
 
         with BeginAndEndMessages("refreshing dashboard", verbose=verbose):
             dashboard.dashboard.make_dashboard_page(
