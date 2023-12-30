@@ -66,6 +66,7 @@ def update_covid():
 def updates(charts,
             begin, end,
             no_externals,
+            serial=False,
             verbose=False,
             testing=False,
             force=False):
@@ -114,17 +115,26 @@ def updates(charts,
             backup.backup(files_subject_to_change,
                           os.path.expanduser("~/archive"),
                           messager=msgs)
+
     with BeginAndEndMessages("updating data and refreshing dashboard", verbose=verbose):
         if not no_externals:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=len(handlers)) as ex:
-                with BeginAndEndMessages("fetching external data", verbose=verbose) as msgs:
-                    ex.map(lambda handler: handler.fetch(verbose=verbose, messager=msgs),
-                           handlers)
+            if serial:
+                for handler in handlers:
+                    handler.fetch(verbose=verbose, messager=msgs)
+            else:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=len(handlers)) as ex:
+                    with BeginAndEndMessages("fetching external data", verbose=verbose) as msgs:
+                        ex.map(lambda handler: handler.fetch(verbose=verbose, messager=msgs),
+                               handlers)
 
-        with BeginAndEndMessages("updating saved data", verbose=verbose):
-            with concurrent.futures.ThreadPoolExecutor(max_workers=len(handlers)) as ex:
-                ex.map(lambda handler: handler.update(verbose=verbose, messager=msgs),
-                       handlers)
+        with BeginAndEndMessages("updating saved data", verbose=verbose) as msgs:
+            if serial:
+                for handler in handlers:
+                    handler.update(verbose=verbose, messager=msgs)
+            else:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=len(handlers)) as ex:
+                    ex.map(lambda handler: handler.update(verbose=verbose, messager=msgs),
+                           handlers)
 
         with BeginAndEndMessages("refreshing dashboard", verbose=verbose):
             dashboard.dashboard.make_dashboard_page(
@@ -151,6 +161,8 @@ def get_args():
                         within the last day.""")
     parser.add_argument("--testing", action='store_true',
                         help="""Use an alternate directory which can be reset.""")
+    parser.add_argument("--serial", action='store_true',
+                        help="""Handle the channels serially, for easier debugging.""")
     parser.add_argument("--verbose", action='store_true',
                         help="""Output more progress messages.""")
     return vars(parser.parse_args())
