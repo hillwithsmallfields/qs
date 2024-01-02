@@ -16,16 +16,22 @@ from expressionive.expridioms import wrap_box, labelled_subsection, linked_image
 # import physical.mfp_reader
 # import physical.oura_reader
 
+RE_READ_MEASUREMENT = False
+RE_READ_EXERCISE = False
+
 NO_TIME = datetime.timedelta(seconds=0)
 
-ACTIVITIES = (('cycling', 'Cycle'), ('running', 'Run'), ('walking', 'Walk'), ('swimming', 'Swim'))
+ACTIVITIES = (('cycling', 'Cycle'), ('running', 'Run'), ('walking', 'Walk'), ('swimming', 'Swim'),)
+ISOMETRICS = (('plank', "Plank"),)
 
 def parse_duration(dur):
     return (datetime.timedelta(hours=int(dur[:2]),
                                minutes=int(dur[3:5]),
                                seconds=float(dur[6:]))
-            if dur
-            else NO_TIME)
+            if isinstance(dur, str)
+            else (datetime.timedelta(seconds=dur)
+                  if isinstance(dur, (int, float))
+                  else NO_TIME))
 
 def parse_date(when):
     return datetime.date.fromisoformat(when[:10])
@@ -122,7 +128,7 @@ EXERCISE_CONVERSIONS = filter_conversions(
     'Comment')
 
 MEASUREMENT_CONVERSIONS = filter_conversions(
-    'Date',
+    # 'Date',
     'Stone',
     'Lbs',
     'Date number',
@@ -343,7 +349,6 @@ def combine_exercise_data(incoming_lists):
                         case 'Open Water Swimming':
                             existing['Swim distance'] = existing.get('Swim distance', 0) + entry['Distance']
                             existing['Swim time'] = (existing.get('Swim time') or NO_TIME) + entry.get('Moving Time', NO_TIME)
-                            pass
                         # case 'Other':
                         #     if entry.get('Title', "").startswith("Elliptical Trainer"):
                         #         pass
@@ -421,7 +426,6 @@ class PhysicalPanel(panels.DashboardPanel):
                     # TODO: add peak flow readings
                 },
                 verbose=verbose, messager=messager))
-
         self.updated = datetime.datetime.now()
         return self
 
@@ -431,11 +435,31 @@ class PhysicalPanel(panels.DashboardPanel):
                             verbose=False):
         """Prepare any images used by the output of the `html` method."""
         # TODO: rolling averages
-        # TODO: convert existing data variables if not empty
-        self.measurement_dataframe = pd.read_csv(self.combined_measurement_filename)
-        self.measurement_dataframe['Date'] = pd.to_datetime(self.measurement_dataframe['Date'])
-        self.exercise_dataframe = pd.read_csv(self.combined_exercise_filename)
-        self.exercise_dataframe['Date'] = pd.to_datetime(self.exercise_dataframe['Date'])
+        if self.measurement_dataframe is None:
+            print("measurement table")
+            for i, row in enumerate(self.measurement_data):
+                print(i, row)
+            self.measurement_dataframe = (pd.read_csv(self.combined_measurement_filename)
+                                          if RE_READ_MEASUREMENT # self.measurement_data is None
+                                          else pd.DataFrame.from_records(self.measurement_data))
+
+            # try splatting the problem column back into shape; but this works differently depending on how I got the data (above)
+            self.measurement_dataframe.to_csv("/tmp/re-reading-raw.csv" if RE_READ_MEASUREMENT else "/tmp/re-using-raw.csv")
+            self.measurement_dataframe['Date'] = pd.to_datetime(self.measurement_dataframe['Date'])
+
+            # Debug output
+            print("measurement_dataframe\n", self.measurement_dataframe)
+            self.measurement_dataframe.to_csv("/tmp/re-reading-adjusted.csv" if RE_READ_MEASUREMENT else "/tmp/re-using-adjusted.csv")
+
+        if self.exercise_dataframe is None:
+            print("exercise table")
+            for i, row in enumerate(self.exercise_data):
+                print(i, row)
+            self.exercise_dataframe = (pd.read_csv(self.combined_exercise_filename)
+                                       if RE_READ_EXERCISE # self.exercise_data is None
+                                       else pd.DataFrame.from_records(self.exercise_data))
+            self.exercise_dataframe['Date'] = pd.to_datetime(self.exercise_dataframe['Date'])
+            print("exercise_dataframe\n", self.exercise_dataframe)
         with BeginAndEndMessages("plotting physical charts", verbose=verbose) as msgs:
             for units in ('stone', 'kilogram', 'pound'):
                 qsutils.qschart.qscharts(
@@ -454,7 +478,8 @@ class PhysicalPanel(panels.DashboardPanel):
             qsutils.qschart.qscharts(
                 data=self.measurement_dataframe,
                 timestamp=None,
-                columns=['systolic', 'diastolic', 'heart_rate'],
+                # columns=['systolic', 'diastolic', 'heart_rate'],
+                columns=['Resting pulse'],
                 foreground_colour=foreground_colour,
                 begin=begin_date, end=end_date, match=None,
                 by_day_of_week=False, # split_by_DoW
