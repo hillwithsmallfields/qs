@@ -4,6 +4,7 @@ import os
 import shutil
 import sys
 
+import numpy as np
 import pandas as pd
 
 import qsutils
@@ -363,8 +364,22 @@ def combine_measurement_data(incoming_lists):
         for list_in in incoming_lists:
             for entry in list_in:
                 by_date[entry['Date']].update(entry)
-        return [by_date[date] for date in sorted(by_date.keys())]
+        return qsutils.qsutils.ensure_numeric_dates(
+            [by_date[date] for date in sorted(by_date.keys())]
+        )
         # TODO: stringify everything for writing
+
+def identity(x):
+    return x
+
+def show_types(label, converted_df):
+    prev = None
+    print("comparing types for", label)
+    for index, row in converted_df.iterrows():
+        types = [type(elt) for elt in row.array]
+        if types != prev:
+            print(label, index, types)
+        prev = types
 
 class PhysicalPanel(panels.DashboardPanel):
 
@@ -414,7 +429,7 @@ class PhysicalPanel(panels.DashboardPanel):
                     os.path.expandvars("$SYNCED/health/isometric.csv"): convert_isometric,
                 },
                 verbose=verbose, messager=messager))
-        self.measurement_data = qsutils.qsutils.ensure_numeric_dates(
+        self.measurement_data = identity( # qsutils.qsutils.ensure_numeric_dates
             dobishem.storage.combined(
                 self.combined_measurement_filename,
                 combine_measurement_data,
@@ -436,25 +451,42 @@ class PhysicalPanel(panels.DashboardPanel):
         """Prepare any images used by the output of the `html` method."""
         # TODO: rolling averages
         if self.measurement_dataframe is None:
-            print("measurement table")
-            for i, row in enumerate(self.measurement_data):
-                print(i, row)
-            self.measurement_dataframe = (pd.read_csv(self.combined_measurement_filename)
-                                          if RE_READ_MEASUREMENT # self.measurement_data is None
-                                          else pd.DataFrame.from_records(self.measurement_data))
 
-            # try splatting the problem column back into shape; but this works differently depending on how I got the data (above)
-            self.measurement_dataframe.to_csv("/tmp/re-reading-raw.csv" if RE_READ_MEASUREMENT else "/tmp/re-using-raw.csv")
-            self.measurement_dataframe['Date'] = pd.to_datetime(self.measurement_dataframe['Date'])
+            for row in self.measurement_data:
+                for col in ['Stone', 'Lbs', 'Lbs total', 'Date number']:
+                    if col in row:
+                        v = row[col]
+                        if v:
+                            row[col] = float(v)
+            converted_df = pd.DataFrame.from_records(self.measurement_data)
+            converted_df.replace("", np.nan, inplace=True)
+            converted_df = converted_df[['Date', 'Stone', 'Lbs', 'Lbs total']]
+            converted_df.to_csv("/tmp/re-using-raw.csv")
+            converted_df['Date'] = pd.to_datetime(converted_df['Date'])
+            converted_df.to_csv("/tmp/re-using-adjusted.csv")
+            # for col in ['Stone', 'Lbs', 'Lbs total']:
+            #     converted_df[col] = converted_df[col].astype(float)
+            # converted_df.to_csv("/tmp/re-using-coerced.csv")
 
-            # Debug output
-            print("measurement_dataframe\n", self.measurement_dataframe)
-            self.measurement_dataframe.to_csv("/tmp/re-reading-adjusted.csv" if RE_READ_MEASUREMENT else "/tmp/re-using-adjusted.csv")
+            re_read_df = pd.read_csv(self.combined_measurement_filename)
+            re_read_df = re_read_df[['Date', 'Stone', 'Lbs', 'Lbs total']]
+            re_read_df.to_csv("/tmp/re-reading-raw.csv")
+            re_read_df['Date'] = pd.to_datetime(re_read_df['Date'])
+            re_read_df.to_csv("/tmp/re-reading-adjusted.csv")
+
+            self.measurement_dataframe = re_read_df if RE_READ_MEASUREMENT else converted_df
+
+            print("converted_df datatypes:\n", converted_df.dtypes)
+            show_types("converted", converted_df)
+            show_types("re_read", re_read_df)
+            print("re_read_df datatypes:\n", re_read_df.dtypes)
+            print("comparison from converted:\n", converted_df.compare(re_read_df))
+            print("comparison from re_read:\n", re_read_df.compare(converted_df))
 
         if self.exercise_dataframe is None:
-            print("exercise table")
-            for i, row in enumerate(self.exercise_data):
-                print(i, row)
+            # print("exercise table")
+            # for i, row in enumerate(self.exercise_data):
+            #     print(i, row)
             self.exercise_dataframe = (pd.read_csv(self.combined_exercise_filename)
                                        if RE_READ_EXERCISE # self.exercise_data is None
                                        else pd.DataFrame.from_records(self.exercise_data))
@@ -475,19 +507,20 @@ class PhysicalPanel(panels.DashboardPanel):
                     vlines=None,
                     verbose=verbose,
                     messager=msgs)
-            qsutils.qschart.qscharts(
-                data=self.measurement_dataframe,
-                timestamp=None,
-                # columns=['systolic', 'diastolic', 'heart_rate'],
-                columns=['Resting pulse'],
-                foreground_colour=foreground_colour,
-                begin=begin_date, end=end_date, match=None,
-                by_day_of_week=False, # split_by_DoW
-                outfile_template=os.path.join(
-                    self.charts_dir, "bp-%s-%%s.png" % (date_suffix)),
-                plot_param_sets=chart_sizes,
-                vlines=None,
-                verbose=verbose,
+            if False:
+                qsutils.qschart.qscharts(
+                    data=self.measurement_dataframe,
+                    timestamp=None,
+                    # columns=['systolic', 'diastolic', 'heart_rate'],
+                    columns=['Resting pulse'],
+                    foreground_colour=foreground_colour,
+                    begin=begin_date, end=end_date, match=None,
+                    by_day_of_week=False, # split_by_DoW
+                    outfile_template=os.path.join(
+                        self.charts_dir, "bp-%s-%%s.png" % (date_suffix)),
+                    plot_param_sets=chart_sizes,
+                    vlines=None,
+                    verbose=verbose,
             messager=msgs)
             for activity, activity_label in ACTIVITIES:
                 qsutils.qschart.qscharts(
