@@ -429,8 +429,7 @@ class PhysicalPanel(panels.DashboardPanel):
                     os.path.expandvars("$SYNCED/health/isometric.csv"): convert_isometric,
                 },
                 verbose=verbose, messager=messager))
-        self.measurement_data = identity( # qsutils.qsutils.ensure_numeric_dates
-            dobishem.storage.combined(
+        self.measurement_data = dobishem.storage.combined(
                 self.combined_measurement_filename,
                 combine_measurement_data,
                 {
@@ -440,7 +439,7 @@ class PhysicalPanel(panels.DashboardPanel):
                     # TODO: add thermometer readings
                     # TODO: add peak flow readings
                 },
-                verbose=verbose, messager=messager))
+                verbose=verbose, messager=messager)
         self.updated = datetime.datetime.now()
         return self
 
@@ -453,40 +452,31 @@ class PhysicalPanel(panels.DashboardPanel):
         if self.measurement_dataframe is None:
 
             for row in self.measurement_data:
-                for col in ['Stone', 'Lbs', 'Lbs total', 'Date number']:
+                for col in ['Stone', 'Lbs', 'Lbs total', 'Date number',
+                            'St total', # 'Kg', 'Non-zero',
+                            ]:
                     if col in row:
                         v = row[col]
                         if v:
                             row[col] = float(v)
+                        else:
+                            row[col] = 0.0
+                    else:
+                        row[col] = 0.0
             converted_df = pd.DataFrame.from_records(self.measurement_data)
+            # converted_df.astype
             converted_df.replace("", np.nan, inplace=True)
-            converted_df = converted_df[['Date', 'Stone', 'Lbs', 'Lbs total']]
-            converted_df.to_csv("/tmp/re-using-raw.csv")
+            print("original columns", converted_df.columns)
+            converted_df = converted_df[['Date', 'Stone', 'Lbs', 'Lbs total',
+                                         # try to narrow down which column breaks it
+                                         'St total', # 'Kg', 'Non-zero',
+                                         ]]
+            print("trimmed columns", converted_df.columns)
             converted_df['Date'] = pd.to_datetime(converted_df['Date'])
-            converted_df.to_csv("/tmp/re-using-adjusted.csv")
-            # for col in ['Stone', 'Lbs', 'Lbs total']:
-            #     converted_df[col] = converted_df[col].astype(float)
-            # converted_df.to_csv("/tmp/re-using-coerced.csv")
 
-            re_read_df = pd.read_csv(self.combined_measurement_filename)
-            re_read_df = re_read_df[['Date', 'Stone', 'Lbs', 'Lbs total']]
-            re_read_df.to_csv("/tmp/re-reading-raw.csv")
-            re_read_df['Date'] = pd.to_datetime(re_read_df['Date'])
-            re_read_df.to_csv("/tmp/re-reading-adjusted.csv")
-
-            self.measurement_dataframe = re_read_df if RE_READ_MEASUREMENT else converted_df
-
-            print("converted_df datatypes:\n", converted_df.dtypes)
-            show_types("converted", converted_df)
-            show_types("re_read", re_read_df)
-            print("re_read_df datatypes:\n", re_read_df.dtypes)
-            print("comparison from converted:\n", converted_df.compare(re_read_df))
-            print("comparison from re_read:\n", re_read_df.compare(converted_df))
+            self.measurement_dataframe = converted_df
 
         if self.exercise_dataframe is None:
-            # print("exercise table")
-            # for i, row in enumerate(self.exercise_data):
-            #     print(i, row)
             self.exercise_dataframe = (pd.read_csv(self.combined_exercise_filename)
                                        if RE_READ_EXERCISE # self.exercise_data is None
                                        else pd.DataFrame.from_records(self.exercise_data))
