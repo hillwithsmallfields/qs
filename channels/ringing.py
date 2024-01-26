@@ -9,6 +9,7 @@ import dobishem.storage
 from expressionive.expressionive import htmltags as T
 from expressionive.expridioms import wrap_box, labelled_subsection, linked_image, row
 
+import qsutils
 import channels.panels as panels
 import ringing.tower_visits as towers
 
@@ -63,14 +64,11 @@ class RingingPanel(panels.DashboardPanel):
         return [os.path.expandvars("$SYNCED/ringing/towers.csv")]
 
     def update(self, verbose=False, messager=None, **kwargs):
-        messager.print("Reading ringing data")
         self.dove = towers.read_dove()
         self.visits = towers.read_visits()
-        messager.print("Read ringing data")
 
         towers.towers_fill_in(self.dove, self.visits)
         towers.write_visits(self.visits)
-        messager.print("Saved updated ringing data")
 
         self.by_bells, self.by_weight, self.by_year = towers.classify_towers(self.visits)
 
@@ -78,13 +76,10 @@ class RingingPanel(panels.DashboardPanel):
         self.by_stage = collections.defaultdict(list)
         for method in self.methods_rung:
             self.by_stage[int(method['Stage'])].append(method['Method'])
-        messager.print("set up methods data")
         ringing_years = list(self.by_year.keys())
         year_data = [{'Date': y, 'Towers': self.by_year.get(y, 0)}
                      for y in range(min(ringing_years), max(ringing_years)+1)]
-        messager.print("year_data {year_data}")
         self.by_year_df = pd.DataFrame(year_data)
-        messager.print("by_year_df set to {self.by_year_df}")
         self.updated = datetime.datetime.now()
         return self
 
@@ -96,14 +91,11 @@ class RingingPanel(panels.DashboardPanel):
         # TODO: Chart towers grabbed by year
         # TODO: Chart towers rung by weight
         if self.by_year_df is not None:
-            plot_params = {'figsize': (5,3), 'facecolor': background_colour, 'edgecolor': foreground_colour}
-            fig, axs = plt.subplots(**plot_params) # the background colour comes in here
-            axs.set_facecolor(fig.get_facecolor())
-            self.by_year_df.plot.bar(ax=axs, x="Date", y='Towers', color=foreground_colour)
-            plt.xlabel("Date")
-            plt.grid(axis='both')
-            fig.savefig(self.by_years_chart_filename,
-                        facecolor=fig.get_facecolor())
+            qsutils.qschart.barchart(self.by_year_df,
+                                     x_name='Date', y_name='Towers',
+                                     filename=self.by_years_chart_filename,
+                                     background_colour=background_colour,
+                                     foreground_colour=foreground_colour)
 
     def html(self):
         """Generate an expressionive HTML structure from the cached data."""

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import sys
+print("using python version", sys.version)
 import argparse
 import concurrent.futures
 import csv
@@ -10,7 +12,6 @@ import os
 import re
 import requests
 import shutil
-import sys
 import yaml
 
 def ensure_in_path(directory):

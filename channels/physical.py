@@ -129,7 +129,7 @@ EXERCISE_CONVERSIONS = filter_conversions(
     'Comment')
 
 MEASUREMENT_CONVERSIONS = filter_conversions(
-    # 'Date',
+    'Date',
     'Stone',
     'Lbs',
     'Date number',
@@ -547,7 +547,8 @@ class PhysicalPanel(panels.DashboardPanel):
                         linked_image(
                             charts_dir=self.charts_dir,
                             image_name="bp",
-                            label="BP")),
+                            label="BP",
+                            title="Blood pressure")),
                 )],
                 T.div(class_="exercise")[labelled_subsection(
                     "Exercise",
@@ -556,7 +557,8 @@ class PhysicalPanel(panels.DashboardPanel):
                             linked_image(
                                 charts_dir=self.charts_dir,
                                 image_name=activity.lower(),
-                                label=activity)
+                                label=activity,
+                                title=activity)
                             for activity in ("Cycling", "Running", "Walking", "Swimming")
                         ]
                     ))])]
