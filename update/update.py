@@ -7,11 +7,13 @@ import concurrent.futures
 import csv
 import datetime
 import io
+import inotify.adapters
 import json
 import os
 import re
 import requests
 import shutil
+import time
 import yaml
 
 def ensure_in_path(directory):
@@ -64,48 +66,14 @@ def update_covid():
     # TODO: write to file
     # TODO: include in charts
 
-def updates(charts,
-            begin, end,
-            no_externals,
-            serial=False,
-            verbose=False,
-            testing=False,
-            force=False):
-
-    """Update my Quantified Self record files, which are generally CSV
-    files with a row for each day.  This also prepares some files for
-    making charts.  Finally, it calls the dashboard code, which uses
-    matplotlib to make the charts, as well as generating the HTML they
-    are embedded in.
-
-    The argument read_externals says whether to contact any external data sources.
-
-    """
-
-    os.makedirs(os.path.expanduser("~/private_html/dashboard"), exist_ok=True)
-
-    if end is None:
-        end = dates.yesterday()
-
-    handlers = [
-        panel_class(charts)
-        for panel_class in [
-                channels.finances.FinancesPanel,
-                # channels.weight.WeightPanel,
-                channels.parcels.ParcelsPanel,
-                channels.timetable.TimetablePanel,
-                channels.weather.WeatherPanel,
-                channels.agenda.AgendaPanel,
-                channels.physical.PhysicalPanel,
-                channels.contacts.ContactsPanel,
-                channels.reflections.ReflectionsPanel,
-                channels.perishables.PerishablesPanel,
-                channels.travel.TravelPanel,
-                channels.inventory.InventoryPanel,
-                channels.ringing.RingingPanel,
-                channels.startpage.StartPage,
-        ]
-    ]
+def update_once(handlers,
+                charts,
+                begin, end,
+                no_externals,
+                serial=False,
+                verbose=False,
+                testing=False,
+                force=False):
 
     with BeginAndEndMessages("archiving old data", verbose=verbose) as msgs:
         files_subject_to_change = [filename
@@ -147,6 +115,81 @@ def updates(charts,
                 chart_sizes=CHART_SIZES,
                 verbose=verbose)
 
+def updates(charts,
+            begin, end,
+            no_externals,
+            serial=False,
+            verbose=False,
+            testing=False,
+            force=False,
+            watch=False,
+            delay=15):
+
+    """Update my Quantified Self record files, which are generally CSV
+    files with a row for each day.  This also prepares some files for
+    making charts.  Finally, it calls the dashboard code, which uses
+    matplotlib to make the charts, as well as generating the HTML they
+    are embedded in.
+
+    The argument read_externals says whether to contact any external data sources.
+
+    """
+
+    os.makedirs(os.path.expanduser("~/private_html/dashboard"), exist_ok=True)
+
+    if end is None:
+        end = dates.yesterday()
+
+    handlers = [
+        panel_class(charts)
+        for panel_class in [
+                channels.finances.FinancesPanel,
+                # channels.weight.WeightPanel,
+                channels.parcels.ParcelsPanel,
+                channels.timetable.TimetablePanel,
+                channels.weather.WeatherPanel,
+                channels.agenda.AgendaPanel,
+                channels.physical.PhysicalPanel,
+                channels.contacts.ContactsPanel,
+                channels.reflections.ReflectionsPanel,
+                channels.perishables.PerishablesPanel,
+                channels.travel.TravelPanel,
+                channels.inventory.InventoryPanel,
+                channels.ringing.RingingPanel,
+                channels.startpage.StartPage,
+        ]
+    ]
+
+    if watch:
+        i = inotify.adapters.Inotify()
+        i.add_watch(os.path.expandvars("$ORG"))
+        i.add_watch(os.path.expandvars("$SYNCED/health"))
+        i.add_watch(os.path.expandvars("$SYNCED/travel"))
+
+        for event in i.event_gen(yield_nones=False):
+            (_, type_names, path, filename) = event
+            if 'IN_CLOSE_WRITE' in type_names:
+                print("PATH=[{}] FILENAME=[{}] EVENT_TYPES={}".format(path, filename, type_names))
+                # allow for multiple files to be saved in a burst
+                time.sleep(delay)
+                update_once(handlers,
+                            charts,
+                            begin, end,
+                            no_externals,
+                            serial,
+                            verbose,
+                            testing,
+                            force)
+    else:
+        update_once(handlers,
+                    charts,
+                    begin, end,
+                    no_externals,
+                    serial,
+                    verbose,
+                    testing,
+                    force)
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--charts", default=os.path.expanduser("~/private_html/dashboard"),
@@ -164,6 +207,11 @@ def get_args():
                         help="""Use an alternate directory which can be reset.""")
     parser.add_argument("--serial", action='store_true',
                         help="""Handle the channels serially, for easier debugging.""")
+    parser.add_argument("--watch", action='store_true',
+                        help="""Watch the input directories, in an inotify loop.""")
+    parser.add_argument("--delay", type=int,
+                        help="""Delay in seconds between detecting a file change and running an update.
+                        Allows for saving of multiple files in a burst.""")
     parser.add_argument("--verbose", action='store_true',
                         help="""Output more progress messages.""")
     return vars(parser.parse_args())
