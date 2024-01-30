@@ -8,16 +8,17 @@ import dobishem
 class StartPage(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
+        self.input_files = set(("startpage.yaml", "startpage.css"))
         super().__init__(*args, **kwargs)
-        self.updated = None
 
     def label(self):
         return ""
 
+    def reads_files(self, filenames):
+        return filenames & self.input_files
+
     def update(self, verbose=False, messager=None):
-
         """Update my personal start page, for which the master is a YAML file."""
-
         startpage = os.path.expandvars("$HOME/private_html/startpage.html")
         startpage_source = os.path.expandvars("$SYNCED/org/startpage.yaml")
         startpage_style = os.path.expandvars("$SYNCED/org/startpage.css")
@@ -33,7 +34,7 @@ class StartPage(panels.DashboardPanel):
                                                             stylesheet=startpage_style,
                                                             output=startpage)
 
-        self.updated = datetime.datetime.now()
+        super().update(verbose, messager)
         return self
 
     def html(self):

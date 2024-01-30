@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+import datetime
 import os
 import sys
 
@@ -17,6 +18,7 @@ class DashboardPanel(ABC):
     def __init__(self, charts_dir):
         self.charts_dir = charts_dir
         self.updated = None
+        self.saved_html = None
 
     def name(self):
         return self.label().lower()
@@ -34,9 +36,16 @@ class DashboardPanel(ABC):
         Used to back up the old versions before an update."""
         return []
 
+    def reads_files(self, filenames):
+        """Returns whether this class reads any of the given filenames."""
+        return True
+
     def update(self, verbose=False, messager=None, **kwargs):
-        """Update the cached data."""
+        """Update the cached data.
+        Call this from subclasses (using super) as it will
+        invalidate the cached HTML."""
         self.updated = datetime.datetime.now()
+        self.saved_html = None
         return self
 
     def prepare_page_images(self,
@@ -45,6 +54,12 @@ class DashboardPanel(ABC):
                             verbose=False):
         """Prepare any images used by the output of the `html` method."""
         pass
+
+    def get_html(self):
+        """Return an expressionive HTML structure from the cached data."""
+        if not self.saved_html:
+            self.saved_html = self.html()
+        return self.saved_html
 
     @abstractmethod
     def html(self):

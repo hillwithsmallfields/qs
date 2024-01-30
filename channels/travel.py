@@ -16,6 +16,7 @@ class TravelPanel(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
+        self.input_files = set(("travel.csv", "places.csv"))
         self.places_filename = "$SYNCED/travel/places/places.csv"
         self.travel_filename = "$SYNCED/travel/travel.csv"
         self.places = None
@@ -30,6 +31,9 @@ class TravelPanel(panels.DashboardPanel):
 
     def label(self):
         return "Travel"
+
+    def reads_files(self, filenames):
+        return filenames & self.input_files
 
     def files_to_write(self):
         """Returns a list of files that the update methods is expected to write.
@@ -79,7 +83,7 @@ class TravelPanel(panels.DashboardPanel):
         self.refuelling['Miles'] = self.refuelling['Mileage'].diff()
         self.refuelling['MilesPerLitre'] = self.refuelling['Miles'] / self.refuelling['Litres']
         self.refuelling['PoundsPerMile'] = self.refuelling['Cost'] / self.refuelling['Miles']
-        self.updated = datetime.datetime.now()
+        super().update(verbose, messager)
         return self
 
     def prepare_page_images(self,
@@ -103,7 +107,6 @@ class TravelPanel(panels.DashboardPanel):
                 verbose=verbose,
                 messager=msgs,
             )
-            # TODO: make a chart of distance travelled per year
             if self.distance_by_year_df is not None:
                 qsutils.qschart.barchart(self.distance_by_year_df,
                                          x_name='Year', y_name='Miles',

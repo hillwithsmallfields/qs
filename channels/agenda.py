@@ -21,7 +21,7 @@ class AgendaPanel(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
-        self.updated = None
+        self.input_files = set(("general.org", "shopping.org", "projects.org", "Marmalade-work.org"))
         self.from_org = None
 
     def name(self):
@@ -30,13 +30,15 @@ class AgendaPanel(panels.DashboardPanel):
     def label(self):
         return "Things to do"
 
+    def reads_files(self, filenames):
+        return filenames & self.input_files
+
     def update(self, verbose=False, messager=None):
 
         """Also updates the parcels expected list.
         Files written:
         * $SYNCED/var/views.json
         * $SYNCED/var/parcels-expected.json"""
-
         messager.print("running emacs subprocess for agenda queries")
         result = subprocess.run(["emacs",
                                  "--no-init-file",
@@ -62,6 +64,7 @@ class AgendaPanel(panels.DashboardPanel):
             self.updated = datetime.datetime.now()
         else:
             messager.print("Emacs run for org query failed")
+        super().update(verbose, messager)
         return self
 
     def agenda_subsections(self, keys):

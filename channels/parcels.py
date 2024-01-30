@@ -12,7 +12,6 @@ class ParcelsPanel(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
-        self.updated = None
         self.parcels = None
 
     def name(self):
@@ -20,6 +19,9 @@ class ParcelsPanel(panels.DashboardPanel):
 
     def label(self):
         return 'Parcels expected'
+
+    def reads_files(self, filenames):
+        return "shopping.org" in filenames
 
     def fetch(self, verbose=False, messager=None):
         # The "fetch" operation for this is done by agenda.py
@@ -29,6 +31,7 @@ class ParcelsPanel(panels.DashboardPanel):
         with open(os.path.expandvars("$SYNCED/var/parcels-expected.json")) as parcels_stream:
             self.parcels = json.load(parcels_stream)['expected']
         self.updated = datetime.datetime.now()
+        super().update(verbose, messager)
         return self
 
     def html(self):

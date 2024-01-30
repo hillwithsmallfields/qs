@@ -28,7 +28,6 @@ class TimetablePanel(panels.DashboardPanel):
             TimetableDay(dobishem.dates.forward_from(datetime.date.today(), None, None, 1)).html(),
             TimetableDay(dobishem.dates.forward_from(datetime.date.today(), None, None, 2)).html(),
         ]
-        pass
 
     def name(self):
         return 'timetable'
@@ -37,6 +36,7 @@ class TimetablePanel(panels.DashboardPanel):
         return 'Timetable'
 
     def update(self, verbose=False, messager=None):
+        super().update(verbose, messager)
         return self
 
     def html(self):

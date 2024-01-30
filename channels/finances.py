@@ -203,7 +203,6 @@ class FinancesPanel(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.updated = None
         self.accumulated_bank_statements_filename = "$SYNCED/finances/handelsbanken/handelsbanken-full-new.csv"
         self.monzo_downloads_filename = "~/Downloads/Monzo Transactions - Monzo Transactions.csv"
         # manually recorded spending:
@@ -298,6 +297,7 @@ class FinancesPanel(panels.DashboardPanel):
         self.by_categories_df.fillna(0, inplace=True)
         self.by_categories_df.to_csv(os.path.join(self.charts_dir, "by-class.csv"))
 
+        super().update(verbose, messager)
         return self
 
     def prepare_page_images(self,

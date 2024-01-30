@@ -392,7 +392,6 @@ class PhysicalPanel(panels.DashboardPanel):
         self.exercise_dataframe = None
         self.measurement_data = None
         self.measurement_dataframe = None
-        self.updated = None
 
     def name(self):
         return 'physical'
@@ -415,10 +414,8 @@ class PhysicalPanel(panels.DashboardPanel):
                 self.combined_measurement_filename]
 
     def update(self, verbose=False, messager=None, **kwargs):
-
         """Merge incoming health-related data from various files, into two central files,
         one for exercise and one for measurements."""
-
         self.exercise_data = qsutils.qsutils.ensure_numeric_dates(
             dobishem.storage.combined(
                 self.combined_exercise_filename,
@@ -440,7 +437,7 @@ class PhysicalPanel(panels.DashboardPanel):
                     # TODO: add peak flow readings
                 },
                 verbose=verbose, messager=messager)
-        self.updated = datetime.datetime.now()
+        super().update(verbose, messager)
         return self
 
     def prepare_page_images(self,

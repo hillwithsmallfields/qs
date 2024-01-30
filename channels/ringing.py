@@ -31,9 +31,10 @@ STAGE_NAMES=[
 
 class RingingPanel(panels.DashboardPanel):
 
-    def __init__(self, charts_dir):
-        self.charts_dir = charts_dir
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.by_years_chart_filename = os.path.join(self.charts_dir, "towers-by-year.png")
+        self.input_files = set(("towers.csv", "methods.csv"))
         self.dove = None
         self.towers = None
         self.visits = None
@@ -43,13 +44,15 @@ class RingingPanel(panels.DashboardPanel):
         self.by_year_df = None
         self.methods_rung = None
         self.by_stage = None
-        self.updated = None
 
     def name(self):
         return "ringing"
 
     def label(self):
         return "Ringing"
+
+    def reads_files(self, filenames):
+        return filenames & self.input_files
 
     def fetch(self, verbose=False, messager=None, **kwargs):
         if datetime.date.today().day == 1:
@@ -80,7 +83,7 @@ class RingingPanel(panels.DashboardPanel):
         year_data = [{'Date': y, 'Towers': self.by_year.get(y, 0)}
                      for y in range(min(ringing_years), max(ringing_years)+1)]
         self.by_year_df = pd.DataFrame(year_data)
-        self.updated = datetime.datetime.now()
+        super().update(verbose, messager)
         return self
 
     def prepare_page_images(self,
