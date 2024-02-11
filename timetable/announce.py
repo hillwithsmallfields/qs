@@ -22,7 +22,8 @@ def announce(announcer, slot):
         for inputfile in announcer.last_read.keys():
             announcer.load(inputfile)
 
-def as_duration(duration):
+def as_timedelta(duration):
+    """Convert anything that might be a duration to a timedelta."""
     if isinstance(duration, datetime.timedelta):
         return duration
     if isinstance(duration, numbers.Number):
@@ -30,7 +31,8 @@ def as_duration(duration):
     hours_minutes = duration.split(':')
     return (datetime.timedelta(minutes=int(hours_minutes[0]))
             if len(hours_minutes) == 1
-            else datetime.timedelta(hours=int(hours_minutes[-2]), minutes=int(hours_minutes[-1])))
+            else datetime.timedelta(hours=int(hours_minutes[0]),
+                                    minutes=int(hours_minutes[1])))
 
 def as_time(when):
     return (when
@@ -57,7 +59,7 @@ class TimeSlot():
                  link=None,
                  sound=None):
         self.start = as_datetime(start)
-        self.end = (self.start + as_duration(duration)) if duration else None
+        self.end = (self.start + as_timedelta(duration)) if duration else None
         self.activity = activity
         self.link = link
 
@@ -154,13 +156,13 @@ class Announcer():
 
     pass
 
-    def __init__(self, engine, language, day=None):
-        self.engine = engine
+    def __init__(self, speech_engine, language, day=None):
+        self.speech_engine = speech_engine
         self.language = language
         self.day = day or Day()
-        self.scheduler = sched.scheduler(datetime.datetime.now, sleep_timedelta)
+        self.scheduler = sched.scheduler()
         self.talker = talkey.Talkey(preferred_languages=[self.language],
-                                    engine_preference=[self.engine])
+                                    engine_preference=[self.speech_engine])
 
     def load(self, input_file, verbose=False):
         self.day.load(input_file, verbose)
@@ -179,6 +181,7 @@ class Announcer():
                 print("scheduling", self.day.slots[start], "at", start)
                 self.scheduler.enterabs(start, 1,
                                         announce, (self, slot))
+    def start(self):
         self.scheduler.run()
 
     def empty_queue(self):
@@ -260,7 +263,7 @@ def get_day_announcer(inputfile,
         day.load(extra)
     return Announcer(engine, language, day=day)
 
-def main():
+def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--language', '-l',
                         default='en',
@@ -270,24 +273,29 @@ def main():
                         help="""The engine to use for Talkey""")
     parser.add_argument("--verbose", "-v",
                         action='store_true')
-    parser.add_argument("--unit-tests", "-u",
+    parser.add_argument("--run-tests", "-u",
                         action='store_true')
     parser.add_argument('inputfile')
-    args = parser.parse_args()
+    return vars(parser.parse_args())
 
-    if args.unit_tests:
+def main(language, engine, verbose, run_tests, inputfile):
+
+    if run_tests:
         unit_tests()
         return
 
     my_announcer = Announcer(
-        args.engine, args.language, get_day_data(
-            args.inputfile,
-            verbose=args.verbose))
+        speech_engine=engine,
+        language=language,
+        get_day_data(
+            inputfile,
+            verbose=verbose))
 
     if args.verbose:
         my_announcer.show()
 
     my_announcer.schedule_announcements()
+    my_announcer.start()
 
 if __name__ == '__main__':
-    main()
+    main(**get_args())
