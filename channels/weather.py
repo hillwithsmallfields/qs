@@ -14,7 +14,7 @@ from expressionive.expressionive import htmltags as T
 from expressionive.expridioms import switchable_panel
 import dashboard.dashboard
 
-import timetable.announce as announce
+import timetable_announcer.announce as announce
 
 COMPASS_POINTS = ('N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW')
 

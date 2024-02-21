@@ -2,6 +2,7 @@ import csv
 import datetime
 import os
 import sys
+import time
 
 import channels.panels as panels
 
@@ -10,7 +11,7 @@ from expressionive.expridioms import switchable_panel
 import dashboard.dashboard
 import dobishem.dates
 
-import timetable.announce as announce
+import timetable_announcer.announce as announce
 
 CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
 
@@ -62,6 +63,7 @@ class TimetableDay:
 
     def __init__(self, day=None):
         self.day = day or datetime.date.today()
+        self.start_time = time.mktime(datetime.datetime.combine(self.day, datetime.time(hour=0, minute=0, second=0)).timetuple())
         self.day_of_week = self.day.strftime("%A")
         with open(os.path.expandvars("$SYNCED/var/weather.csv")) as weatherstream:
             self.weather = {row['time']: row for row in csv.DictReader(weatherstream)}
@@ -79,6 +81,12 @@ class TimetableDay:
                                             else 'odd'))]
              if os.path.isfile(day_full_file)])
 
+    def timestring(self, whenever):
+         if isinstance(whenever, (datetime.datetime, datetime.time)):
+             return whenever.strftime("%H:%M")
+         seconds_into_day = int((whenever - self.start_time) / 60)
+         return "%02d:%02d" % (seconds_into_day / 60, seconds_into_day % 60)
+
     def html(self, with_form=False):
         # TODO: possibly add columns for weather data for the same times
         # TODO: look up times in the weather
@@ -86,8 +94,8 @@ class TimetableDay:
         table = T.table(id_="timetable")[
             T.caption["%s %s" % (self.day_of_week, self.day.isoformat())],
             [[T.tr(class_='inactive',
-                   name=slot.start.strftime("%H:%M"))[
-                       T.td(class_='time_of_day')[slot.start.strftime("%H:%M")],
+                   name=self.timestring(slot.start))[
+                       T.td(class_='time_of_day')[self.timestring(slot.start)],
                        T.td(class_='activity')[T.a(href=slot.link)[slot.activity]
                                                if slot.link
                                                else slot.activity],
