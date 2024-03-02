@@ -112,7 +112,6 @@ def plot_column_set(axs, data, columns, prefix, foreground_colour, bar=False, me
         messager.print(f"Plotting column {col_header} (from {column})")
         column_data = data.loc[data[col_header] != 0,
                                ['Date', col_header]]
-        messager.print(f"Column data is:\n{column_data}")
         try:
             if not column_data.empty:
                 if bar:
