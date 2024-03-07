@@ -65,7 +65,8 @@ def column_header(column):
 
 def qscharts(data:pd.DataFrame,
              timestamp,
-             columns, begin, end, match, by_day_of_week,
+             columns, foreground_colour,
+             begin, end, match, by_day_of_week,
              outfile_template,
              plot_param_sets,
              bar=False,
@@ -88,7 +89,8 @@ def qscharts(data:pd.DataFrame,
         else:
             print(f"charting into {outfile_template % name_suffix}")
         if not qschart(data, timestamp,
-                       columns, begin, end, match, by_day_of_week,
+                       columns, foreground_colour,
+                       begin, end, match, by_day_of_week,
                        outfile_template % name_suffix, params,
                        bar=bar, vlines=vlines,
                        messager=messager,
@@ -98,7 +100,7 @@ def qscharts(data:pd.DataFrame,
             else:
                 print(f"TODO: output instructions for fetching missing data for {outfile_template}")
 
-def plot_column_set(axs, data, columns, prefix, bar=False, messager=None):
+def plot_column_set(axs, data, columns, prefix, foreground_colour, bar=False, messager=None):
     for column in columns:
         col_header = column_header(column)
         if col_header not in data:
@@ -107,21 +109,28 @@ def plot_column_set(axs, data, columns, prefix, bar=False, messager=None):
             else:
                 print("Column", col_header, "not present")
             continue
+        messager.print(f"Plotting column {col_header} (from {column})")
         column_data = data.loc[data[col_header] != 0,
-                               ['Date', column_header(column)]]
-        if not column_data.empty:
-            if bar:
-                # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.plot.bar.html
-                # for how to set the colour
-                column_data.plot.bar(ax=axs, x="Date", y=column_header(column))
-            else:
-                column_data.plot(ax=axs, x="Date", y=column_header(column))
-            # TODO: it's not including the prefix (which I'm using for the day of the week)
-            plt.ylabel(prefix + column_label(column))
+                               ['Date', col_header]]
+        try:
+            if not column_data.empty:
+                if bar:
+                    # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.plot.bar.html
+                    # for how to set the colour
+                    column_data.plot.bar(ax=axs, x="Date", y=column_header(column), color=foreground_colour)
+                else:
+                    column_data.plot(ax=axs, x="Date", y=column_header(column))
+                # TODO: it's not including the prefix (which I'm using for the day of the week)
+                plt.ylabel(prefix + column_label(column))
+                return True
+        except TypeError:
+            print("Data error")
+            return False
 
 def qschart(data: pd.DataFrame,
             timestamp,
             columns: List[str],
+            foreground_colour,
             begin: datetime.datetime, end: datetime.datetime,
             match,
             by_day_of_week,
@@ -171,22 +180,33 @@ def qschart(data: pd.DataFrame,
     # TODO: label every year; grid lines?
     # TODO: plot absolute values
 
-    plot_column_set(axs, data, columns,
-                    "All " if by_day_of_week else "",
-                    bar=bar,
-                    messager=messager)
+    plotted = plot_column_set(axs, data, columns,
+                              "All " if by_day_of_week else "",
+                              foreground_colour=foreground_colour,
+                              bar=bar,
+                              messager=messager)
 
     if by_day_of_week:
         for dow in range(7):
-            plot_column_set(axs,
-                            data[data['Date'].dt.dayofweek == dow],
-                            columns,
-                            "Day_%d_" % dow,
-                            bar=bar)
+            plotted |= plot_column_set(axs,
+                                       data[data['Date'].dt.dayofweek == dow],
+                                       columns,
+                                       "Day_%d_" % dow,
+                                       bar=bar)
 
     plt.xlabel("Date")
     plt.grid(axis='both')
 
     fig.savefig(outfile,
                 facecolor=fig.get_facecolor())
-    return True
+    return plotted
+
+def barchart(df, x_name, y_name, filename, background_colour, foreground_colour):
+    plot_params = {'figsize': (5,3), 'facecolor': background_colour, 'edgecolor': foreground_colour}
+    fig, axs = plt.subplots(**plot_params) # the background colour comes in here
+    axs.set_facecolor(fig.get_facecolor())
+    df.plot.bar(ax=axs, x=x_name, y=y_name, color=foreground_colour)
+    plt.xlabel(x_name)
+    plt.grid(axis='both')
+    fig.savefig(filename,
+                facecolor=fig.get_facecolor())

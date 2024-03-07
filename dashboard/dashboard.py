@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import cssutils
 import csv
 import datetime
@@ -18,34 +16,20 @@ from expressionive.expressionive import htmltags as T
 from expressionive.expridioms import wrap_box, labelled_section, SectionalPage
 import expressionive.exprpages as exprpages
 
-def ensure_in_path(directory):
-    if directory not in sys.path:
-        sys.path.append(directory)
-
-source_dir = os.path.dirname(os.path.realpath(__file__))
-
-# other parts of this project group
-ensure_in_path(os.path.dirname(source_dir))
 import financial.spending_chart
 import financial.parentage
 import financial.finutils
-import qsutils.qsutils            # https://github.com/hillwithsmallfields/qs/blob/master/utils/qsutils.py
+import qsutils.qsutils
 import qsutils.qschart
 
 import channels.timetable
 from expressionive.expridioms import switchable_panel, linked_image
 
-# This corresponds to https://github.com/hillwithsmallfields
-my_projects = os.path.dirname(os.path.dirname(source_dir))
-
 import coimealta.contacts.contacts_data as contacts_data
 import coimealta.inventory.storage as storage
 import coimealta.inventory.perishables as perishables
 
-ensure_in_path(os.path.join(my_projects, "noticeboard"))
-
-import announce                 # https://github.com/hillwithsmallfields/noticeboard/blob/master/announce.py
-import lifehacking_config       # https://github.com/hillwithsmallfields/noticeboard/blob/master/lifehacking_config.py
+SOURCE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 CATEGORIES_OF_INTEREST = ['Eating in', 'Eating out', 'Projects', 'Hobbies', 'Travel']
 
@@ -60,7 +44,7 @@ def make_remaining_cell(thresholds, spent_this_month, coi):
 def dashboard_page_colours():
     """Return the foreground and background colours, and a shading colour, specified in the stylesheet."""
 
-    sheet = cssutils.parseFile(os.path.join(source_dir, "dashboard.css"))
+    sheet = cssutils.parseFile(os.path.join(SOURCE_DIR, "dashboard.css"))
 
     foreground = None
     shading = None
@@ -187,24 +171,47 @@ def write_dashboard_page(charts_dir,
             exprpages.page_text(
                 construct_dashboard_page(charts_dir, channels_data),
                 ((exprpages.tagged_file_contents(
-                    "style", os.path.join(source_dir, "dashboard.css"))
+                    "style", os.path.join(SOURCE_DIR, "dashboard.css"))
                  + qsutils.qsutils.table_support_css(details_background_color))
                  if inline
                  else ""),
                 (exprpages.tagged_file_contents(
-                    "script", os.path.join(source_dir, "dashboard.js"))
+                    "script", os.path.join(SOURCE_DIR, "dashboard.js"))
                  if inline
                  else "")))
     if not inline:
         for filename in ("dashboard.css",
                          "dashboard.js"):
-            shutil.copy(os.path.join(source_dir, filename),
+            shutil.copy(os.path.join(SOURCE_DIR, filename),
                         os.path.join(charts_dir, filename))
+
+def make_channel_images(channel,
+                        when, periods,
+                        chart_sizes, foreground_colour, background_colour,
+                        begin_date, end_date,
+                        verbose):
+    with BeginAndEndMessages("preparing %s images" % channel.name(),
+                             verbose=verbose):
+        for date_suffix, begin in ({'custom': begin_date}
+                                   if begin_date
+                                   else periods).items():
+            with BeginAndEndMessages("preparing %s images for %s" % (channel.name(), date_suffix.replace('_', ' ')),
+                                     verbose=verbose):
+                channel.prepare_page_images(
+                    date_suffix=date_suffix,
+                    begin_date=np.datetime64(datetime.datetime.combine(begin, when.time())),
+                    end_date=end_date or np.datetime64(when),
+                    chart_sizes=chart_sizes,
+                    background_colour=background_colour,
+                    foreground_colour=foreground_colour,
+                    verbose=verbose)
 
 def make_dashboard_images(charts_dir,
                           channels_data,
                           chart_sizes,
+                          text_colour,
                           background_colour,
+                          foreground_colour,
                           begin_date=None, end_date=None,
                           verbose=False):
     """Make all the images for the dashboard."""
@@ -220,20 +227,14 @@ def make_dashboard_images(charts_dir,
                'past_year': dobishem.dates.back_from(today, 1, None, None)}
     with BeginAndEndMessages("preparing images",
                              verbose=verbose):
-        for channel_name, channel in channels_data.items():
-            with BeginAndEndMessages("preparing %s images" % channel_name,
-                                     verbose=verbose):
-                for date_suffix, begin in ({'custom': begin_date}
-                                           if begin_date
-                                           else periods).items():
-                    with BeginAndEndMessages("preparing %s images for %s" % (channel_name, date_suffix.replace('_', ' ')),
-                                             verbose=verbose):
-                        channel.prepare_page_images(
-                            date_suffix=date_suffix,
-                            begin_date=np.datetime64(datetime.datetime.combine(begin, now.time())),
-                            end_date=np.datetime64(now),
-                            chart_sizes=chart_sizes,
-                            verbose=verbose)
+        for channel in channels_data.values():
+            make_channel_images(channel=channel,
+                                when=now, periods=periods,
+                                chart_sizes=chart_sizes,
+                                background_colour=background_colour,
+                                foreground_colour=foreground_colour,
+                                begin_date=begin_date, end_date=end_date,
+                                verbose=verbose)
 
 def make_dashboard_page(charts_dir=None,
                         channels_data=None,
@@ -248,23 +249,16 @@ def make_dashboard_page(charts_dir=None,
         charts_dir = os.path.expanduser("~/private_html/dashboard")
 
     text_colour, background_colour, shading = dashboard_page_colours()
-    make_dashboard_images(charts_dir,
-                          channels_data,
-                          chart_sizes,
-                          background_colour,
-                          begin_date, end_date,
+    if verbose:
+        print(f"text_colour: {text_colour}; background_colour: {background_colour}; shading: {shading}")
+    make_dashboard_images(charts_dir=charts_dir,
+                          channels_data=channels_data,
+                          chart_sizes=chart_sizes,
+                          begin_date=begin_date, end_date=end_date,
+                          text_colour=text_colour,
+                          background_colour=background_colour,
+                          foreground_colour=text_colour,
                           verbose=verbose)
     write_dashboard_page(charts_dir,
                          channels_data,
                          details_background_color=shading)
-
-def main():
-    parser = qsutils.qsutils.program_argparser()
-    parser.add_argument("--charts", default=os.path.expanduser("~/private_html/dashboard"),
-                        help="""Directory to write charts into.""")
-    args = parser.parse_args()
-
-    make_dashboard_page(charts_dir=args.charts)
-
-if __name__ == '__main__':
-    main()

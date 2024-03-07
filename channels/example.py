@@ -27,10 +27,13 @@ class ExamplePanel(panels.DashboardPanel):
     def update(self, verbose=False, messager=None, **kwargs):
         """Update the cached data."""
         self.examples = make_examples()
-        self.updated = datetime.datetime.now()
+        super().update(verbose, messager)
         return self
 
-    def prepare_page_images(self, verbose=False, **kwargs):
+    def prepare_page_images(self,
+                            date_suffix, begin_date, end_date,
+                            chart_sizes, background_colour, foreground_colour,
+                            verbose=False):
         """Prepare any images used by the output of the `html` method."""
         render_example_images(self.examples)
 

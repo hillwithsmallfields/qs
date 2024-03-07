@@ -4,6 +4,7 @@ import os
 import shutil
 import sys
 
+import numpy as np
 import pandas as pd
 
 import qsutils
@@ -16,16 +17,22 @@ from expressionive.expridioms import wrap_box, labelled_subsection, linked_image
 # import physical.mfp_reader
 # import physical.oura_reader
 
+RE_READ_MEASUREMENT = False
+RE_READ_EXERCISE = False
+
 NO_TIME = datetime.timedelta(seconds=0)
 
-ACTIVITIES = (('cycling', 'Cycle'), ('running', 'Run'), ('walking', 'Walk'), ('swimming', 'Swim'))
+ACTIVITIES = (('cycling', 'Cycle'), ('running', 'Run'), ('walking', 'Walk'), ('swimming', 'Swim'),)
+ISOMETRICS = (('plank', "Plank"),)
 
 def parse_duration(dur):
     return (datetime.timedelta(hours=int(dur[:2]),
                                minutes=int(dur[3:5]),
                                seconds=float(dur[6:]))
-            if dur
-            else NO_TIME)
+            if isinstance(dur, str)
+            else (datetime.timedelta(seconds=dur)
+                  if isinstance(dur, (int, float))
+                  else NO_TIME))
 
 def parse_date(when):
     return datetime.date.fromisoformat(when[:10])
@@ -343,7 +350,6 @@ def combine_exercise_data(incoming_lists):
                         case 'Open Water Swimming':
                             existing['Swim distance'] = existing.get('Swim distance', 0) + entry['Distance']
                             existing['Swim time'] = (existing.get('Swim time') or NO_TIME) + entry.get('Moving Time', NO_TIME)
-                            pass
                         # case 'Other':
                         #     if entry.get('Title', "").startswith("Elliptical Trainer"):
                         #         pass
@@ -358,8 +364,22 @@ def combine_measurement_data(incoming_lists):
         for list_in in incoming_lists:
             for entry in list_in:
                 by_date[entry['Date']].update(entry)
-        return [by_date[date] for date in sorted(by_date.keys())]
+        return qsutils.qsutils.ensure_numeric_dates(
+            [by_date[date] for date in sorted(by_date.keys())]
+        )
         # TODO: stringify everything for writing
+
+def identity(x):
+    return x
+
+def show_types(label, converted_df):
+    prev = None
+    print("comparing types for", label)
+    for index, row in converted_df.iterrows():
+        types = [type(elt) for elt in row.array]
+        if types != prev:
+            print(label, index, types)
+        prev = types
 
 class PhysicalPanel(panels.DashboardPanel):
 
@@ -372,7 +392,6 @@ class PhysicalPanel(panels.DashboardPanel):
         self.exercise_dataframe = None
         self.measurement_data = None
         self.measurement_dataframe = None
-        self.updated = None
 
     def name(self):
         return 'physical'
@@ -395,10 +414,8 @@ class PhysicalPanel(panels.DashboardPanel):
                 self.combined_measurement_filename]
 
     def update(self, verbose=False, messager=None, **kwargs):
-
         """Merge incoming health-related data from various files, into two central files,
         one for exercise and one for measurements."""
-
         self.exercise_data = qsutils.qsutils.ensure_numeric_dates(
             dobishem.storage.combined(
                 self.combined_exercise_filename,
@@ -409,8 +426,7 @@ class PhysicalPanel(panels.DashboardPanel):
                     os.path.expandvars("$SYNCED/health/isometric.csv"): convert_isometric,
                 },
                 verbose=verbose, messager=messager))
-        self.measurement_data = qsutils.qsutils.ensure_numeric_dates(
-            dobishem.storage.combined(
+        self.measurement_data = dobishem.storage.combined(
                 self.combined_measurement_filename,
                 combine_measurement_data,
                 {
@@ -420,25 +436,56 @@ class PhysicalPanel(panels.DashboardPanel):
                     # TODO: add thermometer readings
                     # TODO: add peak flow readings
                 },
-                verbose=verbose, messager=messager))
-
-        self.updated = datetime.datetime.now()
+                verbose=verbose, messager=messager)
+        super().update(verbose, messager)
         return self
 
-    def prepare_page_images(self, date_suffix, begin_date, end_date, chart_sizes, verbose=False):
+    def prepare_page_images(self,
+                            date_suffix, begin_date, end_date,
+                            chart_sizes, background_colour, foreground_colour,
+                            verbose=False):
         """Prepare any images used by the output of the `html` method."""
         # TODO: rolling averages
-        # TODO: convert existing data variables if not empty
-        self.measurement_dataframe = pd.read_csv(self.combined_measurement_filename)
-        self.measurement_dataframe['Date'] = pd.to_datetime(self.measurement_dataframe['Date'])
-        self.exercise_dataframe = pd.read_csv(self.combined_exercise_filename)
-        self.exercise_dataframe['Date'] = pd.to_datetime(self.exercise_dataframe['Date'])
+        if self.measurement_dataframe is None:
+
+            for row in self.measurement_data:
+                for col in ['Stone', 'Lbs', 'Lbs total', 'Date number',
+                            'St total', # 'Kg', 'Non-zero',
+                            ]:
+                    if col in row:
+                        v = row[col]
+                        if v:
+                            row[col] = float(v)
+                        else:
+                            row[col] = 0.0
+                    else:
+                        row[col] = 0.0
+            converted_df = pd.DataFrame.from_records(self.measurement_data)
+            # converted_df.astype
+            converted_df.replace("", np.nan, inplace=True)
+            print("original columns", converted_df.columns)
+            converted_df = converted_df[['Date', 'Stone', 'Lbs', 'Lbs total',
+                                         # try to narrow down which column breaks it
+                                         'St total', # 'Kg', 'Non-zero',
+                                         ]]
+            print("trimmed columns", converted_df.columns)
+            converted_df['Date'] = pd.to_datetime(converted_df['Date'])
+
+            self.measurement_dataframe = converted_df
+
+        if self.exercise_dataframe is None:
+            self.exercise_dataframe = (pd.read_csv(self.combined_exercise_filename)
+                                       if RE_READ_EXERCISE # self.exercise_data is None
+                                       else pd.DataFrame.from_records(self.exercise_data))
+            self.exercise_dataframe['Date'] = pd.to_datetime(self.exercise_dataframe['Date'])
+            print("exercise_dataframe\n", self.exercise_dataframe)
         with BeginAndEndMessages("plotting physical charts", verbose=verbose) as msgs:
             for units in ('stone', 'kilogram', 'pound'):
                 qsutils.qschart.qscharts(
                     data=self.measurement_dataframe,
                     timestamp=None,
                     columns=[units],
+                    foreground_colour=foreground_colour,
                     begin=begin_date, end=end_date, match=None,
                     by_day_of_week=False, # split_by_DoW
                     outfile_template=os.path.join(
@@ -447,17 +494,20 @@ class PhysicalPanel(panels.DashboardPanel):
                     vlines=None,
                     verbose=verbose,
                     messager=msgs)
-            qsutils.qschart.qscharts(
-                data=self.measurement_dataframe,
-                timestamp=None,
-                columns=['systolic', 'diastolic', 'heart_rate'],
-                begin=begin_date, end=end_date, match=None,
-                by_day_of_week=False, # split_by_DoW
-                outfile_template=os.path.join(
-                    self.charts_dir, "bp-%s-%%s.png" % (date_suffix)),
-                plot_param_sets=chart_sizes,
-                vlines=None,
-                verbose=verbose,
+            if False:
+                qsutils.qschart.qscharts(
+                    data=self.measurement_dataframe,
+                    timestamp=None,
+                    # columns=['systolic', 'diastolic', 'heart_rate'],
+                    columns=['Resting pulse'],
+                    foreground_colour=foreground_colour,
+                    begin=begin_date, end=end_date, match=None,
+                    by_day_of_week=False, # split_by_DoW
+                    outfile_template=os.path.join(
+                        self.charts_dir, "bp-%s-%%s.png" % (date_suffix)),
+                    plot_param_sets=chart_sizes,
+                    vlines=None,
+                    verbose=verbose,
             messager=msgs)
             for activity, activity_label in ACTIVITIES:
                 qsutils.qschart.qscharts(
@@ -470,8 +520,9 @@ class PhysicalPanel(panels.DashboardPanel):
                                      # 'moving time',
                                      'max speed',
                                      'average speed')],
+                    foreground_colour=foreground_colour,
                     begin=begin_date, end=end_date, match=None,
-                    bar=False,
+                    bar=True,
                     by_day_of_week=False, # split_by_DoW
                     outfile_template=os.path.join(
                         self.charts_dir, "%s-%s-%%s.png" % (activity, date_suffix)),
@@ -493,7 +544,8 @@ class PhysicalPanel(panels.DashboardPanel):
                         linked_image(
                             charts_dir=self.charts_dir,
                             image_name="bp",
-                            label="BP")),
+                            label="BP",
+                            title="Blood pressure")),
                 )],
                 T.div(class_="exercise")[labelled_subsection(
                     "Exercise",
@@ -502,7 +554,8 @@ class PhysicalPanel(panels.DashboardPanel):
                             linked_image(
                                 charts_dir=self.charts_dir,
                                 image_name=activity.lower(),
-                                label=activity)
+                                label=activity,
+                                title=activity)
                             for activity in ("Cycling", "Running", "Walking", "Swimming")
                         ]
                     ))])]

@@ -16,11 +16,14 @@ class TravelPanel(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
+        self.input_files = set(("travel.csv", "places.csv"))
         self.places_filename = "$SYNCED/travel/places/places.csv"
         self.travel_filename = "$SYNCED/travel/travel.csv"
         self.places = None
         self.travel = None
         self.refuelling = None
+        self.distance_by_year_df = None
+        self.by_years_chart_filename = os.path.join(self.charts_dir, "miles-by-year.png")
         self.updated = None
 
     def name(self):
@@ -28,6 +31,9 @@ class TravelPanel(panels.DashboardPanel):
 
     def label(self):
         return "Travel"
+
+    def reads_files(self, filenames):
+        return filenames & self.input_files
 
     def files_to_write(self):
         """Returns a list of files that the update methods is expected to write.
@@ -66,25 +72,31 @@ class TravelPanel(panels.DashboardPanel):
                     lon1 = lon2
         storage.write_csv(self.travel_filename, self.travel)
         self.distance_by_year = defaultdict(int)
-        for journey in self.travel:
-            self.distance_by_year[journey['Date'].year] += int(journey.get('Distance', 0) or 0)
-        for year in sorted(self.distance_by_year.keys()):
-            messager.print(f"{year}: {self.distance_by_year[year]}")
+        try:
+            for journey in self.travel:
+                self.distance_by_year[journey['Date'].year] += int(journey.get('Distance', 0) or 0)
+            self.distance_by_year_df = pd.DataFrame([{'Year': int(year), 'Miles': miles} for year, miles in self.distance_by_year.items()])
+        except Exception as problem:
+            print("problem", problem, "in preparing distances image")
         self.refuelling = pd.read_csv(os.path.expandvars("$SYNCED/org/fuel.csv"))
         self.refuelling['Date'] = pd.to_datetime(self.refuelling['Date'])
         self.refuelling['Miles'] = self.refuelling['Mileage'].diff()
         self.refuelling['MilesPerLitre'] = self.refuelling['Miles'] / self.refuelling['Litres']
         self.refuelling['PoundsPerMile'] = self.refuelling['Cost'] / self.refuelling['Miles']
-        self.updated = datetime.datetime.now()
+        super().update(verbose, messager)
         return self
 
-    def prepare_page_images(self, date_suffix, begin_date, end_date, chart_sizes, verbose=False):
+    def prepare_page_images(self,
+                            date_suffix, begin_date, end_date,
+                            chart_sizes, background_colour, foreground_colour,
+                            verbose=False):
         """Prepare any images used by the output of the `html` method."""
         with BeginAndEndMessages("Charting travel") as msgs:
             qsutils.qschart.qscharts(
                 data=self.refuelling,
                 timestamp=None,
                 columns=['Miles', 'MilesPerLitre', 'PoundsPerMile'],
+                foreground_colour=foreground_colour,
                 begin=begin_date, end=end_date, match=None,
                 bar=False,
                 by_day_of_week=False, # split_by_DoW
@@ -95,18 +107,24 @@ class TravelPanel(panels.DashboardPanel):
                 verbose=verbose,
                 messager=msgs,
             )
-            # TODO: make a chart of distance travelled per year
+            if self.distance_by_year_df is not None:
+                qsutils.qschart.barchart(self.distance_by_year_df,
+                                         x_name='Year', y_name='Miles',
+                                         filename=self.by_years_chart_filename,
+                                         background_colour=background_colour,
+                                         foreground_colour=foreground_colour)
 
     def html(self):
         return T.div[
             wrap_box(
                 labelled_subsection(
                     "Travel distances",
-                    T.p["Distance chart will go here"]
+                    T.img(src=self.by_years_chart_filename)
                 ),
                 labelled_subsection(
                     "Fuel",
                     linked_image(
                         charts_dir=self.charts_dir,
                         image_name="fuel",
-                        label="fuel")))]
+                        label="fuel",
+                        title="Fuel consumption")))]

@@ -42,13 +42,15 @@ class ContactsPanel(panels.DashboardPanel):
         self.contacts_summary = None
         self.people_by_id = None
         self.people_by_name = None
-        self.updated = None
 
     def name(self):
         return 'contacts'
 
     def label(self):
         return "People"
+
+    def reads_files(self, filenames):
+        return "contacts.csv" in filenames
 
     def files_to_write(self):
         return [os.path.expandvars("$SYNCED/org/contacts.csv")]
@@ -67,7 +69,7 @@ class ContactsPanel(panels.DashboardPanel):
         self.contacts_summary = link_contacts.analyze_contacts(self.people_by_id)
         link_contacts.link_contacts(self.people_by_id, self.people_by_name)
         contacts_data.write_contacts(contacts_file, self.people_by_name)
-        self.updated = datetime.datetime.now()
+        super().update(verbose, messager)
         return self
 
     def html(self):

@@ -203,7 +203,6 @@ class FinancesPanel(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.updated = None
         self.accumulated_bank_statements_filename = "$SYNCED/finances/handelsbanken/handelsbanken-full-new.csv"
         self.monzo_downloads_filename = "~/Downloads/Monzo Transactions - Monzo Transactions.csv"
         # manually recorded spending:
@@ -215,6 +214,7 @@ class FinancesPanel(panels.DashboardPanel):
         self.dashboard_dir = os.path.expanduser("~/private_html/dashboard/")
         self.transactions = None
         self.by_categories = None
+        self.by_categories_df = None
         self.known_unknowns = None
         self.categories = None
         self.parentage = None
@@ -267,7 +267,6 @@ class FinancesPanel(panels.DashboardPanel):
                 fixup_reload_row,
                 verbose=verbose, messager=messager
             ))
-
         for row in self.transactions:
             row["Class"] = financial.categorise.nearest_ancestor_in_selection(row['Category'], self.parentage, CATEGORIES_OF_INTEREST)
 
@@ -291,8 +290,6 @@ class FinancesPanel(panels.DashboardPanel):
                 self.completions_filename)):
             financial.list_completions.list_completions()
 
-        # eventually this will be produced inline (and cached in this file);
-        # it used to come from the old Lisp part of the system
         self.by_categories = qsutils.qsutils.ensure_numeric_dates(
             financial.categorise.spread(self.transactions, "Class", "Amount"))
         self.by_categories_df = pd.DataFrame(self.by_categories)
@@ -300,15 +297,20 @@ class FinancesPanel(panels.DashboardPanel):
         self.by_categories_df.fillna(0, inplace=True)
         self.by_categories_df.to_csv(os.path.join(self.charts_dir, "by-class.csv"))
 
+        super().update(verbose, messager)
         return self
 
-    def prepare_page_images(self, begin_date, end_date, chart_sizes, date_suffix, verbose=False):
+    def prepare_page_images(self,
+                            date_suffix, begin_date, end_date,
+                            chart_sizes, background_colour, foreground_colour,
+                            verbose=False):
         """Prepare any images used by the output of the `html` method."""
         with BeginAndEndMessages("Plotting financial charts") as msgs:
             if self.by_categories_df is not None:
                 qsutils.qschart.qscharts(data=self.by_categories_df,
                                          timestamp=None,
                                          columns=CATEGORIES_OF_INTEREST,
+                                         foreground_colour=foreground_colour,
                                          begin=begin_date, end=end_date, match=None, by_day_of_week=False,
                                          outfile_template=os.path.join(
                                              self.charts_dir, "by-class-%s-%%s.png" % date_suffix),

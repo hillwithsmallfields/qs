@@ -2,10 +2,14 @@ import collections
 import datetime
 import os
 
+import pandas as pd
+import matplotlib.pyplot as plt
+
 import dobishem.storage
 from expressionive.expressionive import htmltags as T
 from expressionive.expridioms import wrap_box, labelled_subsection, linked_image, row
 
+import qsutils
 import channels.panels as panels
 import ringing.tower_visits as towers
 
@@ -27,23 +31,28 @@ STAGE_NAMES=[
 
 class RingingPanel(panels.DashboardPanel):
 
-    def __init__(self, charts_dir):
-        self.charts_dir = charts_dir
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.by_years_chart_filename = os.path.join(self.charts_dir, "towers-by-year.png")
+        self.input_files = set(("towers.csv", "methods.csv"))
         self.dove = None
         self.towers = None
         self.visits = None
         self.by_bells = None
         self.by_weight = None
         self.by_year = None
+        self.by_year_df = None
         self.methods_rung = None
         self.by_stage = None
-        self.updated = None
 
     def name(self):
         return "ringing"
 
     def label(self):
         return "Ringing"
+
+    def reads_files(self, filenames):
+        return filenames & self.input_files
 
     def fetch(self, verbose=False, messager=None, **kwargs):
         if datetime.date.today().day == 1:
@@ -57,7 +66,7 @@ class RingingPanel(panels.DashboardPanel):
     def files_to_write(self):
         return [os.path.expandvars("$SYNCED/ringing/towers.csv")]
 
-    def update(self, verbose=False, **kwargs):
+    def update(self, verbose=False, messager=None, **kwargs):
         self.dove = towers.read_dove()
         self.visits = towers.read_visits()
 
@@ -70,15 +79,26 @@ class RingingPanel(panels.DashboardPanel):
         self.by_stage = collections.defaultdict(list)
         for method in self.methods_rung:
             self.by_stage[int(method['Stage'])].append(method['Method'])
-
-        self.updated = datetime.datetime.now()
+        ringing_years = list(self.by_year.keys())
+        year_data = [{'Date': y, 'Towers': self.by_year.get(y, 0)}
+                     for y in range(min(ringing_years), max(ringing_years)+1)]
+        self.by_year_df = pd.DataFrame(year_data)
+        super().update(verbose, messager)
         return self
 
-    def prepare_page_images(self, **kwargs):
+    def prepare_page_images(self,
+                            date_suffix, begin_date, end_date,
+                            chart_sizes, background_colour, foreground_colour,
+                            verbose=False):
         """Prepare any images used by the output of the `html` method."""
         # TODO: Chart towers grabbed by year
         # TODO: Chart towers rung by weight
-        pass
+        if self.by_year_df is not None:
+            qsutils.qschart.barchart(self.by_year_df,
+                                     x_name='Date', y_name='Towers',
+                                     filename=self.by_years_chart_filename,
+                                     background_colour=background_colour,
+                                     foreground_colour=foreground_colour)
 
     def html(self):
         """Generate an expressionive HTML structure from the cached data."""
@@ -86,11 +106,14 @@ class RingingPanel(panels.DashboardPanel):
             wrap_box(
                 labelled_subsection(
                     "Towers visited",
-                    T.table[T.tr[T.th["Bells"], T.th["Towers"]],
-                            [T.tr[T.th()[str(k)],
-                                  T.td()[str(self.by_bells[k])]]
-                             for k in sorted(self.by_bells.keys())],
-                            T.tr[T.th["Total"], T.td[str(len(self.visits))]]]),
+                    wrap_box([T.table[T.tr[T.th["Bells"], T.th["Towers"]],
+                                      [T.tr[T.th()[str(k)],
+                                            T.td()[str(self.by_bells[k])]]
+                                   for k in sorted(self.by_bells.keys())],
+                                      T.tr[T.th["Total"], T.td[str(len(self.visits))]]],
+                              T.img(src=self.by_years_chart_filename)
+                              ])
+                ),
                 labelled_subsection(
                     "Methods rung",
                     T.table[T.tr[T.th["Stage"], T.th["Methods"]],

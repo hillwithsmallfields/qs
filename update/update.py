@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
 
+import sys
+print("using python version", sys.version)
 import argparse
+import concurrent.futures
 import csv
 import datetime
 import io
+import inotify.adapters
 import json
 import os
 import re
 import requests
 import shutil
-import sys
+import time
 import yaml
 
 def ensure_in_path(directory):
@@ -62,12 +66,64 @@ def update_covid():
     # TODO: write to file
     # TODO: include in charts
 
+def update_once(handlers,
+                charts,
+                begin, end,
+                no_externals,
+                serial=False,
+                verbose=False,
+                testing=False,
+                force=False):
+
+    with BeginAndEndMessages("archiving old data", verbose=verbose) as msgs:
+        files_subject_to_change = [filename
+                                   for channel in handlers
+                                   for filename in channel.files_to_write()
+                                   if os.path.exists(filename)]
+        if files_subject_to_change:
+            backup.backup(files_subject_to_change,
+                          os.path.expanduser("~/archive"),
+                          messager=msgs)
+
+    with BeginAndEndMessages("updating data and refreshing dashboard", verbose=verbose):
+        if not no_externals:
+            if serial:
+                for handler in handlers:
+                    handler.fetch(verbose=verbose, messager=msgs)
+            else:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=len(handlers)) as ex:
+                    with BeginAndEndMessages("fetching external data", verbose=verbose) as msgs:
+                        ex.map(lambda handler: handler.fetch(verbose=verbose, messager=msgs),
+                               handlers)
+
+        with BeginAndEndMessages("updating saved data", verbose=verbose) as msgs:
+            if serial:
+                for handler in handlers:
+                    handler.update(verbose=verbose, messager=msgs)
+            else:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=len(handlers)) as ex:
+                    ex.map(lambda handler: handler.update(verbose=verbose, messager=msgs),
+                           handlers)
+
+        with BeginAndEndMessages("refreshing dashboard", verbose=verbose):
+            dashboard.dashboard.make_dashboard_page(
+                charts_dir=os.path.expanduser("~/private_html/dashboard"),
+                channels_data={
+                    handler.name(): handler
+                    for handler in handlers
+                },
+                chart_sizes=CHART_SIZES,
+                verbose=verbose)
+
 def updates(charts,
             begin, end,
             no_externals,
+            serial=False,
             verbose=False,
             testing=False,
-            force=False):
+            force=False,
+            watch=False,
+            delay=15):
 
     """Update my Quantified Self record files, which are generally CSV
     files with a row for each day.  This also prepares some files for
@@ -104,36 +160,35 @@ def updates(charts,
         ]
     ]
 
-    with BeginAndEndMessages("archiving old data", verbose=verbose) as msgs:
-        files_subject_to_change = [filename
-                                   for channel in handlers
-                                   for filename in channel.files_to_write()
-                                   if os.path.exists(filename)]
-        if files_subject_to_change:
-            backup.backup(files_subject_to_change,
-                          os.path.expanduser("~/archive"),
-                          messager=msgs)
-    with BeginAndEndMessages("updating data and refreshing dashboard", verbose=verbose):
-        if not no_externals:
-            with BeginAndEndMessages("fetching external data", verbose=verbose):
-                for handler in handlers:
-                    with BeginAndEndMessages(f"fetching {handler.name()} data", verbose=verbose) as msgs:
-                        handler.fetch(verbose=verbose, messager=msgs)
+    if watch:
+        i = inotify.adapters.Inotify()
+        i.add_watch(os.path.expandvars("$ORG"))
+        i.add_watch(os.path.expandvars("$SYNCED/health"))
+        i.add_watch(os.path.expandvars("$SYNCED/travel"))
 
-        with BeginAndEndMessages("updating saved data", verbose=verbose):
-            for handler in handlers:
-                with BeginAndEndMessages(f"updating {handler.name()} data") as msgs:
-                    handler.update(verbose=verbose, messager=msgs)
-
-        with BeginAndEndMessages("refreshing dashboard", verbose=verbose):
-            dashboard.dashboard.make_dashboard_page(
-                charts_dir=os.path.expanduser("~/private_html/dashboard"),
-                channels_data={
-                    handler.name(): handler
-                    for handler in handlers
-                },
-                chart_sizes=CHART_SIZES,
-                verbose=verbose)
+        for event in i.event_gen(yield_nones=False):
+            (_, type_names, path, filename) = event
+            if 'IN_CLOSE_WRITE' in type_names:
+                print("PATH=[{}] FILENAME=[{}] EVENT_TYPES={}".format(path, filename, type_names))
+                # allow for multiple files to be saved in a burst
+                time.sleep(delay)
+                update_once(handlers,
+                            charts,
+                            begin, end,
+                            no_externals,
+                            serial,
+                            verbose,
+                            testing,
+                            force)
+    else:
+        update_once(handlers,
+                    charts,
+                    begin, end,
+                    no_externals,
+                    serial,
+                    verbose,
+                    testing,
+                    force)
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -150,6 +205,13 @@ def get_args():
                         within the last day.""")
     parser.add_argument("--testing", action='store_true',
                         help="""Use an alternate directory which can be reset.""")
+    parser.add_argument("--serial", action='store_true',
+                        help="""Handle the channels serially, for easier debugging.""")
+    parser.add_argument("--watch", action='store_true',
+                        help="""Watch the input directories, in an inotify loop.""")
+    parser.add_argument("--delay", type=int,
+                        help="""Delay in seconds between detecting a file change and running an update.
+                        Allows for saving of multiple files in a burst.""")
     parser.add_argument("--verbose", action='store_true',
                         help="""Output more progress messages.""")
     return vars(parser.parse_args())

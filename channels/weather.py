@@ -9,25 +9,12 @@ import sys
 import dobishem.dates
 import channels.panels as panels
 
-def ensure_in_path(directory):
-    if directory not in sys.path:
-        sys.path.append(directory)
-
-source_dir = os.path.dirname(os.path.realpath(__file__))
-
-# This corresponds to https://github.com/hillwithsmallfields
-my_projects = os.path.dirname(os.path.dirname(source_dir))
-
-ensure_in_path(os.path.dirname(source_dir))
-
-import qsutils.qsutils            # https://github.com/hillwithsmallfields/qs/blob/master/utils/qsutils.py
+import qsutils.qsutils
 from expressionive.expressionive import htmltags as T
 from expressionive.expridioms import switchable_panel
 import dashboard.dashboard
 
-ensure_in_path(os.path.join(my_projects, "noticeboard"))
-
-import announce                 # https://github.com/hillwithsmallfields/noticeboard/blob/master/announce.py
+import timetable_announcer.announce as announce
 
 COMPASS_POINTS = ('N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW')
 
@@ -41,7 +28,6 @@ class WeatherPanel(panels.DashboardPanel):
         self.weather_table_file = os.path.expandvars("$SYNCED/var/weather.csv")
         self.sunlight_file = os.path.expandvars("$SYNCED/var/sunlight-times.json")
         self.forecast = None
-        self.fetched = None
 
     def name(self):
         return 'weather'
@@ -100,13 +86,13 @@ class WeatherPanel(panels.DashboardPanel):
             writer.writeheader()
             for hour in self.forecast:
                 writer.writerow(hour)
-        self.fetched = datetime.datetime.now()
 
     def update(self, verbose=False, messager=None):
         if self.forecast is None:
             if os.path.exists(self.weather_table_file):
                 with open(self.weather_table_file) as weatherstream:
                     self.forecast=list(csv.DictReader(weatherstream))
+        super().update(verbose, messager)
         return self
 
     def one_day_weather_section(self, day=None):

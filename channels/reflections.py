@@ -33,7 +33,7 @@ class ReflectionsPanel(panels.DashboardPanel):
         while self.second == self.first and countdown > 0:
             self.second = random_reflection(reflections_dir)
             countdown -= 1
-        self.updated = datetime.datetime.now()
+        super().update(verbose, messager)
         return self
 
     def html(self):

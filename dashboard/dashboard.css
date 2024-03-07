@@ -129,6 +129,10 @@ div.transactions_list {
     color:            maroon;
 }
 
+td.switcher_title {
+    text-align: center;
+}
+
 td.time_of_day {
     padding-left:   4px;
     padding-right:  4px;
