@@ -57,8 +57,7 @@ class AgendaPanel(panels.DashboardPanel):
             else:
                 messager.print("Nothing on emacs stdout")
         if result.returncode == 0:
-            with open(os.path.expandvars("$SYNCED/var/views.json")) as org_ql_stream:
-                self.from_org = json.load(org_ql_stream)
+            self.from_org = self.store.load(template='scratch', file='views.json')
             if verbose:
                 messager.print(f"sections from org are {self.from_org.keys()}")
             self.updated = datetime.datetime.now()

@@ -39,6 +39,7 @@ class ContactsPanel(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
+        self.contacts_file = self.store.resolve(template="organizational", file="contacts.csv")
         self.contacts_summary = None
         self.people_by_id = None
         self.people_by_name = None
@@ -53,7 +54,7 @@ class ContactsPanel(panels.DashboardPanel):
         return "contacts.csv" in filenames
 
     def files_to_write(self):
-        return [os.path.expandvars("$SYNCED/org/contacts.csv")]
+        return [contacts_file]
 
     # TODO: fetch method to merge data from Google contacts?
 
@@ -64,7 +65,6 @@ class ContactsPanel(panels.DashboardPanel):
         This checks for links between contacts, and does some
         analysis, which it returns as the result.
         """
-        contacts_file = os.path.expandvars("$SYNCED/org/contacts.csv")
         self.people_by_id, self.people_by_name = contacts_data.read_contacts(contacts_file)
         self.contacts_summary = link_contacts.analyze_contacts(self.people_by_id)
         link_contacts.link_contacts(self.people_by_id, self.people_by_name)
@@ -83,7 +83,8 @@ class ContactsPanel(panels.DashboardPanel):
             for person in self.people_by_id.values()
             if contacts_data.contact_soon(person, today, days_since_last_contact=90)]
         flag_labels = {flag['Flag']: flag['Label']
-                       for flag in storage.read_csv("$SYNCED/org/flags.csv")}
+                       for flag in self.storage.read(template="organizational",
+                                                     file="flags.csv")}
         by_flags = {flag_labels.get(k, k): v
                     for k, v in self.contacts_summary['flagged'].items()}
         return wrap_box(

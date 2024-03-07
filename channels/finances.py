@@ -348,7 +348,7 @@ class FinancesPanel(panels.DashboardPanel):
         """Returns various listings of my financial transactions."""
         # TODO: spending per category per day of month/week
 
-        full_details_file = os.path.join(self.dashboard_dir, "by-class.html")
+        full_details_file = self.outputs.resolve(file="by-class.html")
 
         today = datetime.date.today()
         year_transactions = dobishem.dates.entries_between_dates(

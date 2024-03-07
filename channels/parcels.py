@@ -28,8 +28,7 @@ class ParcelsPanel(panels.DashboardPanel):
         pass
 
     def update(self, verbose=False, messager=None, **kwargs):
-        with open(os.path.expandvars("$SYNCED/var/parcels-expected.json")) as parcels_stream:
-            self.parcels = json.load(parcels_stream).get('expected', [])
+        self.parcels = self.store.load(template='scratch', file="parcels-expected.json")
         messager.print("updated parcels to " + str(self.parcels))
         self.updated = datetime.datetime.now()
         super().update(verbose, messager)

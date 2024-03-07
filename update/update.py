@@ -135,13 +135,21 @@ def updates(charts,
 
     """
 
-    os.makedirs(os.path.expanduser("~/private_html/dashboard"), exist_ok=True)
-
     if end is None:
         end = dates.yesterday()
 
+    store = dobishem.storage.Storage(
+        templates={
+            'scratch': "var/%(file)s"
+            'texts': "texts/%(texts)s",
+            'organizational', "org/%(file)s"},
+        base="$SYNCED")
+    outputs = dobishem.storage.Storage(
+        template={},
+        base="~/private_html/dashboard")
+
     handlers = [
-        panel_class(charts)
+        panel_class(store, outputs)
         for panel_class in [
                 channels.finances.FinancesPanel,
                 # channels.weight.WeightPanel,

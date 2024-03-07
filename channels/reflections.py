@@ -8,12 +8,6 @@ import random
 import channels.panels as panels
 from expressionive.expressionive import htmltags as T
 
-reflections_dir = os.path.expandvars("$SYNCED/texts/reflection")
-
-def random_reflection(reflections_dir):
-    with open(random.choice(glob.glob(os.path.join(reflections_dir, "*.txt")))) as instream:
-        return random.choice([line.strip() for line in instream if line != "\n"])
-
 class ReflectionsPanel(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
@@ -35,6 +29,10 @@ class ReflectionsPanel(panels.DashboardPanel):
             countdown -= 1
         super().update(verbose, messager)
         return self
+
+    def random_reflection(self):
+        with open(self.store.glob("*.txt", template='texts', texts="reflection")) as instream:
+            return random.choice([line.strip() for line in instream if line != "\n"])
 
     def html(self):
         """Generate an expressionive HTML structure from the cached data."""
