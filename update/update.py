@@ -138,14 +138,16 @@ def updates(charts,
     if end is None:
         end = dates.yesterday()
 
-    store = dobishem.storage.Storage(
+    store = storage.Storage(
         templates={
-            'scratch': "var/%(file)s"
+            'scratch': "var/%(file)s",
             'texts': "texts/%(texts)s",
-            'organizational', "org/%(file)s"},
+            'organizational': "org/%(file)s"},
+        defaults={},
         base="$SYNCED")
-    outputs = dobishem.storage.Storage(
-        template={},
+    outputs = storage.Storage(
+        templates={},
+        defaults={},
         base="~/private_html/dashboard")
 
     handlers = [

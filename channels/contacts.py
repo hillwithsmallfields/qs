@@ -39,7 +39,7 @@ class ContactsPanel(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
-        self.contacts_file = self.store.resolve(template="organizational", file="contacts.csv")
+        self.contacts_file = self.storage.resolve("organizational", {'file': "contacts.csv"})
         self.contacts_summary = None
         self.people_by_id = None
         self.people_by_name = None

@@ -57,7 +57,7 @@ class AgendaPanel(panels.DashboardPanel):
             else:
                 messager.print("Nothing on emacs stdout")
         if result.returncode == 0:
-            self.from_org = self.store.load(template='scratch', file='views.json')
+            self.from_org = self.storage.load(template='scratch', file='views.json')
             if verbose:
                 messager.print(f"sections from org are {self.from_org.keys()}")
             self.updated = datetime.datetime.now()

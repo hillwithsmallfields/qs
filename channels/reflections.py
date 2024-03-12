@@ -31,7 +31,7 @@ class ReflectionsPanel(panels.DashboardPanel):
         return self
 
     def random_reflection(self):
-        with open(self.store.glob("*.txt", template='texts', texts="reflection")) as instream:
+        with open(self.storage.glob("*.txt", template='texts', texts="reflection")) as instream:
             return random.choice([line.strip() for line in instream if line != "\n"])
 
     def html(self):

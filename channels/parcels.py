@@ -28,7 +28,7 @@ class ParcelsPanel(panels.DashboardPanel):
         pass
 
     def update(self, verbose=False, messager=None, **kwargs):
-        self.parcels = self.store.load(template='scratch', file="parcels-expected.json")
+        self.parcels = self.storage.load(template='scratch', file="parcels-expected.json")
         messager.print("updated parcels to " + str(self.parcels))
         self.updated = datetime.datetime.now()
         super().update(verbose, messager)
