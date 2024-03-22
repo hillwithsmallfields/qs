@@ -23,7 +23,7 @@ class TravelPanel(panels.DashboardPanel):
         self.travel = None
         self.refuelling = None
         self.distance_by_year_df = None
-        self.by_years_chart_filename = os.path.join(self.charts_dir, "miles-by-year.png")
+        self.by_years_chart_filename = self.outputs.resolve(chart="miles-by-year")
         self.updated = None
 
     def name(self):

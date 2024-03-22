@@ -39,7 +39,7 @@ class ContactsPanel(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
-        self.contacts_file = self.storage.resolve("organizational", {'file': "contacts.csv"})
+        self.contacts_file = self.storage.resolve(organizational="contacts.csv")
         self.contacts_summary = None
         self.people_by_id = None
         self.people_by_name = None
@@ -54,7 +54,7 @@ class ContactsPanel(panels.DashboardPanel):
         return "contacts.csv" in filenames
 
     def files_to_write(self):
-        return [contacts_file]
+        return [self.contacts_file]
 
     # TODO: fetch method to merge data from Google contacts?
 

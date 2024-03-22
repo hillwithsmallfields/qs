@@ -8,9 +8,9 @@ class DashboardPanel(ABC):
 
     def __init__(self, store, outputs):
         self.storage = store
+        self.outputs = outputs
         self.updated = None
         self.saved_html = None
-        self.outputs = outputs
 
     def name(self):
         return self.label().lower()

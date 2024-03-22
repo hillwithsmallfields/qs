@@ -33,7 +33,7 @@ class RingingPanel(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.by_years_chart_filename = os.path.join(self.charts_dir, "towers-by-year.png")
+        self.by_years_chart_filename = self.outputs.resolve(chart="towers-by-year")
         self.input_files = set(("towers.csv", "methods.csv"))
         self.dove = None
         self.towers = None

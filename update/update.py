@@ -115,6 +115,17 @@ def update_once(handlers,
                 chart_sizes=CHART_SIZES,
                 verbose=verbose)
 
+STORAGE_TEMPLATES = {
+    'scratch': "var/%(scratch)s",
+    'texts': "texts/%(texts)s",
+    'organizational': "org/%(organizational)s",
+}
+
+CHART_TEMPLATES = {
+    'chart': "dashboard/%(chart)s.png",
+    'sized_chart': "dashboard/%(chart)s-%(size)s.png",
+}
+
 def updates(charts,
             begin, end,
             no_externals,
@@ -138,18 +149,16 @@ def updates(charts,
     if end is None:
         end = dates.yesterday()
 
+    print("setting up storage with templates", STORAGE_TEMPLATES)
     store = storage.Storage(
-        templates={
-            'scratch': "var/%(file)s",
-            'texts': "texts/%(texts)s",
-            'organizational': "org/%(file)s"},
+        templates=STORAGE_TEMPLATES,
         defaults={},
         base="$SYNCED")
     outputs = storage.Storage(
-        templates={},
+        templates=CHART_TEMPLATES,
         defaults={},
-        base="~/private_html/dashboard")
-
+        base="~/private_html")
+    print("storage template keys are:", store.templates_by_params.keys())
     handlers = [
         panel_class(store, outputs)
         for panel_class in [
