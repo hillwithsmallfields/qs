@@ -305,15 +305,15 @@ class FinancesPanel(panels.DashboardPanel):
                             chart_sizes, background_colour, foreground_colour,
                             verbose=False):
         """Prepare any images used by the output of the `html` method."""
-        with BeginAndEndMessages("Plotting financial charts") as msgs:
+        with BeginAndEndMessages("plotting %s financial charts" % date_suffix) as msgs:
             if self.by_categories_df is not None:
                 qsutils.qschart.qscharts(data=self.by_categories_df,
                                          timestamp=None,
                                          columns=CATEGORIES_OF_INTEREST,
                                          foreground_colour=foreground_colour,
-                                         begin=begin_date, end=end_date, match=None, by_day_of_week=False,
-                                         outfile_template=os.path.join(
-                                             self.charts_dir, "by-class-%s-%%s.png" % date_suffix),
+                                         begin=begin_date, end=end_date, matching=None, by_day_of_week=False,
+                                         chart_store=self.outputs,
+                                         date_suffix=date_suffix,
                                          plot_param_sets=chart_sizes,
                                          messager=msgs)
                 # TODO: split main file into running balances for each account (tracking as needed), take the end of each month for each account, and put them all in a file to display here (and get that shown in the resulting page)

@@ -448,30 +448,33 @@ class PhysicalPanel(panels.DashboardPanel):
         # TODO: rolling averages
         if self.measurement_dataframe is None:
 
-            for row in self.measurement_data:
-                for col in ['Stone', 'Lbs', 'Lbs total', 'Date number',
-                            'St total', # 'Kg', 'Non-zero',
-                            ]:
-                    if col in row:
-                        v = row[col]
-                        if v:
-                            row[col] = float(v)
+            if self.measurement_data:
+                for row in self.measurement_data:
+                    for col in ['Stone', 'Lbs', 'Lbs total', 'Date number',
+                                'St total', # 'Kg', 'Non-zero',
+                                ]:
+                        if col in row:
+                            v = row[col]
+                            if v:
+                                row[col] = float(v)
+                            else:
+                                row[col] = 0.0
                         else:
                             row[col] = 0.0
-                    else:
-                        row[col] = 0.0
-            converted_df = pd.DataFrame.from_records(self.measurement_data)
-            # converted_df.astype
-            converted_df.replace("", np.nan, inplace=True)
-            print("original columns", converted_df.columns)
-            converted_df = converted_df[['Date', 'Stone', 'Lbs', 'Lbs total',
-                                         # try to narrow down which column breaks it
-                                         'St total', # 'Kg', 'Non-zero',
-                                         ]]
-            print("trimmed columns", converted_df.columns)
-            converted_df['Date'] = pd.to_datetime(converted_df['Date'])
+                converted_df = pd.DataFrame.from_records(self.measurement_data)
+                # converted_df.astype
+                converted_df.replace("", np.nan, inplace=True)
+                print("original columns", converted_df.columns)
+                converted_df = converted_df[['Date', 'Stone', 'Lbs', 'Lbs total',
+                                             # try to narrow down which column breaks it
+                                             'St total', # 'Kg', 'Non-zero',
+                                             ]]
+                print("trimmed columns", converted_df.columns)
+                converted_df['Date'] = pd.to_datetime(converted_df['Date'])
 
-            self.measurement_dataframe = converted_df
+                self.measurement_dataframe = converted_df
+            else:
+                print("Warning: No data to convert for physical channel")
 
         if self.exercise_dataframe is None:
             self.exercise_dataframe = (pd.read_csv(self.combined_exercise_filename)
@@ -488,12 +491,13 @@ class PhysicalPanel(panels.DashboardPanel):
                     foreground_colour=foreground_colour,
                     begin=begin_date, end=end_date, match=None,
                     by_day_of_week=False, # split_by_DoW
-                    outfile_template=os.path.join(
-                        self.charts_dir, "weight-%s-%s-%%s.png" % (units, date_suffix)),
+                    chart_store=self.outputs,
                     plot_param_sets=chart_sizes,
                     vlines=None,
                     verbose=verbose,
-                    messager=msgs)
+                    messager=msgs,
+                    date_suffix=date_suffix,
+                    weight_units=units)
             if False:
                 qsutils.qschart.qscharts(
                     data=self.measurement_dataframe,

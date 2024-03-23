@@ -66,13 +66,14 @@ def column_header(column):
 def qscharts(data:pd.DataFrame,
              timestamp,
              columns, foreground_colour,
-             begin, end, match, by_day_of_week,
-             outfile_template,
+             begin, end, matching, by_day_of_week,
+             chart_store,
              plot_param_sets,
              bar=False,
              vlines=None,
              verbose=False,
-             messager=None):
+             messager=None,
+             **kwargs):
     """Plot a set of related charts.
 
     The charts in the set use the same data but different plot params.
@@ -85,20 +86,22 @@ def qscharts(data:pd.DataFrame,
     data.set_index("Date")
     for name_suffix, params in plot_param_sets.items():
         if messager:
-            messager.print(f"charting into {outfile_template % name_suffix}")
+            messager.print(f"charting into {kwargs}")
         else:
-            print(f"charting into {outfile_template % name_suffix}")
+            print(f"charting into {date_suffix} and {name_suffix}")
         if not qschart(data, timestamp,
                        columns, foreground_colour,
-                       begin, end, match, by_day_of_week,
-                       outfile_template % name_suffix, params,
+                       begin, end, matching, by_day_of_week,
+                       plot_params=params,
                        bar=bar, vlines=vlines,
                        messager=messager,
-                       ):
+                       chart_store=chart_store,
+                       name_suffix=name_suffix,
+                       **kwargs):
             if messager:
-                messager.print(f"TODO: output instructions for fetching missing data for {outfile_template}")
+                messager.print(f"TODO: output instructions for fetching missing data for {kwargs}")
             else:
-                print(f"TODO: output instructions for fetching missing data for {outfile_template}")
+                print(f"TODO: output instructions for fetching missing data for {kwargs}")
 
 def plot_column_set(axs, data, columns, prefix, foreground_colour, bar=False, messager=None):
     for column in columns:
@@ -132,13 +135,14 @@ def qschart(data: pd.DataFrame,
             columns: List[str],
             foreground_colour,
             begin: datetime.datetime, end: datetime.datetime,
-            match,
+            matching,
             by_day_of_week,
-            outfile,
             plot_params,
+            chart_store,
             bar=False,
             vlines=None,
-            messager=None):
+            messager=None,
+            **kwargs):
 
     """Plot a chart, if it needs updating.
 
@@ -150,14 +154,14 @@ def qschart(data: pd.DataFrame,
     # TODO: rolling averages, as in http://jonathansoma.com/lede/foundations-2018/pandas/rolling-averages-in-pandas/
     # TODO: filter by day of week
 
-    if timestamp and os.path.exists(outfile) and os.path.getmtime(outfile) >= timestampe:
-        return True
+    # if timestamp and os.path.exists(outfile) and os.path.getmtime(outfile) >= timestampe:
+    #     return True
 
     if begin:
         data = data.loc[data['Date'] >= begin]
     if end:
         data = data.loc[data['Date'] <= end]
-    if match:
+    if matching:
         pass                    # TODO: filter data
 
     if data.empty:
@@ -196,6 +200,9 @@ def qschart(data: pd.DataFrame,
 
     plt.xlabel("Date")
     plt.grid(axis='both')
+
+    print("qschart naming args", kwargs)
+    outfile = chart_store.resolve(**kwargs)
 
     fig.savefig(outfile,
                 facecolor=fig.get_facecolor())
