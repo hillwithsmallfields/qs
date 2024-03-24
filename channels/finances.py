@@ -344,11 +344,11 @@ class FinancesPanel(panels.DashboardPanel):
                                   dobishem.dates.back_from(end_date, None, None, days_back),
                                   end_date))]]]]
 
-    def html(self):
+    def html(self, _messager=None):
         """Returns various listings of my financial transactions."""
         # TODO: spending per category per day of month/week
 
-        full_details_file = self.outputs.resolve(file="by-class.html")
+        full_details_file = self.outputs.resolve(page="by-class")
 
         today = datetime.date.today()
         year_transactions = dobishem.dates.entries_between_dates(

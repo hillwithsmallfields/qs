@@ -47,13 +47,13 @@ class DashboardPanel(ABC):
         """Prepare any images used by the output of the `html` method."""
         pass
 
-    def get_html(self):
+    def get_html(self, messager=None):
         """Return an expressionive HTML structure from the cached data."""
         if not self.saved_html:
-            self.saved_html = self.html()
+            self.saved_html = self.html(messager)
         return self.saved_html
 
     @abstractmethod
-    def html(self):
+    def html(self, messager=None):
         """Generate an expressionive HTML structure from the cached data."""
         return None

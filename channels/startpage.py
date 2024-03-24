@@ -37,6 +37,6 @@ class StartPage(panels.DashboardPanel):
         super().update(verbose, messager)
         return self
 
-    def html(self):
+    def html(self, _messager=None):
         """Generate an expressionive HTML structure from the cached data."""
         return []

@@ -97,11 +97,12 @@ class TravelPanel(panels.DashboardPanel):
                 timestamp=None,
                 columns=['Miles', 'MilesPerLitre', 'PoundsPerMile'],
                 foreground_colour=foreground_colour,
-                begin=begin_date, end=end_date, match=None,
+                begin=begin_date, end=end_date, matching=None,
                 bar=False,
                 by_day_of_week=False, # split_by_DoW
-                outfile_template=os.path.join(
-                    self.charts_dir, "fuel-%s-%%s.png" % date_suffix),
+                chart_store=self.outputs,
+                chart_type='fuel',
+                date_suffix=date_suffix,
                 plot_param_sets=chart_sizes,
                 vlines=None,
                 verbose=verbose,
@@ -114,7 +115,7 @@ class TravelPanel(panels.DashboardPanel):
                                          background_colour=background_colour,
                                          foreground_colour=foreground_colour)
 
-    def html(self):
+    def html(self, _messager=None):
         return T.div[
             wrap_box(
                 labelled_subsection(
@@ -124,7 +125,7 @@ class TravelPanel(panels.DashboardPanel):
                 labelled_subsection(
                     "Fuel",
                     linked_image(
-                        charts_dir=self.charts_dir,
+                        charts_dir=self.outputs.base,
                         image_name="fuel",
                         label="fuel",
                         title="Fuel consumption")))]

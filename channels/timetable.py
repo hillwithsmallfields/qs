@@ -40,7 +40,7 @@ class TimetablePanel(panels.DashboardPanel):
         super().update(verbose, messager)
         return self
 
-    def html(self):
+    def html(self, _messager=None):
         return T.div(class_='timetable')[
             T.h2["Timetable"],
             switchable_panel(

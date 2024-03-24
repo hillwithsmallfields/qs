@@ -72,7 +72,7 @@ class ContactsPanel(panels.DashboardPanel):
         super().update(verbose, messager)
         return self
 
-    def html(self):
+    def html(self, _messager=None):
         if self.contacts_summary is None:
             return None
         n_people = self.contacts_summary['n_people']

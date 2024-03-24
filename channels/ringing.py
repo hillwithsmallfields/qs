@@ -100,7 +100,7 @@ class RingingPanel(panels.DashboardPanel):
                                      background_colour=background_colour,
                                      foreground_colour=foreground_colour)
 
-    def html(self):
+    def html(self, _messager=None):
         """Generate an expressionive HTML structure from the cached data."""
         return T.div(class_='ringing')[
             wrap_box(

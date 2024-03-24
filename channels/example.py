@@ -37,7 +37,7 @@ class ExamplePanel(panels.DashboardPanel):
         """Prepare any images used by the output of the `html` method."""
         render_example_images(self.examples)
 
-    def html(self):
+    def html(self, _messager=None):
         """Generate an expressionive HTML structure from the cached data."""
         return T.div[expressionive.expridioms.wrap_box(
             expressionive.expridioms.linked_image(

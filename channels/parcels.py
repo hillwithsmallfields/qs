@@ -34,14 +34,16 @@ class ParcelsPanel(panels.DashboardPanel):
         super().update(verbose, messager)
         return self
 
-    def html(self):
-        dates = {}
-        for parcel in self.parcels:
-            date = datetime.date.fromisoformat(parcel[0])
-            if date not in dates:
-                dates[date] = []
-            dates[date].append(parcel[1])
-        return [T.dl[[[T.dt[date.strftime("%Y-%m-%d %d")],
-                       T.dd[T.ul[[[T.li[parcel]
-                                   for parcel in sorted(dates[date])]]]]]
-                      for date in sorted(dates)]]]
+    def html(self, messager=None):
+        if self.parcels:
+            dates = {}
+            for parcel in self.parcels:
+                date = datetime.date.fromisoformat(parcel[0])
+                if date not in dates:
+                    dates[date] = []
+                dates[date].append(parcel[1])
+            return [T.dl[[[T.dt[date.strftime("%Y-%m-%d %d")],
+                           T.dd[T.ul[[[T.li[parcel]
+                                       for parcel in sorted(dates[date])]]]]]]]]
+        else:
+            messager.print("Warning: no parcels data")

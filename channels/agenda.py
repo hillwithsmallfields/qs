@@ -66,13 +66,17 @@ class AgendaPanel(panels.DashboardPanel):
         super().update(verbose, messager)
         return self
 
-    def agenda_subsections(self, keys):
-        return wrap_box(*[labelled_subsection(key,
-                                              org_ql_list(section_list))
-                          for key in keys
-                          if len(section_list := top_items(self.from_org.get(key, []))) > 0])
+    def agenda_subsections(self, keys, messager=None):
+        if self.from_org:
+            return wrap_box(*[labelled_subsection(key,
+                                                  org_ql_list(section_list))
+                              for key in keys
+                              if len(section_list := top_items(self.from_org.get(key, []))) > 0])
+        else:
+            messager.print("Warning: no agenda data")
+            return T.p["No agenda data found"]
 
-    def html(self):
+    def html(self, messager=None):
         return wrap_box(
             labelled_subsection("Actions",
                                 self.agenda_subsections(["Today",
@@ -81,8 +85,8 @@ class AgendaPanel(panels.DashboardPanel):
                                                          "Mending",
                                                          "Marmalade,"
                                                          "Physical making",
-                                                         "Programming"])),
+                                                         "Programming"], messager)),
             labelled_subsection("Shopping",
                                 self.agenda_subsections(["Supermarket",
                                                          "Mackays",
-                                                         "Online"])))
+                                                         "Online"], messager)))

@@ -446,42 +446,45 @@ class PhysicalPanel(panels.DashboardPanel):
                             verbose=False):
         """Prepare any images used by the output of the `html` method."""
         # TODO: rolling averages
-        if self.measurement_dataframe is None:
+        with BeginAndEndMessages("preparing physical chart data", verbose=verbose) as msgs:
+            if self.measurement_dataframe is None:
 
-            if self.measurement_data:
-                for row in self.measurement_data:
-                    for col in ['Stone', 'Lbs', 'Lbs total', 'Date number',
-                                'St total', # 'Kg', 'Non-zero',
-                                ]:
-                        if col in row:
-                            v = row[col]
-                            if v:
-                                row[col] = float(v)
+                if self.measurement_data:
+                    for row in self.measurement_data:
+                        for col in ['Stone', 'Lbs', 'Lbs total', 'Date number',
+                                    'St total', # 'Kg', 'Non-zero',
+                                    ]:
+                            if col in row:
+                                v = row[col]
+                                if v:
+                                    row[col] = float(v)
+                                else:
+                                    row[col] = 0.0
                             else:
                                 row[col] = 0.0
-                        else:
-                            row[col] = 0.0
-                converted_df = pd.DataFrame.from_records(self.measurement_data)
-                # converted_df.astype
-                converted_df.replace("", np.nan, inplace=True)
-                print("original columns", converted_df.columns)
-                converted_df = converted_df[['Date', 'Stone', 'Lbs', 'Lbs total',
-                                             # try to narrow down which column breaks it
-                                             'St total', # 'Kg', 'Non-zero',
-                                             ]]
-                print("trimmed columns", converted_df.columns)
-                converted_df['Date'] = pd.to_datetime(converted_df['Date'])
+                    converted_df = pd.DataFrame.from_records(self.measurement_data)
+                    # converted_df.astype
+                    converted_df.replace("", np.nan, inplace=True)
+                    print("original columns", converted_df.columns)
+                    converted_df = converted_df[['Date', 'Stone', 'Lbs', 'Lbs total',
+                                                 # try to narrow down which column breaks it
+                                                 'St total', # 'Kg', 'Non-zero',
+                                                 ]]
+                    print("trimmed columns", converted_df.columns)
+                    converted_df['Date'] = pd.to_datetime(converted_df['Date'])
 
-                self.measurement_dataframe = converted_df
-            else:
-                print("Warning: No data to convert for physical channel")
+                    self.measurement_dataframe = converted_df
+                else:
+                    msgs.print("Warning: No data to convert for physical channel")
+                    return
 
-        if self.exercise_dataframe is None:
-            self.exercise_dataframe = (pd.read_csv(self.combined_exercise_filename)
-                                       if RE_READ_EXERCISE # self.exercise_data is None
-                                       else pd.DataFrame.from_records(self.exercise_data))
-            self.exercise_dataframe['Date'] = pd.to_datetime(self.exercise_dataframe['Date'])
-            print("exercise_dataframe\n", self.exercise_dataframe)
+            if self.exercise_dataframe is None:
+                self.exercise_dataframe = (pd.read_csv(self.combined_exercise_filename)
+                                           if RE_READ_EXERCISE # self.exercise_data is None
+                                           else pd.DataFrame.from_records(self.exercise_data))
+                self.exercise_dataframe['Date'] = pd.to_datetime(self.exercise_dataframe['Date'])
+                msgs.print("exercise_dataframe\n:" + str(self.exercise_dataframe))
+
         with BeginAndEndMessages("plotting physical charts", verbose=verbose) as msgs:
             for units in ('stone', 'kilogram', 'pound'):
                 qsutils.qschart.qscharts(
@@ -489,7 +492,7 @@ class PhysicalPanel(panels.DashboardPanel):
                     timestamp=None,
                     columns=[units],
                     foreground_colour=foreground_colour,
-                    begin=begin_date, end=end_date, match=None,
+                    begin=begin_date, end=end_date, matching=None,
                     by_day_of_week=False, # split_by_DoW
                     chart_store=self.outputs,
                     plot_param_sets=chart_sizes,
@@ -505,14 +508,14 @@ class PhysicalPanel(panels.DashboardPanel):
                     # columns=['systolic', 'diastolic', 'heart_rate'],
                     columns=['Resting pulse'],
                     foreground_colour=foreground_colour,
-                    begin=begin_date, end=end_date, match=None,
+                    begin=begin_date, end=end_date, matching=None,
                     by_day_of_week=False, # split_by_DoW
-                    outfile_template=os.path.join(
-                        self.charts_dir, "bp-%s-%%s.png" % (date_suffix)),
+                    chart_store=self.outputs,
+                    bp_chart=date_suffix,
                     plot_param_sets=chart_sizes,
                     vlines=None,
                     verbose=verbose,
-            messager=msgs)
+                    messager=msgs)
             for activity, activity_label in ACTIVITIES:
                 qsutils.qschart.qscharts(
                     data=self.exercise_dataframe,
@@ -525,28 +528,28 @@ class PhysicalPanel(panels.DashboardPanel):
                                      'max speed',
                                      'average speed')],
                     foreground_colour=foreground_colour,
-                    begin=begin_date, end=end_date, match=None,
+                    begin=begin_date, end=end_date, matching=None,
                     bar=True,
                     by_day_of_week=False, # split_by_DoW
-                    outfile_template=os.path.join(
-                        self.charts_dir, "%s-%s-%%s.png" % (activity, date_suffix)),
+                    chart_store=self.outputs,
+                    activity_chart=activity_label,
                     plot_param_sets=chart_sizes,
                     vlines=None,
                     verbose=verbose,
                     messager=msgs)
 
-    def html(self):
+    def html(self, _messager=None):
         with BeginAndEndMessages("preparing physical HTML"):
             return T.div(class_="physical")[wrap_box(
                 T.div(class_="measurements")[labelled_subsection(
                     "Measurements",
                     wrap_box(
                         linked_image(
-                            charts_dir=self.charts_dir,
+                            charts_dir=self.outputs.base,
                             image_name="weight-stone",
                             label="weight"),
                         linked_image(
-                            charts_dir=self.charts_dir,
+                            charts_dir=self.outputs.base,
                             image_name="bp",
                             label="BP",
                             title="Blood pressure")),
@@ -556,7 +559,7 @@ class PhysicalPanel(panels.DashboardPanel):
                     wrap_box(
                         [
                             linked_image(
-                                charts_dir=self.charts_dir,
+                                charts_dir=self.outputs.base,
                                 image_name=activity.lower(),
                                 label=activity,
                                 title=activity)

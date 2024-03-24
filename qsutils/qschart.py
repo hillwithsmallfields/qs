@@ -83,6 +83,8 @@ def qscharts(data:pd.DataFrame,
         {'small': {'figsize': (5,4)},
          'large': {'figsize': (11,8)}}
     """
+    if data is None:
+        raise ValueError("No data provided for charting")
     data.set_index("Date")
     for name_suffix, params in plot_param_sets.items():
         if messager:
@@ -201,7 +203,8 @@ def qschart(data: pd.DataFrame,
     plt.xlabel("Date")
     plt.grid(axis='both')
 
-    print("qschart naming args", kwargs)
+    if messager:
+        messager.print("qschart naming args %s" % kwargs)
     outfile = chart_store.resolve(**kwargs)
 
     fig.savefig(outfile,

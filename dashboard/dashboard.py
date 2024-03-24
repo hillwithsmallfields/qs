@@ -119,48 +119,49 @@ def travel_section():
     return None
 
 def construct_dashboard_page(charts_dir, channels_data):
-    page = SectionalPage()
-    page.add_section(None,
-                     wrap_box(T.div[T.h2["Perishable food to use up"],
-                                    channels_data['perishables'].html(),
-                                    T.h2["Parcels expected"],
-                                    channels_data['parcels'].html()],
-                              channels_data['timetable'].html(),
-                              channels_data['weather'].html()),)
-    # page.add_section("Health", wrap_box(
-    #     *[
-    #         channels_data[key].html()
-    #         for key in [
-    #                 'weight',
-    #         ]
-    #     ]
-    #     # labelled_section("Calories", calories_section()),
-    #     # labelled_section("Meals", meals_section()),
-    #     # labelled_section("By day of week", calories_per_day_of_week()),
-    #     # labelled_section("Food groups", foods_section()),
-    #     # labelled_section("Peak flow", peak_flow_section()),
-    #     # labelled_section("Sleep split", sleep_split_section()),
-    #     # labelled_section("Sleep times", sleep_times_section()),
-    #     # labelled_section("Sleep correlation", sleep_correlation_section()),
-    #     # labelled_section("Temperature", temperature_section())
-    # ))
-    for panel_key in [
-            'agenda',
-            'physical',
-            'finances',
-            'contacts',
-            'ringing',
-            'travel',
-            'inventory',
-            'reflections',
-    ]:
-        handler = channels_data[panel_key]
-        page.add_section(handler.label(), handler.html())
-    return [T.body(onload="init_dashboard()")[
-        T.script(src="dashboard.js"),
-        T.h1["Personal dashboard"],
-        page.toc(),
-        page.sections()]]
+    with BeginAndEndMessages("constructing page") as msgs:
+        page = SectionalPage()
+        page.add_section(None,
+                         wrap_box(T.div[T.h2["Perishable food to use up"],
+                                        channels_data['perishables'].html(msgs),
+                                        T.h2["Parcels expected"],
+                                        channels_data['parcels'].html(msgs)],
+                                  channels_data['timetable'].html(msgs),
+                                  channels_data['weather'].html(msgs)),)
+        # page.add_section("Health", wrap_box(
+        #     *[
+        #         channels_data[key].html(msgs)
+        #         for key in [
+        #                 'weight',
+        #         ]
+        #     ]
+        #     # labelled_section("Calories", calories_section()),
+        #     # labelled_section("Meals", meals_section()),
+        #     # labelled_section("By day of week", calories_per_day_of_week()),
+        #     # labelled_section("Food groups", foods_section()),
+        #     # labelled_section("Peak flow", peak_flow_section()),
+        #     # labelled_section("Sleep split", sleep_split_section()),
+        #     # labelled_section("Sleep times", sleep_times_section()),
+        #     # labelled_section("Sleep correlation", sleep_correlation_section()),
+        #     # labelled_section("Temperature", temperature_section())
+        # ))
+        for panel_key in [
+                'agenda',
+                'physical',
+                'finances',
+                'contacts',
+                'ringing',
+                'travel',
+                'inventory',
+                'reflections',
+        ]:
+            handler = channels_data[panel_key]
+            page.add_section(handler.label(), handler.html(msgs))
+        return [T.body(onload="init_dashboard()")[
+            T.script(src="dashboard.js"),
+            T.h1["Personal dashboard"],
+            page.toc(),
+            page.sections()]]
 
 def write_dashboard_page(charts_dir,
                          channels_data,

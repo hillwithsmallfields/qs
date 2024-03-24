@@ -27,7 +27,7 @@ class PerishablesPanel(panels.DashboardPanel):
         super().update(verbose, messager)
         return self
 
-    def html(self):
+    def html(self, _messager=None):
         """Generate an expressionive HTML structure from the cached data."""
         today = self.updated.date()
         week_ahead = (self.updated + datetime.timedelta(days=7)).date()

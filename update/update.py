@@ -122,10 +122,12 @@ STORAGE_TEMPLATES = {
 }
 
 CHART_TEMPLATES = {
+    'page': "%(page)s.html",
     'chart': "dashboard/%(chart)s.png",
     'sized_chart': "dashboard/%(chart)s-%(size)s.png",
     'period_name_chart': "dashboard/%(date_suffix)s-%(name_suffix)s.png",
-    'weight_chart': "weight-%(weight_units)s-%(date_suffix)s-%(size)s.png"
+    'weight_chart': "weight-%(weight_units)s-%(date_suffix)s-%(size)s.png",
+    'misc_chart': "%(chart_type)s-%(name_suffix)s-%(date_suffix)s.png",
 }
 
 def updates(charts,

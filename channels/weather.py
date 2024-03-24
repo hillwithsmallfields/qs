@@ -122,7 +122,7 @@ class WeatherPanel(panels.DashboardPanel):
                         for hour in self.forecast
                             if hour['time'].startswith(daystring)]]
 
-    def html(self):
+    def html(self, _messager=None):
         day_after_tomorrow = dobishem.dates.forward_from(datetime.date.today(), None, None, 2)
         day_after_tomorrow_name = day_after_tomorrow.strftime("%A")
         with open(self.sunlight_file) as sunlight_stream:
