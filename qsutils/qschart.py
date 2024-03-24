@@ -98,7 +98,7 @@ def qscharts(data:pd.DataFrame,
                        bar=bar, vlines=vlines,
                        messager=messager,
                        chart_store=chart_store,
-                       name_suffix=name_suffix,
+                       size=name_suffix,
                        **kwargs):
             if messager:
                 messager.print(f"TODO: output instructions for fetching missing data for {kwargs}")

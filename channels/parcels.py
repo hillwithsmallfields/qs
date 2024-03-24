@@ -28,7 +28,7 @@ class ParcelsPanel(panels.DashboardPanel):
         pass
 
     def update(self, verbose=False, messager=None, **kwargs):
-        self.parcels = self.storage.load(template='scratch', file="parcels-expected.json")
+        self.parcels = self.storage.load(scratch="parcels-expected.json")
         messager.print("updated parcels to " + str(self.parcels))
         self.updated = datetime.datetime.now()
         super().update(verbose, messager)
@@ -38,6 +38,7 @@ class ParcelsPanel(panels.DashboardPanel):
         if self.parcels:
             dates = {}
             for parcel in self.parcels:
+                messager.print("parsing %s" % parcel)
                 date = datetime.date.fromisoformat(parcel[0])
                 if date not in dates:
                     dates[date] = []

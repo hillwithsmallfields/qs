@@ -532,7 +532,7 @@ class PhysicalPanel(panels.DashboardPanel):
                     bar=True,
                     by_day_of_week=False, # split_by_DoW
                     chart_store=self.outputs,
-                    activity_chart=activity_label,
+                    activity=activity_label,
                     plot_param_sets=chart_sizes,
                     vlines=None,
                     verbose=verbose,

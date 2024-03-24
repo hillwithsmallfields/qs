@@ -295,7 +295,7 @@ class FinancesPanel(panels.DashboardPanel):
         self.by_categories_df = pd.DataFrame(self.by_categories)
         self.by_categories_df['Date'] = pd.to_datetime(self.by_categories_df['Date'])
         self.by_categories_df.fillna(0, inplace=True)
-        self.by_categories_df.to_csv(os.path.join(self.charts_dir, "by-class.csv"))
+        self.by_categories_df.to_csv(self.outputs.resolve(financial="by-class"))
 
         super().update(verbose, messager)
         return self

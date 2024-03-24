@@ -65,10 +65,10 @@ class ContactsPanel(panels.DashboardPanel):
         This checks for links between contacts, and does some
         analysis, which it returns as the result.
         """
-        self.people_by_id, self.people_by_name = contacts_data.read_contacts(contacts_file)
+        self.people_by_id, self.people_by_name = contacts_data.read_contacts(self.contacts_file)
         self.contacts_summary = link_contacts.analyze_contacts(self.people_by_id)
         link_contacts.link_contacts(self.people_by_id, self.people_by_name)
-        contacts_data.write_contacts(contacts_file, self.people_by_name)
+        contacts_data.write_contacts(self.contacts_file, self.people_by_name)
         super().update(verbose, messager)
         return self
 

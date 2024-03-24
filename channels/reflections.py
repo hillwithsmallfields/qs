@@ -26,10 +26,10 @@ class ReflectionsPanel(panels.DashboardPanel):
         """Update the cached data."""
         self.reflections = []
         for i in range(self.reflection_count):
-            new_reflection = random_reflection(reflections_dir)
+            new_reflection = self.random_reflection()
             countdown = 4               # in case there's only one reflection available
             while new_reflection in self.reflections and countdown > 0:
-                new_reflection = random_reflection(reflections_dir)
+                new_reflection = self.random_reflection()
                 countdown -= 1
             if new_reflection not in self.reflections:
                 self.reflections.append(new_reflection)
@@ -37,7 +37,7 @@ class ReflectionsPanel(panels.DashboardPanel):
         return self
 
     def random_reflection(self):
-        with open(self.storage.glob("*.txt", template='texts', texts="reflection")) as instream:
+        with open(random.choice(self.storage.glob("*.txt", texts="reflection"))) as instream:
             return random.choice([line.strip() for line in instream if line != "\n"])
 
     def html(self, _messager=None):
