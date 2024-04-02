@@ -40,6 +40,7 @@ import channels.perishables
 import channels.physical
 import channels.reflections
 import channels.startpage
+import channels.timetable
 import channels.travel
 import channels.ringing
 import channels.weather
@@ -67,7 +68,7 @@ def update_covid():
     # TODO: include in charts
 
 def update_once(handlers,
-                charts,
+                store, charts,
                 begin, end,
                 no_externals,
                 serial=False,
@@ -107,7 +108,7 @@ def update_once(handlers,
 
         with BeginAndEndMessages("refreshing dashboard", verbose=verbose):
             dashboard.dashboard.make_dashboard_page(
-                charts_dir=os.path.expanduser("~/private_html/dashboard"),
+                store, charts,
                 channels_data={
                     handler.name(): handler
                     for handler in handlers
@@ -199,7 +200,7 @@ def updates(charts,
                 # allow for multiple files to be saved in a burst
                 time.sleep(delay)
                 update_once(handlers,
-                            charts,
+                            store, outputs,
                             begin, end,
                             no_externals,
                             serial,
@@ -208,7 +209,7 @@ def updates(charts,
                             force)
     else:
         update_once(handlers,
-                    charts,
+                    store, outputs,
                     begin, end,
                     no_externals,
                     serial,

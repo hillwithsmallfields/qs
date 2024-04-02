@@ -118,7 +118,7 @@ def travel_section():
     # TODO: read travel.csv and a journeys file generated from Google
     return None
 
-def construct_dashboard_page(charts_dir, channels_data):
+def construct_dashboard_page(store, charts, channels_data):
     with BeginAndEndMessages("constructing page") as msgs:
         page = SectionalPage()
         empty = channels.empty.EmptyPanel()
@@ -164,14 +164,15 @@ def construct_dashboard_page(charts_dir, channels_data):
             page.toc(),
             page.sections()]]
 
-def write_dashboard_page(charts_dir,
+def write_dashboard_page(store,
+                         charts,
                          channels_data,
                          details_background_color="gold", inline=True):
     """Construct and save the dashboard page."""
-    with open(os.path.join(charts_dir, "index.html"), 'w') as page_stream:
+    with charts.open_for_write(relative="index.html") as page_stream:
         page_stream.write(
             exprpages.page_text(
-                construct_dashboard_page(charts_dir, channels_data),
+                construct_dashboard_page(store, charts, channels_data),
                 ((exprpages.tagged_file_contents(
                     "style", os.path.join(SOURCE_DIR, "dashboard.css"))
                  + qsutils.qsutils.table_support_css(details_background_color))
@@ -208,8 +209,7 @@ def make_channel_images(channel,
                     foreground_colour=foreground_colour,
                     verbose=verbose)
 
-def make_dashboard_images(charts_dir,
-                          channels_data,
+def make_dashboard_images(channels_data,
                           chart_sizes,
                           text_colour,
                           background_colour,
@@ -238,7 +238,7 @@ def make_dashboard_images(charts_dir,
                                 begin_date=begin_date, end_date=end_date,
                                 verbose=verbose)
 
-def make_dashboard_page(charts_dir=None,
+def make_dashboard_page(store, charts,
                         channels_data=None,
                         chart_sizes={'small': {'figsize': (5,4)},
                                      'large': {'figsize': (11,8)}},
@@ -247,20 +247,17 @@ def make_dashboard_page(charts_dir=None,
 
     """Make the dashboard page, including refreshed images for it."""
 
-    if not charts_dir:
-        charts_dir = os.path.expanduser("~/private_html/dashboard")
-
     text_colour, background_colour, shading = dashboard_page_colours()
     if verbose:
         print(f"text_colour: {text_colour}; background_colour: {background_colour}; shading: {shading}")
-    make_dashboard_images(charts_dir=charts_dir,
-                          channels_data=channels_data,
+    make_dashboard_images(channels_data=channels_data,
                           chart_sizes=chart_sizes,
                           begin_date=begin_date, end_date=end_date,
                           text_colour=text_colour,
                           background_colour=background_colour,
                           foreground_colour=text_colour,
                           verbose=verbose)
-    write_dashboard_page(charts_dir,
+    write_dashboard_page(store,
+                         charts,
                          channels_data,
                          details_background_color=shading)
