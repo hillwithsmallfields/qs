@@ -22,7 +22,7 @@ import financial.finutils
 import qsutils.qsutils
 import qsutils.qschart
 
-import channels.timetable
+import channels.empty
 from expressionive.expridioms import switchable_panel, linked_image
 
 import coimealta.contacts.contacts_data as contacts_data
@@ -121,13 +121,14 @@ def travel_section():
 def construct_dashboard_page(charts_dir, channels_data):
     with BeginAndEndMessages("constructing page") as msgs:
         page = SectionalPage()
+        empty = channels.empty.EmptyPanel()
         page.add_section(None,
                          wrap_box(T.div[T.h2["Perishable food to use up"],
-                                        channels_data['perishables'].html(msgs),
+                                        channels_data.get('perishables', empty).html(msgs),
                                         T.h2["Parcels expected"],
-                                        channels_data['parcels'].html(msgs)],
-                                  channels_data['timetable'].html(msgs),
-                                  channels_data['weather'].html(msgs)),)
+                                        channels_data.get('parcels', empty).html(msgs)],
+                                  channels_data.get('timetable', empty).html(msgs),
+                                  channels_data.get('weather', empty).html(msgs)),)
         # page.add_section("Health", wrap_box(
         #     *[
         #         channels_data[key].html(msgs)
