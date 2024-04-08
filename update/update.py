@@ -77,6 +77,7 @@ def update_once(handlers,
                 force=False):
 
     with BeginAndEndMessages("archiving old data", verbose=verbose) as msgs:
+        msgs.print("in update_once, charts has %d templates: %s" % (len(charts.templates), charts))
         files_subject_to_change = [filename
                                    for channel in handlers
                                    for filename in channel.files_to_write()
@@ -106,9 +107,10 @@ def update_once(handlers,
                     ex.map(lambda handler: handler.update(verbose=verbose, messager=msgs),
                            handlers)
 
-        with BeginAndEndMessages("refreshing dashboard", verbose=verbose):
+        with BeginAndEndMessages("refreshing dashboard", verbose=verbose) as msgs:
+            msgs.print("about to make dashboard page; charts has %d templates: %s" % (len(charts.templates), charts))
             dashboard.dashboard.make_dashboard_page(
-                store, charts,
+                store=store, charts=charts,
                 channels_data={
                     handler.name(): handler
                     for handler in handlers
@@ -133,6 +135,7 @@ CHART_TEMPLATES = {
     'period_name_chart': "dashboard/%(date_suffix)s-%(name_suffix)s.png",
     'weight_chart': "dashboard/weight-%(weight_units)s-%(date_suffix)s-%(size)s.png",
     'misc_chart': "dashboard/%(chart_type)s-%(name_suffix)s-%(date_suffix)s.png",
+    'relative': "%(relative)s",
 }
 
 def updates(charts,
@@ -163,10 +166,12 @@ def updates(charts,
         templates=STORAGE_TEMPLATES,
         defaults={},
         base="$SYNCED")
+    print(len(CHART_TEMPLATES), "chart templates are:", CHART_TEMPLATES)
     outputs = storage.Storage(
         templates=CHART_TEMPLATES,
         defaults={},
         base="~/private_html")
+    print(len(outputs.templates), "output templates are:", outputs.templates)
     handlers = [
         panel_class(store, outputs)
         for panel_class in [

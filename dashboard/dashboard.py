@@ -121,7 +121,7 @@ def travel_section():
 def construct_dashboard_page(store, charts, channels_data):
     with BeginAndEndMessages("constructing page") as msgs:
         page = SectionalPage()
-        empty = channels.empty.EmptyPanel()
+        empty = channels.empty.EmptyPanel(store, charts)
         page.add_section(None,
                          wrap_box(T.div[T.h2["Perishable food to use up"],
                                         channels_data.get('perishables', empty).html(msgs),
@@ -257,7 +257,8 @@ def make_dashboard_page(store, charts,
                           background_colour=background_colour,
                           foreground_colour=text_colour,
                           verbose=verbose)
-    write_dashboard_page(store,
-                         charts,
-                         channels_data,
+    print("in make_dashboard_images, charts has %d templates" % len(charts.templates), charts.templates)
+    write_dashboard_page(store=store,
+                         charts=charts,
+                         channels_data=channels_data,
                          details_background_color=shading)

@@ -6,8 +6,8 @@ from expressionive.expridioms import wrap_box, labelled_section, SectionalPage
 
 class EmptyPanel(panels.DashboardPanel):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, store, outputs, *args, **kwargs):
+        super().__init__(store, outputs, *args, **kwargs)
 
     def name(self):
         return "empty"

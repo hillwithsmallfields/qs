@@ -37,8 +37,8 @@ class ParcelsPanel(panels.DashboardPanel):
     def html(self, messager=None):
         if self.parcels:
             dates = {}
-            messager.print("parsing collection %s" % self.parcels)
-            for parcel in self.parcels:
+            messager.print("parsing collection %s" % self.parcels['expected'])
+            for parcel in self.parcels['expected']:
                 messager.print("parsing entry %s" % parcel)
                 date = datetime.date.fromisoformat(parcel[0])
                 if date not in dates:

@@ -83,8 +83,7 @@ class ContactsPanel(panels.DashboardPanel):
             for person in self.people_by_id.values()
             if contacts_data.contact_soon(person, today, days_since_last_contact=90)]
         flag_labels = {flag['Flag']: flag['Label']
-                       for flag in self.storage.read(template="organizational",
-                                                     file="flags.csv")}
+                       for flag in self.storage.load(organizational="flags.csv")}
         by_flags = {flag_labels.get(k, k): v
                     for k, v in self.contacts_summary['flagged'].items()}
         return wrap_box(
