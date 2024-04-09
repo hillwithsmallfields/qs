@@ -125,17 +125,16 @@ STORAGE_TEMPLATES = {
 }
 
 CHART_TEMPLATES = {
-    'page': "dashboard/%(page)s.html",
-    'chart': "dashboard/%(chart)s.png",
-    'financial': "dashboard/%(financial)s.csv",
-    'sized_chart': "dashboard/%(chart)s-%(size)s.png",
-    'dated_sized_chart': "dashboard/%(date_suffix)s-%(size)s.png",
-    'type_dated_sized_chart': "dashboard/%(chart_type)s-%(date_suffix)s-%(size)s.png",
-    'activity_chart': "dashboard/%(activity)s-%(size)s.png",
-    'period_name_chart': "dashboard/%(date_suffix)s-%(name_suffix)s.png",
-    'weight_chart': "dashboard/weight-%(weight_units)s-%(date_suffix)s-%(size)s.png",
-    'misc_chart': "dashboard/%(chart_type)s-%(name_suffix)s-%(date_suffix)s.png",
-    'relative': "%(relative)s",
+    'page': "%(page)s.html",
+    'chart': "%(chart)s.png",
+    'financial': "%(financial)s.csv",
+    'sized_chart': "%(chart)s-%(size)s.png",
+    'dated_sized_chart': "%(date_suffix)s-%(size)s.png",
+    'type_dated_sized_chart': "%(chart_type)s-%(date_suffix)s-%(size)s.png",
+    'activity_chart': "%(activity)s-%(size)s.png",
+    'period_name_chart': "%(date_suffix)s-%(name_suffix)s.png",
+    'weight_chart': "weight-%(weight_units)s-%(date_suffix)s-%(size)s.png",
+    'misc_chart': "%(chart_type)s-%(name_suffix)s-%(date_suffix)s.png",
 }
 
 def updates(charts,
@@ -170,7 +169,7 @@ def updates(charts,
     outputs = storage.Storage(
         templates=CHART_TEMPLATES,
         defaults={},
-        base="~/private_html")
+        base="~/private_html/dashboard")
     print(len(outputs.templates), "output templates are:", outputs.templates)
     handlers = [
         panel_class(store, outputs)

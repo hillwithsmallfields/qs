@@ -169,7 +169,7 @@ def write_dashboard_page(store,
                          channels_data,
                          details_background_color="gold", inline=True):
     """Construct and save the dashboard page."""
-    with charts.open_for_write(relative="index.html") as page_stream:
+    with charts.open_for_write(page="index") as page_stream:
         page_stream.write(
             exprpages.page_text(
                 construct_dashboard_page(store, charts, channels_data),
