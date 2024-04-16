@@ -418,18 +418,20 @@ class PhysicalPanel(panels.DashboardPanel):
         one for exercise and one for measurements."""
         self.exercise_data = qsutils.qsutils.ensure_numeric_dates(
             dobishem.storage.combined(
-                self.combined_exercise_filename,
-                combine_exercise_data,
-                {
+                destination=self.combined_exercise_filename,
+                combiner=combine_exercise_data,
+                origins={
                     self.combined_exercise_filename: convert_exercise,
                     self.accumulated_garmin_downloads_filename: convert_garmin,
                     os.path.expandvars("$SYNCED/health/isometric.csv"): convert_isometric,
                 },
                 verbose=verbose, messager=messager))
+        # dobishem.storage.modified(self.combined_measurement_filename)
+        # dobishem.storage.modified(os.path.expandvars("$SYNCED/health/weight.csv"))
         self.measurement_data = dobishem.storage.combined(
-                self.combined_measurement_filename,
-                combine_measurement_data,
-                {
+                destination=self.combined_measurement_filename,
+                combiner=combine_measurement_data,
+                origins={
                     self.combined_measurement_filename: convert_measurement,
                     os.path.expandvars("$SYNCED/health/weight.csv"): convert_weight,
                     # TODO: add blood pressure readings
@@ -452,7 +454,7 @@ class PhysicalPanel(panels.DashboardPanel):
                 if self.measurement_data:
                     for row in self.measurement_data:
                         for col in ['Stone', 'Lbs', 'Lbs total', 'Date number',
-                                    'St total', # 'Kg', 'Non-zero',
+                                    'St total', 'Kg', # 'Non-zero',
                                     ]:
                             if col in row:
                                 v = row[col]
@@ -465,12 +467,10 @@ class PhysicalPanel(panels.DashboardPanel):
                     converted_df = pd.DataFrame.from_records(self.measurement_data)
                     # converted_df.astype
                     converted_df.replace("", np.nan, inplace=True)
-                    print("original columns", converted_df.columns)
                     converted_df = converted_df[['Date', 'Stone', 'Lbs', 'Lbs total',
                                                  # try to narrow down which column breaks it
-                                                 'St total', # 'Kg', 'Non-zero',
+                                                 'St total', 'Kg', # 'Non-zero',
                                                  ]]
-                    print("trimmed columns", converted_df.columns)
                     converted_df['Date'] = pd.to_datetime(converted_df['Date'])
 
                     self.measurement_dataframe = converted_df
