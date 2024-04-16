@@ -87,10 +87,7 @@ def qscharts(data:pd.DataFrame,
         raise ValueError("No data provided for charting")
     data.set_index("Date")
     for name_suffix, params in plot_param_sets.items():
-        if messager:
-            messager.print(f"charting into {kwargs}")
-        else:
-            print(f"charting into {date_suffix} and {name_suffix}")
+        messager.print(f"charting into {kwargs}")
         if not qschart(data, timestamp,
                        columns, foreground_colour,
                        begin, end, matching, by_day_of_week,
@@ -100,19 +97,13 @@ def qscharts(data:pd.DataFrame,
                        chart_store=chart_store,
                        size=name_suffix,
                        **kwargs):
-            if messager:
-                messager.print(f"TODO: output instructions for fetching missing data for {kwargs}")
-            else:
-                print(f"TODO: output instructions for fetching missing data for {kwargs}")
+            messager.print(f"TODO: output instructions for fetching missing data for {kwargs}")
 
 def plot_column_set(axs, data, columns, prefix, foreground_colour, bar=False, messager=None):
     for column in columns:
         col_header = column_header(column)
         if col_header not in data:
-            if messager:
-                messager.print("Column %s not present" % col_header)
-            else:
-                print("Column", col_header, "not present")
+            messager.print("Column %s not present" % col_header)
             continue
         messager.print(f"Plotting column {col_header} (from {column})")
         column_data = data.loc[data[col_header] != 0,
@@ -128,8 +119,8 @@ def plot_column_set(axs, data, columns, prefix, foreground_colour, bar=False, me
                 # TODO: it's not including the prefix (which I'm using for the day of the week)
                 plt.ylabel(prefix + column_label(column))
                 return True
-        except TypeError:
-            print("Data error")
+        except TypeError as te:
+            messager.print(f"Data error: {te}")
             return False
 
 def qschart(data: pd.DataFrame,
@@ -167,6 +158,7 @@ def qschart(data: pd.DataFrame,
         pass                    # TODO: filter data
 
     if data.empty:
+        messager.print(f"No data for period from {begin} to {end} in columns {columns}")
         return False
 
     min_date = data['Date'].min()
@@ -203,8 +195,7 @@ def qschart(data: pd.DataFrame,
     plt.xlabel("Date")
     plt.grid(axis='both')
 
-    if messager:
-        messager.print("qschart naming args %s" % kwargs)
+    messager.print("qschart naming args %s" % kwargs)
     outfile = chart_store.resolve(**kwargs)
 
     fig.savefig(outfile,
