@@ -6,6 +6,18 @@ import re
 
 import dobishem.tabular_text
 
+COLUMN_ORDER= [
+    'status',
+    'title',
+    'scheduled',
+    'group',
+    'project',
+    'tags',
+    'created',
+    'modified',
+    'notes',
+]
+
 class Project:
 
     def __init__(self, node):
@@ -105,7 +117,7 @@ def save_agenda(agenda):
         dobishem.tabular_text.write_tabular(
             outstream,
             [action.as_dict() for action in agenda],
-            column_order=['status', 'title', 'group', 'project', 'tags', 'created', 'modified', 'notes'],
+            column_order=COLUMN_ORDER,
             margin="  ")
 
 def main():
