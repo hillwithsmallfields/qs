@@ -29,6 +29,13 @@ STAGE_NAMES=[
     "Maximus",
     ]
 
+def write_classification(table, label, filebase):
+    dobishem.storage.write_csv(os.path.expandvars("$SYNCED/ringing/by-%s.csv" % filebase),
+                               sorted([{label: key, "Towers": value} for key, value in table.items()],
+                                      key=lambda d: d[label],
+                                      reverse=True)
+                               )
+
 class RingingPanel(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
@@ -64,7 +71,8 @@ class RingingPanel(panels.DashboardPanel):
             towers.download_dove()
 
     def files_to_write(self):
-        return [os.path.expandvars("$SYNCED/ringing/towers.csv")]
+        return [os.path.expandvars("$SYNCED/ringing/%s.csv") % filebase
+                for filebase in ["towers", "by-bells", "by-weight", "by-year"]]
 
     def update(self, verbose=False, messager=None, **kwargs):
         self.dove = towers.read_dove()
@@ -74,6 +82,10 @@ class RingingPanel(panels.DashboardPanel):
         towers.write_visits(self.visits)
 
         self.by_bells, self.by_weight, self.by_year = towers.classify_towers(self.visits)
+
+        write_classification(self.by_bells, "Bells", "bells")
+        write_classification(self.by_weight, "Hundredweight", "weight")
+        write_classification(self.by_year, "Year", "year")
 
         self.methods_rung = dobishem.storage.read_csv("$SYNCED/ringing/methods.csv")
         self.by_stage = collections.defaultdict(list)

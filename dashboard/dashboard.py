@@ -199,15 +199,18 @@ def make_channel_images(channel,
                                    if begin_date
                                    else periods).items():
             with BeginAndEndMessages("preparing %s images for %s" % (channel.name(), date_suffix.replace('_', ' ')),
-                                     verbose=verbose):
-                channel.prepare_page_images(
-                    date_suffix=date_suffix,
-                    begin_date=np.datetime64(datetime.datetime.combine(begin, when.time())),
-                    end_date=end_date or np.datetime64(when),
-                    chart_sizes=chart_sizes,
-                    background_colour=background_colour,
-                    foreground_colour=foreground_colour,
-                    verbose=verbose)
+                                     verbose=verbose) as m:
+                try:
+                    channel.prepare_page_images(
+                        date_suffix=date_suffix,
+                        begin_date=np.datetime64(datetime.datetime.combine(begin, when.time())),
+                        end_date=end_date or np.datetime64(when),
+                        chart_sizes=chart_sizes,
+                        background_colour=background_colour,
+                        foreground_colour=foreground_colour,
+                        verbose=verbose)
+                except ValueError as e:
+                    m.print(str(e))
 
 def make_dashboard_images(channels_data,
                           chart_sizes,
