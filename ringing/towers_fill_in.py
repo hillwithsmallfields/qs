@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Fill in details in my towers list, from Dove
 
+import os
 import csv
 import tower_visits
 
