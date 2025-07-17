@@ -228,7 +228,7 @@ class FinancesPanel(panels.DashboardPanel):
 
     def fetch(self, verbose=False, messager=None):
         """Combine my downloaded bank statements into one file."""
-        dobishem.storage.combined(
+        dobishem.storage.make(
             self.accumulated_bank_statements_filename,
             merge_handelsbanken_statements,
             {filename: normalize_and_filter_opening_rows
@@ -257,7 +257,7 @@ class FinancesPanel(panels.DashboardPanel):
             key_column='Statement')
 
         self.transactions = qsutils.qsutils.ensure_numeric_dates(
-            dobishem.storage.combined(
+            dobishem.storage.make(
                 self.finances_main_filename,
                 finances_merger,
                 {

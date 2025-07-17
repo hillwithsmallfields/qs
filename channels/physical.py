@@ -363,7 +363,10 @@ def combine_measurement_data(incoming_lists):
     with BeginAndEndMessages("Combining measurement data"):
         for list_in in incoming_lists:
             for entry in list_in:
-                by_date[entry['Date']].update(entry)
+                if 'Date' in entry:
+                    by_date[entry['Date']].update(entry)
+                else:
+                    print("Undated entry:", entry)
         return qsutils.qsutils.ensure_numeric_dates(
             [by_date[date] for date in sorted(by_date.keys())]
         )
@@ -402,7 +405,7 @@ class PhysicalPanel(panels.DashboardPanel):
 
     def fetch(self, verbose=False, messager=None):
         """Fetch health-related downloads such as Garmin, and merge them into an accumulated file."""
-        dobishem.storage.combined(
+        dobishem.storage.make(
             self.accumulated_garmin_downloads_filename,
             merge_garmin_downloads,
             {filename: lambda raw: raw
@@ -420,7 +423,7 @@ class PhysicalPanel(panels.DashboardPanel):
         one for exercise and one for measurements."""
 
         self.exercise_data = qsutils.qsutils.ensure_numeric_dates(
-            dobishem.storage.combined(
+            dobishem.storage.make(
                 self.combined_exercise_filename,
                 combine_exercise_data,
                 {
@@ -429,7 +432,7 @@ class PhysicalPanel(panels.DashboardPanel):
                     os.path.expandvars("$SYNCED/health/isometric.csv"): convert_isometric,
                 },
                 verbose=verbose, messager=messager))
-        self.measurement_data = dobishem.storage.combined(
+        self.measurement_data = dobishem.storage.make(
                 self.combined_measurement_filename,
                 combine_measurement_data,
                 {
