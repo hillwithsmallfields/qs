@@ -129,7 +129,7 @@ EXERCISE_CONVERSIONS = filter_conversions(
     'Comment')
 
 MEASUREMENT_CONVERSIONS = filter_conversions(
-    # 'Date',
+    'Date',
     'Stone',
     'Lbs',
     'Date number',
@@ -395,7 +395,6 @@ class PhysicalPanel(panels.DashboardPanel):
         self.exercise_dataframe = None
         self.measurement_data = None
         self.measurement_dataframe = None
-        self.updated = None
 
     def name(self):
         return 'physical'
@@ -418,10 +417,8 @@ class PhysicalPanel(panels.DashboardPanel):
                 self.combined_measurement_filename]
 
     def update(self, verbose=False, messager=None, **kwargs):
-
         """Merge incoming health-related data from various files, into two central files,
         one for exercise and one for measurements."""
-
         self.exercise_data = qsutils.qsutils.ensure_numeric_dates(
             dobishem.storage.make(
                 self.combined_exercise_filename,
@@ -443,7 +440,7 @@ class PhysicalPanel(panels.DashboardPanel):
                     # TODO: add peak flow readings
                 },
                 verbose=verbose, messager=messager)
-        self.updated = datetime.datetime.now()
+        super().update(verbose, messager)
         return self
 
     def prepare_page_images(self,
@@ -550,7 +547,8 @@ class PhysicalPanel(panels.DashboardPanel):
                         linked_image(
                             charts_dir=self.charts_dir,
                             image_name="bp",
-                            label="BP")),
+                            label="BP",
+                            title="Blood pressure")),
                 )],
                 T.div(class_="exercise")[labelled_subsection(
                     "Exercise",
@@ -559,7 +557,8 @@ class PhysicalPanel(panels.DashboardPanel):
                             linked_image(
                                 charts_dir=self.charts_dir,
                                 image_name=activity.lower(),
-                                label=activity)
+                                label=activity,
+                                title=activity)
                             for activity in ("Cycling", "Running", "Walking", "Swimming")
                         ]
                     ))])]

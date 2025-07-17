@@ -27,7 +27,7 @@ class ExamplePanel(panels.DashboardPanel):
     def update(self, verbose=False, messager=None, **kwargs):
         """Update the cached data."""
         self.examples = make_examples()
-        self.updated = datetime.datetime.now()
+        super().update(verbose, messager)
         return self
 
     def prepare_page_images(self,

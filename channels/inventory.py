@@ -67,6 +67,7 @@ class InventoryPanel(panels.DashboardPanel):
 
         _, self.volume, self.bookshelf_length, self.other_length, self.area = storage.calculate_capacities(self.locations)
         self.updated = datetime.datetime.now()
+        super().update(verbose, messager)
         return self
 
     def html(self):

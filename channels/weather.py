@@ -14,7 +14,7 @@ from expressionive.expressionive import htmltags as T
 from expressionive.expridioms import switchable_panel
 import dashboard.dashboard
 
-import timetable.announce as announce
+import timetable_announcer.announce as announce
 
 COMPASS_POINTS = ('N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW')
 
@@ -28,7 +28,6 @@ class WeatherPanel(panels.DashboardPanel):
         self.weather_table_file = os.path.expandvars("$SYNCED/var/weather.csv")
         self.sunlight_file = os.path.expandvars("$SYNCED/var/sunlight-times.json")
         self.forecast = None
-        self.fetched = None
 
     def name(self):
         return 'weather'
@@ -87,13 +86,13 @@ class WeatherPanel(panels.DashboardPanel):
             writer.writeheader()
             for hour in self.forecast:
                 writer.writerow(hour)
-        self.fetched = datetime.datetime.now()
 
     def update(self, verbose=False, messager=None):
         if self.forecast is None:
             if os.path.exists(self.weather_table_file):
                 with open(self.weather_table_file) as weatherstream:
                     self.forecast=list(csv.DictReader(weatherstream))
+        super().update(verbose, messager)
         return self
 
     def one_day_weather_section(self, day=None):

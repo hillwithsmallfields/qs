@@ -18,10 +18,13 @@ class PerishablesPanel(panels.DashboardPanel):
     def label(self):
         return "Perishables"
 
+    def reads_files(self, filenames):
+        return "perishables.csv" in filenames
+
     def update(self, verbose=False, messager=None, **kwargs):
         """Update the cached data."""
         self.perishables = coimealta.inventory.perishables.get_perishables()
-        self.updated = datetime.datetime.now()
+        super().update(verbose, messager)
         return self
 
     def html(self):
