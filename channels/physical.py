@@ -428,7 +428,8 @@ class PhysicalPanel(panels.DashboardPanel):
                 verbose=verbose, messager=messager))
         # dobishem.storage.modified(self.combined_measurement_filename)
         # dobishem.storage.modified(os.path.expandvars("$SYNCED/health/weight.csv"))
-        self.measurement_data = dobishem.storage.combined(
+        messager.print("About to update measurement data using combined measurement filename %s" % self.combined_measurement_filename)
+        self.measurement_data = dobishem.storage.make(
                 destination=self.combined_measurement_filename,
                 combiner=combine_measurement_data,
                 origins={
@@ -439,6 +440,7 @@ class PhysicalPanel(panels.DashboardPanel):
                     # TODO: add peak flow readings
                 },
                 verbose=verbose, messager=messager)
+        messager.print("Updated measurement data to %s" % self.measurement_data)
         super().update(verbose, messager)
         return self
 

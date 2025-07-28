@@ -24,8 +24,10 @@ def nearest_ancestor_in_selection(cat, parentage, selection):
             else nearest_ancestor_in_selection(ancestor, parentage, selection))
 
 def make_map_to_selection(parentage, selection):
-    return {category: nearest_ancestor_in_selection(category, parentage, selection)
-            for category in parentage.keys()} | {x: x for x in selection}
+    return ({category: nearest_ancestor_in_selection(category, parentage, selection)
+             for category in parentage.keys()} | {x: x for x in selection}
+            if parentage
+            else {})
 
 def abs_if_num(x):
     return abs(x) if isinstance(x, numbers.Number) else x

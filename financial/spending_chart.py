@@ -60,10 +60,12 @@ def cell_as_html(row, column, threshold):
         return T.td[""]
 
 def column_total(table, column):
-    return functools.reduce(
-        operator.add,
-        (cell_total(row[column])
-         for row in table))
+    row_values = [cell_total(row[column])
+                  for row in table]
+    return (functools.reduce(operator.add,
+                             row_values)
+            if row_values
+            else 0)
 
 def spending_chart(transactions, key, period, columns, map_to_highlights, thresholds={}):
     """Create a spending chart, as an untemplate structure."""

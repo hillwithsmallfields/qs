@@ -227,7 +227,7 @@ class FinancesPanel(panels.DashboardPanel):
 
     def fetch(self, verbose=False, messager=None):
         """Combine my downloaded bank statements into one file."""
-        dobishem.storage.combined(
+        dobishem.storage.make(
             self.accumulated_bank_statements_filename,
             merge_handelsbanken_statements,
             {filename: normalize_and_filter_opening_rows
@@ -256,7 +256,7 @@ class FinancesPanel(panels.DashboardPanel):
             key_column='Statement')
 
         self.transactions = qsutils.qsutils.ensure_numeric_dates(
-            dobishem.storage.combined(
+            dobishem.storage.make(
                 self.finances_main_filename,
                 finances_merger,
                 {
@@ -381,14 +381,16 @@ class FinancesPanel(panels.DashboardPanel):
                           financial.categorise.make_map_to_selection(
                               self.parentage,
                               CATEGORIES_OF_INTEREST))]),
-            labelled_subsection("Unrecognized payees",
-                                [T.p["Listed in ",
-                                     os.path.expandvars("$SYNCED/finances/unknown-payees.yaml"),
-                                     "; please add to ",
-                                     os.path.expandvars("$SYNCED/finances/conversions.csv")],
-                                 T.div(class_='transactions_list')[T.ul[
-                                     [T.li[payee]
-                                      for payee in self.known_unknowns]]]]),
+            (labelled_subsection("Unrecognized payees",
+                                 [T.p["Listed in ",
+                                      os.path.expandvars("$SYNCED/finances/unknown-payees.yaml"),
+                                      "; please add to ",
+                                      os.path.expandvars("$SYNCED/finances/conversions.csv")],
+                                  T.div(class_='transactions_list')[T.ul[
+                                      [T.li[payee]
+                                      for payee in self.known_unknowns]]]])
+             if self.known_unknowns
+             else []),
             # T.div[T.h3["Automatic Spending by day of month"],
             #       untemplate.safe_unicode(qsutils.html_pages.file_contents(os.path.join(self.facto.file_config('finance', 'merge-results-dir'),
             #                                                          "auto-by-day-of-month.html")))],

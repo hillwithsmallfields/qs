@@ -40,10 +40,13 @@ class ParcelsPanel(panels.DashboardPanel):
             messager.print("parsing collection %s" % self.parcels['expected'])
             for parcel in self.parcels['expected']:
                 messager.print("parsing entry %s" % parcel)
-                date = datetime.date.fromisoformat(parcel[0])
-                if date not in dates:
-                    dates[date] = []
-                dates[date].append(parcel[1])
+                try:
+                    date = datetime.date.fromisoformat(parcel[0])
+                    if date not in dates:
+                        dates[date] = []
+                    dates[date].append(parcel[1])
+                except ValueError:
+                    print("unparsable parcel arrival date:", parcel[0])
             return [T.dl[[[T.dt[date.strftime("%Y-%m-%d %d")],
                            T.dd[T.ul[[[T.li[parcel]
                                        for parcel in sorted(dates[date])]]]]]]]]
