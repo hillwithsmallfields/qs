@@ -67,7 +67,7 @@ class InventoryPanel(panels.DashboardPanel):
 
         _, self.volume, self.bookshelf_length, self.other_length, self.area = storage.calculate_capacities(self.locations)
         self.updated = datetime.datetime.now()
-        print("media by type now", media_by_type)
+        print("media by type now", self.media_by_type)
         super().update(verbose, messager)
         return self
 

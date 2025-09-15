@@ -170,6 +170,7 @@ def write_dashboard_page(store,
                          details_background_color="gold", inline=True):
     """Construct and save the dashboard page."""
     with charts.open_for_write(page="index") as page_stream:
+        print("page stream is %s", page_stream)
         page_stream.write(
             exprpages.page_text(
                 construct_dashboard_page(store, charts, channels_data),
@@ -198,7 +199,7 @@ def make_channel_images(channel,
         for date_suffix, begin in ({'custom': begin_date}
                                    if begin_date
                                    else periods).items():
-            with BeginAndEndMessages("preparing %s images for %s" % (channel.name(), date_suffix.replace('_', ' ')),
+            with BeginAndEndMessages("opreparing %s images for %s" % (channel.name(), date_suffix.replace('_', ' ')),
                                      verbose=verbose) as m:
                 try:
                     channel.prepare_page_images(

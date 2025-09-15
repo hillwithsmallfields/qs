@@ -401,11 +401,12 @@ class PhysicalPanel(panels.DashboardPanel):
 
     def fetch(self, verbose=False, messager=None):
         """Fetch health-related downloads such as Garmin, and merge them into an accumulated file."""
-        dobishem.storage.combined(
-            self.accumulated_garmin_downloads_filename,
-            merge_garmin_downloads,
-            {filename: lambda raw: raw
-             for filename in dobishem.storage.in_modification_order("~/Downloads/Activities*.csv")},
+        messager.print("physical fetch for garmin downloads %s" % self.accumulated_garmin_downloads_filename)
+        dobishem.storage.make(
+            destination=self.accumulated_garmin_downloads_filename,
+            combiner=merge_garmin_downloads,
+            origins={filename: lambda raw: raw
+                     for filename in dobishem.storage.in_modification_order("~/Downloads/Activities*.csv")},
             verbose=verbose, messager=messager)
 
     def files_to_write(self):
@@ -417,7 +418,7 @@ class PhysicalPanel(panels.DashboardPanel):
         """Merge incoming health-related data from various files, into two central files,
         one for exercise and one for measurements."""
         self.exercise_data = qsutils.qsutils.ensure_numeric_dates(
-            dobishem.storage.combined(
+            dobishem.storage.make(
                 destination=self.combined_exercise_filename,
                 combiner=combine_exercise_data,
                 origins={

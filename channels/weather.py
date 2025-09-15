@@ -48,8 +48,9 @@ class WeatherPanel(panels.DashboardPanel):
             return
         try:
             owm = pyowm.owm.OWM(owm_key)
+            print("logged in to OWM using key", owm_key)
         except:
-            print("Could not log in to OWM")
+            print("Could not log in to OWM using key", owm_key)
             return
         reg = owm.city_id_registry()
         city = "Cambridge"
@@ -58,6 +59,7 @@ class WeatherPanel(panels.DashboardPanel):
         list_of_locations = reg.locations_for(city, country)
         place = list_of_locations[0]
         weather_manager = owm.weather_manager()
+        print("weather manager is", weather_manager)
         observation = weather_manager.weather_at_place(loc_name)
         if verbose:
             if messager:

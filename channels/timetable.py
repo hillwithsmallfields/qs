@@ -57,7 +57,7 @@ class TimetablePanel(panels.DashboardPanel):
                 'today')]
 
     def __repr__(self):
-        return "<timetable %s>" % ", ".join(self.days)
+        return "<timetable %s>" % ", ".join(str(day) for day in self.days)
 
 class TimetableDay:
 
