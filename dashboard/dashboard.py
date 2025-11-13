@@ -155,6 +155,7 @@ def construct_dashboard_page(store, charts, channels_data):
                 'travel',
                 'inventory',
                 'reflections',
+                'bible',
         ]:
             handler = channels_data[panel_key]
             page.add_section(handler.label(), handler.html(msgs))
