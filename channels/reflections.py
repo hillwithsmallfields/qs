@@ -37,10 +37,11 @@ class ReflectionsPanel(panels.DashboardPanel):
 
     def random_reflection(self):
         reflection_file = random.choice(self.storage.glob("*.txt", texts="reflection"))
-        # dobishem.storage.load() for .txt files returns the text content as a string
-        text_content = dobishem.storage.load(reflection_file)
-        lines = [line.strip() for line in text_content.split('\n') if line.strip()]
-        return random.choice(lines) if lines else ""
+        # dobishem.storage.load() for .txt files returns a list of lines
+        lines = dobishem.storage.load(reflection_file)
+        # Filter out empty lines and strip whitespace
+        non_empty_lines = [line.strip() for line in lines if line.strip()]
+        return random.choice(non_empty_lines) if non_empty_lines else ""
 
     def html(self, _messager=None):
         """Generate an expressionive HTML structure from the cached data."""
