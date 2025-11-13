@@ -123,6 +123,12 @@ STORAGE_TEMPLATES = {
     'scratch': "var/%(scratch)s",
     'texts': "texts/%(texts)s",
     'organizational': "org/%(organizational)s",
+    'health': "health/%(health)s",
+    'finances': "finances/%(finances)s",
+    'finances_subdir': "finances/%(subdir)s/%(finances)s",
+    'ringing': "ringing/%(ringing)s",
+    'timetables': "timetables/%(timetables)s",
+    'downloads': "~/Downloads/%(downloads)s",
 }
 
 CHART_TEMPLATES = {

@@ -203,14 +203,14 @@ class FinancesPanel(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.accumulated_bank_statements_filename = "$SYNCED/finances/handelsbanken/handelsbanken-full-new.csv"
-        self.monzo_downloads_filename = "~/Downloads/Monzo Transactions - Monzo Transactions.csv"
+        self.accumulated_bank_statements_filename = self.storage.resolve(subdir="handelsbanken", finances="handelsbanken-full-new.csv")
+        self.monzo_downloads_filename = os.path.expanduser("~/Downloads/Monzo Transactions - Monzo Transactions.csv")
         # manually recorded spending:
-        self.spending_filename = "$SYNCED/finances/spending.csv"
-        self.conversion_filename = "$SYNCED/finances/conversions.csv"
-        self.hierarchy_filename = "$SYNCED/finances/cats.yaml"
-        self.finances_main_filename = "$SYNCED/finances/finances-new.csv"
-        self.completions_filename = "$SYNCED/var/finances-completions-new.el"
+        self.spending_filename = self.storage.resolve(finances="spending.csv")
+        self.conversion_filename = self.storage.resolve(finances="conversions.csv")
+        self.hierarchy_filename = self.storage.resolve(finances="cats.yaml")
+        self.finances_main_filename = self.storage.resolve(finances="finances-new.csv")
+        self.completions_filename = self.storage.resolve(scratch="finances-completions-new.el")
         self.dashboard_dir = os.path.expanduser("~/private_html/dashboard/")
         self.transactions = None
         self.by_categories = None
@@ -383,9 +383,9 @@ class FinancesPanel(panels.DashboardPanel):
                               CATEGORIES_OF_INTEREST))]),
             (labelled_subsection("Unrecognized payees",
                                  [T.p["Listed in ",
-                                      os.path.expandvars("$SYNCED/finances/unknown-payees.yaml"),
+                                      self.storage.resolve(finances="unknown-payees.yaml"),
                                       "; please add to ",
-                                      os.path.expandvars("$SYNCED/finances/conversions.csv")],
+                                      self.storage.resolve(finances="conversions.csv")],
                                   T.div(class_='transactions_list')[T.ul[
                                       [T.li[payee]
                                       for payee in self.known_unknowns]]]])

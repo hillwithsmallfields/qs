@@ -25,8 +25,8 @@ class WeatherPanel(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
-        self.weather_table_file = os.path.expandvars("$SYNCED/var/weather.csv")
-        self.sunlight_file = os.path.expandvars("$SYNCED/var/sunlight-times.json")
+        self.weather_table_file = self.storage.resolve(scratch="weather.csv")
+        self.sunlight_file = self.storage.resolve(scratch="sunlight-times.json")
         self.forecast = None
 
     def name(self):
@@ -66,12 +66,11 @@ class WeatherPanel(panels.DashboardPanel):
                 messager.print(f"weather observation is {observation}")
             else:
                 print("weather observation is", observation)
-        with open(self.sunlight_file, 'w') as outstream:
-            json.dump({'sunrise': (datetime.datetime.fromtimestamp(observation.weather.sunrise_time())
-                                   .time().isoformat(timespec='minutes')),
-                       'sunset': (datetime.datetime.fromtimestamp(observation.weather.sunset_time())
-                                  .time().isoformat(timespec='minutes'))},
-                      outstream)
+        self.storage.save(scratch="sunlight-times.json",
+                         data={'sunrise': (datetime.datetime.fromtimestamp(observation.weather.sunrise_time())
+                                          .time().isoformat(timespec='minutes')),
+                               'sunset': (datetime.datetime.fromtimestamp(observation.weather.sunset_time())
+                                         .time().isoformat(timespec='minutes'))})
         weather = weather_manager.one_call(lat=place.lat, lon=place.lon,units='metric')
         self.forecast = [{
             'time': datetime.datetime.fromtimestamp(h.ref_time).isoformat()[:16],
@@ -83,17 +82,12 @@ class WeatherPanel(panels.DashboardPanel):
             'wind-direction': h.wnd['deg']
         } for h in weather.forecast_hourly]
 
-        with open(self.weather_table_file, 'w') as outstream:
-            writer = csv.DictWriter(outstream, ['time', 'status', 'precipitation', 'temperature', 'uvi', 'wind-speed', 'wind-direction'])
-            writer.writeheader()
-            for hour in self.forecast:
-                writer.writerow(hour)
+        self.storage.save(scratch="weather.csv", data=self.forecast)
 
     def update(self, verbose=False, messager=None):
         if self.forecast is None:
             if os.path.exists(self.weather_table_file):
-                with open(self.weather_table_file) as weatherstream:
-                    self.forecast=list(csv.DictReader(weatherstream))
+                self.forecast = self.storage.load(scratch="weather.csv")
         super().update(verbose, messager)
         return self
 
@@ -127,8 +121,7 @@ class WeatherPanel(panels.DashboardPanel):
     def html(self, _messager=None):
         day_after_tomorrow = dobishem.dates.forward_from(datetime.date.today(), None, None, 2)
         day_after_tomorrow_name = day_after_tomorrow.strftime("%A")
-        with open(self.sunlight_file) as sunlight_stream:
-            sunlight_times = json.load(sunlight_stream)
+        sunlight_times = self.storage.load(scratch="sunlight-times.json")
         return T.div(class_='weather')[
             T.h2["Weather"],
             switchable_panel('weather_switcher',

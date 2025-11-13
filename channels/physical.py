@@ -385,9 +385,9 @@ class PhysicalPanel(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.accumulated_garmin_downloads_filename = os.path.expandvars("$SYNCED/health/garmin-downloads.csv")
-        self.combined_exercise_filename = os.path.expandvars("$SYNCED/health/exercise.csv")
-        self.combined_measurement_filename = os.path.expandvars("$SYNCED/health/measurements.csv")
+        self.accumulated_garmin_downloads_filename = self.storage.resolve(health="garmin-downloads.csv")
+        self.combined_exercise_filename = self.storage.resolve(health="exercise.csv")
+        self.combined_measurement_filename = self.storage.resolve(health="measurements.csv")
         self.exercise_data = None
         self.exercise_dataframe = None
         self.measurement_data = None
@@ -424,18 +424,18 @@ class PhysicalPanel(panels.DashboardPanel):
                 origins={
                     self.combined_exercise_filename: convert_exercise,
                     self.accumulated_garmin_downloads_filename: convert_garmin,
-                    os.path.expandvars("$SYNCED/health/isometric.csv"): convert_isometric,
+                    self.storage.resolve(health="isometric.csv"): convert_isometric,
                 },
                 verbose=verbose, messager=messager))
         # dobishem.storage.modified(self.combined_measurement_filename)
-        # dobishem.storage.modified(os.path.expandvars("$SYNCED/health/weight.csv"))
+        # dobishem.storage.modified(self.storage.resolve(health="weight.csv"))
         messager.print("About to update measurement data using combined measurement filename %s" % self.combined_measurement_filename)
         self.measurement_data = dobishem.storage.make(
                 destination=self.combined_measurement_filename,
                 combiner=combine_measurement_data,
                 origins={
                     self.combined_measurement_filename: convert_measurement,
-                    os.path.expandvars("$SYNCED/health/weight.csv"): convert_weight,
+                    self.storage.resolve(health="weight.csv"): convert_weight,
                     # TODO: add blood pressure readings
                     # TODO: add thermometer readings
                     # TODO: add peak flow readings

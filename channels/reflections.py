@@ -3,6 +3,7 @@ import glob
 import os
 import random
 
+import dobishem.storage
 import channels.panels as panels
 from expressionive.expressionive import htmltags as T
 
@@ -35,8 +36,11 @@ class ReflectionsPanel(panels.DashboardPanel):
         return self
 
     def random_reflection(self):
-        with open(random.choice(self.storage.glob("*.txt", texts="reflection"))) as instream:
-            return random.choice([line.strip() for line in instream if line != "\n"])
+        reflection_file = random.choice(self.storage.glob("*.txt", texts="reflection"))
+        # dobishem.storage.load() for .txt files returns the text content as a string
+        text_content = dobishem.storage.load(reflection_file)
+        lines = [line.strip() for line in text_content.split('\n') if line.strip()]
+        return random.choice(lines) if lines else ""
 
     def html(self, _messager=None):
         """Generate an expressionive HTML structure from the cached data."""

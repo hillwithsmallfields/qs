@@ -25,9 +25,9 @@ class TimetablePanel(panels.DashboardPanel):
             'tomorrow',
             self.day_after_tomorrow_name]
         self.days = [
-            TimetableDay().html(with_form=True),
-            TimetableDay(dobishem.dates.forward_from(datetime.date.today(), None, None, 1)).html(),
-            TimetableDay(dobishem.dates.forward_from(datetime.date.today(), None, None, 2)).html(),
+            TimetableDay(self.storage).html(with_form=True),
+            TimetableDay(self.storage, dobishem.dates.forward_from(datetime.date.today(), None, None, 1)).html(),
+            TimetableDay(self.storage, dobishem.dates.forward_from(datetime.date.today(), None, None, 2)).html(),
         ]
 
     def name(self):
@@ -61,18 +61,18 @@ class TimetablePanel(panels.DashboardPanel):
 
 class TimetableDay:
 
-    def __init__(self, day=None):
+    def __init__(self, storage, day=None):
+        self.storage = storage
         self.day = day or datetime.date.today()
         self.start_time = time.mktime(datetime.datetime.combine(self.day, datetime.time(hour=0, minute=0, second=0)).timetuple())
         self.day_of_week = self.day.strftime("%A")
-        with open(os.path.expandvars("$SYNCED/var/weather.csv")) as weatherstream:
-            self.weather = {row['time']: row for row in csv.DictReader(weatherstream)}
-        timetables_dir = os.path.expandvars("$SYNCED/timetables")
+        weather_data = self.storage.load(scratch="weather.csv")
+        self.weather = {row['time']: row for row in weather_data}
         self.slots = announce.get_day_announcer(
-            os.path.join(timetables_dir, "timetable.csv"),
+            self.storage.resolve(timetables="timetable.csv"),
             [day_full_file
              for day_full_file in [
-                     os.path.join(timetables_dir, day_name)
+                     self.storage.resolve(timetables=day_name)
                      for day_name in (
                              "%s.csv" % self.day_of_week,
                              "%s-%s.csv" % (self.day_of_week,
