@@ -488,22 +488,18 @@ class PhysicalPanel(panels.DashboardPanel):
                 self.exercise_dataframe['Date'] = pd.to_datetime(self.exercise_dataframe['Date'])
                 msgs.print("exercise_dataframe\n:" + str(self.exercise_dataframe))
 
-        with BeginAndEndMessages("plotting physical charts", verbose=verbose) as msgs:
-            for units in ('stone', 'kilogram', 'pound'):
-                qsutils.qschart.qscharts(
-                    data=self.measurement_dataframe,
-                    timestamp=None,
-                    columns=[units],
-                    foreground_colour=foreground_colour,
-                    begin=begin_date, end=end_date, matching=None,
-                    by_day_of_week=False, # split_by_DoW
-                    chart_store=self.outputs,
-                    plot_param_sets=chart_sizes,
-                    vlines=None,
-                    verbose=verbose,
-                    messager=msgs,
-                    date_suffix=date_suffix,
-                    weight_units=units)
+        for units in ('stone', 'kilogram', 'pound'):
+            self.create_charts(
+                data=self.measurement_dataframe,
+                columns=[units],
+                date_suffix=date_suffix,
+                begin_date=begin_date,
+                end_date=end_date,
+                chart_sizes=chart_sizes,
+                foreground_colour=foreground_colour,
+                verbose=verbose,
+                chart_type=f"weight in {units}",
+                weight_units=units)
             if False:
                 qsutils.qschart.qscharts(
                     data=self.measurement_dataframe,
@@ -519,27 +515,25 @@ class PhysicalPanel(panels.DashboardPanel):
                     vlines=None,
                     verbose=verbose,
                     messager=msgs)
-            for activity, activity_label in ACTIVITIES:
-                qsutils.qschart.qscharts(
-                    data=self.exercise_dataframe,
-                    timestamp=None,
-                    columns=['%s %s' % (activity_label, factor)
-                             for factor in (
-                                     'distance',
-                                     # 'elapsed time',
-                                     # 'moving time',
-                                     'max speed',
-                                     'average speed')],
-                    foreground_colour=foreground_colour,
-                    begin=begin_date, end=end_date, matching=None,
-                    bar=True,
-                    by_day_of_week=False, # split_by_DoW
-                    chart_store=self.outputs,
-                    activity=activity_label,
-                    plot_param_sets=chart_sizes,
-                    vlines=None,
-                    verbose=verbose,
-                    messager=msgs)
+        for activity, activity_label in ACTIVITIES:
+            self.create_charts(
+                data=self.exercise_dataframe,
+                columns=['%s %s' % (activity_label, factor)
+                         for factor in (
+                                 'distance',
+                                 # 'elapsed time',
+                                 # 'moving time',
+                                 'max speed',
+                                 'average speed')],
+                date_suffix=date_suffix,
+                begin_date=begin_date,
+                end_date=end_date,
+                chart_sizes=chart_sizes,
+                foreground_colour=foreground_colour,
+                verbose=verbose,
+                chart_type=f"{activity_label} activity",
+                bar=True,
+                activity=activity_label)
 
     def html(self, _messager=None):
         with BeginAndEndMessages("preparing physical HTML"):
