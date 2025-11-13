@@ -225,19 +225,33 @@ class FinancesPanel(panels.DashboardPanel):
     def label(self):
         return "Spending"
 
+    def load_config(self, verbose=False, messager=None):
+        """Load local configuration files (category hierarchy and account mappings).
+
+        These are local config files that should always be loaded, regardless of
+        whether external data sources are being fetched.
+        """
+        if self.parentage is None:
+            self.parentage = financial.categorise.parentages(
+                dobishem.storage.load("$SYNCED/finances/cats.yaml",
+                                     verbose=verbose, messager=messager))
+
+        global normalized_accounts
+        if not normalized_accounts:
+            normalized_accounts = dobishem.storage.load("$SYNCED/finances/normalize_accounts.json",
+                                                        verbose=verbose, messager=messager)
+
     def fetch(self, verbose=False, messager=None):
         """Combine my downloaded bank statements into one file."""
+        # Load config files first (needed for processing)
+        self.load_config(verbose=verbose, messager=messager)
+
         dobishem.storage.make(
             self.accumulated_bank_statements_filename,
             merge_handelsbanken_statements,
             {filename: normalize_and_filter_opening_rows
              for filename in dobishem.storage.in_modification_order("~/Downloads/Transaction*.csv")},
             verbose=verbose, messager=messager)
-        self.parentage = financial.categorise.parentages(dobishem.storage.load("$SYNCED/finances/cats.yaml",
-                                                                               verbose=verbose, messager=messager))
-        global normalized_accounts
-        normalized_accounts = dobishem.storage.load("$SYNCED/finances/normalize_accounts.json",
-                                                    verbose=verbose, messager=messager)
 
     def files_to_write(self):
         return [self.accumulated_bank_statements_filename,
@@ -249,6 +263,9 @@ class FinancesPanel(panels.DashboardPanel):
         """Merge my accumulated financial data, bank statements, Monzo
         statements, and manually recorded spending into the accumulated
         file."""
+
+        # Ensure config is loaded (in case fetch was skipped with --no-externals)
+        self.load_config(verbose=verbose, messager=messager)
 
         conversions = dobishem.storage.read_csv(
             self.conversion_filename,
