@@ -32,6 +32,7 @@ import dashboard.dashboard
 import qsutils.trim_csv
 import qsutils
 import channels.agenda
+import channels.bible
 import channels.contacts
 import channels.finances
 import channels.inventory
@@ -187,6 +188,7 @@ def updates(charts,
                 channels.travel.TravelPanel,
                 channels.inventory.InventoryPanel,
                 channels.ringing.RingingPanel,
+                channels.bible.BiblePanel,
                 channels.startpage.StartPage,
         ]
     ]
