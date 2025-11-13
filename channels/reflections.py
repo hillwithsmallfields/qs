@@ -1,5 +1,3 @@
-"""Example panel to copy and base new ones on."""
-
 import datetime
 import glob
 import os
