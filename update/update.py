@@ -139,6 +139,7 @@ CHART_TEMPLATES = {
     'dated_sized_chart': "%(date_suffix)s-%(size)s.png",
     'type_dated_sized_chart': "%(chart_type)s-%(date_suffix)s-%(size)s.png",
     'activity_chart': "%(activity)s-%(size)s.png",
+    'period_activity_chart': "%(activity)s-%(date_suffix)s-%(size)s.png",
     'period_name_chart': "%(date_suffix)s-%(name_suffix)s.png",
     'weight_chart': "weight-%(weight_units)s-%(date_suffix)s-%(size)s.png",
     'misc_chart': "%(chart_type)s-%(name_suffix)s-%(date_suffix)s.png",
