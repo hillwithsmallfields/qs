@@ -197,6 +197,23 @@ td.days_left {
     padding-left: 2em;
 }
 
+div.bible {
+}
+
+p.bible_verse {
+    line-height: 1.1em;
+    margin-top: .25em;
+    margin-bottom: .25em;
+}
+
+span.verse_number {
+    font-size: xx-small;
+}
+
+span.word {
+    color: red;
+}
+
 /* Use with: */
 /*  <div class="flex-container"> */
 /*   <div>1</div> */

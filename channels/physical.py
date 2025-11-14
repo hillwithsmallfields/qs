@@ -441,7 +441,7 @@ class PhysicalPanel(panels.DashboardPanel):
                     # TODO: add peak flow readings
                 },
                 verbose=verbose, messager=messager)
-        messager.print("Updated measurement data to %s" % self.measurement_data)
+        # messager.print("Updated measurement data to %s" % self.measurement_data)
         super().update(verbose, messager)
         return self
 
