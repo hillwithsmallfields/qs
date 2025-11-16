@@ -200,7 +200,7 @@ td.days_left {
 div.bible {
 }
 
-p.bible_verse {
+.bible_verse {
     line-height: 1.25em;
     margin-top: .25em;
     margin-bottom: .25em;
@@ -208,8 +208,12 @@ p.bible_verse {
     text-indent: -1em;
 }
 
-span.verse_number {
+.verse_number {
     font-size: xx-small;
+}
+
+th.verse_number {
+    padding-right: 1em;
 }
 
 span.word {
