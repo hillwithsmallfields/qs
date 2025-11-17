@@ -116,8 +116,12 @@ class BiblePanel(panels.DashboardPanel):
         super().__init__(*args, **kwargs)
         self.bible = TextCollection(os.path.expandvars("$BIBLE/kj.org"), "KJV")
         self.bible_al = TextCollection(os.path.expandvars("$BIBLE/al.org"), "Shqip")
-        self.bible_pl = TextCollection(os.path.expandvars("$BIBLE/pl.org"), "Polska")
-        self.versions = [self.bible, self.bible_al, self.bible_pl]
+        # self.bible_pl = TextCollection(os.path.expandvars("$BIBLE/pl.org"), "Polska")
+        self.versions = [
+            self.bible,
+            self.bible_al,
+            # self.bible_pl,
+        ]
 
     def name(self):
         return "bible"
