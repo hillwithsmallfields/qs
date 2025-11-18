@@ -210,10 +210,12 @@ div.bible {
 
 .verse_number {
     font-size: xx-small;
+    vertical-align: top;
+    text-align: right;
 }
 
-th.verse_number {
-    padding-right: 1em;
+.verse_text {
+    vertical-align: top;
 }
 
 span.word {
