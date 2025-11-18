@@ -48,5 +48,5 @@ class PerishablesPanel(panels.DashboardPanel):
                                                      T.td[row['Best before'].strftime("%d")],
                                                      T.td(class_="days_left")[(row['Best before'] - today).days],
                                                      T.td[row['Product']],
-                                                     T.td[str(row['Quantity'])]]
+                                                     T.td[str(int(row['Quantity']))]]
                           for row in self.perishables]]])
