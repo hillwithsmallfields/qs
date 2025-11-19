@@ -83,32 +83,45 @@ def chapters_interlinear_html(versions, chapters):
     return [[T.h3[chapter], chapter_interlinear_html(versions, chapter)]
             for chapter in chapters]
 
-def psalm_titles(day_of_month, pluralise=False):
+# Thirty-two psalms to fill in the 182 day cycle after psalm 150:
+FAVOURITE_PSALMS = [
+    1, 4, 8, 9, 11,             # 5
+    14, 15, 16, 17, 19,         # 10
+    20, 21, 23, 25, 27,         # 15
+    29, 30, 31, 32, 33,         # 20
+    34, 39, 40, 41, 42,         # 25
+    43, 45, 46, 47, 48,         # 30
+    49, 51
+]
+
+def psalm_titles(day_of_cycle, pluralise=False):
     """Return the psalms for today, as a list."""
-    start = min(day_of_month, 30) * 5
-    return [("Psalms %d" if pluralise else "Psalm %d") % (start + offset)
-            for offset in range(5)]
+    double_day = day_of_cycle * 2
+    return (["Psalms %d" % (double_day - 1),
+             "Psalms %d" % double_day]
+            if double_day <= 150
+            else ["Psalms %d" % FAVOURITE_PSALMS[double_day-151],
+                  "Psalms %d" % FAVOURITE_PSALMS[double_day-150]])
 
-def psalm_titles_string(day_of_month):
+def psalm_titles_string(day_of_cycle):
     """Return the psalms for today, as a string."""
-    return ", ".join(psalm_titles(day_of_month))
+    return ", ".join(psalm_titles(day_of_cycle))
 
-def proverbs_titles(day_of_month):
+def proverbs_titles(day_of_cycle):
     """Return the proverbs for today, as a list."""
-    return ["Proverbs %d" % day_of_month]
+    return ["Proverbs %d" % ((day_of_cycle-1) % 31 + 1)]
 
-def proverbs_titles_string(day_of_month):
+def proverbs_titles_string(day_of_cycle):
     """Return the proverbs for today, as a string."""
-    return ", ".join(proverbs_titles(day_of_month))
+    return ", ".join(proverbs_titles(day_of_cycle))
 
-def gospel_titles(day_of_month):
+def gospel_titles(day_of_cycle):
     """Return the gospels for today, as a list."""
-    base = day_of_month*3
-    return [gospel_chapter(i+1) for i in range(base, base+3)]
+    return [gospel_chapter(day_of_cycle)]
 
-def gospel_titles_string(day_of_month):
+def gospel_titles_string(day_of_cycle):
     """Return the gospels for today, as a string."""
-    return ", ".join(gospel_titles(day_of_month))
+    return ", ".join(gospel_titles(day_of_cycle))
 
 class BiblePanel(panels.DashboardPanel):
 
@@ -136,19 +149,20 @@ class BiblePanel(panels.DashboardPanel):
 
     def html(self, _messager=None):
         """Generate an expressionive HTML structure for the Bible readings."""
-        day_of_month = datetime.date.today().day
+        today = datetime.date.today()
+        day_of_cycle = (today - today.replace(month=1, day=1)).days % 91 + 1
         interlinear = True
         return T.div(class_='bible')[
-            T.h2["Psalms: ", psalm_titles_string(day_of_month)],
-            (chapters_interlinear_html(self.versions, psalm_titles(day_of_month, pluralise=True))
+            T.h2["Psalms: ", psalm_titles_string(day_of_cycle)],
+            (chapters_interlinear_html(self.versions, psalm_titles(day_of_cycle, pluralise=True))
              if interlinear
-             else chapters_html(self.bible, psalm_titles(day_of_month))),
-            T.h2["Proverbs: ", proverbs_titles_string(day_of_month)],
-            (chapters_interlinear_html(self.versions, proverbs_titles(day_of_month))
+             else chapters_html(self.bible, psalm_titles(day_of_cycle))),
+            T.h2["Proverbs: ", proverbs_titles_string(day_of_cycle)],
+            (chapters_interlinear_html(self.versions, proverbs_titles(day_of_cycle))
              if interlinear
-             else chapters_html(self.bible, proverbs_titles(day_of_month))),
-            T.h2["Gospels: ", gospel_titles_string(day_of_month)],
-            (chapters_interlinear_html(self.versions, gospel_titles(day_of_month))
+             else chapters_html(self.bible, proverbs_titles(day_of_cycle))),
+            T.h2["Gospels: ", gospel_titles_string(day_of_cycle)],
+            (chapters_interlinear_html(self.versions, gospel_titles(day_of_cycle))
              if interlinear
-             else chapters_html(self.bible, gospel_titles(day_of_month))),
+             else chapters_html(self.bible, gospel_titles(day_of_cycle))),
         ]
