@@ -1,6 +1,6 @@
 ;;; finances-entry.el --- enter finances tracking entries interactively  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2021, 2023, 2023  John Sturdy
+;; Copyright (C) 2021, 2023, 2023, 2025  John Sturdy
 
 ;; Author: John Sturdy <jsturdy@ccsl.com>
 ;; Keywords: convenience
@@ -148,7 +148,7 @@ Optional argument GIVEN-PAYEE, ITEM, and GIVEN-CATEGORY are the payee, item, and
     (unless (assoc payee payee-completions)
       (push (list payee category)
             payee-completions))
-    (pushnew project project-completions :test 'string=)
+    (cl-pushnew project project-completions :test 'string=)
     (list date time
           account
           (* converted-amount (if debit -1 1)) account-default-currency
