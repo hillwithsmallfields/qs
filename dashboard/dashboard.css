@@ -216,6 +216,8 @@ div.bible {
 
 .verse_text {
     vertical-align: top;
+    padding-left: 1em;
+    padding-right: 1em;
 }
 
 span.word {
