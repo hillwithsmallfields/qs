@@ -7,23 +7,40 @@ import channels.panels as panels
 from expressionive.expressionive import htmltags as T
 from orgbookchapterverse.orgbookchapterverse import TextCollection, interlinear_chapter
 
+# 32 chapters to add to the 150 psalms gives 182 chapters, which is
+# twice the 91 days of the nearly-quarter-year cycle, so we get Old
+# Testament two readings a day, mostly from the Psalms.
+OLD_TESTAMENT_LENGTHS = (
+    ("Ecclesiastes", 12),
+    ("Song of Solomon", 8),
+    ("Ecclesiastes", 12),
+)
+
 GOSPEL_LENGTHS = (
     ("Matthew", 28),
     ("Mark", 16),
     ("Luke", 24),
     ("John", 21))
 
-def gospel_chapter(n):
-    """Return the Nth chapter of the gospels."""
-    gospel = 0
+def book_sequence_chapter(book_sequence, n):
+    """Return the Nth chapter from a sequence of books."""
+    book = 0
     begin = 1
     end = 0
-    for gospel in GOSPEL_LENGTHS:
-        end += gospel[1]
+    for book in book_sequence:
+        end += book[1]
         if begin <= n and n <= end:
-            return "%s %d" % (gospel[0], (n - begin) + 1)
+            return "%s %d" % (book[0], (n - begin) + 1)
         begin = end + 1
     return None
+
+def old_testament_chapter(n):
+    """Return the Nth chapter from selected Old Testament books."""
+    return book_sequence_chapter(OLD_TESTAMENT_LENGTHS, n)
+
+def gospel_chapter(n):
+    """Return the Nth chapter of the gospels."""
+    return book_sequence_chapter(GOSPEL_LENGTHS, n)
 
 def chapter_name_hack(chapter):
     return "Psalms " + chapter.split(" ")[1] if chapter.startswith("Psalm ") else chapter
@@ -83,25 +100,14 @@ def chapters_interlinear_html(versions, chapters):
     return [[T.h3[chapter], chapter_interlinear_html(versions, chapter)]
             for chapter in chapters]
 
-# Thirty-two psalms to fill in the 182 day cycle after psalm 150:
-FAVOURITE_PSALMS = [
-    1, 4, 8, 9, 11,             # 5
-    14, 15, 16, 17, 19,         # 10
-    20, 21, 23, 25, 27,         # 15
-    29, 30, 31, 32, 33,         # 20
-    34, 39, 40, 41, 42,         # 25
-    43, 45, 46, 47, 48,         # 30
-    49, 51
-]
-
 def psalm_titles(day_of_cycle, pluralise=False):
     """Return the psalms for today, as a list."""
     double_day = day_of_cycle * 2
     return (["Psalms %d" % (double_day - 1),
              "Psalms %d" % double_day]
             if double_day <= 150
-            else ["Psalms %d" % FAVOURITE_PSALMS[double_day-151],
-                  "Psalms %d" % FAVOURITE_PSALMS[double_day-150]])
+            else [old_testament_chapter(double_day - 151),
+                  old_testament_chapter(double_day - 150)])
 
 def psalm_titles_string(day_of_cycle):
     """Return the psalms for today, as a string."""
@@ -109,7 +115,11 @@ def psalm_titles_string(day_of_cycle):
 
 def proverbs_titles(day_of_cycle):
     """Return the proverbs for today, as a list."""
-    return ["Proverbs %d" % ((day_of_cycle-1) % 31 + 1)]
+    return [("Proverbs %d" % ((day_of_cycle-1) % 31 + 1))
+             if day_of_cycle <= 89
+             else ("Proverbs 28"
+                   if day_of_cycle == 90
+                   else "Proverbs 30")]
 
 def proverbs_titles_string(day_of_cycle):
     """Return the proverbs for today, as a string."""
@@ -117,7 +127,11 @@ def proverbs_titles_string(day_of_cycle):
 
 def gospel_titles(day_of_cycle):
     """Return the gospels for today, as a list."""
-    return [gospel_chapter(day_of_cycle)]
+    return [gospel_chapter(day_of_cycle)
+            if day_of_cycle <= 89
+            else ('Proverbs 29'
+                  if day_of_cycle == 90
+                  else 'Proverbs 31')]
 
 def gospel_titles_string(day_of_cycle):
     """Return the gospels for today, as a string."""
