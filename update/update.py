@@ -68,7 +68,8 @@ def update_covid():
     # TODO: write to file
     # TODO: include in charts
 
-def update_once(handlers,
+def update_once(public_handlers,
+                private_handlers,
                 store, charts,
                 begin, end,
                 no_externals,
@@ -80,7 +81,7 @@ def update_once(handlers,
     with BeginAndEndMessages("archiving old data", verbose=verbose) as msgs:
         msgs.print("in update_once, charts has %d templates: %s" % (len(charts.templates), charts))
         files_subject_to_change = [filename
-                                   for channel in handlers
+                                   for channel in (public_handlers + private_handlers)
                                    for filename in channel.files_to_write()
                                    if os.path.exists(filename)]
         if files_subject_to_change:
@@ -89,32 +90,37 @@ def update_once(handlers,
                           messager=msgs)
 
     with BeginAndEndMessages("updating data and refreshing dashboard", verbose=verbose):
+        all_handlers = (public_handlers + private_handlers)
         if not no_externals:
             if serial:
-                for handler in handlers:
+                for handler in all_handlers:
                     handler.fetch(verbose=verbose, messager=msgs)
             else:
-                with concurrent.futures.ThreadPoolExecutor(max_workers=len(handlers)) as ex:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=len(all_handlers)) as ex:
                     with BeginAndEndMessages("fetching external data", verbose=verbose) as msgs:
                         ex.map(lambda handler: handler.fetch(verbose=verbose, messager=msgs),
-                               handlers)
+                               all_handlers)
 
         with BeginAndEndMessages("updating saved data", verbose=verbose) as msgs:
             if serial:
-                for handler in handlers:
+                for handler in all_handlers:
                     handler.update(verbose=verbose, messager=msgs)
             else:
-                with concurrent.futures.ThreadPoolExecutor(max_workers=len(handlers)) as ex:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=len(all_handlers)) as ex:
                     ex.map(lambda handler: handler.update(verbose=verbose, messager=msgs),
-                           handlers)
+                           all_handlers)
 
         with BeginAndEndMessages("refreshing dashboard", verbose=verbose) as msgs:
             msgs.print("about to make dashboard page; charts has %d templates: %s" % (len(charts.templates), charts))
-            dashboard.dashboard.make_dashboard_page(
+            dashboard.dashboard.make_dashboard_pages(
                 store=store, charts=charts,
-                channels_data={
+                public_channels_data={
                     handler.name(): handler
-                    for handler in handlers
+                    for handler in public_handlers
+                },
+                private_channels_data={
+                    handler.name(): handler
+                    for handler in private_handlers
                 },
                 chart_sizes=CHART_SIZES,
                 verbose=verbose)
@@ -179,24 +185,29 @@ def updates(charts,
         defaults={},
         base="~/private_html/dashboard")
     print(len(outputs.templates), "output templates are:", outputs.templates)
-    handlers = [
+    public_handlers = [
+        panel_class(store, outputs)
+        for panel_class in [
+                channels.weather.WeatherPanel,
+                channels.reflections.ReflectionsPanel,
+                channels.bible.BiblePanel,
+                channels.startpage.StartPage,
+        ]
+    ]
+    private_handlers = [
         panel_class(store, outputs)
         for panel_class in [
                 channels.finances.FinancesPanel,
                 # channels.weight.WeightPanel,
                 channels.parcels.ParcelsPanel,
                 channels.timetable.TimetablePanel,
-                channels.weather.WeatherPanel,
                 channels.agenda.AgendaPanel,
                 channels.physical.PhysicalPanel,
                 channels.contacts.ContactsPanel,
-                channels.reflections.ReflectionsPanel,
                 channels.perishables.PerishablesPanel,
                 channels.travel.TravelPanel,
                 channels.inventory.InventoryPanel,
                 channels.ringing.RingingPanel,
-                channels.bible.BiblePanel,
-                channels.startpage.StartPage,
         ]
     ]
 
@@ -212,7 +223,8 @@ def updates(charts,
                 print("PATH=[{}] FILENAME=[{}] EVENT_TYPES={}".format(path, filename, type_names))
                 # allow for multiple files to be saved in a burst
                 time.sleep(delay)
-                update_once(handlers,
+                update_once(public_handlers,
+                            private_handlers,
                             store, outputs,
                             begin, end,
                             no_externals,
@@ -221,7 +233,8 @@ def updates(charts,
                             testing,
                             force)
     else:
-        update_once(handlers,
+        update_once(public_handlers,
+                    private_handlers,
                     store, outputs,
                     begin, end,
                     no_externals,

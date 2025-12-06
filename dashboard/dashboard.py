@@ -157,20 +157,21 @@ def construct_dashboard_page(store, charts, channels_data):
                 'reflections',
                 'bible',
         ]:
-            handler = channels_data[panel_key]
-            page.add_section(handler.label(), handler.html(msgs))
+            if (handler := channels_data.get(panel_key)):
+                page.add_section(handler.label(), handler.html(msgs))
         return [T.body(onload="init_dashboard()")[
             T.script(src="dashboard.js"),
             T.h1["Personal dashboard"],
             page.toc(),
             page.sections()]]
 
-def write_dashboard_page(store,
+def write_dashboard_page(page_file,
+                         store,
                          charts,
                          channels_data,
                          details_background_color="gold", inline=True):
     """Construct and save the dashboard page."""
-    with charts.open_for_write(page="index") as page_stream:
+    with charts.open_for_write(page=page_file) as page_stream:
         print("page stream is %s", page_stream)
         page_stream.write(
             exprpages.page_text(
@@ -243,19 +244,20 @@ def make_dashboard_images(channels_data,
                                 begin_date=begin_date, end_date=end_date,
                                 verbose=verbose)
 
-def make_dashboard_page(store, charts,
-                        channels_data=None,
-                        chart_sizes={'small': {'figsize': (5,4)},
-                                     'large': {'figsize': (11,8)}},
-                        begin_date=None, end_date=None,
-                        verbose=False):
+def make_dashboard_pages(store, charts,
+                         public_channels_data=None,
+                         private_channels_data=None,
+                         chart_sizes={'small': {'figsize': (5,4)},
+                                      'large': {'figsize': (11,8)}},
+                         begin_date=None, end_date=None,
+                         verbose=False):
 
     """Make the dashboard page, including refreshed images for it."""
 
     text_colour, background_colour, shading = dashboard_page_colours()
     if verbose:
         print(f"text_colour: {text_colour}; background_colour: {background_colour}; shading: {shading}")
-    make_dashboard_images(channels_data=channels_data,
+    make_dashboard_images(channels_data=(public_channels_data | private_channels_data),
                           chart_sizes=chart_sizes,
                           begin_date=begin_date, end_date=end_date,
                           text_colour=text_colour,
@@ -263,7 +265,13 @@ def make_dashboard_page(store, charts,
                           foreground_colour=text_colour,
                           verbose=verbose)
     print("in make_dashboard_images, charts has %d templates" % len(charts.templates), charts.templates)
-    write_dashboard_page(store=store,
+    write_dashboard_page(page_file="index",
+                         store=store,
                          charts=charts,
-                         channels_data=channels_data,
+                         channels_data=public_channels_data,
+                         details_background_color=shading)
+    write_dashboard_page(page_file="me/index",
+                         store=store,
+                         charts=charts,
+                         channels_data=private_channels_data,
                          details_background_color=shading)
