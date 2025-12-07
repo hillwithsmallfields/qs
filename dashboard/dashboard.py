@@ -244,7 +244,7 @@ def make_dashboard_images(channels_data,
                                 begin_date=begin_date, end_date=end_date,
                                 verbose=verbose)
 
-def make_dashboard_pages(store, charts,
+def make_dashboard_pages(store, charts, private_charts,
                          public_channels_data=None,
                          private_channels_data=None,
                          chart_sizes={'small': {'figsize': (5,4)},
@@ -270,8 +270,8 @@ def make_dashboard_pages(store, charts,
                          charts=charts,
                          channels_data=public_channels_data,
                          details_background_color=shading)
-    write_dashboard_page(page_file="me/index",
+    write_dashboard_page(page_file="index",
                          store=store,
-                         charts=charts,
+                         charts=private_charts,
                          channels_data=private_channels_data,
                          details_background_color=shading)

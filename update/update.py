@@ -70,7 +70,7 @@ def update_covid():
 
 def update_once(public_handlers,
                 private_handlers,
-                store, charts,
+                store, charts, private_charts,
                 begin, end,
                 no_externals,
                 serial=False,
@@ -113,7 +113,7 @@ def update_once(public_handlers,
         with BeginAndEndMessages("refreshing dashboard", verbose=verbose) as msgs:
             msgs.print("about to make dashboard page; charts has %d templates: %s" % (len(charts.templates), charts))
             dashboard.dashboard.make_dashboard_pages(
-                store=store, charts=charts,
+                store=store, charts=charts, private_charts=private_charts,
                 public_channels_data={
                     handler.name(): handler
                     for handler in public_handlers
@@ -185,6 +185,11 @@ def updates(charts,
         defaults={},
         base="~/private_html/dashboard")
     print(len(outputs.templates), "output templates are:", outputs.templates)
+    private_outputs = storage.Storage(
+        templates=CHART_TEMPLATES,
+        defaults={},
+        base="~/private_html/dashboard/me")
+    print(len(private_outputs.templates), "private output templates are:", private_outputs.templates)
     public_handlers = [
         panel_class(store, outputs)
         for panel_class in [
@@ -225,7 +230,7 @@ def updates(charts,
                 time.sleep(delay)
                 update_once(public_handlers,
                             private_handlers,
-                            store, outputs,
+                            store, outputs, private_outputs,
                             begin, end,
                             no_externals,
                             serial,
@@ -235,7 +240,7 @@ def updates(charts,
     else:
         update_once(public_handlers,
                     private_handlers,
-                    store, outputs,
+                    store, outputs, private_outputs,
                     begin, end,
                     no_externals,
                     serial,
