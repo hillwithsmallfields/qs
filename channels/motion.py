@@ -4,6 +4,7 @@ import argparse
 import datetime
 import json
 import os
+import prefixed
 import psutil
 import re
 import socket
@@ -16,6 +17,7 @@ def get_args():
     parser.add_argument("--list-files", "-l", action='store_true')
     parser.add_argument("--keep-days", "-k", type=int)
     parser.add_argument("--wipeout", "-w", action='store_true')
+    parser.add_argument("--trim", "-t", default="2G")
     return vars(parser.parse_args())
 
 def get_live_command_lines_matching(matching):
@@ -79,7 +81,7 @@ def get_files_details(clip_dir):
     """Return the details of all the regular files in a directory."""
     return [file_details(s) for s in full_filenames(clip_dir)]
 
-def motion_main(list_files, keep_days, wipeout):
+def motion_main(list_files, keep_days, wipeout, trim):
     clips_dir = get_config_value(get_motion_config_filename(),
                                  "target_dir")
     if list:
@@ -104,6 +106,21 @@ def motion_main(list_files, keep_days, wipeout):
         json.dump({'deleted': deleted,
                    'kept': kept},
                   sys.stdout)
+    if trim:
+        limit = prefixed.Float(trim)
+        filenames = sorted(full_filenames(clips_dir),
+                           key=lambda filename: os.stat(filename).st_ctime,
+                           reverse=True)
+        while (filenames
+               and (prefixed.Float(subprocess.run("du", "-si", clips_dir)
+                                   .stdout
+                                   .split(' ')
+                                   [0])
+                    > limit)):
+            try:
+                os.delete(filenames.pop())
+            except:
+                pass
 
 if __name__ == "__main__":
     motion_main(**get_args())
