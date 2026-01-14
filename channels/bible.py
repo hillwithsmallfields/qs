@@ -86,7 +86,11 @@ def interlinear_verse(number, verse):
 
 def chapter_interlinear_html(versions, chapter):
     """Return the expressionive structure for an interlinear text."""
-    book_name, chapter_number = chapter.rsplit(" ", -1)
+    try:
+        book_name, chapter_number = chapter.rsplit(" ", 1)
+    except ValueError:
+        print("problem splitting", chapter, "into book name and chapter number")
+        return []
     list_of_verses = interlinear_chapter(versions, book_name, chapter_number)
     return T.table()[
         [[T.tr[[T.th(class_="verse_number")[str(vnumber)],

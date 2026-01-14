@@ -13,6 +13,7 @@ import numpy as np
 import dobishem.dates
 from dobishem.nested_messages import BeginAndEndMessages
 from expressionive.expressionive import htmltags as T
+from expressionive.expressionive import Serializer # for debugging only
 from expressionive.expridioms import wrap_box, labelled_section, SectionalPage
 import expressionive.exprpages as exprpages
 
@@ -118,17 +119,35 @@ def travel_section():
     # TODO: read travel.csv and a journeys file generated from Google
     return None
 
-def construct_dashboard_page(store, charts, channels_data):
+def construct_impersonal_dashboard_page(store, charts, channels_data):
     with BeginAndEndMessages("constructing page") as msgs:
         page = SectionalPage()
         empty = channels.empty.EmptyPanel(store, charts)
+        page.add_section('Links', T.ul[T.li[T.a(href="me/index.html")["Personal dashboard"]]])
         page.add_section(None,
                          wrap_box(T.div[T.h2["Perishable food to use up"],
-                                        channels_data.get('perishables', empty).html(msgs),
-                                        T.h2["Parcels expected"],
-                                        channels_data.get('parcels', empty).html(msgs)],
+                                        channels_data.get('perishables', empty).html(msgs)],
                                   channels_data.get('timetable', empty).html(msgs),
                                   channels_data.get('weather', empty).html(msgs)),)
+        for panel_key in [
+                'ringing',
+                'travel',
+                'reflections',
+                'bible',
+        ]:
+            if (handler := channels_data.get(panel_key)):
+                page.add_section(handler.label(), handler.html(msgs))
+        return [T.body(onload="init_dashboard()")[
+            T.script(src="dashboard.js"),
+            T.h1["Public dashboard"],
+            page.toc(),
+            page.sections()]]
+
+def construct_personal_dashboard_page(store, charts, channels_data):
+    with BeginAndEndMessages("constructing page") as msgs:
+        page = SectionalPage()
+        empty = channels.empty.EmptyPanel(store, charts)
+        page.add_section('Links', T.ul[T.li[T.a(href="../index.html")["Public dashboard"]]])
         # page.add_section("Health", wrap_box(
         #     *[
         #         channels_data[key].html(msgs)
@@ -146,16 +165,14 @@ def construct_dashboard_page(store, charts, channels_data):
         #     # labelled_section("Sleep correlation", sleep_correlation_section()),
         #     # labelled_section("Temperature", temperature_section())
         # ))
+
         for panel_key in [
                 'agenda',
+                'parcels',
                 'physical',
                 'finances',
                 'contacts',
-                'ringing',
-                'travel',
                 'inventory',
-                'reflections',
-                'bible',
         ]:
             if (handler := channels_data.get(panel_key)):
                 page.add_section(handler.label(), handler.html(msgs))
@@ -169,13 +186,13 @@ def write_dashboard_page(page_file,
                          store,
                          charts,
                          channels_data,
+                         page_constructor,
                          details_background_color="gold", inline=True):
     """Construct and save the dashboard page."""
     with charts.open_for_write(page=page_file) as page_stream:
-        print("page stream is %s", page_stream)
         page_stream.write(
             exprpages.page_text(
-                construct_dashboard_page(store, charts, channels_data),
+                page_constructor(store, charts, channels_data),
                 ((exprpages.tagged_file_contents(
                     "style", os.path.join(SOURCE_DIR, "dashboard.css"))
                  + qsutils.qsutils.table_support_css(details_background_color))
@@ -269,9 +286,11 @@ def make_dashboard_pages(store, charts, private_charts,
                          store=store,
                          charts=charts,
                          channels_data=public_channels_data,
+                         page_constructor=construct_impersonal_dashboard_page,
                          details_background_color=shading)
     write_dashboard_page(page_file="index",
                          store=store,
                          charts=private_charts,
                          channels_data=private_channels_data,
+                         page_constructor=construct_personal_dashboard_page,
                          details_background_color=shading)

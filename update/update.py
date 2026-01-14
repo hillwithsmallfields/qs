@@ -194,6 +194,8 @@ def updates(charts,
         panel_class(store, outputs)
         for panel_class in [
                 channels.weather.WeatherPanel,
+                channels.travel.TravelPanel,
+                channels.perishables.PerishablesPanel,
                 channels.reflections.ReflectionsPanel,
                 channels.bible.BiblePanel,
                 channels.startpage.StartPage,
@@ -209,8 +211,6 @@ def updates(charts,
                 channels.agenda.AgendaPanel,
                 channels.physical.PhysicalPanel,
                 channels.contacts.ContactsPanel,
-                channels.perishables.PerishablesPanel,
-                channels.travel.TravelPanel,
                 channels.inventory.InventoryPanel,
                 channels.ringing.RingingPanel,
         ]
