@@ -91,13 +91,16 @@ def chapter_interlinear_html(versions, chapter):
     except ValueError:
         print("problem splitting", chapter, "into book name and chapter number")
         return []
-    list_of_verses = interlinear_chapter(versions, book_name, chapter_number)
-    return T.table()[
+    return T.table(class_="interlinear_chapter")[
         [[T.tr[[T.th(class_="verse_number")[str(vnumber)],
-                [[T.td(class_="verse_text")[emphasize_word(text)]
-                  for text in verse]]
+                [[T.td(class_=(("verse_text_%d_%d" % (len(versions), colno))
+                               if len(versions) <= 4
+                               else "verse_text"))[emphasize_word(text)]
+                  for colno, text in enumerate(verse)]]
                 ]]]
-         for vnumber, verse in enumerate(list_of_verses, start=1)]]
+         for vnumber, verse in enumerate(
+                 interlinear_chapter(versions, book_name, chapter_number),
+                 start=1)]]
 
 def chapters_interlinear_html(versions, chapters):
     """Return the expressionive structure for a list of Bible chapters."""

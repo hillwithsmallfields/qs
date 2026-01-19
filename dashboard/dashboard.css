@@ -200,6 +200,10 @@ td.days_left {
 div.bible {
 }
 
+table.interlinear_chapter {
+    width="100%";
+}
+
 .bible_verse {
     line-height: 1.25em;
     margin-top: .25em;
@@ -214,6 +218,81 @@ div.bible {
     text-align: right;
 }
 
+/* verse text for 1-column text */
+.verse_text_1_0 {
+    vertical-align: top;
+    padding-left: 1em;
+    padding-right: 1em;
+    width="90%";
+}
+
+/* verse texts for 2-column text */
+.verse_text_2_0 {
+    vertical-align: top;
+    padding-left: 1em;
+    padding-right: 1em;
+    width="45%";
+}
+
+.verse_text_2_1 {
+    vertical-align: top;
+    padding-left: 1em;
+    padding-right: 1em;
+    width="45%";
+}
+
+/* verse text columns for 3-column text */
+.verse_text_3_0 {
+    vertical-align: top;
+    padding-left: 1em;
+    padding-right: 1em;
+    width="30%";
+}
+
+.verse_text_3_1 {
+    vertical-align: top;
+    padding-left: 1em;
+    padding-right: 1em;
+    width="30%";
+}
+
+.verse_text_3_2 {
+    vertical-align: top;
+    padding-left: 1em;
+    padding-right: 1em;
+    width="30%";
+}
+
+/* verse text columns for 3-column text */
+.verse_text_4_0 {
+    vertical-align: top;
+    padding-left: 1em;
+    padding-right: 1em;
+    width="22%";
+}
+
+.verse_text_4_1 {
+    vertical-align: top;
+    padding-left: 1em;
+    padding-right: 1em;
+    width="22%";
+}
+
+.verse_text_4_2 {
+    vertical-align: top;
+    padding-left: 1em;
+    padding-right: 1em;
+    width="22%";
+}
+
+.verse_text_4_3 {
+    vertical-align: top;
+    padding-left: 1em;
+    padding-right: 1em;
+    width="22%";
+}
+
+/* verse text for other numbers of columns */
 .verse_text {
     vertical-align: top;
     padding-left: 1em;
