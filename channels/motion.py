@@ -81,6 +81,37 @@ def get_files_details(clip_dir):
     """Return the details of all the regular files in a directory."""
     return [file_details(s) for s in full_filenames(clip_dir)]
 
+def keep_days_in_dir(clip_dir, keep_days):
+    """Keep only a given number of days back in a clips directory."""
+    cutoff = time.time() - keep_days*24*60*60
+    deleted = 0
+    kept = 0
+    for name in full_filenames(clips_dir):
+        if os.stat(name).st_ctime) < cutoff:
+            os.delete(name)
+            deleted += 1
+        else:
+            kept += 1
+    return {'deleted': deleted,
+            'kept': kept}
+
+def trim_dir(clips_dir, trim_to):
+    """Trim a clips directory to a given size."""
+    limit = prefixed.Float(trim_to)
+    filenames = sorted(full_filenames(clips_dir),
+                       key=lambda filename: os.stat(filename).st_ctime,
+                       reverse=True)
+    while (filenames
+           and (prefixed.Float(subprocess.run("du", "-si", clips_dir)
+                               .stdout
+                               .split(' ')
+                               [0])
+                > limit)):
+        try:
+            os.delete(filenames.pop())
+        except:
+            pass
+
 def motion_main(list_files, keep_days, wipeout, trim):
     clips_dir = get_config_value(get_motion_config_filename(),
                                  "target_dir")
@@ -94,33 +125,10 @@ def motion_main(list_files, keep_days, wipeout, trim):
             deleted += 1
         json.dump({'deleted': deleted}, sys.stdout)
     if keep_days:
-        cutoff = time.time() - keep_days*24*60*60
-        deleted = 0
-        kept = 0
-        for name in full_filenames(clips_dir):
-            if os.stat(name).st_ctime) < cutoff:
-                os.delete(name)
-                deleted += 1
-            else:
-                kept += 1
-        json.dump({'deleted': deleted,
-                   'kept': kept},
+        json.dump(keep_days_in_dir(clips_dir, keep_days),
                   sys.stdout)
     if trim:
-        limit = prefixed.Float(trim)
-        filenames = sorted(full_filenames(clips_dir),
-                           key=lambda filename: os.stat(filename).st_ctime,
-                           reverse=True)
-        while (filenames
-               and (prefixed.Float(subprocess.run("du", "-si", clips_dir)
-                                   .stdout
-                                   .split(' ')
-                                   [0])
-                    > limit)):
-            try:
-                os.delete(filenames.pop())
-            except:
-                pass
+        trim(clips_dir, trim)
 
 if __name__ == "__main__":
     motion_main(**get_args())
