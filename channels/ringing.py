@@ -36,6 +36,25 @@ def write_classification(table, label, filebase):
                                       reverse=True)
                                )
 
+def update_touchbook(touchbook):
+    """Fill in the fields I can't always be bothered to type in my touchbook file."""
+    date = None
+    place = None
+    rows = []
+    with dobishem.storage.FileProtection(filename=touchbook):
+        for row in dobishem.storage.read_csv(touchbook):
+            if not row['Date']:
+                row['Date'] = date
+            date = row['Date']
+            if not row['Place']:
+                row['Place'] = place
+            place = row['Place']
+            if None in row:
+                del row[None]
+            rows.append(row)
+        dobishem.storage.write_csv(touchbook, rows,
+                                   sort_columns=['Date', 'Place', 'Method', 'Stage', 'Bell'])
+
 class RingingPanel(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
@@ -95,6 +114,9 @@ class RingingPanel(panels.DashboardPanel):
         year_data = [{'Date': y, 'Towers': self.by_year.get(y, 0)}
                      for y in range(min(ringing_years), max(ringing_years)+1)]
         self.by_year_df = pd.DataFrame(year_data)
+
+        update_touchbook("$SYNCED/ringing/touchbook.csv")
+
         super().update(verbose, messager)
         return self
 
