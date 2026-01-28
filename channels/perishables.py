@@ -26,16 +26,13 @@ class PerishablesPanel(panels.DashboardPanel):
     def update(self, verbose=False, messager=None, **kwargs):
         """Update the cached data."""
         self.perishables = coimealta.inventory.perishables.get_perishables()
-        messager.print("perishables.update: perishables are %s" % self.perishables)
         super().update(verbose, messager)
         return self
 
-    def html(self, messager=None):
+    def html(self, _messager=None):
         """Generate an expressionive HTML structure from the cached data."""
         today = self.updated.date()
         week_ahead = (self.updated + datetime.timedelta(days=7)).date()
-        messager.print("perishables.html: holding perishables %s" % self.perishables)
-        traceback.print_stack()
         return (T.p["No items on record."]
                 if len(self.perishables) == 0
                 else T.table[
