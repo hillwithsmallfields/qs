@@ -140,4 +140,7 @@ class ContactsPanel(panels.DashboardPanel):
                 "People groups",
                 row(counts_table("By nationality", self.contacts_summary['by_nationality']),
                     counts_table("By title", self.contacts_summary['by_title']),
-                    counts_table("By place met", self.contacts_summary['by_place_met']))))
+                    counts_table("By place met", self.contacts_summary['by_place_met']),
+                    counts_table("Male names", self.contacts_summary['by_given_names']['m']),
+                    counts_table("Female names", self.contacts_summary['by_given_names']['f']),
+                    )))

@@ -1,5 +1,7 @@
 """Perishables panel to copy and base new ones on."""
 
+import traceback
+
 import datetime
 
 import channels.panels as panels
