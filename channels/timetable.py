@@ -43,18 +43,17 @@ class TimetablePanel(panels.DashboardPanel):
     def html(self, _messager=None):
         return T.div(class_='timetable')[
             T.h2["Timetable"],
-            switchable_panel(
-                'timetable_switcher',
-                {'today': self.days[0],
-                 'tomorrow': self.days[1],
-                 self.day_after_tomorrow_name: self.days[2]},
-                {'today': "Today",
-                 'tomorrow': "Tomorrow",
-                 self.day_after_tomorrow_name: self.day_after_tomorrow_name},
-                ['today',
-                 'tomorrow',
-                 self.day_after_tomorrow_name],
-                'today')]
+            switchable_panel(switcher_id='timetable_switcher',
+                             panels={'today': self.days[0],
+                                     'tomorrow': self.days[1],
+                                     self.day_after_tomorrow_name: self.days[2]},
+                             labels={'today': "Today",
+                                     'tomorrow': "Tomorrow",
+                                     self.day_after_tomorrow_name: self.day_after_tomorrow_name},
+                             order=['today',
+                                    'tomorrow',
+                                    self.day_after_tomorrow_name],
+                             initial='today')]
 
     def __repr__(self):
         return "<timetable %s>" % ", ".join(str(day) for day in self.days)

@@ -124,22 +124,22 @@ class WeatherPanel(panels.DashboardPanel):
         sunlight_times = self.storage.load(scratch="sunlight-times.json")
         return T.div(class_='weather')[
             T.h2["Weather"],
-            switchable_panel('weather_switcher',
-                             {'today': self.one_day_weather_section(),
-                              'tomorrow': self.one_day_weather_section(
-                                  dobishem.dates.forward_from(datetime.date.today(),
-                                                             None, None, 1)),
-                              # day_after_tomorrow_name: one_day_weather_section(
-                              #     day_after_tomorrow)
+            switchable_panel(switcher_id='weather_switcher',
+                             panels={'today': self.one_day_weather_section(),
+                                     'tomorrow': self.one_day_weather_section(
+                                         dobishem.dates.forward_from(datetime.date.today(),
+                                                                     None, None, 1)),
+                                     # day_after_tomorrow_name: one_day_weather_section(
+                                     #     day_after_tomorrow)
                              },
-                             {'today': "Today",
-                              'tomorrow': "Tomorrow",
-                              # day_after_tomorrow_name: day_after_tomorrow_name
+                             labels={'today': "Today",
+                                     'tomorrow': "Tomorrow",
+                                     # day_after_tomorrow_name: day_after_tomorrow_name
                              },
-                             ['today', 'tomorrow',
+                             order=['today', 'tomorrow',
                               # day_after_tomorrow_name
                              ],
-                             'today'),
+                             initial='today'),
             T.h3["Daylight times"],
             T.dl[T.dt["Sunrise:"], T.dd[sunlight_times['sunrise']],
             T.dt["Sunset:"], T.dd[sunlight_times['sunset']]]]
