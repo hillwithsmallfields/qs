@@ -127,7 +127,6 @@ def construct_impersonal_dashboard_page(store, charts, channels_data):
         page.add_section(None,
                          wrap_box(T.div[T.h2["Perishable food to use up"],
                                         channels_data.get('perishables', empty).html(msgs)],
-                                  channels_data.get('timetable', empty).html(msgs),
                                   channels_data.get('weather', empty).html(msgs)),)
         for panel_key in [
                 'ringing',
@@ -167,6 +166,7 @@ def construct_personal_dashboard_page(store, charts, channels_data):
         # ))
 
         for panel_key in [
+                'timetable',
                 'agenda',
                 'parcels',
                 'physical',
