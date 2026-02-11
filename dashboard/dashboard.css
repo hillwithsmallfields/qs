@@ -201,7 +201,7 @@ div.bible {
 }
 
 table.interlinear_chapter {
-    width="100%";
+    width: "100%";
 }
 
 .bible_verse {
@@ -223,7 +223,7 @@ table.interlinear_chapter {
     vertical-align: top;
     padding-left: 1em;
     padding-right: 1em;
-    width="90%";
+    width: "90%";
 }
 
 /* verse texts for 2-column text */
@@ -231,14 +231,14 @@ table.interlinear_chapter {
     vertical-align: top;
     padding-left: 1em;
     padding-right: 1em;
-    width="45%";
+    width: "45%";
 }
 
 .verse_text_2_1 {
     vertical-align: top;
     padding-left: 1em;
     padding-right: 1em;
-    width="45%";
+    width: "45%";
 }
 
 /* verse text columns for 3-column text */
@@ -246,21 +246,21 @@ table.interlinear_chapter {
     vertical-align: top;
     padding-left: 1em;
     padding-right: 1em;
-    width="30%";
+    width: "30%";
 }
 
 .verse_text_3_1 {
     vertical-align: top;
     padding-left: 1em;
     padding-right: 1em;
-    width="30%";
+    width: "30%";
 }
 
 .verse_text_3_2 {
     vertical-align: top;
     padding-left: 1em;
     padding-right: 1em;
-    width="30%";
+    width: "30%";
 }
 
 /* verse text columns for 3-column text */
@@ -268,28 +268,28 @@ table.interlinear_chapter {
     vertical-align: top;
     padding-left: 1em;
     padding-right: 1em;
-    width="22%";
+    width: "22%";
 }
 
 .verse_text_4_1 {
     vertical-align: top;
     padding-left: 1em;
     padding-right: 1em;
-    width="22%";
+    width: "22%";
 }
 
 .verse_text_4_2 {
     vertical-align: top;
     padding-left: 1em;
     padding-right: 1em;
-    width="22%";
+    width: "22%";
 }
 
 .verse_text_4_3 {
     vertical-align: top;
     padding-left: 1em;
     padding-right: 1em;
-    width="22%";
+    width: "22%";
 }
 
 /* verse text for other numbers of columns */
