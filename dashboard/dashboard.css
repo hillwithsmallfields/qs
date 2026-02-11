@@ -197,6 +197,13 @@ td.days_left {
     padding-left: 2em;
 }
 
+span.todo_item {
+}
+
+span.open_item {
+    font-style: italic;
+}
+
 div.bible {
 }
 

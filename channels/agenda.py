@@ -33,6 +33,8 @@ class AgendaItem:
         return self.heading + (""
                                if self.parent is None
                                else (" (in " + self.parent + ")"))
+    def html(self):
+        return T.span(class_=('todo_item' if self.status == "TODO" else 'open_item'))[self.longname()]
 
 def load_agenda_file(filename,
                      n_results=None,
@@ -105,7 +107,7 @@ class AgendaPanel(panels.DashboardPanel):
 
     def agenda_subsections(self, keys, messager=None):
         if self.from_org:
-            things = [labelled_subsection(key, T.ul[[T.li[item.longname()] for item in section_list]])
+            things = [labelled_subsection(key, T.ul[[T.li[item.html()] for item in section_list]])
                       for key in keys
                       if len(section_list := self.from_org.get(key, [])) > 0]
             return wrap_box(*things)
