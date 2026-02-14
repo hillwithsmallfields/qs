@@ -2,7 +2,7 @@
 
 SCRIPT_DIR=$(dirname $(readlink -f "$0"))
 
-source $SCRIPT_DIR/../../noticeboard/noticeboard.env/bin/activate
+source $SCRIPT_DIR/../qs.env/bin/activate
 
 export ARCHIVE=$HOME/archive
 export DOWNLOADS=$HOME/Downloads
@@ -11,4 +11,11 @@ export PRIVATEHTML=$HOME/private_html
 export SCRATCH=$HOME/scratch
 export SYNCEDBACKUPS=$HOME/Sync-snapshots
 
-$SCRIPT_DIR/update.py $*
+# We can't use 3.9, because we want 'match'
+PYTHON=python3.9
+# currently 3.12:
+PYTHON=python3
+# has pandas:
+PYTHON=python3.10
+
+$PYTHON $SCRIPT_DIR/update.py $*
