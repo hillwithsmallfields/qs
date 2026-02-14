@@ -17,7 +17,7 @@ class StartPage(panels.DashboardPanel):
     def reads_files(self, filenames):
         return filenames & self.input_files
 
-    def update(self, verbose=False, messager=None):
+    def update(self, verbose=False, messager=None, **kwargs):
         """Update my personal start page, for which the master is a YAML file."""
         startpage = os.path.expandvars("$HOME/private_html/startpage.html")
         startpage_source = os.path.expandvars("$SYNCED/org/startpage.yaml")

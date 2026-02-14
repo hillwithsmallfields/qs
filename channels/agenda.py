@@ -86,7 +86,7 @@ class AgendaPanel(panels.DashboardPanel):
     def reads_files(self, filenames):
         return filenames & self.input_files
 
-    def update(self, verbose=False, messager=None):
+    def update(self, verbose=False, messager=None, **kwargs):
         self.from_org = {
             "General": load_agenda_file("$ORG/general.org", n_results=12),
             "Weekend": load_agenda_file("$ORG/general.org", require_tag='weekend'),

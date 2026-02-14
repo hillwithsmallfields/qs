@@ -258,7 +258,7 @@ class FinancesPanel(panels.DashboardPanel):
                 self.finances_main_filename,
                 self.completions_filename]
 
-    def update(self, verbose=False, messager=None):
+    def update(self, verbose=False, messager=None, **kwargs):
 
         """Merge my accumulated financial data, bank statements, Monzo
         statements, and manually recorded spending into the accumulated

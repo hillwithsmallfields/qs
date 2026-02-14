@@ -120,7 +120,7 @@ def travel_section():
     return None
 
 def construct_impersonal_dashboard_page(store, charts, channels_data):
-    with BeginAndEndMessages("constructing page") as msgs:
+    with BeginAndEndMessages("constructing impersonal page") as msgs:
         page = SectionalPage()
         empty = channels.empty.EmptyPanel(store, charts)
         page.add_section('Links', T.ul[T.li[T.a(href="me/index.html")["Personal dashboard"]]])
@@ -143,7 +143,7 @@ def construct_impersonal_dashboard_page(store, charts, channels_data):
             page.sections()]]
 
 def construct_personal_dashboard_page(store, charts, channels_data):
-    with BeginAndEndMessages("constructing page") as msgs:
+    with BeginAndEndMessages("constructing personal page") as msgs:
         page = SectionalPage()
         empty = channels.empty.EmptyPanel(store, charts)
         page.add_section('Links', T.ul[T.li[T.a(href="../index.html")["Public dashboard"]]])

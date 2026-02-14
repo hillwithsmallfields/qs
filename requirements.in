@@ -5,6 +5,7 @@ matplotlib
 numpy
 orgparse
 pandas
+psutil
 pyowm
 pystemmer
 python-decouple
@@ -13,6 +14,7 @@ requests
 coimealta
 dobishem
 expressionive
+motion_monitor
 orgbookchapterverse
 tabular_page_maker
 timetable_announcer

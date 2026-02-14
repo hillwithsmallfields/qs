@@ -115,7 +115,7 @@ class RingingPanel(panels.DashboardPanel):
                      for y in range(min(ringing_years), max(ringing_years)+1)]
         self.by_year_df = pd.DataFrame(year_data)
 
-        update_touchbook("$SYNCED/ringing/touchbook.csv")
+        update_touchbook(os.path.expandvars("$SYNCED/ringing/touchbook.csv"))
 
         super().update(verbose, messager)
         return self

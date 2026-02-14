@@ -58,7 +58,7 @@ class ContactsPanel(panels.DashboardPanel):
 
     # TODO: fetch method to merge data from Google contacts?
 
-    def update(self, verbose=False, messager=None):
+    def update(self, verbose=False, messager=None, **kwargs):
 
         """Preen my contacts file.
 
