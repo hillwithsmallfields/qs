@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os.path
+import shutil
 import subprocess
 import traceback
 
@@ -11,6 +12,14 @@ import expressionive.exprpages as exprpages
 from motion_monitor import motion_monitor, managed_directory
 
 SNAPS_DIRECTORY = "/tmp/snaps"
+
+def local_copy(original, directory):
+    short = os.path.split(original)[1]
+    copy = os.path.join(directory, short)
+    os.makedirs(directory, exist_ok=True)
+    shutil.copyfile(original, copy)
+    print("copied", original, "to", copy, "and called it", short)
+    return short
 
 class MotionPanel(panels.DashboardPanel):
 
@@ -39,32 +48,18 @@ class MotionPanel(panels.DashboardPanel):
     def fetch(self, verbose=False, messager=None, **kwargs):
         """Fetch data from external sources."""
 
-        def _snap(video_file):
-            snap_name = os.path.join(SNAPS_DIRECTORY, os.path.splitext(os.path.split(video_file)[1])[0] + ".jpg")
-            messager.print("making snapshot %s from video %s" % (snap_name, video_file))
-            subprocess.run(["ffmpeg", "-i", video_file,
-                            "-ss", "0:00:01",
-                            "-frames:v", "1",
-                            snap_name],
-                           stdout=subprocess.DEVNULL,
-                           stderr=subprocess.DEVNULL)
-            return snap_name
-
-        messager.print("in MotionPanel.fetch")
+        messager.print("in MotionPanel.fetch with clips directory %s" % self.motion_clips_directory)
         if self.motion_clips_directory:
             try:
-                self.video_files = managed_directory.recent_files_in_directory(self.motion_clips_directory)
+                self.video_files = managed_directory.recent_files_in_directory(self.motion_clips_directory,
+                                                                               matching=lambda f: f.endswith(".mkv"))
+                messager.print("got video files %s..." % self.video_files[:4])
+                self.snap_files = managed_directory.recent_files_in_directory(self.motion_clips_directory,
+                                                                              matching=lambda f: f.endswith(".jpg"))
+                
+                messager.print("got snap files %s" % self.snap_files)
             except Exception as e:
-                messager.print("Got exception %s while getting recent motion clips" % e)
-            if self.video_files:
-                messager.print("Generating snap files from %d motion clips" % len(self.video_files))
-                try:
-                    self.snap_files = [_snap(filedesc['filename']) for filedesc in self.video_files]
-                except Exception as e:
-                    messager.print("Got exception %s while snapping frames from videos" % e)
-                    traceback.print_exception(e)
-            else:
-                messager.print("No video files found")
+                messager.print("Got exception %s while getting recent motion clips and snaps" % e)
         else:
             messager.print("No motion clips directory")
 
@@ -72,17 +67,24 @@ class MotionPanel(panels.DashboardPanel):
         """Update the cached data."""
         messager.print("in MotionPanel.update with private_charts %s and snap files %s" % (private_charts, self.snap_files))
         if self.snap_files and private_charts:
-            with private_charts.open_for_write(page="motion_gallery.html") as page_stream:
+            with private_charts.open_for_write(page="motion_gallery") as page_stream:
                 page_stream.write(
                     exprpages.page_text(
                         [T.body()[
                             T.h1["Motion gallery"],
-                            T.p["There are %d images" % len(self.snap_files)]
-                    ]]))
+                            T.p["There are %d images" % len(self.snap_files)],
+                            [[T.h2[image['created']],
+                              T.img(src=local_copy(image['filename'], private_charts.base))
+                              ]
+                             for image in self.snap_files]
+                        ]],
+                        style_text="",
+                        script_text=""))
 
         super().update(verbose, messager)
         return self
 
     def html(self, _messager=None):
         """Generate an expressionive HTML structure from the cached data."""
+        messager.print("making HTML for motion detection with snap files %s" % self.snap_files)
         return T.div[T.p["%d videos have been taken in the past day" % len(self.snap_files)]]
