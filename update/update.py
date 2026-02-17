@@ -109,7 +109,8 @@ def update_once(public_handlers,
                                    charts=charts, private_charts=private_charts)
             else:
                 with concurrent.futures.ThreadPoolExecutor(max_workers=len(all_handlers)) as ex:
-                    ex.map(lambda handler: handler.update(verbose=verbose, messager=msgs),
+                    ex.map(lambda handler: handler.update(verbose=verbose, messager=msgs,
+                                                          charts=charts, private_charts=private_charts),
                            all_handlers)
 
         with BeginAndEndMessages("refreshing dashboard", verbose=verbose) as msgs:
