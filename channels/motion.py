@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import collections
 import os.path
 import re
 import shutil
@@ -73,21 +74,26 @@ class MotionPanel(panels.DashboardPanel):
 
     def update(self, verbose=False, messager=None, private_charts=None, **kwargs):
         """Update the cached data."""
-        messager.print("in MotionPanel.update with private_charts %s and snap files %s" % (private_charts, self.snaps))
         if self.snaps and private_charts:
-            messager.print("Making motion gallery with %d images" % (len(self.snaps)))
+            time_blocks = collections.defaultdict(lambda: collections.defaultdict(list))
+            for image in self.snaps:
+                time_blocks[image['created'][:10]][image['created'][11:13]].append(image)
             with private_charts.open_for_write(page="motion_gallery") as page_stream:
                 base = os.path.expanduser(private_charts.base)
                 page_stream.write(
                     exprpages.page_text(
                         [T.body()[
                             T.h1["Motion gallery"],
-                            T.p["There are %d images" % len(self.snaps)],
-                            [[T.h2[image['created']],
-                              T.a(href=image['video']['filename'])[T.img(src=local_copy(image['filename'], base))]
-                              ]
-                             for image in self.snaps]
-                        ]],
+                            T.p["There are %d images." % len(self.snaps)],
+                            [[T.h2[date],
+                             [[T.h3[hour + ":00"],
+                               [[T.h4[T.a(name=entry['created'])[entry['created'][11:19]]],
+                                   T.a(href=entry['video']['filename'])[
+                                   T.img(src=local_copy(entry['filename'], base))]]
+                                for entry in sorted(time_blocks[date][hour],
+                                                    key=lambda e: e['created'])]]
+                               for hour in sorted(time_blocks[date].keys())]]
+                              for date in sorted(time_blocks.keys())]]],
                         style_text="",
                         script_text=""))
 
