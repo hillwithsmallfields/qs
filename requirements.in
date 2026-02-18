@@ -9,6 +9,7 @@ frozendict
 inotify
 matplotlib
 numpy
+orgparse
 pandas
 python-decouple
 pyyaml
