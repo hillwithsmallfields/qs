@@ -55,6 +55,13 @@ def update_touchbook(touchbook):
         dobishem.storage.write_csv(touchbook, rows,
                                    sort_columns=['Date', 'Place', 'Method', 'Stage', 'Bell'])
 
+def analyze_touchbook(touchbook):
+    """Analyze what I've been ringing."""
+    rung = collections.defaultdict(lambda: collections.defaultdict(list))
+    for row in dobishem.storage.read_csv(touchbook):
+        rung[row['Method'] + " " + STAGE_NAMES[int(row.get('Stage', 0) or 0)]][int(row.get('Bell', 0) or 0)].append(row)
+    return {k: sum(len(b) for b in v.values()) for k, v in rung.items()}
+
 class RingingPanel(panels.DashboardPanel):
 
     def __init__(self, *args, **kwargs):
@@ -115,7 +122,9 @@ class RingingPanel(panels.DashboardPanel):
                      for y in range(min(ringing_years), max(ringing_years)+1)]
         self.by_year_df = pd.DataFrame(year_data)
 
-        update_touchbook(os.path.expandvars("$SYNCED/ringing/touchbook.csv"))
+        touchbook = os.path.expandvars("$SYNCED/ringing/touchbook.csv")
+        update_touchbook(touchbook)
+        self.method_totals = analyze_touchbook(touchbook)
 
         super().update(verbose, messager)
         return self
@@ -156,4 +165,11 @@ class RingingPanel(panels.DashboardPanel):
                                                                  T.span(class_='details')[", ".join(sorted(self.by_stage[stage]))]
                                                                  ]]]
                              for stage in sorted(self.by_stage.keys())],
-                            T.tr[T.th["Total"], T.td[str(len(self.methods_rung))]],]))]
+                            T.tr[T.th["Total"], T.td[str(len(self.methods_rung))]],]),
+                labelled_subsection(
+                    "Touches rung",
+                    T.table[[T.tr[T.th[method],
+                                  T.td[str(self.method_totals[method])]]
+                             for method in sorted(self.method_totals.keys(),
+                                                  key=lambda k: self.method_totals[k],
+                                                  reverse=True)]]))]
