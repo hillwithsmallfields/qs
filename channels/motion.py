@@ -17,7 +17,7 @@ SNAPS_DIRECTORY = "/tmp/snaps"
 
 def local_copy(original, directory):
     """Take a copy of a file into a directory, and return its name within the directory."""
-    short = os.path.split(original)[1]
+    short = os.path.split(original)[1].replace(':', '-')
     os.makedirs(directory, exist_ok=True)
     shutil.copy(original, os.path.join(directory, short))
     return short
