@@ -5,6 +5,7 @@ matplotlib
 numpy
 orgparse
 pandas
+prefixed
 psutil
 pyowm
 pystemmer
