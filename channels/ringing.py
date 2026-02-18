@@ -60,11 +60,33 @@ def analyze_touchbook(touchbook):
     rung = collections.defaultdict(lambda: collections.defaultdict(list))
     maxbell = 0
     for row in dobishem.storage.read_csv(touchbook):
+        if row['Status'] == 'failed':
+            continue
         bell = int(row.get('Bell', 0) or 0)
         if bell > maxbell:
             maxbell = bell
         rung[row['Method'] + " " + STAGE_NAMES[int(row.get('Stage', 0) or 0)]][bell].append(row)
     return maxbell, rung, {k: sum(len(b) for b in v.values()) for k, v in rung.items()}
+
+def method_totals_cell(touches_rung, method_totals, method):
+    """Return the html structure for a method totals cell."""
+    touches = sorted([touch for on_bell in touches_rung[method].values()
+                      for touch in on_bell],
+                     key=lambda touch: touch['Date'])
+    return T.td[T.span(class_='overview')[str(method_totals[method]),
+                                          T.span(class_='details')[
+                                              T.ol[[
+                                                  T.li["%s: %s" % (touch['Date'], touch['Place'])]
+                                                  for touch in touches]]]]]
+
+def touches_cell(touches):
+    """Return the html structure for a method/bell totals cell."""
+    return T.td[T.span(class_='overview')[str(len(touches) or "."),
+                                          T.span(class_='details fineprint')[
+                                              T.ol[[
+                                                  T.li["%s: %s" % (touch['Date'], touch['Place'])]
+                                                  for touch in sorted(touches,
+                                                                      key=lambda t: t['Date'])]]]]]
 
 class RingingPanel(panels.DashboardPanel):
 
@@ -174,15 +196,9 @@ class RingingPanel(panels.DashboardPanel):
                     "Touches rung",
                     T.table[T.tr[[T.th["Method"], T.th["Times"]] + [T.th[str(n) if n else "?"] for n in range(self.maxbell+1)]],
                             [T.tr[[T.th[method],
-                                   T.td[str(self.method_totals[method])],
-                                   # T.td["; ".join(["%d: %d" % (bell, len(self.touches_rung[method][bell]))
-                                   #                for bell in sorted(self.touches_rung[method].keys())])],
-                                   # T.td[str(self.touches_rung[method])]
-                                  ]
-                                   + [
-                                      T.td[len(self.touches_rung[method].get(bell, [])) or "."]
-                                      for bell in range(self.maxbell+1)
-                                  ]]
+                                   method_totals_cell(self.touches_rung, self.method_totals, method)]
+                                   + [touches_cell(self.touches_rung[method].get(bell, []))
+                                      for bell in range(self.maxbell+1)]]
                              for method in sorted(self.method_totals.keys(),
                                                   key=lambda k: self.method_totals[k],
                                                   reverse=True)]]))]
