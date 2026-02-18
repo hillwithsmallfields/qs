@@ -120,10 +120,13 @@ def travel_section():
     return None
 
 def construct_impersonal_dashboard_page(store, charts, channels_data):
-    with BeginAndEndMessages("constructing page") as msgs:
+    with BeginAndEndMessages("constructing impersonal page") as msgs:
         page = SectionalPage()
         empty = channels.empty.EmptyPanel(store, charts)
-        page.add_section('Links', T.ul[T.li[T.a(href="me/index.html")["Personal dashboard"]]])
+        page.add_section('Links', T.ul[
+            T.li[T.a(href="me/index.html")["Personal dashboard"]],
+            T.li[T.a(href="me/motion_gallery.html")["Motion detection gallery"]]
+        ])
         page.add_section(None,
                          wrap_box(T.div[T.h2["Perishable food to use up"],
                                         channels_data.get('perishables', empty).html(msgs)],
@@ -143,10 +146,13 @@ def construct_impersonal_dashboard_page(store, charts, channels_data):
             page.sections()]]
 
 def construct_personal_dashboard_page(store, charts, channels_data):
-    with BeginAndEndMessages("constructing page") as msgs:
+    with BeginAndEndMessages("constructing personal page") as msgs:
         page = SectionalPage()
         empty = channels.empty.EmptyPanel(store, charts)
-        page.add_section('Links', T.ul[T.li[T.a(href="../index.html")["Public dashboard"]]])
+        page.add_section('Links', T.ul[
+            T.li[T.a(href="../index.html")["Public dashboard"]],
+            T.li[T.a(href="motion_gallery.html")["Motion detection gallery"]]
+        ])
         # page.add_section("Health", wrap_box(
         #     *[
         #         channels_data[key].html(msgs)

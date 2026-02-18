@@ -36,7 +36,7 @@ class TimetablePanel(panels.DashboardPanel):
     def label(self):
         return 'Timetable'
 
-    def update(self, verbose=False, messager=None):
+    def update(self, verbose=False, messager=None, **kwargs):
         super().update(verbose, messager)
         return self
 

@@ -52,39 +52,46 @@ class WeatherPanel(panels.DashboardPanel):
         except:
             print("Could not log in to OWM using key", owm_key)
             return
-        reg = owm.city_id_registry()
+        place = None
         city = "Cambridge"
         country = "GB"
-        loc_name = "%s,%s" % (city, country)
-        list_of_locations = reg.locations_for(city, country)
-        place = list_of_locations[0]
-        weather_manager = owm.weather_manager()
-        print("weather manager is", weather_manager)
-        observation = weather_manager.weather_at_place(loc_name)
-        if verbose:
-            if messager:
-                messager.print(f"weather observation is {observation}")
-            else:
-                print("weather observation is", observation)
-        self.storage.save(scratch="sunlight-times.json",
-                         data={'sunrise': (datetime.datetime.fromtimestamp(observation.weather.sunrise_time())
-                                          .time().isoformat(timespec='minutes')),
-                               'sunset': (datetime.datetime.fromtimestamp(observation.weather.sunset_time())
-                                         .time().isoformat(timespec='minutes'))})
-        weather = weather_manager.one_call(lat=place.lat, lon=place.lon,units='metric')
-        self.forecast = [{
-            'time': datetime.datetime.fromtimestamp(h.ref_time).isoformat()[:16],
-            'status': h.detailed_status,
-            'precipitation': h.precipitation_probability,
-            'temperature': h.temp['temp'],
-            'uvi': h.uvi,
-            'wind-speed': h.wnd['speed'],
-            'wind-direction': h.wnd['deg']
-        } for h in weather.forecast_hourly]
+        try:
+            reg = owm.city_id_registry()
+            loc_name = "%s,%s" % (city, country)
+            place = reg.locations_for(city, country)[0]
+            weather_manager = owm.weather_manager()
+            messager.print("weather manager is %s" % weather_manager)
+            observation = weather_manager.weather_at_place(loc_name)
+            self.storage.save(scratch="sunlight-times.json",
+                             data={'sunrise': (datetime.datetime.fromtimestamp(observation.weather.sunrise_time())
+                                              .time().isoformat(timespec='minutes')),
+                                   'sunset': (datetime.datetime.fromtimestamp(observation.weather.sunset_time())
+                                             .time().isoformat(timespec='minutes'))})
+            if verbose:
+                if messager:
+                    messager.print(f"weather observation is {observation}")
+                else:
+                    print("weather observation is", observation)
+        except Exception as e:
+            messager.print("Could not observe at %s in %s" % (city, country))
+        if place:
+            messager.print("getting weather for %s" % place)
+            weather = weather_manager.one_call(lat=place.lat, lon=place.lon,units='metric')
+            self.forecast = [{
+                'time': datetime.datetime.fromtimestamp(h.ref_time).isoformat()[:16],
+                'status': h.detailed_status,
+                'precipitation': h.precipitation_probability,
+                'temperature': h.temp['temp'],
+                'uvi': h.uvi,
+                'wind-speed': h.wnd['speed'],
+                'wind-direction': h.wnd['deg']
+            } for h in weather.forecast_hourly]
 
-        self.storage.save(scratch="weather.csv", data=self.forecast)
+            self.storage.save(scratch="weather.csv", data=self.forecast)
+        else:
+            messager.print("No place to get weather for")
 
-    def update(self, verbose=False, messager=None):
+    def update(self, verbose=False, messager=None, **kwargs):
         if self.forecast is None:
             if os.path.exists(self.weather_table_file):
                 self.forecast = self.storage.load(scratch="weather.csv")
