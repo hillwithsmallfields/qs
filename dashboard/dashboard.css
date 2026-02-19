@@ -197,6 +197,10 @@ td.days_left {
     padding-left: 2em;
 }
 
+.fineprint {
+    font-size: x-small;
+}
+
 span.todo_item {
 }
 
