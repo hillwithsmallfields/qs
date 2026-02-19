@@ -197,6 +197,7 @@ def updates(charts,
         panel_class(store, outputs)
         for panel_class in [
                 channels.weather.WeatherPanel,
+                channels.ringing.RingingPanel,
                 channels.travel.TravelPanel,
                 channels.perishables.PerishablesPanel,
                 channels.reflections.ReflectionsPanel,
@@ -215,7 +216,6 @@ def updates(charts,
                 channels.physical.PhysicalPanel,
                 channels.contacts.ContactsPanel,
                 channels.inventory.InventoryPanel,
-                channels.ringing.RingingPanel,
                 channels.motion.MotionPanel,
         ]
     ]
