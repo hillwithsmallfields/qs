@@ -6,49 +6,20 @@ import sys
 from expressionive.expressionive import htmltags as T
 from expressionive.expridioms import wrap_box, labelled_section
 
-import channels.panels as panels
+import channels.agenda as agenda
 
-class ParcelsPanel(panels.DashboardPanel):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args)
-        self.parcels = None
-
-    def name(self):
-        return 'parcels'
-
-    def label(self):
-        return 'Parcels expected'
-
-    def reads_files(self, filenames):
-        return "shopping.org" in filenames
-
-    def fetch(self, verbose=False, messager=None):
-        # The "fetch" operation for this is done by agenda.py
-        pass
+class ParcelsPanel(agenda.AgendaPanel):
 
     def update(self, verbose=False, messager=None, **kwargs):
-        self.parcels = self.storage.load(scratch="parcels-expected.json")
-        messager.print("updated parcels to %s" % self.parcels)
-        self.updated = datetime.datetime.now()
-        super().update(verbose, messager)
+        self.from_org = {
+            "Ordered": agenda.load_agenda_file("$ORG/shopping.org", require_todo="ORDERED"),
+            "Dispatched": agenda.load_agenda_file("$ORG/shopping.org", require_todo="DISPATCHED"),
+        }
+        super().update(verbose, messager, **kwargs)
         return self
 
     def html(self, messager=None):
-        if self.parcels:
-            dates = {}
-            messager.print("parsing collection %s" % self.parcels['expected'])
-            for parcel in self.parcels['expected']:
-                messager.print("parsing entry %s" % parcel)
-                try:
-                    date = datetime.date.fromisoformat(parcel[0])
-                    if date not in dates:
-                        dates[date] = []
-                    dates[date].append(parcel[1])
-                except ValueError:
-                    print("unparsable parcel arrival date:", parcel[0])
-            return [T.dl[[[T.dt[date.strftime("%Y-%m-%d %d")],
-                           T.dd[T.ul[[[T.li[parcel]
-                                       for parcel in sorted(dates[date])]]]]]]]]
-        else:
-            messager.print("Warning: no parcels data")
+        return wrap_box(
+            labelled_subsection("Parcels",
+                                self.agenda_subsections(["Ordered",
+                                                         "Dispatched"], messager)))

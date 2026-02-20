@@ -2,6 +2,8 @@ import collections
 import datetime
 import os
 
+import traceback
+
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -55,6 +57,14 @@ def update_touchbook(touchbook):
         dobishem.storage.write_csv(touchbook, rows,
                                    sort_columns=['Date', 'Place', 'Method', 'Stage', 'Bell'])
 
+PRINCIPLES = [
+    "Stedman",
+    "Orpheus",
+    "Crambo",
+    "Erin",
+    "Cactus",
+]
+
 def analyze_touchbook(touchbook):
     """Analyze what I've been ringing."""
     rung = collections.defaultdict(lambda: collections.defaultdict(list))
@@ -63,9 +73,20 @@ def analyze_touchbook(touchbook):
         if row['Status'] == 'failed':
             continue
         bell = int(row.get('Bell', 0) or 0)
+        stage = int(row.get('Stage', 0) or 0)
+        if bell > stage:
+            # ignore covering
+            continue
+        method = row.get('Method')
+        if method == 'RC':
+            continue
+        if bell == 1 and method not in PRINCIPLES and "Alliance" not in method:
+            method = "Hunt bell"
         if bell > maxbell:
             maxbell = bell
-        rung[row['Method'] + " " + STAGE_NAMES[int(row.get('Stage', 0) or 0)]][bell].append(row)
+        if stage > maxbell:
+            maxbell = stage
+        rung[method + " " + STAGE_NAMES[stage]][bell].append(row)
     return maxbell, rung, {k: sum(len(b) for b in v.values()) for k, v in rung.items()}
 
 def method_totals_cell(touches_rung, method_totals, method):

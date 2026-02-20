@@ -95,8 +95,6 @@ class AgendaPanel(panels.DashboardPanel):
             "Mending": load_agenda_file("$ORG/general.org", require_tag='mending'),
             "Programming": load_agenda_file("$ORG/general.org", require_tag='programming'),
             "Makespace": load_agenda_file("$ORG/projects.org", n_results=6, require_tag="@Makespace"),
-            "Ordered": load_agenda_file("$ORG/shopping.org", require_todo="ORDERED"),
-            "Dispatched": load_agenda_file("$ORG/shopping.org", require_todo="DISPATCHED"),
             "Learning": load_agenda_file("$ORG/learning.org", require_todo="OPEN", n_results=6),
             "Supermarket": load_agenda_file("$ORG/shopping.org", require_tag='supermarket', require_todo="BUY"),
             "Mackays": load_agenda_file("$ORG/shopping.org", require_tag='Mackays', require_todo="BUY"),

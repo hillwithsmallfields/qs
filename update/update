@@ -11,11 +11,14 @@ export PRIVATEHTML=$HOME/private_html
 export SCRATCH=$HOME/scratch
 export SYNCEDBACKUPS=$HOME/Sync-snapshots
 
-# We can't use 3.9, because we want 'match'
-PYTHON=python3.9
-# currently 3.12:
+
+# currently 3.12 on noticeboard:
 PYTHON=python3
-# has pandas:
-PYTHON=python3.10
+case $(hostname) in
+    shtogu)
+        # has pandas on noticeboard:
+        PYTHON=python3.10
+        ;;
+esac
 
 $PYTHON $SCRIPT_DIR/update.py $*
