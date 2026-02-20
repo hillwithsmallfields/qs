@@ -1,0 +1,13 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "qs"
+authors = [{name = "John C. G. Sturdy", email = "jcg.sturdy@gmail.com"}]
+readme = "README.md"
+license = {file = "LICENSE"}
+classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
+version = "0.0.1"
+description = "My Quantified self and other updates."
+
