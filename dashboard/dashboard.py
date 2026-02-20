@@ -6,6 +6,7 @@ import json
 import os
 import random
 import shutil
+import socket
 import sys
 
 import numpy as np
@@ -119,6 +120,14 @@ def travel_section():
     # TODO: read travel.csv and a journeys file generated from Google
     return None
 
+def page_footer():
+    """Return a page footer."""
+    return [
+        T.hr(),
+        T.p(class_='footer')["Page created at %s on %s"
+                             % (datetime.datetime.now().isoformat(timespec='seconds'),
+                                socket.gethostname())]]
+
 def construct_impersonal_dashboard_page(store, charts, channels_data):
     with BeginAndEndMessages("constructing impersonal page") as msgs:
         page = SectionalPage()
@@ -143,7 +152,8 @@ def construct_impersonal_dashboard_page(store, charts, channels_data):
             T.script(src="dashboard.js"),
             T.h1["Public dashboard"],
             page.toc(),
-            page.sections()]]
+            page.sections(),
+            page_footer()]]
 
 def construct_personal_dashboard_page(store, charts, channels_data):
     with BeginAndEndMessages("constructing personal page") as msgs:
@@ -186,7 +196,8 @@ def construct_personal_dashboard_page(store, charts, channels_data):
             T.script(src="dashboard.js"),
             T.h1["Personal dashboard"],
             page.toc(),
-            page.sections()]]
+            page.sections(),
+            page_footer()]]
 
 def write_dashboard_page(page_file,
                          store,

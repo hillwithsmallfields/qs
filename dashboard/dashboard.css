@@ -208,6 +208,11 @@ span.open_item {
     font-style: italic;
 }
 
+p.footer {
+    font-size: x-small;
+    text-align: right;
+}
+
 div.bible {
 }
 
