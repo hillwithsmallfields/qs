@@ -7,13 +7,36 @@ DOVE_FILE = os.path.expanduser("~/Downloads/dove.csv")
 DOVE_URL = "https://dove.cccbr.org.uk/towers.csv"
 MY_TOWERS_FILE = os.path.expanduser("~/Sync/ringing/towers.csv")
 
+# The columns to write in my tower visits records
+OUT_COLUMNS = ['Tower',
+               'Date',
+               'Bells',
+               'Weight',
+               'Lbs',
+               'Diocese',
+               'County',
+               'Latitude',
+               'Longitude']
+
+# The columns to copy from the reference Dove file to my personal
+# tower visits file, with the column names to use in the output:
+TRANSFER_KEYS = {
+    'County': 'County',
+    'Diocese': 'Diocese',
+    'Lat': 'Latitude',
+    'Long': 'Longitude',
+    'Bells': 'Bells',
+    'Wt': 'Lbs',
+    }
+
 def tower_names(tower):
-    return [tower['PlaceCL'] or tower['Place'],
-            tower['Place'],
-            tower['AltName'] or tower['Place'],
-            "%s, %s" % (tower['Place'], tower['Dedicn']),
-            "%s (%s)" % (tower['Place'], tower['County']),
-            ]
+    """Return various names by which a tower may be known."""
+    return set([tower['PlaceCL'] or tower['Place'],
+                tower['Place'],
+                tower['AltName'] or tower['Place'],
+                "%s, %s" % (tower['Place'], tower['Dedicn']),
+                "%s (%s)" % (tower['Place'], tower['County']),
+                ])
 
 def download_dove():
     if not os.path.exists(DOVE_FILE):
@@ -30,45 +53,42 @@ def download_dove():
             print("Failed to fetch Dove data")
 
 def read_dove():
+    """Read the Dove data as a dictionary.
+
+    Each tower appears under multiple names, as returned by the function `tower_names`."""
+    download_dove()
     with open(DOVE_FILE) as dovestream:
         return {
             name: tower
             for tower in csv.DictReader(dovestream)
             for name in tower_names(tower)
-            if tower['RingType'] == 'Full-circle ring'
+            if (tower['RingType'] == 'Full-circle ring'
+                and tower['Bells'] != "1")
         }
 
 def read_visits():
+    """Read my tower visits records."""
     with open(MY_TOWERS_FILE) as towerstream:
         return {
             tower['Tower']: tower
             for tower in csv.DictReader(towerstream)
         }
 
-OUT_COLUMNS = ['Tower', 'Date', 'Bells', 'Weight', 'Lbs', 'Diocese', 'County', 'Latitude', 'Longitude']
-
 def write_visits(visits):
+    """Read my tower visits records."""
     with open(MY_TOWERS_FILE, 'w') as outstream:
         writer = csv.DictWriter(outstream, OUT_COLUMNS)
         writer.writeheader()
         for name in sorted(visits.keys()):
             writer.writerow(visits[name])
-
-transfer_keys = {
-    'County': 'County',
-    'Diocese': 'Diocese',
-    'Lat': 'Latitude',
-    'Long': 'Longitude',
-    'Bells': 'Bells',
-    'Wt': 'Lbs',
-    }
+    return visits
 
 def towers_fill_in(dove, visits):
     """Fill in details of my tower visits, using the Dove data."""
     for name, visit in visits.items():
         if name in dove:
             extra_details = dove[name]
-            for dove_column, visit_column in transfer_keys.items():
+            for dove_column, visit_column in TRANSFER_KEYS.items():
                 visit[visit_column] = extra_details[dove_column]
         else:
             print("No details for", name)
@@ -77,6 +97,10 @@ def towers_fill_in(dove, visits):
             visit['Weight'] = "%d-%d-%d" % (lbs // 112, (lbs % 112) // 28, lbs % 28)
 
 def classify_towers(visits):
+    """Classify my tower visits by:
+    - number of bells
+    - tenor weight
+    - year of first recorded visit."""
     by_bells = defaultdict(int)
     by_weight = defaultdict(int)
     by_year = defaultdict(int)
