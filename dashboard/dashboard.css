@@ -340,4 +340,5 @@ span.word {
   background-color: yellow;
   z-index: 1;
   position: absolute;
+  min-width: 24em;
 }
