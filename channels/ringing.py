@@ -13,7 +13,8 @@ from expressionive.expridioms import wrap_box, labelled_subsection, linked_image
 
 import qsutils
 import channels.panels as panels
-import ringing.tower_visits as towers
+from change_ringing import towers
+import ringing.tower_visits
 
 STAGE_NAMES=[
     "",
@@ -149,12 +150,12 @@ class RingingPanel(panels.DashboardPanel):
 
     def update(self, verbose=False, messager=None, **kwargs):
         self.dove = towers.read_dove()
-        self.visits = towers.read_visits()
+        self.visits = ringing.tower_visits.read_visits()
 
-        towers.towers_fill_in(self.dove, self.visits)
-        towers.write_visits(self.visits)
+        ringing.tower_visits.towers_fill_in(self.dove, self.visits)
+        ringing.tower_visits.write_visits(self.visits)
 
-        self.by_bells, self.by_weight, self.by_year = towers.classify_towers(self.visits)
+        self.by_bells, self.by_weight, self.by_year = ringing.tower_visits.classify_towers(self.visits)
 
         write_classification(self.by_bells, "Bells", "bells")
         write_classification(self.by_weight, "Hundredweight", "weight")
