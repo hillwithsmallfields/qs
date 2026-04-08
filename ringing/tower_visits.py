@@ -50,7 +50,10 @@ def towers_fill_in(dove, visits):
         if name in dove:
             towers_matching_name = dove[name]
             if len(towers_matching_name) > 1:
-                print("Warning: the tower name", name, "is ambiguous")
+                if visit.get('Weight'):
+                    print("Warning: the tower name", name, "is ambiguous but the entry is already complete")
+                else:
+                    print("Warning: the tower name", name, "is ambiguous, so we can't complete the entry")
                 continue
             extra_details = towers_matching_name[0]
             for dove_column, visit_column in TRANSFER_KEYS.items():
