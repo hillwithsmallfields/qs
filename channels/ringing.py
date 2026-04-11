@@ -111,10 +111,11 @@ def method_totals_cell(touches_rung, method_totals, method):
                                                   T.li["%s: %s" % (touch['Date'], touch['Place'])]
                                                   for touch in touches]]]]]
 
-def touches_cell(touches):
+def touches_cell(touches, method, bell):
     """Return the html structure for a method/bell totals cell."""
     return T.td[T.span(class_='overview')[str(len(touches) or "."),
                                           T.span(class_='details fineprint')[
+                                              T.h5["Touches of %s rung on bell %d:" % (method, bell)],
                                               T.ol[[
                                                   T.li["%s: %s" % (touch['Date'], touch['Place'])]
                                                   for touch in sorted(touches,
@@ -229,7 +230,7 @@ class RingingPanel(panels.DashboardPanel):
                     T.table[T.tr[[T.th["Method"], T.th["Times"]] + [T.th[str(n) if n else "?"] for n in range(self.maxbell+1)]],
                             [T.tr[[T.th[method],
                                    method_totals_cell(self.touches_rung, self.method_totals, method)]
-                                   + [touches_cell(self.touches_rung[method].get(bell, []))
+                                   + [touches_cell(self.touches_rung[method].get(bell, []), method, bell)
                                       for bell in range(self.maxbell+1)]]
                              for method in sorted(self.method_totals.keys(),
                                                   key=lambda k: self.method_totals[k],
