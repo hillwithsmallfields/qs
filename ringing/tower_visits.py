@@ -48,13 +48,20 @@ def towers_fill_in(dove, visits):
     """Fill in details of my tower visits, using the Dove data."""
     for name, visit in visits.items():
         if name in dove:
-            extra_details = dove[name]
+            towers_matching_name = dove[name]
+            if len(towers_matching_name) > 1:
+                if visit.get('Weight'):
+                    print("Warning: the tower name", name, "is ambiguous but the entry is already complete")
+                else:
+                    print("Warning: the tower name", name, "is ambiguous, so we can't complete the entry")
+                continue
+            extra_details = towers_matching_name[0]
             for dove_column, visit_column in TRANSFER_KEYS.items():
                 visit[visit_column] = extra_details[dove_column]
         else:
             print("No details for", name)
-        if 'Lbs' in visit and visit['Lbs']:
-            lbs = int(visit['Lbs'])
+        if (lbs_text := visit.get('Lbs')):
+            lbs = int(lbs_text)
             visit['Weight'] = "%d-%d-%d" % (lbs // 112, (lbs % 112) // 28, lbs % 28)
 
 def classify_towers(visits):

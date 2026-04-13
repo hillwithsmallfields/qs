@@ -66,8 +66,10 @@ PRINCIPLES = [
     "Cactus",
 ]
 
-def analyze_touchbook(touchbook):
-    """Analyze what I've been ringing."""
+def analyze_touchbook(touchbook, by_stage=None):
+    """Analyze what I've been ringing.
+
+    If your methods rung is given (by stage) your records are cross-checked."""
     rung = collections.defaultdict(lambda: collections.defaultdict(list))
     maxbell = 0
     for row in dobishem.storage.read_csv(touchbook):
@@ -87,6 +89,14 @@ def analyze_touchbook(touchbook):
             maxbell = bell
         if stage > maxbell:
             maxbell = stage
+        if (by_stage
+            and (not method.startswith("Spliced "))
+            and method not in ["Plain Hunt", "Hunt bell"]
+            and method not in by_stage[stage]
+            and method.split(' ')[0] not in by_stage[stage]
+            ):
+            print("Note:", method, "on", stage, "bells is in your touchbook but not your table of methods rung")
+            print("  your methods at this stage:", by_stage[stage])
         rung[method + " " + STAGE_NAMES[stage]][bell].append(row)
     return maxbell, rung, {k: sum(len(b) for b in v.values()) for k, v in rung.items()}
 
@@ -101,10 +111,11 @@ def method_totals_cell(touches_rung, method_totals, method):
                                                   T.li["%s: %s" % (touch['Date'], touch['Place'])]
                                                   for touch in touches]]]]]
 
-def touches_cell(touches):
+def touches_cell(touches, method, bell):
     """Return the html structure for a method/bell totals cell."""
     return T.td[T.span(class_='overview')[str(len(touches) or "."),
                                           T.span(class_='details fineprint')[
+                                              T.h5["Touches of %s rung on bell %d:" % (method, bell)],
                                               T.ol[[
                                                   T.li["%s: %s" % (touch['Date'], touch['Place'])]
                                                   for touch in sorted(touches,
@@ -172,7 +183,7 @@ class RingingPanel(panels.DashboardPanel):
 
         touchbook = os.path.expandvars("$SYNCED/ringing/touchbook.csv")
         update_touchbook(touchbook)
-        self.maxbell, self.touches_rung, self.method_totals = analyze_touchbook(touchbook)
+        self.maxbell, self.touches_rung, self.method_totals = analyze_touchbook(touchbook, self.by_stage)
 
         super().update(verbose, messager)
         return self
@@ -219,7 +230,7 @@ class RingingPanel(panels.DashboardPanel):
                     T.table[T.tr[[T.th["Method"], T.th["Times"]] + [T.th[str(n) if n else "?"] for n in range(self.maxbell+1)]],
                             [T.tr[[T.th[method],
                                    method_totals_cell(self.touches_rung, self.method_totals, method)]
-                                   + [touches_cell(self.touches_rung[method].get(bell, []))
+                                   + [touches_cell(self.touches_rung[method].get(bell, []), method, bell)
                                       for bell in range(self.maxbell+1)]]
                              for method in sorted(self.method_totals.keys(),
                                                   key=lambda k: self.method_totals[k],
