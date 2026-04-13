@@ -207,18 +207,20 @@ def write_dashboard_page(page_file,
                          details_background_color="gold", inline=True):
     """Construct and save the dashboard page."""
     with charts.open_for_write(page=page_file) as page_stream:
+        stylesheet_filename = os.path.join(SOURCE_DIR, "dashboard.css")
         page_stream.write(
             exprpages.page_text(
                 page_constructor(store, charts, channels_data),
-                ((exprpages.tagged_file_contents(
-                    "style", os.path.join(SOURCE_DIR, "dashboard.css"))
-                 + qsutils.qsutils.table_support_css(details_background_color))
-                 if inline
-                 else ""),
-                (exprpages.tagged_file_contents(
+                title="Personal dashboard",
+                style_text=((exprpages.tagged_file_contents("style", stylesheet_filename)
+                             + qsutils.qsutils.table_support_css(details_background_color))
+                            if inline
+                            else ""),
+                stylesheet=None if inline else stylesheet_filename,
+                script_text=(exprpages.tagged_file_contents(
                     "script", os.path.join(SOURCE_DIR, "dashboard.js"))
-                 if inline
-                 else "")))
+                             if inline
+                             else "")))
     if not inline:
         for filename in ("dashboard.css",
                          "dashboard.js"):
