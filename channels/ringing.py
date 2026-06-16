@@ -160,6 +160,7 @@ class RingingPanel(panels.DashboardPanel):
                 for filebase in ["towers", "by-bells", "by-weight", "by-year"]]
 
     def update(self, verbose=False, messager=None, **kwargs):
+        print("running RingingPanel.update on", self)
         self.dove = towers.read_dove()
         self.visits = ringing.tower_visits.read_visits()
 
@@ -195,6 +196,7 @@ class RingingPanel(panels.DashboardPanel):
         """Prepare any images used by the output of the `html` method."""
         # TODO: Chart towers grabbed by year
         # TODO: Chart towers rung by weight
+        print("Running RingingPanel.prepare_page_images on", self)
         if self.by_year_df is not None:
             qsutils.qschart.barchart(self.by_year_df,
                                      x_name='Date', y_name='Towers',
@@ -204,6 +206,7 @@ class RingingPanel(panels.DashboardPanel):
 
     def html(self, _messager=None):
         """Generate an expressionive HTML structure from the cached data."""
+        print("Running RingingPanel.html on", self)
         return T.div(class_='ringing')[
             wrap_box(
                 labelled_subsection(
