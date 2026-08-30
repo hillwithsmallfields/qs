@@ -11,7 +11,7 @@ import yaml
 import numpy as np
 import pandas as pd
 
-import dobishem
+import dobishem.storage
 from expressionive.expressionive import htmltags as T
 from expressionive.expridioms import wrap_box, labelled_subsection, linked_image
 from dobishem.nested_messages import BeginAndEndMessages

@@ -9,7 +9,7 @@ import pandas as pd
 
 import qsutils
 import channels.panels as panels
-import dobishem
+import dobishem.storage
 from dobishem.nested_messages import BeginAndEndMessages
 from expressionive.expressionive import htmltags as T
 from expressionive.expridioms import wrap_box, labelled_subsection, linked_image

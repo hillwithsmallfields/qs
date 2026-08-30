@@ -64,6 +64,8 @@ PRINCIPLES = [
     "Crambo",
     "Erin",
     "Cactus",
+    "Banana",
+    "Scientific",
 ]
 
 def analyze_touchbook(touchbook, by_stage=None):

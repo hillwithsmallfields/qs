@@ -3,7 +3,7 @@ import tabular_page_maker.make_link_table
 import os
 
 import channels.panels as panels
-import dobishem
+import dobishem.storage
 
 class StartPage(panels.DashboardPanel):
 
