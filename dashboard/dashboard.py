@@ -133,7 +133,7 @@ def construct_impersonal_dashboard_page(store, charts, channels_data):
         page = SectionalPage()
         empty = channels.empty.EmptyPanel(store, charts)
         page.add_section('Links', T.ul[
-            T.li[T.a(href="me/index.html")["Personal dashboard"]],
+            T.li[T.a(href="me/index.html")["Public dashboard"]],
             T.li[T.a(href="me/motion_gallery.html")["Motion detection gallery"]]
         ])
         page.add_section(None,
