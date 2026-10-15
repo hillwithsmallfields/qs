@@ -10,7 +10,7 @@ import re
 import channels.panels as panels
 from expressionive.expressionive import htmltags as T
 from interlinear.interlinear import chapters_html, chapters_interlinear_html
-from orgbookchapterverse.orgbookchapterverse import TextCollection, interlinear_chapter
+from orgbookchapterverse.orgbookchapterverse import TextCollection, interlinear_book_chapters
 
 # 32 chapters to add to the 150 psalms gives 182 chapters, which is
 # twice the 91 days of the nearly-quarter-year cycle, so we get Old
@@ -116,17 +116,24 @@ class BiblePanel(panels.DashboardPanel):
         today = datetime.date.today()
         day_of_cycle = (today - today.replace(month=1, day=1)).days % 91 + 1
         interlinear = True
+        print("psalm titles", psalm_titles(day_of_cycle, pluralise=True))
         return T.div(class_='bible')[
             T.h2["Psalms: ", psalm_titles_string(day_of_cycle)],
-            (chapters_interlinear_html(self.versions, psalm_titles(day_of_cycle, pluralise=True), heading=T.h3)
+            (chapters_interlinear_html(interlinear_book_chapters(self.versions, psalm_titles(day_of_cycle, pluralise=True)),
+                heading=T.h3
+            )
              if interlinear
              else chapters_html(self.bible, psalm_titles(day_of_cycle))),
             T.h2["Proverbs: ", proverbs_titles_string(day_of_cycle)],
-            (chapters_interlinear_html(self.versions, proverbs_titles(day_of_cycle))
+            (chapters_interlinear_html(interlinear_book_chapters(self.versions, proverbs_titles(day_of_cycle)))
              if interlinear
              else chapters_html(self.bible, proverbs_titles(day_of_cycle))),
             T.h2["Gospels: ", gospel_titles_string(day_of_cycle)],
-            (chapters_interlinear_html(self.versions, gospel_titles(day_of_cycle))
+            (chapters_interlinear_html(interlinear_book_chapters(self.versions, gospel_titles(day_of_cycle)))
              if interlinear
              else chapters_html(self.bible, gospel_titles(day_of_cycle))),
         ]
+
+def show(label, stuff):
+    print(label, "stuff is", stuff)
+    return stuff

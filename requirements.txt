@@ -23,6 +23,11 @@ psutil
 pyowm
 requests
 setuptools
-tabular_page_maker
+tabular_page_maker>=0.0.6
 timetable_announcer
 pyyaml
+dobishem
+expressionive
+myfitnesspal
+interlinear
+coimealta

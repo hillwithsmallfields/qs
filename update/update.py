@@ -208,7 +208,7 @@ def updates(charts,
     private_handlers = [
         panel_class(store, outputs)
         for panel_class in [
-                channels.finances.FinancesPanel,
+                # channels.finances.FinancesPanel, # commented out because of problem with missing data causing sort to fail
                 # channels.weight.WeightPanel,
                 channels.parcels.ParcelsPanel,
                 channels.timetable.TimetablePanel,

@@ -30,9 +30,9 @@ class StartPage(panels.DashboardPanel):
                     messager.print("Updating start page")
                 else:
                     print("Updating start page")
-            tabular_page_maker.make_link_table.output_table(dobishem.storage.load(startpage_source),
-                                                            stylesheet=startpage_style,
-                                                            output=startpage)
+            tabular_page_maker.make_link_table.make_table(dobishem.storage.load(startpage_source),
+                                                          stylesheet=startpage_style,
+                                                          output=startpage)
 
         super().update(verbose, messager)
         return self

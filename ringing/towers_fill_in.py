@@ -5,13 +5,14 @@
 
 import os
 import csv
+import towers
 import tower_visits
 
 def towers_fill_in_main():
     """Complete updates to my tower visits file.
 
     Uses the Dove data to fill in columns that I haven't filled in in any rows."""
-    tower_visits.download_dove()
+    towers.download_dove()
     dove = tower_visits.read_dove()
     visits = tower_visits.read_visits()
 
